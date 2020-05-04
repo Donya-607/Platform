@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{D00FF255-56E5-4E96-A2E2-950096C7773E}</ProjectGuid>
+    <RootNamespace>Platform</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Configuration\Common.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Configuration\Common.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Configuration\Common.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Configuration\Common.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)Code\Donya\;$(ProjectDir)External\Cereal\include\;$(ProjectDir)External\DirectXTK\Inc\;$(ProjectDir)External\FMOD\LowLevel\inc\;$(ProjectDir)External\FMOD\Studio\inc\;$(ProjectDir)External\ImGui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)External\DirectXTK\Inc\;$(ProjectDir)External\FMOD\LowLevel\lib\;$(ProjectDir)External\FMOD\Studio\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;DirectXTK_d.lib;fmodL_vc.lib;fmodstudioL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)Code\Donya\;$(ProjectDir)External\Cereal\include\;$(ProjectDir)External\DirectXTK\Inc\;$(ProjectDir)External\FMOD\LowLevel\inc\;$(ProjectDir)External\FMOD\Studio\inc\;$(ProjectDir)External\ImGui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(ProjectDir)External\DirectXTK\Inc\;$(ProjectDir)External\FMOD\LowLevel\lib\;$(ProjectDir)External\FMOD\Studio\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d11.lib;dxgi.lib;DirectXTK.lib;fmod_vc.lib;fmodstudio_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Code\Animation.cpp" />
+    <ClCompile Include="Code\Common.cpp" />
+    <ClCompile Include="Code\Donya\AudioSystem.cpp" />
+    <ClCompile Include="Code\Donya\Blend.cpp" />
+    <ClCompile Include="Code\Donya\Camera.cpp" />
+    <ClCompile Include="Code\Donya\Collision.cpp" />
+    <ClCompile Include="Code\Donya\Color.cpp" />
+    <ClCompile Include="Code\Donya\Donya.cpp" />
+    <ClCompile Include="Code\Donya\GamepadXInput.cpp" />
+    <ClCompile Include="Code\Donya\GeometricPrimitive.cpp" />
+    <ClCompile Include="Code\Donya\Keyboard.cpp" />
+    <ClCompile Include="Code\Donya\Loader.cpp" />
+    <ClCompile Include="Code\Donya\Looper.cpp" />
+    <ClCompile Include="Code\Donya\Model.cpp" />
+    <ClCompile Include="Code\Donya\ModelCommon.cpp" />
+    <ClCompile Include="Code\Donya\ModelMotion.cpp" />
+    <ClCompile Include="Code\Donya\ModelPolygon.cpp" />
+    <ClCompile Include="Code\Donya\ModelPose.cpp" />
+    <ClCompile Include="Code\Donya\ModelPrimitive.cpp" />
+    <ClCompile Include="Code\Donya\ModelRenderer.cpp" />
+    <ClCompile Include="Code\Donya\Motion.cpp" />
+    <ClCompile Include="Code\Donya\Mouse.cpp" />
+    <ClCompile Include="Code\Donya\Quaternion.cpp" />
+    <ClCompile Include="Code\Donya\Random.cpp" />
+    <ClCompile Include="Code\Donya\RenderingStates.cpp" />
+    <ClCompile Include="Code\Donya\Resource.cpp" />
+    <ClCompile Include="Code\Donya\ScreenShake.cpp" />
+    <ClCompile Include="Code\Donya\Shader.cpp" />
+    <ClCompile Include="Code\Donya\Sound.cpp" />
+    <ClCompile Include="Code\Donya\Sprite.cpp" />
+    <ClCompile Include="Code\Donya\SpriteSheet.cpp" />
+    <ClCompile Include="Code\Donya\Surface.cpp" />
+    <ClCompile Include="Code\Donya\Useful.cpp" />
+    <ClCompile Include="Code\Donya\UseImGui.cpp" />
+    <ClCompile Include="Code\Donya\Vector.cpp" />
+    <ClCompile Include="Code\Donya\WindowsUtil.cpp" />
+    <ClCompile Include="Code\Fader.cpp" />
+    <ClCompile Include="Code\FilePath.cpp" />
+    <ClCompile Include="Code\Framework.cpp" />
+    <ClCompile Include="Code\main.cpp" />
+    <ClCompile Include="Code\Panel.cpp" />
+    <ClCompile Include="Code\Parameter.cpp" />
+    <ClCompile Include="Code\Player.cpp" />
+    <ClCompile Include="Code\Renderer.cpp" />
+    <ClCompile Include="Code\SceneBattle.cpp" />
+    <ClCompile Include="Code\SceneClear.cpp" />
+    <ClCompile Include="Code\SceneLogo.cpp" />
+    <ClCompile Include="Code\SceneManager.cpp" />
+    <ClCompile Include="Code\ScenePause.cpp" />
+    <ClCompile Include="Code\SceneTitle.cpp" />
+    <ClCompile Include="External\ImGui\imgui.cpp" />
+    <ClCompile Include="External\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="External\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="External\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="External\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="External\ImGui\imgui_widgets.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Code\Animation.h" />
+    <ClInclude Include="Code\Common.h" />
+    <ClInclude Include="Code\Donya\AudioSystem.h" />
+    <ClInclude Include="Code\Donya\Benchmark.h" />
+    <ClInclude Include="Code\Donya\Blend.h" />
+    <ClInclude Include="Code\Donya\Camera.h" />
+    <ClInclude Include="Code\Donya\CBuffer.h" />
+    <ClInclude Include="Code\Donya\Collision.h" />
+    <ClInclude Include="Code\Donya\Color.h" />
+    <ClInclude Include="Code\Donya\Constant.h" />
+    <ClInclude Include="Code\Donya\Counter.h" />
+    <ClInclude Include="Code\Donya\Direct3DUtil.h" />
+    <ClInclude Include="Code\Donya\Donya.h" />
+    <ClInclude Include="Code\Donya\Easing.h" />
+    <ClInclude Include="Code\Donya\EnumBitwiseOperators.h" />
+    <ClInclude Include="Code\Donya\GamepadXInput.h" />
+    <ClInclude Include="Code\Donya\GeometricPrimitive.h" />
+    <ClInclude Include="Code\Donya\HighResolutionTimer.h" />
+    <ClInclude Include="Code\Donya\Keyboard.h" />
+    <ClInclude Include="Code\Donya\Loader.h" />
+    <ClInclude Include="Code\Donya\Looper.h" />
+    <ClInclude Include="Code\Donya\Model.h" />
+    <ClInclude Include="Code\Donya\ModelCommon.h" />
+    <ClInclude Include="Code\Donya\ModelMotion.h" />
+    <ClInclude Include="Code\Donya\ModelPolygon.h" />
+    <ClInclude Include="Code\Donya\ModelPose.h" />
+    <ClInclude Include="Code\Donya\ModelPrimitive.h" />
+    <ClInclude Include="Code\Donya\ModelRenderer.h" />
+    <ClInclude Include="Code\Donya\ModelSource.h" />
+    <ClInclude Include="Code\Donya\Motion.h" />
+    <ClInclude Include="Code\Donya\Mouse.h" />
+    <ClInclude Include="Code\Donya\Quaternion.h" />
+    <ClInclude Include="Code\Donya\Random.h" />
+    <ClInclude Include="Code\Donya\RenderingStates.h" />
+    <ClInclude Include="Code\Donya\Resource.h" />
+    <ClInclude Include="Code\Donya\ScreenShake.h" />
+    <ClInclude Include="Code\Donya\Serializer.h" />
+    <ClInclude Include="Code\Donya\Shader.h" />
+    <ClInclude Include="Code\Donya\Sound.h" />
+    <ClInclude Include="Code\Donya\Sprite.h" />
+    <ClInclude Include="Code\Donya\SpriteSheet.h" />
+    <ClInclude Include="Code\Donya\Surface.h" />
+    <ClInclude Include="Code\Donya\Template.h" />
+    <ClInclude Include="Code\Donya\Useful.h" />
+    <ClInclude Include="Code\Donya\UseImGui.h" />
+    <ClInclude Include="Code\Donya\Vector.h" />
+    <ClInclude Include="Code\Donya\WindowsUtil.h" />
+    <ClInclude Include="Code\Fader.h" />
+    <ClInclude Include="Code\FilePath.h" />
+    <ClInclude Include="Code\Framework.h" />
+    <ClInclude Include="Code\Icon.h" />
+    <ClInclude Include="Code\Music.h" />
+    <ClInclude Include="Code\Panel.h" />
+    <ClInclude Include="Code\Parameter.h" />
+    <ClInclude Include="Code\Player.h" />
+    <ClInclude Include="Code\Renderer.h" />
+    <ClInclude Include="Code\Scene.h" />
+    <ClInclude Include="Code\SceneBattle.h" />
+    <ClInclude Include="Code\SceneClear.h" />
+    <ClInclude Include="Code\SceneLogo.h" />
+    <ClInclude Include="Code\SceneManager.h" />
+    <ClInclude Include="Code\ScenePause.h" />
+    <ClInclude Include="Code\SceneTitle.h" />
+    <ClInclude Include="External\Cereal\include\cereal\access.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\archives\adapters.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\archives\binary.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\archives\json.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\archives\portable_binary.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\archives\xml.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\cereal.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\details\helpers.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\details\polymorphic_impl.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\details\polymorphic_impl_fwd.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\details\static_object.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\details\traits.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\details\util.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\external\base64.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\allocators.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\document.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\encodedstream.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\encodings.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\error\en.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\error\error.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\filereadstream.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\filewritestream.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\fwd.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\biginteger.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\diyfp.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\dtoa.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\ieee754.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\itoa.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\meta.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\pow10.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\regex.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\stack.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\strfunc.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\strtod.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\internal\swap.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\istreamwrapper.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\memorybuffer.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\memorystream.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\msinttypes\inttypes.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\msinttypes\stdint.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\ostreamwrapper.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\pointer.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\prettywriter.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\rapidjson.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\reader.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\schema.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\stream.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\stringbuffer.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidjson\writer.h" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidxml\rapidxml.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidxml\rapidxml_iterators.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidxml\rapidxml_print.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\external\rapidxml\rapidxml_utils.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\macros.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\array.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\base_class.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\bitset.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\boost_variant.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\chrono.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\common.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\complex.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\concepts\pair_associative_container.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\deque.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\forward_list.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\functional.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\list.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\map.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\memory.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\polymorphic.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\queue.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\set.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\stack.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\string.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\tuple.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\unordered_map.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\unordered_set.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\utility.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\valarray.hpp" />
+    <ClInclude Include="External\Cereal\include\cereal\types\vector.hpp" />
+    <ClInclude Include="External\ImGui\imconfig.h" />
+    <ClInclude Include="External\ImGui\imgui.h" />
+    <ClInclude Include="External\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="External\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="External\ImGui\imgui_internal.h" />
+    <ClInclude Include="External\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="External\ImGui\imstb_textedit.h" />
+    <ClInclude Include="External\ImGui\imstb_truetype.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Code\Icon.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Code\Donya\Donya.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="External\Cereal\include\cereal\external\rapidxml\manual.html" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
