@@ -42,7 +42,7 @@ namespace Donya
 		bool IsHitSphere( const Sphere &a, const Coord &b )
 		{
 			const Coord diff = b - a.pos;
-			return ( diff.x * diff.x ) + ( diff.y * diff.y ) < ( a.radius * a.radius );
+			return diff.LengthSq() < ( a.radius * a.radius );
 		}
 		template<typename Sphere>
 		bool IsHitSphere( const Sphere &a, const Sphere &b )
@@ -201,37 +201,63 @@ namespace Donya
 			return IsHitSphere( a, b );
 		}
 
+		template<typename Box, typename Sphere>
+		bool IsHitBoxSphere( const Box &a, const Sphere &b )
+		{
+			const auto closestPoint = FindClosestPoint( a, b.pos );
+			const auto diff  = b.pos - closestPoint;
+			const auto lenSq = diff.LengthSq();
+			const auto radSq = b.radius * b.radius;
+			return ( lenSq <= radSq );
+		}
+
 		bool IsHit( const Box2 &a, const Sphere2 &b, bool consider )
 		{
-
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsHitBoxSphere( a, b );
 		}
 		bool IsHit( const Sphere2 &a, const Box2 &b, bool consider )
 		{
-
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsHitBoxSphere( b, a );
 		}
 		bool IsHit( const Box3 &a, const Sphere3 &b, bool consider )
 		{
-
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsHitBoxSphere( a, b );
 		}
 		bool IsHit( const Sphere3 &a, const Box3 &b, bool consider )
 		{
-
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsHitBoxSphere( b, a );
 		}
 		bool IsHit( const Box2F &a, const Sphere2F &b, bool consider )
 		{
-
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsHitBoxSphere( a, b );
 		}
 		bool IsHit( const Sphere2F &a, const Box2F &b, bool consider )
 		{
-
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsHitBoxSphere( b, a );
 		}
 		bool IsHit( const Box3F &a, const Sphere3F &b, bool consider )
 		{
-
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsHitBoxSphere( a, b );
 		}
 		bool IsHit( const Sphere3F &a, const Box3F &b, bool consider )
 		{
-
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsHitBoxSphere( b, a );
 		}
 
 		template<typename Box, typename Coord>

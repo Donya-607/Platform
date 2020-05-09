@@ -618,6 +618,7 @@ namespace Donya
 			return DirectX::XMVectorSet( x, y, z, w );
 		}
 	public:
+		constexpr float LengthSq() const { return ( x * x ) + ( y * y ) + ( z * z ) + ( w * w ); }
 		constexpr Vector3 XYZ() const { return Vector3{ x, y, z }; }
 	public:
 		/// <summary>
@@ -1020,6 +1021,8 @@ namespace Donya
 				Donya::SignBit( y ),
 			};
 		}
+
+		constexpr int LengthSq() const { return ( x * x ) + ( y * y ); }
 	public:
 		/// <summary>
 		/// Convert by static_cast.
@@ -1168,6 +1171,8 @@ namespace Donya
 				Donya::SignBit( z ),
 			};
 		}
+
+		constexpr int LengthSq() const { return ( x * x ) + ( y * y ) + ( z * z ); }
 	public:
 		/// <summary>
 		/// Convert by static_cast.
@@ -1330,6 +1335,8 @@ namespace Donya
 				Donya::SignBit( w ),
 			};
 		}
+
+		constexpr int LengthSq() const { return ( x * x ) + ( y * y ) + ( z * z ) + ( w * w ); }
 	public:
 		/// <summary>
 		/// Convert by static_cast.
