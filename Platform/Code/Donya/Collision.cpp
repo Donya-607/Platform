@@ -233,6 +233,90 @@ namespace Donya
 		{
 
 		}
+
+		template<typename Box, typename Coord>
+		Coord FindClosestPointBox( const Box &from, const Coord &to, unsigned int dimension )
+		{
+			const Coord fromMin = from.Min();
+			const Coord fromMax = from.Max();
+			Coord point{};
+			for ( unsigned int i = 0; i < dimension; ++i )
+			{
+				point[i] = std::max( fromMin[i], std::min( fromMax[i], to[i] ) );
+			}
+			return point;
+		}
+		template<typename Sphere, typename Coord>
+		Coord FindClosestPointSphere( const Sphere &from, const Coord &to )
+		{
+			const Coord v = to - from.pos;
+			return from.pos + ( v.Unit() * from.radius );
+		}
+
+		Donya::Int2 FindClosestPoint( const Donya::Int2 &from, const Box2 &to )
+		{
+			return FindClosestPointBox( to, from, 2U );
+		}
+		Donya::Int2 FindClosestPoint( const Box2 &from, const Donya::Int2 &to )
+		{
+			return FindClosestPointBox( from, to, 2U );
+		}
+		Donya::Int3 FindClosestPoint( const Donya::Int3 &from, const Box3 &to )
+		{
+			return FindClosestPointBox( to, from, 3U );
+		}
+		Donya::Int3 FindClosestPoint( const Box3 &from, const Donya::Int3 &to )
+		{
+			return FindClosestPointBox( from, to, 3U );
+		}
+		Donya::Vector2 FindClosestPoint( const Donya::Vector2 &from, const Box2F &to )
+		{
+			return FindClosestPointBox( to, from, 2U );
+		}
+		Donya::Vector2 FindClosestPoint( const Box2F &from, const Donya::Vector2 &to )
+		{
+			return FindClosestPointBox( from, to, 2U );
+		}
+		Donya::Vector3 FindClosestPoint( const Donya::Vector3 &from, const Box3F &to )
+		{
+			return FindClosestPointBox( to, from, 3U );
+		}
+		Donya::Vector3 FindClosestPoint( const Box3F &from, const Donya::Vector3 &to )
+		{
+			return FindClosestPointBox( from, to, 3U );
+		}
+		Donya::Int2 FindClosestPoint( const Donya::Int2 &from, const Sphere2 &to )
+		{
+			return FindClosestPointSphere( to, from );
+		}
+		Donya::Int2 FindClosestPoint( const Sphere2 &from, const Donya::Int2 &to )
+		{
+			return FindClosestPointSphere( from, to );
+		}
+		Donya::Int3 FindClosestPoint( const Donya::Int3 &from, const Sphere3 &to )
+		{
+			return FindClosestPointSphere( to, from );
+		}
+		Donya::Int3 FindClosestPoint( const Sphere3 &from, const Donya::Int3 &to )
+		{
+			return FindClosestPointSphere( from, to );
+		}
+		Donya::Vector2 FindClosestPoint( const Donya::Vector2 &from, const Sphere2F &to )
+		{
+			return FindClosestPointSphere( to, from );
+		}
+		Donya::Vector2 FindClosestPoint( const Sphere2F &from, const Donya::Vector2 &to )
+		{
+			return FindClosestPointSphere( from, to );
+		}
+		Donya::Vector3 FindClosestPoint( const Donya::Vector3 &from, const Sphere3F &to )
+		{
+			return FindClosestPointSphere( to, from );
+		}
+		Donya::Vector3 FindClosestPoint( const Sphere3F &from, const Donya::Vector3 &to )
+		{
+			return FindClosestPointSphere( from, to );
+		}
 	}
 
 	void Box::Set			( float centerX, float centerY, float halfWidth, float halfHeight, bool isExist )

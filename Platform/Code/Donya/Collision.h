@@ -133,6 +133,23 @@ namespace Donya
 		bool IsHit( const Sphere2F &a, const Box2F &b, bool considerExistFlag = true );
 		bool IsHit( const Box3F &a, const Sphere3F &b, bool considerExistFlag = true );
 		bool IsHit( const Sphere3F &a, const Box3F &b, bool considerExistFlag = true );
+
+		Donya::Int2 FindClosestPoint( const Donya::Int2 &from, const Box2 &to );
+		Donya::Int2 FindClosestPoint( const Box2 &from, const Donya::Int2 &to );
+		Donya::Int3 FindClosestPoint( const Donya::Int3 &from, const Box3 &to );
+		Donya::Int3 FindClosestPoint( const Box3 &from, const Donya::Int3 &to );
+		Donya::Vector2 FindClosestPoint( const Donya::Vector2 &from, const Box2F &to );
+		Donya::Vector2 FindClosestPoint( const Box2F &from, const Donya::Vector2 &to );
+		Donya::Vector3 FindClosestPoint( const Donya::Vector3 &from, const Box3F &to );
+		Donya::Vector3 FindClosestPoint( const Box3F &from, const Donya::Vector3 &to );
+		Donya::Int2 FindClosestPoint( const Donya::Int2 &from, const Sphere2 &to );
+		Donya::Int2 FindClosestPoint( const Sphere2 &from, const Donya::Int2 &to );
+		Donya::Int3 FindClosestPoint( const Donya::Int3 &from, const Sphere3 &to );
+		Donya::Int3 FindClosestPoint( const Sphere3 &from, const Donya::Int3 &to );
+		Donya::Vector2 FindClosestPoint( const Donya::Vector2 &from, const Sphere2F &to );
+		Donya::Vector2 FindClosestPoint( const Sphere2F &from, const Donya::Vector2 &to );
+		Donya::Vector3 FindClosestPoint( const Donya::Vector3 &from, const Sphere3F &to );
+		Donya::Vector3 FindClosestPoint( const Sphere3F &from, const Donya::Vector3 &to );
 	}
 
 	class Circle;
