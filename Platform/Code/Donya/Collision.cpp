@@ -70,7 +70,6 @@ namespace Donya
 			// else
 			return IsHitBox( a, b );
 		}
-
 		bool IsHit( const Donya::Int3 &a, const Box3 &b, bool consider )
 		{
 			if ( consider && !b.exist ) { return false; }
@@ -89,7 +88,6 @@ namespace Donya
 			// else
 			return IsHitBox( a, b );
 		}
-
 		bool IsHit( const Donya::Vector2 &a, const Box2F &b, bool consider )
 		{
 			if ( consider && !b.exist ) { return false; }
@@ -108,7 +106,6 @@ namespace Donya
 			// else
 			return IsHitBox( a, b );
 		}
-
 		bool IsHit( const Donya::Vector3 &a, const Box3F &b, bool consider )
 		{
 			if ( consider && !b.exist ) { return false; }
@@ -127,7 +124,6 @@ namespace Donya
 			// else
 			return IsHitBox( a, b );
 		}
-
 		bool IsHit( const Donya::Int2 &a, const Sphere2 &b, bool consider )
 		{
 			if ( consider && !b.exist ) { return false; }

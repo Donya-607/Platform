@@ -243,6 +243,7 @@
     <ClInclude Include="Code\Framework.h" />
     <ClInclude Include="Code\Icon.h" />
     <ClInclude Include="Code\Music.h" />
+    <ClInclude Include="Code\ObjectBase.h" />
     <ClInclude Include="Code\Panel.h" />
     <ClInclude Include="Code\Parameter.h" />
     <ClInclude Include="Code\Player.h" />
