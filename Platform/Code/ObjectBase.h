@@ -18,10 +18,21 @@
 class Actor
 {
 public:
-	Donya::Int2				pos;
-	Donya::Collision::Box2	hitBox;	// The "pos" acts as an offset.
+	/// <summary>
+	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
+	/// </summary>
+	static int MoveX( Actor *pTarget, float movement, const std::vector<Donya::Collision::Box2> &solids );
+	/// <summary>
+	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
+	/// </summary>
+	static int MoveAxis( Actor *pTarget, int moveDimension, float movement, const std::vector<Donya::Collision::Box2> &solids );
 public:
-	virtual void Move( const Donya::Int2 &movement );
+	Donya::Int2				pos;
+	Donya::Vector2			posRemainder;
+	Donya::Collision::Box2	hitBox;			// The "pos" acts as an offset.
+public:
+	virtual void Move( const Donya::Int2	&movement );
+	virtual void Move( const Donya::Vector2	&movement );
 public:
 	virtual bool IsRiding( const Donya::Collision::Box2 &onto ) const;
 	/// <summary>
