@@ -21,18 +21,32 @@ public:
 	/// <summary>
 	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
 	/// </summary>
-	static int MoveX( Actor *pTarget, float movement, const std::vector<Donya::Collision::Box2> &solids );
-	/// <summary>
-	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
-	/// </summary>
 	static int MoveAxis( Actor *pTarget, int moveDimension, float movement, const std::vector<Donya::Collision::Box2> &solids );
 public:
 	Donya::Int2				pos;
 	Donya::Vector2			posRemainder;
 	Donya::Collision::Box2	hitBox;			// The "pos" acts as an offset.
 public:
-	virtual void Move( const Donya::Int2	&movement );
-	virtual void Move( const Donya::Vector2	&movement );
+	template<typename OnCollisionTriggeredMethod>
+	void MoveX( float movement, const std::vector<Donya::Collision::Box2> &solids, OnCollisionTriggeredMethod &OnCollisionMethod )
+	{
+		constexpr int dimension = 0;
+		const int collideIndex  = MoveAxis( this, dimension, movement[dimension], solids );
+		if ( collideIndex != -1 )
+		{
+			OnCollisionMethod();
+		}
+	}
+	template<typename OnCollisionTriggeredMethod>
+	void MoveY( float movement, const std::vector<Donya::Collision::Box2> &solids, OnCollisionTriggeredMethod &OnCollisionMethod )
+	{
+		constexpr int dimension = 1;
+		const int collideIndex  = MoveAxis( this, dimension, movement[dimension], solids );
+		if ( collideIndex != -1 )
+		{
+			OnCollisionMethod();
+		}
+	}
 public:
 	virtual bool IsRiding( const Donya::Collision::Box2 &onto ) const;
 	/// <summary>

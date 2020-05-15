@@ -22,45 +22,41 @@ namespace
 }
 
 
-int Actor::MoveX( Actor *p, float sourceMovement, const std::vector<Donya::Collision::Box2> &solids )
+int Actor::MoveAxis( Actor *p, int axis, float sourceMovement, const std::vector<Donya::Collision::Box2> &solids )
 {
 	if ( !p ) { return -1; }
 	// else
 
-	p->posRemainder.x += sourceMovement;
+	float &remainder = p->posRemainder[axis];
+	remainder += sourceMovement;
 
-	float movement = std::round( sourceMovement );
+	float movement = std::round( remainder );
 	if ( ZeroEqual( movement ) ) { return -1; }
 	// else
 
-	p->posRemainder.x -= movement;
+	remainder -= movement;
 	const int	moveSign  = Donya::SignBit( movement );
 	const float	moveSignF = scast<float>( movement );
 
 	Donya::Collision::Box2 movedBody{};
-	while ( ZeroEqual( movement ) )
+	while ( ZeroEqual( movement ) ) // Moves 1 pixel at a time.
 	{
 		// Verify some solid is there at destination first.
 		movedBody = p->GetHitBox();
-		movedBody.pos.x += moveSign;
+		movedBody.pos[axis] += moveSign;
 		const int collideIndex = FindCollidingIndex( movedBody, solids );
+
 		// I will stop before move if some solid is there.
 		if ( collideIndex != -1 ) { return collideIndex; }
 		// else
 
-		p->pos.x += moveSign;
+		p->pos[axis] += moveSign;
 		movement -= moveSignF; // The movement is float, but this was made by round(), that will be zero and then break this loop.
 	}
+
+	return -1;
 }
 
-void Actor::Move( const Donya::Int2		&movement )
-{
-	Move( movement.Float() );
-}
-void Actor::Move( const Donya::Vector2	&movement )
-{
-
-}
 bool Actor::IsRiding( const Donya::Collision::Box2 &onto ) const
 {
 	const auto body  = GetHitBox();
