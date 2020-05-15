@@ -83,9 +83,103 @@ void Actor::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matV
 }
 
 
-void Solid::Move( const Donya::Int2 &movement, const std::vector<Actor *> &affectedActorPtrs )
+void Solid::Move( const Donya::Int2		&sourceMovement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box2> &solids )
 {
+	// Call float version.
+	Move( sourceMovement.Float(), affectedActorPtrs, solids );
+}
+void Solid::Move( const Donya::Vector2	&sourceMovement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box2> &solids )
+{
+	enum Dimension { X = 0, Y = 1 };
 
+	const Donya::Collision::Box2 oldBody = GetHitBox();
+
+	// Store riding actors. This process must do before the move(if do it after the move, we may be out of riding range).
+	std::vector<Actor *> ridingActorPtrs{};
+	for ( const auto &it : affectedActorPtrs )
+	{
+		if ( !it ) { continue; }
+		if ( !it->IsRiding( oldBody ) ) { continue; }
+		// else
+
+		ridingActorPtrs.emplace_back( it );
+	}
+	auto IsRidingActor = [&]( const Actor *actorAddress )
+	{
+		for ( const auto &it : ridingActorPtrs )
+		{
+			if ( it == actorAddress )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	auto MovePerAxis = [&]( int axis )
+	{
+		float &remainder = posRemainder[axis];
+		remainder += sourceMovement[axis];
+
+		const float movement = std::round( remainder );
+		if ( ZeroEqual( movement ) ) { return; }
+		// else
+
+		remainder -= movement;
+		pos[axis] += scast<int>( movement );
+
+		const Donya::Collision::Box2 movedBody = GetHitBox();
+
+		// Makes an actor that moved by me will ignore me.
+		// so the actor will not consider to collide to me.
+		hitBox.exist = false;
+
+		// Pushing and Carrying actors
+		Donya::Collision::Box2 actorBody{};
+		for ( auto &it : affectedActorPtrs )
+		{
+			if ( !it ) { continue; }
+			// else
+
+			auto MoveActor = [&]( Actor &actor, float movement, auto OnCollisionMethod )
+			{
+				switch ( axis )
+				{
+				case Dimension::X: actor.MoveX( movement, solids, OnCollisionMethod ); return;
+				case Dimension::Y: actor.MoveY( movement, solids, OnCollisionMethod ); return;
+				default: return;
+				}
+			};
+
+			actorBody = it->GetHitBox();
+			if ( Donya::Collision::IsHit( actorBody, movedBody ) )
+			{
+				// Push the actor
+
+				const auto minAct = actorBody.Min();
+				const auto maxAct = actorBody.Max();
+				const auto minMe  = movedBody.Min();
+				const auto maxMe  = movedBody.Max();
+
+				const int pushAmount = ( 0.0f < movement )
+				? maxMe[axis] - minAct[axis]	// e.g. this.right - actor.left
+				: minMe[axis] - maxAct[axis];	// e.g. this.left  - actor.right
+
+				MoveActor( *it, scast<float>( pushAmount ), [&]() { it->Squish(); } );
+			}
+			else
+			if ( IsRidingActor( it ) )
+			{
+				MoveActor( *it, movement, []() {} );
+			}
+		}
+
+		hitBox.exist = true;
+	};
+
+	MovePerAxis( Dimension::X );
+	MovePerAxis( Dimension::Y );
 }
 Donya::Int2 Solid::GetPosition() const
 {
