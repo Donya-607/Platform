@@ -22,7 +22,7 @@ namespace
 	}
 
 	// A drawing origin will be regarded as a center. Returns drawing result.
-	bool DrawHitBox( const Donya::Collision::Box2 &drawBox, const Donya::Vector2 &posRemainder, const Donya::Vector4 &color )
+	bool DrawHitBoxImpl( const Donya::Collision::Box2 &drawBox, const Donya::Vector2 &posRemainder, const Donya::Vector4 &color )
 	{
 		Donya::Collision::Box2F drawBoxF{};
 		drawBoxF.pos  = drawBox.pos.Float() + posRemainder;
@@ -100,10 +100,10 @@ Donya::Collision::Box2 Actor::GetWorldHitBox() const
 	tmp.exist	= hitBox.exist;
 	return tmp;
 }
-void Actor::DrawHitBox( const Donya::Vector4 &color ) const
+bool Actor::DrawHitBox( const Donya::Vector4 &color ) const
 {
 	const auto drawBox = GetWorldHitBox();
-	::DrawHitBox( drawBox, posRemainder, color );
+	return DrawHitBoxImpl( drawBox, posRemainder, color );
 }
 
 
@@ -221,8 +221,8 @@ Donya::Collision::Box2 Solid::GetWorldHitBox() const
 	tmp.exist	= hitBox.exist;
 	return tmp;
 }
-void Solid::DrawHitBox( const Donya::Vector4 &color ) const
+bool Solid::DrawHitBox( const Donya::Vector4 &color ) const
 {
 	const auto drawBox = GetWorldHitBox();
-	::DrawHitBox( drawBox, posRemainder, color );
+	return DrawHitBoxImpl( drawBox, posRemainder, color );
 }

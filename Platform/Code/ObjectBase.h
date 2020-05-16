@@ -55,7 +55,10 @@ public:
 	virtual Donya::Vector2			GetFloatPosition()	const;
 	virtual Donya::Collision::Box2	GetWorldHitBox()	const;
 public:
-	virtual void DrawHitBox( const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+	/// <summary>
+	/// A drawing origin will be regarded as a center. Returns drawing result.
+	/// </summary>
+	virtual bool DrawHitBox( const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 };
 
 
@@ -82,6 +85,9 @@ public:
 	Donya::Vector2			GetFloatPosition()	const;
 	Donya::Collision::Box2	GetWorldHitBox()	const;
 public:
-	void DrawHitBox( const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+	/// <summary>
+	/// A drawing origin will be regarded as a center. Returns drawing result.
+	/// </summary>
+	bool DrawHitBox( const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 };
 
