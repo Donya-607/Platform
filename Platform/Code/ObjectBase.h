@@ -3,10 +3,7 @@
 #include <vector>
 
 #include "Donya/Collision.h"
-#include "Donya/ModelPolygon.h"
 #include "Donya/Vector.h"
-
-#include "Renderer.h"
 
 
 // I'm referring to this: https://medium.com/@MattThorson/celeste-and-towerfall-physics-d24bd2ae0fc5
@@ -54,10 +51,11 @@ public:
 	/// </summary>
 	virtual void Squish() {}
 public:
-	virtual Donya::Int2				GetPosition()	const;
-	virtual Donya::Collision::Box2	GetHitBox()		const;
+	virtual Donya::Int2				GetPosition()		const;
+	virtual Donya::Vector2			GetFloatPosition()	const;
+	virtual Donya::Collision::Box2	GetWorldHitBox()	const;
 public:
-	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Quaternion &rotation = Donya::Quaternion::Identity(), const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+	virtual void DrawHitBox( const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 };
 
 
@@ -80,9 +78,10 @@ public:
 	/// </summary>
 	void Move( const Donya::Vector2	&movement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box2> &solids );
 public:
-	Donya::Int2				GetPosition()	const;
-	Donya::Collision::Box2	GetHitBox()		const;
+	Donya::Int2				GetPosition()		const;
+	Donya::Vector2			GetFloatPosition()	const;
+	Donya::Collision::Box2	GetWorldHitBox()	const;
 public:
-	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Quaternion &rotation = Donya::Quaternion::Identity(), const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+	void DrawHitBox( const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 };
 

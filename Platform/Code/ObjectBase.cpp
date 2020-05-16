@@ -2,6 +2,7 @@
 
 #include "Donya/Constant.h"	// Use scast macro
 #include "Donya/Useful.h"	// Use ZeroEqual(), SignBit()
+#include "Donya/Sprite.h"	// Drawing a rectangle
 
 
 namespace
@@ -18,6 +19,24 @@ namespace
 		}
 
 		return -1;
+	}
+
+	// A drawing origin will be regarded as a center. Returns drawing result.
+	bool DrawHitBox( const Donya::Collision::Box2 &drawBox, const Donya::Vector2 &posRemainder, const Donya::Vector4 &color )
+	{
+		Donya::Collision::Box2F drawBoxF{};
+		drawBoxF.pos  = drawBox.pos.Float() + posRemainder;
+		drawBoxF.size = drawBox.size.Float() + ( posRemainder * 0.5f /* To half size */ );
+
+		return Donya::Sprite::DrawRect
+		(
+			drawBoxF.pos.x,
+			drawBoxF.pos.y,
+			drawBoxF.size.x * 2.0f /* To whole size*/,
+			drawBoxF.size.y * 2.0f /* To whole size*/,
+			color.x, color.y, color.z, color.w, 0.0f,
+			Donya::Sprite::Origin::CENTER
+		);
 	}
 }
 
@@ -42,7 +61,7 @@ int Actor::MoveAxis( Actor *p, int axis, float sourceMovement, const std::vector
 	while ( ZeroEqual( movement ) ) // Moves 1 pixel at a time.
 	{
 		// Verify some solid is there at destination first.
-		movedBody = p->GetHitBox();
+		movedBody = p->GetWorldHitBox();
 		movedBody.pos[axis] += moveSign;
 		const int collideIndex = FindCollidingIndex( movedBody, solids );
 
@@ -59,7 +78,7 @@ int Actor::MoveAxis( Actor *p, int axis, float sourceMovement, const std::vector
 
 bool Actor::IsRiding( const Donya::Collision::Box2 &onto ) const
 {
-	const auto body  = GetHitBox();
+	const auto body  = GetWorldHitBox();
 	const int  foot  = body.pos.y + body.size.y;
 	const int  floor = onto.pos.y - onto.size.y;
 
@@ -69,7 +88,11 @@ Donya::Int2 Actor::GetPosition() const
 {
 	return pos + hitBox.pos;
 }
-Donya::Collision::Box2 Actor::GetHitBox() const
+Donya::Vector2 Actor::GetFloatPosition() const
+{
+	return GetPosition().Float() + posRemainder;
+}
+Donya::Collision::Box2 Actor::GetWorldHitBox() const
 {
 	Donya::Collision::Box2 tmp;
 	tmp.pos		= GetPosition();
@@ -77,9 +100,10 @@ Donya::Collision::Box2 Actor::GetHitBox() const
 	tmp.exist	= hitBox.exist;
 	return tmp;
 }
-void Actor::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Quaternion &rotation, const Donya::Vector4 &color ) const
+void Actor::DrawHitBox( const Donya::Vector4 &color ) const
 {
-
+	const auto drawBox = GetWorldHitBox();
+	::DrawHitBox( drawBox, posRemainder, color );
 }
 
 
@@ -92,7 +116,7 @@ void Solid::Move( const Donya::Vector2	&sourceMovement, const std::vector<Actor 
 {
 	enum Dimension { X = 0, Y = 1 };
 
-	const Donya::Collision::Box2 oldBody = GetHitBox();
+	const Donya::Collision::Box2 oldBody = GetWorldHitBox();
 
 	// Store riding actors. This process must do before the move(if do it after the move, we may be out of riding range).
 	std::vector<Actor *> ridingActorPtrs{};
@@ -129,7 +153,7 @@ void Solid::Move( const Donya::Vector2	&sourceMovement, const std::vector<Actor 
 		remainder -= movement;
 		pos[axis] += scast<int>( movement );
 
-		const Donya::Collision::Box2 movedBody = GetHitBox();
+		const Donya::Collision::Box2 movedBody = GetWorldHitBox();
 
 		// Makes an actor that moved by me will ignore me.
 		// so the actor will not consider to collide to me.
@@ -152,7 +176,7 @@ void Solid::Move( const Donya::Vector2	&sourceMovement, const std::vector<Actor 
 				}
 			};
 
-			actorBody = it->GetHitBox();
+			actorBody = it->GetWorldHitBox();
 			if ( Donya::Collision::IsHit( actorBody, movedBody ) )
 			{
 				// Push the actor
@@ -185,7 +209,11 @@ Donya::Int2 Solid::GetPosition() const
 {
 	return pos + hitBox.pos;
 }
-Donya::Collision::Box2 Solid::GetHitBox() const
+Donya::Vector2 Solid::GetFloatPosition() const
+{
+	return GetPosition().Float() + posRemainder;
+}
+Donya::Collision::Box2 Solid::GetWorldHitBox() const
 {
 	Donya::Collision::Box2 tmp;
 	tmp.pos		= GetPosition();
@@ -193,7 +221,8 @@ Donya::Collision::Box2 Solid::GetHitBox() const
 	tmp.exist	= hitBox.exist;
 	return tmp;
 }
-void Solid::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Quaternion &rotation, const Donya::Vector4 &color ) const
+void Solid::DrawHitBox( const Donya::Vector4 &color ) const
 {
-
+	const auto drawBox = GetWorldHitBox();
+	::DrawHitBox( drawBox, posRemainder, color );
 }
