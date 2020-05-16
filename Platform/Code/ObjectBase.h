@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Donya/Collision.h"
+#include "Donya/Serializer.h"
 #include "Donya/Vector.h"
 
 
@@ -23,6 +24,22 @@ public:
 	Donya::Int2				pos;
 	Donya::Vector2			posRemainder;
 	Donya::Collision::Box2	hitBox;			// The "pos" acts as an offset.
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			CEREAL_NVP( pos				),
+			CEREAL_NVP( posRemainder	),
+			CEREAL_NVP( hitBox			)
+		);
+		if ( 1 <= version )
+		{
+			// archive();
+		}
+	}
 public:
 	template<typename OnCollisionTriggeredMethod>
 	void MoveX( float movement, const std::vector<Donya::Collision::Box2> &solids, OnCollisionTriggeredMethod &OnCollisionMethod )
@@ -71,6 +88,22 @@ public:
 	Donya::Int2				pos;
 	Donya::Vector2			posRemainder;
 	Donya::Collision::Box2	hitBox;			// The "pos" acts as an offset.
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			CEREAL_NVP( pos				),
+			CEREAL_NVP( posRemainder	),
+			CEREAL_NVP( hitBox			)
+		);
+		if ( 1 <= version )
+		{
+			// archive();
+		}
+	}
 public:
 	/// <summary>
 	/// My move can be guaranteed to get there. The "relativeActors" will be pushed(or carried) if colliding. The "solids" will be used for the actors move.
@@ -91,3 +124,5 @@ public:
 	bool DrawHitBox( const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 };
 
+CEREAL_CLASS_VERSION( Actor, 0 );
+CEREAL_CLASS_VERSION( Solid, 0 );
