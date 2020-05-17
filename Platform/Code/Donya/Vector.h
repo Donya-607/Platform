@@ -1027,7 +1027,7 @@ namespace Donya
 		/// <summary>
 		/// Convert by static_cast.
 		/// </summary>
-		static Int2 Create( const Vector2 &v )
+		static constexpr Int2 Create( const Vector2 &v )
 		{
 			return Donya::Int2
 			{
@@ -1035,6 +1035,7 @@ namespace Donya
 				static_cast<int>( v.y )
 			};
 		}
+		static constexpr Int2 Zero() { return Int2{ 0, 0 }; }
 	};
 
 	static Int2 operator + ( const Int2 &L, int   scalar ) { return ( Int2( L ) += scalar ); }
@@ -1177,7 +1178,7 @@ namespace Donya
 		/// <summary>
 		/// Convert by static_cast.
 		/// </summary>
-		static Int3 Create( const Vector3 &v )
+		static constexpr Int3 Create( const Vector3 &v )
 		{
 			return Int3
 			{
@@ -1186,6 +1187,7 @@ namespace Donya
 				static_cast<int>( v.z )
 			};
 		}
+		static constexpr Int3 Zero() { return Int3{ 0, 0, 0 }; }
 	};
 
 	static Int3 operator + ( const Int3 &L, int   scalar ) { return ( Int3( L ) += scalar ); }
@@ -1341,7 +1343,7 @@ namespace Donya
 		/// <summary>
 		/// Convert by static_cast.
 		/// </summary>
-		static Int4 Create( const Vector4 &v )
+		static constexpr Int4 Create( const Vector4 &v )
 		{
 			return Int4
 			{
@@ -1351,6 +1353,7 @@ namespace Donya
 				static_cast<int>( v.w )
 			};
 		}
+		static constexpr Int4 Zero() { return Int4{ 0, 0, 0, 0 }; }
 	};
 
 	static Int4 operator + ( const Int4 &L, int   scalar ) { return ( Int4( L ) += scalar ); }

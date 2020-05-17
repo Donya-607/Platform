@@ -21,13 +21,18 @@ namespace
 		return -1;
 	}
 
-	// A drawing origin will be regarded as a center. Returns drawing result.
-	bool DrawHitBoxImpl( const Donya::Collision::Box2 &drawBox, const Donya::Vector2 &posRemainder, const Donya::Vector4 &color )
+	Donya::Collision::Box2F ToFloat( const Donya::Collision::Box2 &intBox, const Donya::Vector2 &remainder )
 	{
-		Donya::Collision::Box2F drawBoxF{};
-		drawBoxF.pos  = drawBox.pos.Float() + posRemainder;
-		drawBoxF.size = drawBox.size.Float() + ( posRemainder * 0.5f /* To half size */ );
+		Donya::Collision::Box2F tmp{};
+		tmp.pos   = intBox.pos.Float()  + remainder;
+		tmp.size  = intBox.size.Float() + ( remainder * 0.5f /* To half size */ );
+		tmp.exist = intBox.exist;
+		return tmp;
+	}
 
+	// A drawing origin will be regarded as a center. Returns drawing result.
+	bool DrawHitBoxImpl( const Donya::Collision::Box2F &drawBoxF, const Donya::Vector4 &color )
+	{
 		return Donya::Sprite::DrawRect
 		(
 			drawBoxF.pos.x,
@@ -88,7 +93,7 @@ Donya::Int2 Actor::GetPosition() const
 {
 	return pos + hitBox.pos;
 }
-Donya::Vector2 Actor::GetFloatPosition() const
+Donya::Vector2 Actor::GetPositionFloat() const
 {
 	return GetPosition().Float() + posRemainder;
 }
@@ -100,10 +105,14 @@ Donya::Collision::Box2 Actor::GetWorldHitBox() const
 	tmp.exist	= hitBox.exist;
 	return tmp;
 }
+Donya::Collision::Box2F Actor::GetWorldHitBoxFloat() const
+{
+	return ToFloat( GetWorldHitBox(), posRemainder );
+}
 bool Actor::DrawHitBox( const Donya::Vector4 &color ) const
 {
-	const auto drawBox = GetWorldHitBox();
-	return DrawHitBoxImpl( drawBox, posRemainder, color );
+	const auto drawBoxF = GetWorldHitBoxFloat();
+	return DrawHitBoxImpl( drawBoxF, color );
 }
 
 
@@ -209,7 +218,7 @@ Donya::Int2 Solid::GetPosition() const
 {
 	return pos + hitBox.pos;
 }
-Donya::Vector2 Solid::GetFloatPosition() const
+Donya::Vector2 Solid::GetPositionFloat() const
 {
 	return GetPosition().Float() + posRemainder;
 }
@@ -221,8 +230,12 @@ Donya::Collision::Box2 Solid::GetWorldHitBox() const
 	tmp.exist	= hitBox.exist;
 	return tmp;
 }
+Donya::Collision::Box2F Solid::GetWorldHitBoxFloat() const
+{
+	return ToFloat( GetWorldHitBox(), posRemainder );
+}
 bool Solid::DrawHitBox( const Donya::Vector4 &color ) const
 {
-	const auto drawBox = GetWorldHitBox();
-	return DrawHitBoxImpl( drawBox, posRemainder, color );
+	const auto drawBoxF = GetWorldHitBoxFloat();
+	return DrawHitBoxImpl( drawBoxF, color );
 }

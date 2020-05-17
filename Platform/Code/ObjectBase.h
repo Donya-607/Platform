@@ -68,9 +68,10 @@ public:
 	/// </summary>
 	virtual void Squish() {}
 public:
-	virtual Donya::Int2				GetPosition()		const;
-	virtual Donya::Vector2			GetFloatPosition()	const;
-	virtual Donya::Collision::Box2	GetWorldHitBox()	const;
+	virtual Donya::Int2				GetPosition()			const;
+	virtual Donya::Vector2			GetPositionFloat()		const;
+	virtual Donya::Collision::Box2	GetWorldHitBox()		const;
+	virtual Donya::Collision::Box2F	GetWorldHitBoxFloat()	const;
 public:
 	/// <summary>
 	/// A drawing origin will be regarded as a center. Returns drawing result.
@@ -114,9 +115,10 @@ public:
 	/// </summary>
 	void Move( const Donya::Vector2	&movement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box2> &solids );
 public:
-	Donya::Int2				GetPosition()		const;
-	Donya::Vector2			GetFloatPosition()	const;
-	Donya::Collision::Box2	GetWorldHitBox()	const;
+	Donya::Int2				GetPosition()			const;
+	Donya::Vector2			GetPositionFloat()		const;
+	Donya::Collision::Box2	GetWorldHitBox()		const;
+	Donya::Collision::Box2F	GetWorldHitBoxFloat()	const;
 public:
 	/// <summary>
 	/// A drawing origin will be regarded as a center. Returns drawing result.
