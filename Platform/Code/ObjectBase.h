@@ -41,26 +41,14 @@ private:
 		}
 	}
 public:
-	template<typename OnCollisionTriggeredMethod>
-	void MoveX( float movement, const std::vector<Donya::Collision::Box2> &solids, OnCollisionTriggeredMethod &OnCollisionMethod )
-	{
-		constexpr int dimension = 0;
-		const int collideIndex  = MoveAxis( this, dimension, movement, solids );
-		if ( collideIndex != -1 )
-		{
-			OnCollisionMethod();
-		}
-	}
-	template<typename OnCollisionTriggeredMethod>
-	void MoveY( float movement, const std::vector<Donya::Collision::Box2> &solids, OnCollisionTriggeredMethod &OnCollisionMethod )
-	{
-		constexpr int dimension = 1;
-		const int collideIndex  = MoveAxis( this, dimension, movement, solids );
-		if ( collideIndex != -1 )
-		{
-			OnCollisionMethod();
-		}
-	}
+	/// <summary>
+	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
+	/// </summary>
+	int MoveX( float movement, const std::vector<Donya::Collision::Box2> &solids );
+	/// <summary>
+	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
+	/// </summary>
+	int MoveY( float movement, const std::vector<Donya::Collision::Box2> &solids );
 public:
 	virtual bool IsRiding( const Donya::Collision::Box2 &onto ) const;
 	/// <summary>

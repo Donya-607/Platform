@@ -43,6 +43,13 @@ namespace
 			Donya::Sprite::Origin::CENTER
 		);
 	}
+
+	enum Dimension : int
+	{
+		X = 0,
+		Y,
+		// Z
+	};
 }
 
 
@@ -60,10 +67,10 @@ int Actor::MoveAxis( Actor *p, int axis, float sourceMovement, const std::vector
 
 	remainder -= movement;
 	const int	moveSign  = Donya::SignBit( movement );
-	const float	moveSignF = scast<float>( movement );
+	const float	moveSignF = scast<float>( moveSign );
 
 	Donya::Collision::Box2 movedBody{};
-	while ( ZeroEqual( movement ) ) // Moves 1 pixel at a time.
+	while ( !ZeroEqual( movement ) ) // Moves 1 pixel at a time.
 	{
 		// Verify some solid is there at destination first.
 		movedBody = p->GetWorldHitBox();
@@ -81,6 +88,14 @@ int Actor::MoveAxis( Actor *p, int axis, float sourceMovement, const std::vector
 	return -1;
 }
 
+int Actor::MoveX( float movement, const std::vector<Donya::Collision::Box2> &solids )
+{
+	return MoveAxis( this, Dimension::X, movement, solids );
+}
+int Actor::MoveY( float movement, const std::vector<Donya::Collision::Box2> &solids )
+{
+	return MoveAxis( this, Dimension::Y, movement, solids );
+}
 bool Actor::IsRiding( const Donya::Collision::Box2 &onto ) const
 {
 	const auto body  = GetWorldHitBox();
@@ -123,8 +138,6 @@ void Solid::Move( const Donya::Int2		&sourceMovement, const std::vector<Actor *>
 }
 void Solid::Move( const Donya::Vector2	&sourceMovement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box2> &solids )
 {
-	enum Dimension { X = 0, Y = 1 };
-
 	const Donya::Collision::Box2 oldBody = GetWorldHitBox();
 
 	// Store riding actors. This process must do before the move(if do it after the move, we may be out of riding range).
@@ -175,13 +188,13 @@ void Solid::Move( const Donya::Vector2	&sourceMovement, const std::vector<Actor 
 			if ( !it ) { continue; }
 			// else
 
-			auto MoveActor = [&]( Actor &actor, float movement, auto OnCollisionMethod )
+			auto MoveActor = [&]( Actor &actor, float movement )
 			{
 				switch ( axis )
 				{
-				case Dimension::X: actor.MoveX( movement, solids, OnCollisionMethod ); return;
-				case Dimension::Y: actor.MoveY( movement, solids, OnCollisionMethod ); return;
-				default: return;
+				case Dimension::X: return actor.MoveX( movement, solids );
+				case Dimension::Y: return actor.MoveY( movement, solids );
+				default: return -1;
 				}
 			};
 
@@ -199,12 +212,16 @@ void Solid::Move( const Donya::Vector2	&sourceMovement, const std::vector<Actor 
 				? maxMe[axis] - minAct[axis]	// e.g. this.right - actor.left
 				: minMe[axis] - maxAct[axis];	// e.g. this.left  - actor.right
 
-				MoveActor( *it, scast<float>( pushAmount ), [&]() { it->Squish(); } );
+				const int collideIndex = MoveActor( *it, scast<float>( pushAmount ) );
+				if ( collideIndex != -1 )
+				{
+					it->Squish();
+				}
 			}
 			else
 			if ( IsRidingActor( it ) )
 			{
-				MoveActor( *it, movement, []() {} );
+				MoveActor( *it, movement );
 			}
 		}
 
