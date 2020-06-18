@@ -136,6 +136,9 @@ void SceneBattle::Init()
 	assert( result );
 
 	ParamBattle::Get().Init();
+	
+	result = Player::LoadResource();
+	assert( result );
 
 	CameraInit();
 
@@ -554,6 +557,8 @@ void SceneBattle::UseImGui()
 
 			ImGui::TreePop();
 		}
+
+		Player::UpdateParameter( u8"自機のパラメータ" );
 
 		ImGui::TreePop();
 	}

@@ -9,6 +9,7 @@
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
 #include "ObjectBase.h"
+#include "Player.h"
 #include "Renderer.h"
 #include "Scene.h"
 
