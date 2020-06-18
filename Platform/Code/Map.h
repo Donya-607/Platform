@@ -15,12 +15,12 @@
 /// <summary>
 /// A piece of map(map-chip).
 /// </summary>
-class Tile : public Solid
+class Tile : public Solid2D
 {
 private:
-	using Solid::pos;
-	using Solid::posRemainder;
-	using Solid::hitBox;
+	using Solid2D::pos;
+	using Solid2D::posRemainder;
+	using Solid2D::hitBox;
 	Donya::Int2 tileSize;	// World space, Whole size
 	Donya::Int2 texCoord;	// Texture space, Left-Top
 	Donya::Int2 texSize;	// Texture space, Whole size
@@ -31,7 +31,7 @@ private:
 	{
 		archive
 		(
-			cereal::base_class<Solid>( this ),
+			cereal::base_class<Solid2D>( this ),
 			CEREAL_NVP( tileSize ),
 			CEREAL_NVP( texCoord ),
 			CEREAL_NVP( texSize  )
@@ -48,7 +48,7 @@ public:
 };
 CEREAL_CLASS_VERSION( Tile, 0 )
 // CEREAL_REGISTER_TYPE( Tile )
-// CEREAL_REGISTER_POLYMORPHIC_RELATION( Solid, Tile )
+// CEREAL_REGISTER_POLYMORPHIC_RELATION( Solid2D, Tile )
 
 
 /// <summary>

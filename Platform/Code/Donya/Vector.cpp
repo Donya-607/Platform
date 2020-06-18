@@ -13,7 +13,7 @@ namespace Donya
 	{
 		float length = Length();
 
-		if ( ZeroEqual( length ) ) { return *this; }
+		if ( ::IsZero( length ) ) { return *this; }
 		// else
 
 		x /= length;
@@ -37,7 +37,7 @@ namespace Donya
 	}
 	bool Vector2::IsZero() const
 	{
-		return ( ZeroEqual( LengthSq() ) ) ? true : false;
+		return ( ::IsZero( LengthSq() ) ) ? true : false;
 	}
 	Vector2 Vector2::Rotate( float radian )
 	{
@@ -62,7 +62,7 @@ namespace Donya
 	{
 		float length = Length();
 
-		if ( ZeroEqual( length ) ) { return *this; }
+		if ( ::IsZero( length ) ) { return *this; }
 		// else
 
 		x /= length;
@@ -79,13 +79,13 @@ namespace Donya
 	}
 	bool Vector3::IsZero() const
 	{
-		return ( ZeroEqual( LengthSq() ) ) ? true : false;
+		return ( ::IsZero( LengthSq() ) ) ? true : false;
 	}
 	bool operator == ( const Vector3 &L, const Vector3 &R )
 	{
-		if ( !ZeroEqual( L.x - R.x ) ) { return false; }
-		if ( !ZeroEqual( L.y - R.y ) ) { return false; }
-		if ( !ZeroEqual( L.z - R.z ) ) { return false; }
+		if ( !IsZero( L.x - R.x ) ) { return false; }
+		if ( !IsZero( L.y - R.y ) ) { return false; }
+		if ( !IsZero( L.z - R.z ) ) { return false; }
 		// else
 		return true;
 	}
@@ -317,7 +317,7 @@ namespace Donya
 		constexpr unsigned int ELEMENT_COUNT = 15U;
 		for ( unsigned int i = 0; i < ELEMENT_COUNT; ++i )
 		{
-			if ( !ZeroEqual( L[i] - R[i] ) )
+			if ( !IsZero( L[i] - R[i] ) )
 			{
 				return false;
 			}

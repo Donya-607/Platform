@@ -22,7 +22,7 @@ private:
 
 	std::vector<Solid>					solids;
 	Actor								actor;
-	Donya::Vector2						actorVelocity;
+	Donya::Vector3						actorVelocity;
 
 #if DEBUG_MODE
 	bool nowDebugMode			= false;

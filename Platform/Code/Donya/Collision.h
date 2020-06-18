@@ -150,6 +150,23 @@ namespace Donya
 		Donya::Vector2 FindClosestPoint( const Sphere2F &from, const Donya::Vector2 &to );
 		Donya::Vector3 FindClosestPoint( const Donya::Vector3 &from, const Sphere3F &to );
 		Donya::Vector3 FindClosestPoint( const Sphere3F &from, const Donya::Vector3 &to );
+
+		bool		operator == ( const Box2		&a, const Box2		&b );
+		bool		operator == ( const Box2F		&a, const Box2F		&b );
+		bool		operator == ( const Box3		&a, const Box3		&b );
+		bool		operator == ( const Box3F		&a, const Box3F		&b );
+		bool		operator == ( const Sphere2		&a, const Sphere2	&b );
+		bool		operator == ( const Sphere2F	&a, const Sphere2F	&b );
+		bool		operator == ( const Sphere3		&a, const Sphere3	&b );
+		bool		operator == ( const Sphere3F	&a, const Sphere3F	&b );
+		static bool	operator != ( const Box2		&a, const Box2		&b ) { return !( a == b ); }
+		static bool	operator != ( const Box2F		&a, const Box2F		&b ) { return !( a == b ); }
+		static bool	operator != ( const Box3		&a, const Box3		&b ) { return !( a == b ); }
+		static bool	operator != ( const Box3F		&a, const Box3F		&b ) { return !( a == b ); }
+		static bool	operator != ( const Sphere2		&a, const Sphere2	&b ) { return !( a == b ); }
+		static bool	operator != ( const Sphere2F	&a, const Sphere2F	&b ) { return !( a == b ); }
+		static bool	operator != ( const Sphere3		&a, const Sphere3	&b ) { return !( a == b ); }
+		static bool	operator != ( const Sphere3F	&a, const Sphere3F	&b ) { return !( a == b ); }
 	}
 
 	class Circle;

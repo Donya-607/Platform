@@ -3,7 +3,7 @@
 #include <array>
 
 #include "Constant.h"
-#include "Useful.h"	// Use ZeroEqual().
+#include "Useful.h"	// Use IsZero().
 
 #undef max
 #undef min
@@ -338,6 +338,56 @@ namespace Donya
 		Donya::Vector3 FindClosestPoint( const Sphere3F &from, const Donya::Vector3 &to )
 		{
 			return FindClosestPointSphere( from, to );
+		}
+
+		template<typename Box>
+		bool IsEqualBox( const Box &a, const Box &b )
+		{
+			if ( !( a.pos  - b.pos  ).IsZero()	)	{ return false; }
+			if ( !( a.size - b.size ).IsZero()	)	{ return false; }
+			if ( a.exist != b.exist				)	{ return false; }
+			return true;
+		}
+		template<typename Sphere>
+		bool IsEqualSphere( const Sphere &a, const Sphere &b )
+		{
+			if ( !( a.pos  - b.pos  ).IsZero()	)	{ return false; }
+			if ( !IsZero( a.radius - b.radius )	)	{ return false; }
+			if ( a.exist != b.exist				)	{ return false; }
+			return true;
+		}
+
+		bool operator == ( const Box2		&a, const Box2		&b )
+		{
+			return IsEqualBox( a, b );
+		}
+		bool operator == ( const Box2F		&a, const Box2F		&b )
+		{
+			return IsEqualBox( a, b );
+		}
+		bool operator == ( const Box3		&a, const Box3		&b )
+		{
+			return IsEqualBox( a, b );
+		}
+		bool operator == ( const Box3F		&a, const Box3F		&b )
+		{
+			return IsEqualBox( a, b );
+		}
+		bool operator == ( const Sphere2	&a, const Sphere2	&b )
+		{
+			return IsEqualSphere( a, b );
+		}
+		bool operator == ( const Sphere2F	&a, const Sphere2F	&b )
+		{
+			return IsEqualSphere( a, b );
+		}
+		bool operator == ( const Sphere3	&a, const Sphere3	&b )
+		{
+			return IsEqualSphere( a, b );
+		}
+		bool operator == ( const Sphere3F	&a, const Sphere3F	&b )
+		{
+			return IsEqualSphere( a, b );
 		}
 	}
 
@@ -862,19 +912,19 @@ namespace Donya
 
 	bool operator == ( const Box	&L, const Box		&R )
 	{
-		if ( !ZeroEqual( L.pos.x  - R.pos.x  ) )	{ return false; }
-		if ( !ZeroEqual( L.pos.y  - R.pos.y  ) )	{ return false; }
-		if ( !ZeroEqual( L.size.x - R.size.x ) )	{ return false; }
-		if ( !ZeroEqual( L.size.y - R.size.y ) )	{ return false; }
+		if ( !IsZero( L.pos.x  - R.pos.x  ) )	{ return false; }
+		if ( !IsZero( L.pos.y  - R.pos.y  ) )	{ return false; }
+		if ( !IsZero( L.size.x - R.size.x ) )	{ return false; }
+		if ( !IsZero( L.size.y - R.size.y ) )	{ return false; }
 		if ( L.exist != R.exist )					{ return false; }
 		// else
 		return true;
 	}
 	bool operator == ( const Circle	&L, const Circle	&R )
 	{
-		if ( !ZeroEqual( L.pos.x  - R.pos.x  ) )	{ return false; }
-		if ( !ZeroEqual( L.pos.y  - R.pos.y  ) )	{ return false; }
-		if ( !ZeroEqual( L.radius - R.radius ) )	{ return false; }
+		if ( !IsZero( L.pos.x  - R.pos.x  ) )	{ return false; }
+		if ( !IsZero( L.pos.y  - R.pos.y  ) )	{ return false; }
+		if ( !IsZero( L.radius - R.radius ) )	{ return false; }
 		if ( L.exist != R.exist )					{ return false; }
 		// else
 		return true;
@@ -890,7 +940,7 @@ namespace Donya
 	bool operator == ( const Sphere	&L, const Sphere	&R )
 	{
 		if ( ! ( L.pos  - R.pos  ).IsZero() )		{ return false; }
-		if ( !ZeroEqual( L.radius - R.radius ) )	{ return false; }
+		if ( !IsZero( L.radius - R.radius ) )	{ return false; }
 		if ( L.exist != R.exist )					{ return false; }
 		// else
 		return true;

@@ -1021,6 +1021,10 @@ namespace Donya
 				Donya::SignBit( y ),
 			};
 		}
+		constexpr bool IsZero() const
+		{
+			return ( !x && !y );
+		}
 
 		constexpr int LengthSq() const { return ( x * x ) + ( y * y ); }
 	public:
@@ -1171,6 +1175,10 @@ namespace Donya
 				Donya::SignBit( y ),
 				Donya::SignBit( z ),
 			};
+		}
+		constexpr bool IsZero() const
+		{
+			return ( !x && !y && !z );
 		}
 
 		constexpr int LengthSq() const { return ( x * x ) + ( y * y ) + ( z * z ); }
@@ -1336,6 +1344,10 @@ namespace Donya
 				Donya::SignBit( z ),
 				Donya::SignBit( w ),
 			};
+		}
+		constexpr bool IsZero() const
+		{
+			return ( !x && !y && !z && !w );
 		}
 
 		constexpr int LengthSq() const { return ( x * x ) + ( y * y ) + ( z * z ) + ( w * w ); }

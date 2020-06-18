@@ -32,7 +32,7 @@ namespace
 		struct
 		{
 			float slerpFactor = 0.2f;
-			Donya::Vector3 offsetPos;	// The offset of position from the player position.
+			Donya::Vector3 offsetPos{ 0.0f, 5.0f, -5.0f };	// The offset of position from the player position.
 			Donya::Vector3 offsetFocus;	// The offset of focus from the player position.
 		}
 		camera;
@@ -143,30 +143,32 @@ void SceneBattle::Init()
 	CameraInit();
 
 	// Generate test solids
-	constexpr Donya::Int2 points[]
+	constexpr float halfSize = 0.5f;
+	constexpr Donya::Vector3 base  {-halfSize * 2.0f, 0.0f, 0.0f };
+	constexpr Donya::Vector3 offset{ halfSize * 2.0f, 0.0f, 0.0f };
+	constexpr Donya::Vector3 points[]
 	{
-		{ 600, 900 },
-		{ 632, 900 },
-		{ 664, 900 },
-		{ 696, 900 },
-		{ 728, 900 },
-		{ 760, 900 },
-		{ 792, 900 },
+		base + ( offset * 0.0f ),
+		base + ( offset * 1.0f ),
+		base + ( offset * 2.0f ),
+		base + ( offset * 3.0f ),
+		base + ( offset * 4.0f ),
+		base + ( offset * 5.0f ),
+		base + ( offset * 6.0f ),
 	};
 	for ( const auto &it : points )
 	{
 		Solid tmp{};
 		tmp.pos			= it;
 		tmp.hitBox.pos	= 0;
-		tmp.hitBox.size	= 16;
+		tmp.hitBox.size	= halfSize;
 		solids.emplace_back( std::move( tmp ) );
 	}
 
-	actor.pos.x			= 666;
-	actor.pos.y			= 666;
-	actor.hitBox.size	= 16;
-	actorVelocity.x		= 0.0f;
-	actorVelocity.y		= -5.0f;
+	actor.pos			= 0.0f;
+	actor.pos.y			= 3.0f;
+	actor.hitBox.size	= halfSize;
+	actorVelocity		= 0.0f;
 }
 void SceneBattle::Uninit()
 {
@@ -207,26 +209,34 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 	{
 		if ( Donya::Keyboard::Trigger( VK_SHIFT ) )
 		{
-			constexpr float strength = 16.0f;
-			actorVelocity.y = -strength;
+			constexpr float strength = 0.8f;
+			actorVelocity.y = strength;
 		}
 		else
 		{
-			constexpr float gravity		= 0.8f;
+			constexpr float gravity		= 0.1f;
 			constexpr float resistance	= 0.5f;
-			constexpr float maxSpeed	= 16.0f;
-			actorVelocity.y +=	( Donya::Keyboard::Press( VK_SHIFT ) )
+			constexpr float maxSpeed	= 0.4f;
+
+			constexpr int resistGravityFrame = 35;
+			static int pressTimer = 0;
+			pressTimer = ( Donya::Keyboard::Press( VK_SHIFT ) ) ? pressTimer + 1 : 0;
+
+
+			actorVelocity.y -=	( 0 < pressTimer && pressTimer <= resistGravityFrame )
 								? gravity * resistance
 								: gravity;
-			actorVelocity.y = Donya::Clamp( actorVelocity.y, actorVelocity.y, maxSpeed );
+			actorVelocity.y = Donya::Clamp( actorVelocity.y, -maxSpeed, maxSpeed );
 		}
 
 		constexpr float accel = 999.0f;
 		constexpr float decel = 999.0f;
-		constexpr float maxSpeed = 3.0f;
-		if ( Donya::Keyboard::Press( VK_RIGHT ) ) { actorVelocity.x += accel; }
+		constexpr float maxSpeed = 0.05f;
+		if ( Donya::Keyboard::Press( VK_RIGHT ) )
+		{ actorVelocity.x += accel; }
 		else
-		if ( Donya::Keyboard::Press( VK_LEFT  ) ) { actorVelocity.x -= accel; }
+		if ( Donya::Keyboard::Press( VK_LEFT  ) )
+		{ actorVelocity.x -= accel; }
 		else
 		{
 			const int sign = Donya::SignBit( actorVelocity.x );
@@ -243,12 +253,13 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 
 	// Move the actor
 	{
-		std::vector<Donya::Collision::Box2> hitBoxes;
+		std::vector<Donya::Collision::Box3F> hitBoxes;
 		for ( const auto &it : solids )
 		{
 			hitBoxes.emplace_back( it.GetWorldHitBox() );
 		}
 		actor.MoveX( actorVelocity.x, hitBoxes );
+		actor.MoveZ( actorVelocity.z, hitBoxes );
 		const int collideIndex = actor.MoveY( actorVelocity.y, hitBoxes );
 		if ( collideIndex != -1 )
 		{
@@ -301,10 +312,10 @@ void SceneBattle::Draw( float elapsedTime )
 
 	for ( const auto &it : solids )
 	{
-		it.DrawHitBox( { 1.0f, 0.5f, 0.0f, 1.0f } );
+		it.DrawHitBox( pRenderer.get(), VP, { 1.0f, 0.5f, 0.0f, 1.0f } );
 	}
 
-	actor.DrawHitBox( { 0.4f, 1.0f, 0.4f, 1.0f } );
+	actor.DrawHitBox( pRenderer.get(), VP, { 0.4f, 1.0f, 0.4f, 1.0f } );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
