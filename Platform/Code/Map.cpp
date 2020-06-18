@@ -59,7 +59,7 @@ void Map::Uninit()
 }
 bool Map::LoadMap( int stageNumber )
 {
-	const std::string filePath = MakeMapPath( ID, stageNumber );
+	const std::string filePath = MakeStageParamPathBinary( ID, stageNumber );
 	if ( !Donya::IsExistFile( filePath ) ) { return false; }
 	// else
 
@@ -91,7 +91,7 @@ void Map::DrawHitBoxes( const Donya::Vector4 &color ) const
 #if USE_IMGUI
 void Map::Save( int stageNumber )
 {
-	const std::string filePath = MakeMapPath( ID, stageNumber );
+	const std::string filePath = MakeStageParamPathBinary( ID, stageNumber );
 	MakeFileIfNotExists( filePath, IOFromBinaryFile );
 
 	Donya::Serializer::Save( *this, filePath.c_str(), ID, IOFromBinaryFile );

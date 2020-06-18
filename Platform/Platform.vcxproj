@@ -133,7 +133,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Code\Animation.cpp" />
     <ClCompile Include="Code\Common.cpp" />
     <ClCompile Include="Code\Donya\AudioSystem.cpp" />
     <ClCompile Include="Code\Donya\Blend.cpp" />
@@ -172,19 +171,19 @@
     <ClCompile Include="Code\Fader.cpp" />
     <ClCompile Include="Code\FilePath.cpp" />
     <ClCompile Include="Code\Framework.cpp" />
-    <ClCompile Include="Code\main.cpp" />
+    <ClCompile Include="Code\Main.cpp" />
     <ClCompile Include="Code\Map.cpp" />
     <ClCompile Include="Code\ObjectBase.cpp" />
-    <ClCompile Include="Code\Panel.cpp" />
     <ClCompile Include="Code\Parameter.cpp" />
     <ClCompile Include="Code\Player.cpp" />
     <ClCompile Include="Code\Renderer.cpp" />
     <ClCompile Include="Code\SceneBattle.cpp" />
-    <ClCompile Include="Code\SceneClear.cpp" />
+    <ClCompile Include="Code\SceneLoad.cpp" />
     <ClCompile Include="Code\SceneLogo.cpp" />
     <ClCompile Include="Code\SceneManager.cpp" />
     <ClCompile Include="Code\ScenePause.cpp" />
     <ClCompile Include="Code\SceneTitle.cpp" />
+    <ClCompile Include="Code\UI.cpp" />
     <ClCompile Include="External\ImGui\imgui.cpp" />
     <ClCompile Include="External\ImGui\imgui_demo.cpp" />
     <ClCompile Include="External\ImGui\imgui_draw.cpp" />
@@ -193,7 +192,6 @@
     <ClCompile Include="External\ImGui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Code\Animation.h" />
     <ClInclude Include="Code\Common.h" />
     <ClInclude Include="Code\Donya\AudioSystem.h" />
     <ClInclude Include="Code\Donya\Benchmark.h" />
@@ -247,17 +245,18 @@
     <ClInclude Include="Code\Map.h" />
     <ClInclude Include="Code\Music.h" />
     <ClInclude Include="Code\ObjectBase.h" />
-    <ClInclude Include="Code\Panel.h" />
     <ClInclude Include="Code\Parameter.h" />
     <ClInclude Include="Code\Player.h" />
+    <ClInclude Include="Code\PlayerParam.h" />
     <ClInclude Include="Code\Renderer.h" />
     <ClInclude Include="Code\Scene.h" />
     <ClInclude Include="Code\SceneBattle.h" />
-    <ClInclude Include="Code\SceneClear.h" />
+    <ClInclude Include="Code\SceneLoad.h" />
     <ClInclude Include="Code\SceneLogo.h" />
     <ClInclude Include="Code\SceneManager.h" />
     <ClInclude Include="Code\ScenePause.h" />
     <ClInclude Include="Code\SceneTitle.h" />
+    <ClInclude Include="Code\UI.h" />
     <ClInclude Include="External\Cereal\include\cereal\access.hpp" />
     <ClInclude Include="External\Cereal\include\cereal\archives\adapters.hpp" />
     <ClInclude Include="External\Cereal\include\cereal\archives\binary.hpp" />

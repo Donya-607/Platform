@@ -63,8 +63,6 @@ CEREAL_CLASS_VERSION( Member, 0 )
 
 class ParamBattle : public ParameterBase<ParamBattle>
 {
-public:
-	static constexpr const char *ID = "Battle";
 private:
 	Member m;
 public:
@@ -78,9 +76,8 @@ public:
 	}
 	Member Data() const { return m; }
 private:
-	std::string GetSerializeIdentifier()	override { return ID; }
-	std::string GetSerializePathBinary()	override { return MakeParameterPathBinary( ID ); }
-	std::string GetSerializePathJson()		override { return MakeParameterPathJson( ID ); }
+	static constexpr const char *ID = "Battle";
+	const char *GetSerializeIdentifier() override { return ID; }
 public:
 #if USE_IMGUI
 	void UseImGui() override
@@ -492,7 +489,7 @@ Scene::Result SceneBattle::ReturnResult()
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
-		change.sceneType = Scene::Type::Clear;
+		change.sceneType = Scene::Type::Title;
 		return change;
 	}
 
