@@ -152,7 +152,6 @@
     <ClCompile Include="Code\Donya\ModelPose.cpp" />
     <ClCompile Include="Code\Donya\ModelPrimitive.cpp" />
     <ClCompile Include="Code\Donya\ModelRenderer.cpp" />
-    <ClCompile Include="Code\Donya\Motion.cpp" />
     <ClCompile Include="Code\Donya\Mouse.cpp" />
     <ClCompile Include="Code\Donya\Quaternion.cpp" />
     <ClCompile Include="Code\Donya\Random.cpp" />
@@ -220,7 +219,6 @@
     <ClInclude Include="Code\Donya\ModelPrimitive.h" />
     <ClInclude Include="Code\Donya\ModelRenderer.h" />
     <ClInclude Include="Code\Donya\ModelSource.h" />
-    <ClInclude Include="Code\Donya\Motion.h" />
     <ClInclude Include="Code\Donya\Mouse.h" />
     <ClInclude Include="Code\Donya\Quaternion.h" />
     <ClInclude Include="Code\Donya\Random.h" />

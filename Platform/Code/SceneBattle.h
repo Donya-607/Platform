@@ -22,6 +22,7 @@ private:
 	std::unique_ptr<RenderingHelper>	pRenderer;
 
 	std::vector<Solid>					solids;
+	std::unique_ptr<Player>				pPlayer;
 	Actor								actor;
 	Donya::Vector3						actorVelocity;
 

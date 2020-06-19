@@ -24,20 +24,24 @@
 #include "FilePath.h"
 #include "Music.h"
 #include "Parameter.h"
+#include "PlayerParam.h"
 
 namespace
 {
-	struct Member
+	struct SceneParam
 	{
 		struct
 		{
-			float slerpFactor = 0.2f;
-			Donya::Vector3 offsetPos{ 0.0f, 5.0f, -5.0f };	// The offset of position from the player position.
+			float slerpFactor	= 0.2f;
+			float fovDegree		= 30.0f;
+			Donya::Vector3 offsetPos{ 0.0f, 5.0f, -10.0f };	// The offset of position from the player position.
 			Donya::Vector3 offsetFocus;	// The offset of focus from the player position.
 		}
 		camera;
 		
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
+
+		PlayerInitializer testPlayerInit;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -46,10 +50,12 @@ namespace
 			archive
 			(
 				CEREAL_NVP( camera.slerpFactor			),
+				CEREAL_NVP( camera.fovDegree			),
 				CEREAL_NVP( camera.offsetPos			),
 				CEREAL_NVP( camera.offsetFocus			),
 				CEREAL_NVP( directionalLight.color		),
-				CEREAL_NVP( directionalLight.direction	)
+				CEREAL_NVP( directionalLight.direction	),
+				CEREAL_NVP( testPlayerInit				)
 			);
 
 			if ( 1 <= version )
@@ -57,70 +63,37 @@ namespace
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
-	};
-}
-CEREAL_CLASS_VERSION( Member, 0 )
-
-class ParamBattle : public ParameterBase<ParamBattle>
-{
-private:
-	Member m;
-public:
-	void Init() override
-	{
-	#if DEBUG_MODE
-		LoadJson( m );
-	#else
-		LoadBinary( m );
-	#endif // DEBUG_MODE
-	}
-	Member Data() const { return m; }
-private:
-	static constexpr const char *ID = "Battle";
-	const char *GetSerializeIdentifier() override { return ID; }
-public:
-#if USE_IMGUI
-	void UseImGui() override
-	{
-		if ( !ImGui::BeginIfAllowed() ) { return; }
-		// else
-
-		if ( ImGui::TreeNode( u8"バトルのパラメータ調整" ) )
+	public:
+		void ShowImGuiNode()
 		{
 			if ( ImGui::TreeNode( u8"カメラ" ) )
 			{
-				ImGui::DragFloat ( u8"補間倍率",						&m.camera.slerpFactor,		0.01f );
-				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&m.camera.offsetPos.x,		0.01f );
-				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&m.camera.offsetFocus.x,	0.01f );
+				ImGui::DragFloat ( u8"補間倍率",						&camera.slerpFactor,	0.01f );
+				ImGui::DragFloat ( u8"画角（Degree）",				&camera.fovDegree,		0.1f  );
+				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&camera.offsetPos.x,	0.01f );
+				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&camera.offsetFocus.x,	0.01f );
 
 				ImGui::TreePop();
 			}
 			
 			if ( ImGui::TreeNode( u8"平行光" ) )
 			{
-				ImGui::ColorEdit4  ( u8"色",		&m.directionalLight.color.x );
-				ImGui::SliderFloat4( u8"方向",	&m.directionalLight.direction.x, -1.0f, 1.0f );
-
+				ImGui::ColorEdit4  ( u8"色",		&directionalLight.color.x );
+				ImGui::SliderFloat4( u8"方向",	&directionalLight.direction.x, -1.0f, 1.0f );
+				
 				ImGui::TreePop();
 			}
 
-			ShowIONode( m );
-
-			ImGui::TreePop();
 		}
+	};
 
-		ImGui::End();
-	}
-#endif // USE_IMGUI
-};
-
-namespace
-{
-	Member FetchMember()
+	static ParamOperator<SceneParam> sceneParam{ "SceneGame" };
+	const SceneParam &FetchParameter()
 	{
-		return ParamBattle::Get().Data();
+		return sceneParam.Get();
 	}
 }
+CEREAL_CLASS_VERSION( SceneParam, 0 )
 
 void SceneBattle::Init()
 {
@@ -135,10 +108,14 @@ void SceneBattle::Init()
 	result = pRenderer->Init();
 	assert( result );
 
-	ParamBattle::Get().Init();
+	sceneParam.LoadParameter();
+	const auto &data = FetchParameter();
 	
 	result = Player::LoadResource();
 	assert( result );
+
+	pPlayer = std::make_unique<Player>();
+	pPlayer->Init( data.testPlayerInit );
 
 	CameraInit();
 
@@ -172,14 +149,15 @@ void SceneBattle::Init()
 }
 void SceneBattle::Uninit()
 {
-	ParamBattle::Get().Uninit();
+	if ( pPlayer ) { pPlayer->Uninit(); }
+	pPlayer.reset();
 
 	// Donya::Sound::Stop( Music::BGM_Game );
 }
 
 Scene::Result SceneBattle::Update( float elapsedTime )
 {
-	elapsedTime = 1.0f; // Disable
+	// elapsedTime = 1.0f; // Disable
 
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
@@ -199,11 +177,25 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 #endif // DEBUG_MODE
 
 #if USE_IMGUI
-	ParamBattle::Get().UseImGui();
 	UseImGui();
 #endif // USE_IMGUI
 
 	controller.Update();
+
+	// Update the player
+	if ( pPlayer )
+	{
+		const bool pressRight = Donya::Keyboard::Press( VK_RIGHT );
+		const bool pressLeft  = Donya::Keyboard::Press( VK_LEFT  );
+		const bool pressJump  = Donya::Keyboard::Press( VK_SHIFT );
+
+		Player::Input input;
+		if ( pressRight ) { input.moveVelocity.x += 1.0f; }
+		if ( pressLeft  ) { input.moveVelocity.x -= 1.0f; }
+		input.useJump = pressJump;
+
+		pPlayer->Update( elapsedTime, input );
+	}
 
 	// Update actor velocity
 	{
@@ -251,19 +243,27 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 		actorVelocity.x = Donya::Clamp( actorVelocity.x, -maxSpeed, maxSpeed );
 	}
 
-	// Move the actor
+	// Move the actors
 	{
 		std::vector<Donya::Collision::Box3F> hitBoxes;
 		for ( const auto &it : solids )
 		{
 			hitBoxes.emplace_back( it.GetWorldHitBox() );
 		}
-		actor.MoveX( actorVelocity.x, hitBoxes );
-		actor.MoveZ( actorVelocity.z, hitBoxes );
-		const int collideIndex = actor.MoveY( actorVelocity.y, hitBoxes );
-		if ( collideIndex != -1 )
+
+		if ( pPlayer )
 		{
-			actorVelocity.y = 0.0f;
+			pPlayer->PhysicUpdate( elapsedTime, hitBoxes );
+		}
+		else
+		{
+			actor.MoveX( actorVelocity.x, hitBoxes );
+			actor.MoveZ( actorVelocity.z, hitBoxes );
+			const int collideIndex = actor.MoveY( actorVelocity.y, hitBoxes );
+			if ( collideIndex != -1 )
+			{
+				actorVelocity.y = 0.0f;
+			}
 		}
 	}
 
@@ -274,12 +274,12 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 
 void SceneBattle::Draw( float elapsedTime )
 {
-	elapsedTime = 1.0f; // Disable
+	// elapsedTime = 1.0f; // Disable
 
 	ClearBackGround();
 
 	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
-	const auto data = FetchMember();
+	const auto &data = FetchParameter();
 	
 	// Update scene constant.
 	{
@@ -299,6 +299,7 @@ void SceneBattle::Draw( float elapsedTime )
 		// The drawing priority is determined by the priority of the information.
 
 		pRenderer->ActivateShaderNormalSkinning();
+		if ( pPlayer ) { pPlayer->Draw( pRenderer.get() ); }
 		pRenderer->DeactivateShaderNormalSkinning();
 
 		pRenderer->ActivateShaderNormalStatic();
@@ -315,12 +316,12 @@ void SceneBattle::Draw( float elapsedTime )
 		it.DrawHitBox( pRenderer.get(), VP, { 1.0f, 0.5f, 0.0f, 1.0f } );
 	}
 
-	actor.DrawHitBox( pRenderer.get(), VP, { 0.4f, 1.0f, 0.4f, 1.0f } );
+	// actor.DrawHitBox( pRenderer.get(), VP, { 0.4f, 1.0f, 0.4f, 1.0f } );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
-
+		if ( pPlayer ) { pPlayer->DrawHitBox( pRenderer.get(), VP ); }
 	}
 #endif // DEBUG_MODE
 		
@@ -349,9 +350,11 @@ void SceneBattle::Draw( float elapsedTime )
 
 void SceneBattle::CameraInit()
 {
+	const auto &data = FetchParameter();
+
 	iCamera.Init( Donya::ICamera::Mode::Look );
 	iCamera.SetZRange( 0.1f, 1000.0f );
-	iCamera.SetFOV( ToRadian( 30.0f ) );
+	iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
 	iCamera.SetScreenSize( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
 	AssignCameraPos();
 	iCamera.SetProjectionPerspective();
@@ -366,18 +369,19 @@ void SceneBattle::CameraInit()
 }
 void SceneBattle::AssignCameraPos()
 {
-	const auto data = FetchMember();
-	
-	// iCamera.SetPosition  ( playerPos + data.camera.offsetPos   );
-	// iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
-	iCamera.SetPosition  ( data.camera.offsetPos   );
-	iCamera.SetFocusPoint( data.camera.offsetFocus );
+	const auto &data = FetchParameter();
+	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+
+	iCamera.SetPosition  ( playerPos + data.camera.offsetPos   );
+	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
 }
 void SceneBattle::CameraUpdate()
 {
+	const auto &data = FetchParameter();
+
 	Donya::ICamera::Controller input{};
 	input.SetNoOperation();
-	input.slerpPercent = FetchMember().camera.slerpFactor;
+	input.slerpPercent = data.camera.slerpFactor;
 
 #if !DEBUG_MODE
 	AssignCameraPos();
@@ -519,13 +523,14 @@ void SceneBattle::UseImGui()
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 	
-	const auto data = FetchMember();
-
-	if ( ImGui::TreeNode( u8"バトル・メンバーの調整" ) )
+	if ( ImGui::TreeNode( u8"ゲーム・メンバーの調整" ) )
 	{
 		ImGui::Text( u8"「Ｆ５キー」を押すと，" );
 		ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
 		ImGui::Text( "" );
+
+		sceneParam.ShowImGuiNode( u8"シーンのパラメータ" );
+		const auto &data = FetchParameter();
 
 		if ( ImGui::TreeNode( u8"カメラ情報" ) )
 		{
@@ -559,6 +564,7 @@ void SceneBattle::UseImGui()
 		}
 
 		Player::UpdateParameter( u8"自機のパラメータ" );
+		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
 
 		ImGui::TreePop();
 	}
