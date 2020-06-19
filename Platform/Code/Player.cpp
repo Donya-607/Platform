@@ -189,6 +189,8 @@ void Player::MotionManager::Init()
 {
 	prevKind = currKind = MotionKind::Jump;
 	animator.ResetTimer();
+
+	AssignPose( currKind );
 }
 void Player::MotionManager::Update( Player &inst, float elapsedTime )
 {

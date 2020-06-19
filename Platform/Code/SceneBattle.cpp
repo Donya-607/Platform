@@ -84,6 +84,7 @@ namespace
 				ImGui::TreePop();
 			}
 
+			testPlayerInit.ShowImGuiNode( u8"©‹@‚Ì‰ŠúˆÊ’u", -1, false );
 		}
 	};
 
