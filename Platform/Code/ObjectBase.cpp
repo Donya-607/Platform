@@ -160,8 +160,9 @@ int Actor::MoveAxis( Actor *p, int axis, float movement, const std::vector<Donya
 
 	const int moveSign = Donya::SignBit( movement );
 
-	Donya::Collision::Box3F movedBody = p->GetWorldHitBox();
-	movedBody.pos[axis] += movement;
+	const Donya::Collision::Box3F wsPrevBody = p->GetWorldHitBox();
+	Donya::Collision::Box3F wsMovedBody = wsPrevBody;
+	wsMovedBody.pos[axis] += movement;
 
 	auto CalcPenetration	= []( int axis, int moveSign, const Donya::Collision::Box3F &myself, const Donya::Collision::Box3F &other )
 	{
@@ -186,7 +187,7 @@ int Actor::MoveAxis( Actor *p, int axis, float movement, const std::vector<Donya
 	int lastCollideIndex = -1;
 	while ( ++loopCount <= MAX_LOOP_COUNT )
 	{
-		const int currentIndex = FindCollidingIndex( movedBody, solids );
+		const int currentIndex = FindCollidingIndex( wsMovedBody, solids );
 		if ( currentIndex < 0 ) { break; } // Does not detected a collision.
 		// else
 
@@ -195,14 +196,14 @@ int Actor::MoveAxis( Actor *p, int axis, float movement, const std::vector<Donya
 		const Donya::Collision::Box3F *pOther = &solids[lastCollideIndex];
 
 		// Store absolute value.
-		const float penetration	= CalcPenetration( axis, moveSign, movedBody, *pOther );
+		const float penetration	= CalcPenetration( axis, moveSign, wsMovedBody, *pOther );
 		const float resolver	= CalcResolver   ( axis, moveSign, penetration );
 
-		movedBody.pos[axis] += resolver;
+		wsMovedBody.pos[axis] += resolver;
 	}
 
-	p->pos =  movedBody.pos;
-	p->pos -= p->hitBox.pos; // Remove hitBox's offset
+	const Donya::Vector3 diff = wsMovedBody.pos - wsPrevBody.pos;
+	p->pos[axis] += diff[axis];
 
 	return lastCollideIndex;
 }

@@ -1,9 +1,11 @@
 #include "Player.h"
 
 #include "Donya/Loader.h"
+#include "Donya/Sound.h"
 
 #include "Common.h"
 #include "FilePath.h"
+#include "Music.h"
 #include "Parameter.h"
 #include "PlayerParam.h"
 
@@ -301,10 +303,18 @@ void Player::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision
 		// Consider as landing
 		if ( velocity.y <= 0.0f )
 		{
-			onGround = true;
+			if ( !onGround )
+			{
+				onGround = true;
+				Donya::Sound::Play( Music::Player_Landing );
+			}
 		}
 
 		velocity.y = 0.0f;
+	}
+	else
+	{
+		onGround = false;
 	}
 }
 void Player::Draw( RenderingHelper *pRenderer )
@@ -312,7 +322,7 @@ void Player::Draw( RenderingHelper *pRenderer )
 	if ( !pRenderer ) { return; }
 	// else
 
-	const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* forDrawingHitBox = */ false, GetPosition() );
+	const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, GetPosition() );
 
 	const auto &drawModel = GetModel();
 	const auto &drawPose  = motionManager.GetPose();
@@ -351,10 +361,23 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 		pRenderer->ProcessDrawingCube( constant );
 	};
 	
-	constexpr Donya::Vector4 hitColor { 1.0f, 0.0f, 0.3f, 0.6f };
-	constexpr Donya::Vector4 hurtColor{ 0.0f, 1.0f, 0.3f, 0.6f };
-	DrawProcess( GetWorldHitBox(),  hitColor  );
-	DrawProcess( GetWorldHurtBox(), hurtColor );
+	constexpr Donya::Vector4 bodyColor{ 0.0f, 1.0f, 0.3f, 0.6f };
+	constexpr Donya::Vector4 hurtColor{ 0.0f, 0.3f, 1.0f, 0.6f };
+	const auto  body		= GetWorldHitBox();
+	const auto  hurt		= GetWorldHurtBox();
+	const float bodyNear	= body.pos.z - body.size.z;
+	const float hurtNear	= hurt.pos.z - hurt.size.z;
+	// Drawing the far box first
+	if ( bodyNear < hurtNear )
+	{
+		DrawProcess( hurt, hurtColor );
+		DrawProcess( body, bodyColor );
+	}
+	else
+	{
+		DrawProcess( body, bodyColor );
+		DrawProcess( hurt, hurtColor );
+	}
 #endif // DEBUG_MODE
 }
 Donya::Collision::Box3F	Player::GetWorldHurtBox() const
@@ -373,6 +396,15 @@ void Player::MoveHorizontal( float elapsedTime, Input input )
 
 	const float  movement = data.moveSpeed * input.moveVelocity.x;
 	velocity.x = movement;
+
+	if ( !IsZero( velocity.x ) )
+	{
+		const float rotateSign = ( 0.0f < velocity.x ) ? 1.0f : -1.0f;
+		orientation = Donya::Quaternion::Make
+		(
+			Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
+		);
+	}
 }
 void Player::MoveVertical  ( float elapsedTime, Input input )
 {
@@ -384,6 +416,7 @@ void Player::MoveVertical  ( float elapsedTime, Input input )
 		velocity.y				= data.jumpStrength;
 		keepJumpSecond			= 0.0f;
 		wasReleasedJumpInput	= false;
+		Donya::Sound::Play( Music::Player_Jump );
 	}
 	else
 	{
