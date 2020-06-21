@@ -26,6 +26,13 @@
 #include "Parameter.h"
 #include "PlayerParam.h"
 
+#if DEBUG_MODE
+namespace
+{
+	constexpr int debugTmpStageNo = -1;
+}
+#endif // DEBUG_MODE
+
 namespace
 {
 	struct SceneParam
@@ -84,7 +91,7 @@ namespace
 				ImGui::TreePop();
 			}
 
-			testPlayerInit.ShowImGuiNode( u8"自機の初期位置", -1, false );
+			testPlayerInit.ShowImGuiNode( u8"自機の初期位置", debugTmpStageNo, false );
 		}
 	};
 
@@ -115,42 +122,52 @@ void SceneBattle::Init()
 	result = Player::LoadResource();
 	assert( result );
 
+	pMap = std::make_unique<Map>();
+	pMap->Init( debugTmpStageNo );
+
 	pPlayer = std::make_unique<Player>();
 	pPlayer->Init( data.testPlayerInit );
 
 	CameraInit();
 
-	// Generate test solids
-	constexpr float halfSize = 0.5f;
-	constexpr Donya::Vector3 base  {-halfSize * 2.0f, 0.0f, 0.0f };
-	constexpr Donya::Vector3 offset{ halfSize * 2.0f, 0.0f, 0.0f };
-	constexpr Donya::Vector3 points[]
+#if DEBUG_MODE
+	// Temporary process, unnecessary
 	{
-		base + ( offset * 0.0f ),
-		base + ( offset * 1.0f ),
-		base + ( offset * 2.0f ),
-		base + ( offset * 3.0f ),
-		base + ( offset * 4.0f ),
-		base + ( offset * 5.0f ),
-		base + ( offset * 6.0f ),
-	};
-	for ( const auto &it : points )
-	{
-		Solid tmp{};
-		tmp.pos			= it;
-		tmp.hitBox.pos	= 0;
-		tmp.hitBox.size	= halfSize;
-		solids.emplace_back( std::move( tmp ) );
-	}
+		// Generate test solids
+		constexpr float halfSize = 0.5f;
+		constexpr Donya::Vector3 base  {-halfSize * 2.0f, 0.0f, 0.0f };
+		constexpr Donya::Vector3 offset{ halfSize * 2.0f, 0.0f, 0.0f };
+		constexpr Donya::Vector3 points[]
+		{
+			base + ( offset * 0.0f ),
+			base + ( offset * 1.0f ),
+			base + ( offset * 2.0f ),
+			base + ( offset * 3.0f ),
+			base + ( offset * 4.0f ),
+			base + ( offset * 5.0f ),
+			base + ( offset * 6.0f ),
+		};
+		for ( const auto &it : points )
+		{
+			Solid tmp{};
+			tmp.pos			= it;
+			tmp.hitBox.pos	= 0;
+			tmp.hitBox.size	= halfSize;
+			solids.emplace_back( std::move( tmp ) );
+		}
 
-	actor.pos			= 0.0f;
-	actor.pos.y			= 3.0f;
-	actor.hitBox.size	= halfSize;
-	actorVelocity		= 0.0f;
+		actor.pos			= 0.0f;
+		actor.pos.y			= 3.0f;
+		actor.hitBox.size	= halfSize;
+		actorVelocity		= 0.0f;
+	}
+#endif // DEBUG_MODE
 }
 void SceneBattle::Uninit()
 {
-	if ( pPlayer ) { pPlayer->Uninit(); }
+	if ( pMap		) { pMap->Uninit();		}
+	if ( pPlayer	) { pPlayer->Uninit();	}
+	pMap.reset();
 	pPlayer.reset();
 
 	// Donya::Sound::Stop( Music::BGM_Game );
@@ -158,8 +175,6 @@ void SceneBattle::Uninit()
 
 Scene::Result SceneBattle::Update( float elapsedTime )
 {
-	// elapsedTime = 1.0f; // Disable
-
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
 	{
@@ -183,7 +198,10 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 
 	controller.Update();
 
-	// Update the player
+	if ( pMap )
+	{
+		pMap->Update( elapsedTime );
+	}
 	if ( pPlayer )
 	{
 		const bool pressRight = Donya::Keyboard::Press( VK_RIGHT );
@@ -247,9 +265,13 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 	// Move the actors
 	{
 		std::vector<Donya::Collision::Box3F> hitBoxes;
-		for ( const auto &it : solids )
+		if ( pMap )
 		{
-			hitBoxes.emplace_back( it.GetWorldHitBox() );
+			const auto &tiles = pMap->GetTiles();
+			for ( const auto &it : tiles )
+			{
+				hitBoxes.emplace_back( it.GetWorldHitBox() );
+			}
 		}
 
 		if ( pPlayer )
@@ -304,6 +326,7 @@ void SceneBattle::Draw( float elapsedTime )
 		pRenderer->DeactivateShaderNormalSkinning();
 
 		pRenderer->ActivateShaderNormalStatic();
+		if ( pMap ) { pMap->Draw( pRenderer.get() ); }
 		pRenderer->DeactivateShaderNormalStatic();
 	}
 	// pRenderer->DeactivateConstantTrans();
@@ -312,17 +335,17 @@ void SceneBattle::Draw( float elapsedTime )
 	pRenderer->DeactivateRasterizerModel();
 	pRenderer->DeactivateSamplerModel();
 
-	for ( const auto &it : solids )
-	{
-		it.DrawHitBox( pRenderer.get(), VP, { 1.0f, 0.5f, 0.0f, 1.0f } );
-	}
-
+	// for ( const auto &it : solids )
+	// {
+	// 	it.DrawHitBox( pRenderer.get(), VP, { 1.0f, 0.5f, 0.0f, 1.0f } );
+	// }
 	// actor.DrawHitBox( pRenderer.get(), VP, { 0.4f, 1.0f, 0.4f, 1.0f } );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
-		if ( pPlayer ) { pPlayer->DrawHitBox( pRenderer.get(), VP ); }
+		if ( pMap		) { pMap->DrawHitBoxes( pRenderer.get(), VP ); }
+		if ( pPlayer	) { pPlayer->DrawHitBox( pRenderer.get(), VP ); }
 	}
 #endif // DEBUG_MODE
 		
@@ -566,6 +589,8 @@ void SceneBattle::UseImGui()
 
 		Player::UpdateParameter( u8"自機のパラメータ" );
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
+
+		if ( pMap ) { pMap->ShowImGuiNode( u8"マップの現在", debugTmpStageNo ); }
 
 		ImGui::TreePop();
 	}

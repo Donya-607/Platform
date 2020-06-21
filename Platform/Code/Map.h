@@ -7,6 +7,7 @@
 #include <cereal/types/vector.hpp>
 
 #include "Donya/UseImGui.h"	// Use USE_IMGUI macro
+#include "Donya/Serializer.h"
 #include "Donya/Vector.h"
 
 #include "ObjectBase.h"
@@ -15,15 +16,12 @@
 /// <summary>
 /// A piece of map(map-chip).
 /// </summary>
-class Tile : public Solid2D
+class Tile : public Solid
 {
 private:
-	using Solid2D::pos;
-	using Solid2D::posRemainder;
-	using Solid2D::hitBox;
-	Donya::Int2 tileSize;	// World space, Whole size
-	Donya::Int2 texCoord;	// Texture space, Left-Top
-	Donya::Int2 texSize;	// Texture space, Whole size
+	using Solid::pos;
+	using Solid::hitBox;
+	Donya::Int2 texOffset;	// Texture space, Left-Top
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -31,10 +29,8 @@ private:
 	{
 		archive
 		(
-			cereal::base_class<Solid2D>( this ),
-			CEREAL_NVP( tileSize ),
-			CEREAL_NVP( texCoord ),
-			CEREAL_NVP( texSize  )
+			cereal::base_class<Solid>( this ),
+			CEREAL_NVP( texOffset )
 		);
 		if ( 1 <= version )
 		{
@@ -42,13 +38,18 @@ private:
 		}
 	}
 public:
-	void Init( const Donya::Int2 &wsTilePos, const Donya::Int2 &wsTileWholeSize, const Donya::Int2 &texPartCoord, const Donya::Int2 &texPartWholeSize );
-	void Uninit() {}
-	void Draw( size_t spriteIndex ) const;
+	void Init( const Donya::Vector3 &wsTilePos, const Donya::Vector3 &wsTileWholeSize, const Donya::Int2 &texCoordOffset );
+	void Uninit();
+	void Update( float elapsedTime );
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
+public:
+#if USE_IMGUI
+	void ShowImGuiNode( const std::string &nodeCaption );
+#endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( Tile, 0 )
 // CEREAL_REGISTER_TYPE( Tile )
-// CEREAL_REGISTER_POLYMORPHIC_RELATION( Solid2D, Tile )
+// CEREAL_REGISTER_POLYMORPHIC_RELATION( Solid, Tile )
 
 
 /// <summary>
@@ -57,20 +58,13 @@ CEREAL_CLASS_VERSION( Tile, 0 )
 class Map
 {
 private:
-	int					stageNo		= 0;
-	size_t				spriteIndex	= 0;
-	Donya::Int2			texPartSize{ 32, 32 }; // Texture space, Whole size
-	std::vector<Tile>	tiles;
+	std::vector<Tile> tiles;
 private:
 	friend class cereal::access;
 	template<class Archive>
 	void serialize( Archive &archive, std::uint32_t version )
 	{
-		archive
-		(
-			CEREAL_NVP( stageNo	),
-			CEREAL_NVP( tiles	)
-		);
+		archive( CEREAL_NVP( tiles ) );
 		if ( 1 <= version )
 		{
 			// archive();
@@ -78,29 +72,19 @@ private:
 	}
 	static constexpr const char *ID = "Map";
 public:
+	bool Init( int stageNumber );
 	void Uninit();
+	void Update( float elapsedTime );
+	void Draw( RenderingHelper *pRenderer ) const;
+	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
-	/// <summary>
-	/// Returns false if a map file of specified stage is not found.
-	/// </summary>
-	bool LoadMap( int stageNumber );
-	/// <summary>
-	/// Returns loading result.
-	/// </summary>
-	bool LoadTileTexture( const std::wstring &tileTexturePath, size_t maxInstanceCount = 2048U );
-public:
-	/// <summary>
-	/// Specify the size of each tile.
-	/// </summary>
-	void SetTileSize( const Donya::Int2 &tileWholeSize );
-public:
-	void Draw() const;
-	void DrawHitBoxes( const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+	const std::vector<Tile> &GetTiles() const;
 private:
+	bool LoadMap( int stageNumber, bool fromBinary );
 #if USE_IMGUI
-	void Save( int stageNo );
+	void SaveMap( int stageNumber, bool fromBinary );
 public:
-	// void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
+	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( Map, 0 )

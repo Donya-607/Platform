@@ -8,6 +8,7 @@
 #include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
+#include "Map.h"
 #include "ObjectBase.h"
 #include "Player.h"
 #include "Renderer.h"
@@ -23,6 +24,7 @@ private:
 
 	std::vector<Solid>					solids;
 	std::unique_ptr<Player>				pPlayer;
+	std::unique_ptr<Map>				pMap;
 	Actor								actor;
 	Donya::Vector3						actorVelocity;
 

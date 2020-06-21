@@ -105,6 +105,7 @@ void PlayerInitializer::SaveBin( int stageNo )
 	constexpr bool fromBinary = true;
 
 	const std::string filePath = MakeStageParamPathBinary( ID, stageNo );
+	MakeDirectoryIfNotExists( filePath );
 	MakeFileIfNotExists( filePath, fromBinary );
 
 	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
@@ -114,6 +115,7 @@ void PlayerInitializer::SaveJson( int stageNo )
 	constexpr bool fromBinary = false;
 
 	const std::string filePath = MakeStageParamPathJson( ID, stageNo );
+	MakeDirectoryIfNotExists( filePath );
 	MakeFileIfNotExists( filePath, fromBinary );
 
 	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
