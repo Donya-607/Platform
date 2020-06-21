@@ -87,6 +87,14 @@ namespace Donya
 	}
 
 	/// <summary>
+	/// start + ( t * ( last - start ) )
+	/// </summary>
+	constexpr float Lerp( float start, float last, float time )
+	{
+		return start + ( time * ( last - start ) );
+	}
+
+	/// <summary>
 	/// Returns [-pi ~ +pi].
 	/// </summary>
 	float NormalizeRadian( float radian );

@@ -12,10 +12,12 @@
 class SceneLoad : public Scene
 {
 private:
-	bool finishSprites	= false;
+	bool finishModels	= false;
 	bool finishSounds	= false;
-	std::unique_ptr<std::thread> pThreadSprites = nullptr;
-	std::unique_ptr<std::thread> pThreadSounds  = nullptr;
+	bool finishSprites	= false;
+	std::unique_ptr<std::thread> pThreadModels	= nullptr;
+	std::unique_ptr<std::thread> pThreadSounds	= nullptr;
+	std::unique_ptr<std::thread> pThreadSprites	= nullptr;
 
 	bool allSucceeded	= true;
 	std::mutex	succeedMutex;

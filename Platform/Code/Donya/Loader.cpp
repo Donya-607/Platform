@@ -9,7 +9,8 @@
 #endif // USE_FBX_SDK
 
 #include "Constant.h"	// Use scast macro.
-#include "Useful.h"		// Use OutputDebugStr().
+#include "Donya.h"	// Use GetHWnd().
+#include "Useful.h"	// Use OutputDebugStr().
 
 #undef min
 #undef max
@@ -91,13 +92,13 @@ namespace Donya
 	Model::Animation::Transform SeparateSRT( const FBX::FbxAMatrix &source )
 	{
 		Model::Animation::Transform output;
-		output.scale = Convert( source.GetS() ).XYZ();
-		output.rotation = ToQuaternion( source.GetQ() );
-		output.translation = Convert( source.GetT() ).XYZ();
+		output.scale		= Convert( source.GetS() ).XYZ();
+		output.rotation		= ToQuaternion( source.GetQ() );
+		output.translation	= Convert( source.GetT() ).XYZ();
 		return output;
 	}
 
-	constexpr bool HasMesh( FBX::FbxNodeAttribute::EType attr )
+	constexpr bool HasMesh		( FBX::FbxNodeAttribute::EType attr )
 	{
 		constexpr FBX::FbxNodeAttribute::EType HAS_LIST[]
 		{
@@ -109,7 +110,7 @@ namespace Donya
 		}
 		return false;
 	}
-	constexpr bool HasSkeletal( FBX::FbxNodeAttribute::EType attr )
+	constexpr bool HasSkeletal	( FBX::FbxNodeAttribute::EType attr )
 	{
 		constexpr FBX::FbxNodeAttribute::EType HAS_LIST[]
 		{
@@ -184,7 +185,7 @@ namespace Donya
 	{
 		// Convert right-hand space to left-hand space.
 		pSource->coordinateConversion._11 = -1.0f;
-		pPolyGroup->ApplyCullMode( Model::PolygonGroup::CullMode::Back );
+		pPolyGroup->ApplyCullMode( Model::PolygonGroup::CullMode::Front );
 		pPolyGroup->ApplyCoordinateConversion( pSource->coordinateConversion );
 	}
 
@@ -247,17 +248,17 @@ namespace Donya
 			FBX::FbxAMatrix localTransform{};
 			localTransform = pNode->EvaluateLocalTransform( currentTime );
 
-			bone.name = pNode->GetName();
-			bone.transform = SeparateSRT( localTransform );
+			bone.name		= pNode->GetName();
+			bone.transform	= SeparateSRT( localTransform );
 
 			FBX::FbxNode *pParent = pNode->GetParent();
 			if ( pParent )
 			{
-				bone.parentName = pParent->GetName();
+				bone.parentName   = pParent->GetName();
 			}
 			else
 			{
-				bone.parentName = "";
+				bone.parentName   = "";
 			}
 		}
 
@@ -286,8 +287,8 @@ namespace Donya
 				FBX::FbxAMatrix boneToParent{};
 				boneToParent = parentBoneToGlobal.Inverse() * boneToGlobal;
 
-				bone.parentIndex = FindBoneIndex( data, bone.parentName );
-				bone.transformToParent = SeparateSRT( boneToParent );
+				bone.parentIndex		= FindBoneIndex( data, bone.parentName );
+				bone.transformToParent	= SeparateSRT( boneToParent );
 			}
 		}
 
@@ -339,35 +340,35 @@ namespace Donya
 
 		for ( int i = 0; i < animationStackCount; ++i )
 		{
-			FBX::FbxString *pAnimStackName = animationStackNames.GetAt( i );
-			FBX::FbxAnimStack *pCurrentAnimationStack = pScene->FindMember<FBX::FbxAnimStack>( pAnimStackName->Buffer() );
+			FBX::FbxString		*pAnimStackName			= animationStackNames.GetAt( i );
+			FBX::FbxAnimStack	*pCurrentAnimationStack	= pScene->FindMember<FBX::FbxAnimStack>( pAnimStackName->Buffer() );
 			pScene->SetCurrentAnimationStack( pCurrentAnimationStack );
 
-			FBX::FbxTakeInfo *pTakeInfo = pScene->GetTakeInfo( pAnimStackName->Buffer() );
-			if ( !pTakeInfo ) { continue; }
+			FBX::FbxTakeInfo	*pTakeInfo = pScene->GetTakeInfo( pAnimStackName->Buffer() );
+			if ( !pTakeInfo )	{ continue; }
 			// else
 
-			const FBX::FbxTime beginTime = pTakeInfo->mLocalTimeSpan.GetStart();
-			const FBX::FbxTime endTime = pTakeInfo->mLocalTimeSpan.GetStop();
-			const int startFrame = scast<int>( beginTime.Get() / samplingStep.Get() );
-			const int endFrame = scast<int>( endTime.Get() / samplingStep.Get() );
-			const int frameCount = scast<int>( ( endTime.Get() - beginTime.Get() ) / samplingStep.Get() );
+			const FBX::FbxTime beginTime	= pTakeInfo->mLocalTimeSpan.GetStart();
+			const FBX::FbxTime endTime		= pTakeInfo->mLocalTimeSpan.GetStop();
+			const int startFrame	= scast<int>( beginTime.Get() / samplingStep.Get() );
+			const int endFrame		= scast<int>( endTime.Get()   / samplingStep.Get() );
+			const int frameCount	= scast<int>( ( endTime.Get() - beginTime.Get() ) / samplingStep.Get() );
 
 			Model::Animation::Motion motion{};
-			motion.name = std::string{ pAnimStackName->Buffer() };
-			motion.samplingRate = samplingRate;
-			motion.animSeconds = samplingTime * frameCount;
-			motion.keyFrames.resize( scast<size_t>( frameCount + 1 ) );
+			motion.name				= std::string{ pAnimStackName->Buffer() };	
+			motion.samplingRate		= samplingRate;
+			motion.animSeconds		= samplingTime * frameCount;
+			motion.keyFrames.resize(  scast<size_t>( frameCount + 1 ) );
 
-			float  seconds = 0.0f;
-			size_t index = 0;
+			float  seconds	= 0.0f;
+			size_t index	= 0;
 			Donya::Vector4x4 currentGlobalTransform{};
-			for ( FBX::FbxTime currentTime = beginTime; currentTime < endTime; currentTime += samplingStep )
+			for (  FBX::FbxTime currentTime = beginTime; currentTime < endTime; currentTime += samplingStep )
 			{
 				BuildKeyFrame( &motion.keyFrames[index], skeletalNodes, currentTime, seconds );
-
-				seconds += samplingTime;
-				index += 1U;
+				
+				seconds	+= samplingTime;
+				index	+= 1U;
 			}
 
 			pMotions->emplace_back( std::move( motion ) );
@@ -385,19 +386,19 @@ namespace Donya
 
 		auto FetchMaterial = [&fileDirectory]( Model::Source::Material *pMaterial, const char *strProperty, const char *strFactor, const FBX::FbxSurfaceMaterial *pSurfaceMaterial )
 		{
-			const FBX::FbxProperty property = pSurfaceMaterial->FindProperty( strProperty );
-			const FBX::FbxProperty factor = pSurfaceMaterial->FindProperty( strFactor );
+			const FBX::FbxProperty property	= pSurfaceMaterial->FindProperty( strProperty	);
+			const FBX::FbxProperty factor	= pSurfaceMaterial->FindProperty( strFactor		);
 
 			if ( !property.IsValid() ) { return; }
 			// else
 
-			auto AssignColor = [&property, &factor]( Model::Source::Material *pMaterial )
+			auto AssignColor	= [&property, &factor]( Model::Source::Material *pMaterial )
 			{
-				Donya::Vector3	color = Convert( property.Get<FBX::FbxDouble3>() );
-				float			bias = scast<float>( factor.Get<FBX::FbxDouble>() );
+				Donya::Vector3	color	= Convert( property.Get<FBX::FbxDouble3>() );
+				float			bias	= scast<float>( factor.Get<FBX::FbxDouble>() );
 				pMaterial->color = Donya::Vector4{ color * bias, 1.0f };
 			};
-			auto FetchTextures = [&]()->void
+			auto FetchTextures	= [&]()->void
 			{
 				int textureCount = property.GetSrcObjectCount<FBX::FbxFileTexture>();
 				for ( int i = 0; i < textureCount; ++i )
@@ -419,6 +420,24 @@ namespace Donya
 					else
 					{
 						pMaterial->textureName = relativePath;
+					}
+
+					bool filePathIsValid = Donya::IsExistFile( fileDirectory + pMaterial->textureName );
+					if ( !filePathIsValid )
+					{
+						// Notice to a user in release version.
+
+						std::string msg{};
+						msg += "テクスチャが見つかりませんでした！\n";
+						msg += "ディレクトリ：[" + fileDirectory + "]\n";
+						msg += "ファイル名：[" + pMaterial->textureName + "]";
+						MessageBox
+						(
+							Donya::GetHWnd(),
+							Donya::MultiToWide( msg ).c_str(),
+							TEXT( "Model Loading Failed" ),
+							MB_ICONEXCLAMATION | MB_OK
+						);
 					}
 
 					// No support a multiple texture currently.
@@ -461,20 +480,26 @@ namespace Donya
 			const FbxMtl *pSurfaceMaterial = pNode->GetMaterial( i );
 
 			auto &subset = pSubsets->at( i );
-			subset.name = pSurfaceMaterial->GetName();
-			FetchMaterial( &subset.ambient, FbxMtl::sAmbient, FbxMtl::sAmbientFactor, pSurfaceMaterial );
-			FetchMaterial( &subset.bump, FbxMtl::sBump, FbxMtl::sBumpFactor, pSurfaceMaterial );
-			FetchMaterial( &subset.diffuse, FbxMtl::sDiffuse, FbxMtl::sDiffuseFactor, pSurfaceMaterial );
-			FetchMaterial( &subset.specular, FbxMtl::sSpecular, FbxMtl::sSpecularFactor, pSurfaceMaterial );
-			FetchMaterial( &subset.emissive, FbxMtl::sEmissive, FbxMtl::sEmissiveFactor, pSurfaceMaterial );
+			subset.name  = pSurfaceMaterial->GetName();
+			FetchMaterial( &subset.ambient,		FbxMtl::sAmbient,	FbxMtl::sAmbientFactor,		pSurfaceMaterial );
+			FetchMaterial( &subset.bump,		FbxMtl::sBump,		FbxMtl::sBumpFactor,		pSurfaceMaterial );
+			FetchMaterial( &subset.diffuse,		FbxMtl::sDiffuse,	FbxMtl::sDiffuseFactor,		pSurfaceMaterial );
+			FetchMaterial( &subset.specular,	FbxMtl::sSpecular,	FbxMtl::sSpecularFactor,	pSurfaceMaterial );
+			FetchMaterial( &subset.emissive,	FbxMtl::sEmissive,	FbxMtl::sEmissiveFactor,	pSurfaceMaterial );
 
 			mtlType = AnalyseMaterialType( pSurfaceMaterial );
 			if ( mtlType == MaterialType::Phong )
 			{
-				const FBX::FbxProperty shininess = pSurfaceMaterial->FindProperty( FbxMtl::sShininess );
+				const FBX::FbxProperty shininess	= pSurfaceMaterial->FindProperty( FbxMtl::sShininess );
+				const FBX::FbxProperty transparency	= pSurfaceMaterial->FindProperty( FbxMtl::sTransparencyFactor );
 				if ( shininess.IsValid() )
 				{
 					subset.specular.color.w = scast<float>( shininess.Get<FBX::FbxDouble>() );
+				}
+				if ( transparency.IsValid() )
+				{
+					// The transparency has 0.0f:opaque, 1.0f:transparency. http://docs.autodesk.com/FBX/2014/ENU/FBX-SDK-Documentation/index.html?url=cpp_ref/class_fbx_surface_lambert.html,topicNumber=cpp_ref_class_fbx_surface_lambert_htmldea88f87-afee-49de-9ef5-73a4ac9477b2,hash=ac47de888da8afd942fcfb6ccfbe28dda
+					subset.diffuse.color.w = 1.0f - scast<float>( transparency.Get<FBX::FbxDouble>() );
 				}
 			}
 			else
@@ -507,9 +532,9 @@ namespace Donya
 	}
 	void BuildMesh( Model::Source::Mesh *pMesh, FBX::FbxNode *pNode, FBX::FbxMesh *pFBXMesh, std::vector<Model::Polygon> *pPolygons, FBX::FbxScene *pScene, const std::string &fileDirectory, const std::vector<Model::Animation::Node> &modelSkeletal, float animationSamplingFPS )
 	{
-		constexpr	int EXPECT_POLYGON_SIZE = 3;
-		const		int mtlCount = pNode->GetMaterialCount();
-		const		int polygonCount = pFBXMesh->GetPolygonCount();
+		constexpr	int EXPECT_POLYGON_SIZE	= 3;
+		const		int mtlCount			= pNode->GetMaterialCount();
+		const		int polygonCount		= pFBXMesh->GetPolygonCount();
 
 		pMesh->indices.resize( polygonCount * EXPECT_POLYGON_SIZE );
 		pMesh->name = pNode->GetName();
@@ -537,42 +562,42 @@ namespace Donya
 
 			const FBX::FbxAMatrix geometricTransform
 			{
-				pNode->GetGeometricTranslation( FBX::FbxNode::eSourcePivot ),
-				pNode->GetGeometricRotation( FBX::FbxNode::eSourcePivot ),
-				pNode->GetGeometricScaling( FBX::FbxNode::eSourcePivot )
+				pNode->GetGeometricTranslation	( FBX::FbxNode::eSourcePivot ),
+				pNode->GetGeometricRotation		( FBX::FbxNode::eSourcePivot ),
+				pNode->GetGeometricScaling		( FBX::FbxNode::eSourcePivot )
 			};
 
-			auto FetchInfluence = [&boneInfluences]( const FBX::FbxCluster *pCluster, int clusterIndex )
+			auto FetchInfluence		= [&boneInfluences]( const FBX::FbxCluster *pCluster, int clusterIndex )
 			{
-				const int		ctrlPointIndicesCount = pCluster->GetControlPointIndicesCount();
-				const int *ctrlPointIndices = pCluster->GetControlPointIndices();
-				const double *ctrlPointWeights = pCluster->GetControlPointWeights();
+				const int		ctrlPointIndicesCount	= pCluster->GetControlPointIndicesCount();
+				const int		*ctrlPointIndices		= pCluster->GetControlPointIndices();
+				const double	*ctrlPointWeights		= pCluster->GetControlPointWeights();
 
 				if ( !ctrlPointIndices || !ctrlPointWeights ) { return; }
 				// else
 
 				for ( int i = 0; i < ctrlPointIndicesCount; ++i )
 				{
-					BoneInfluence &data = boneInfluences[ctrlPointIndices[i]];
+					BoneInfluence &data	= boneInfluences[ctrlPointIndices[i]];
 					float weight = scast<float>( ctrlPointWeights[i] );
-					int   index = clusterIndex;
+					int   index  = clusterIndex;
 					data.Append( weight, index );
 				}
 			};
-			auto FetchBoneOffset = [&geometricTransform]( const FBX::FbxCluster *pCluster, std::vector<Model::Animation::Node> *pBoneOffsets )
+			auto FetchBoneOffset	= [&geometricTransform]( const FBX::FbxCluster *pCluster, std::vector<Model::Animation::Node> *pBoneOffsets )
 			{
 				const FBX::FbxAMatrix  boneOffset = FetchBoneOffsetMatrix( pCluster );
 
 				Model::Animation::Node node{};
-				node.bone.name = pCluster->GetLink()->GetName();
-				node.bone.transform = SeparateSRT( boneOffset * geometricTransform );
-				node.local = node.bone.transform.ToWorldMatrix();
+				node.bone.name				= pCluster->GetLink()->GetName();
+				node.bone.transform			= SeparateSRT( boneOffset * geometricTransform );
+				node.local	= node.bone.transform.ToWorldMatrix();
 
 				// The bone offset matrix does not use something related to parent related.
-				node.bone.parentName = "";
-				node.bone.parentIndex = -1;
-				node.bone.transformToParent = Model::Animation::Transform::Identity();
-				node.global = node.local;
+				node.bone.parentName		= "";
+				node.bone.parentIndex		= -1;
+				node.bone.transformToParent	= Model::Animation::Transform::Identity();
+				node.global	= node.local;
 
 				pBoneOffsets->emplace_back( std::move( node ) );
 			};
@@ -587,7 +612,7 @@ namespace Donya
 				for ( int clusterIndex = 0; clusterIndex < clusterCount; ++clusterIndex )
 				{
 					FBX::FbxCluster *pCluster = pSkin->GetCluster( clusterIndex );
-					FetchInfluence( pCluster, clusterIndex );
+					FetchInfluence ( pCluster, clusterIndex );
 					FetchBoneOffset( pCluster, &pMesh->boneOffsets );
 				}
 
@@ -595,7 +620,7 @@ namespace Donya
 				for ( int clusterIndex = 0; clusterIndex < clusterCount; ++clusterIndex )
 				{
 					const FBX::FbxCluster *pCluster = pSkin->GetCluster( clusterIndex );
-					const int boneIndex = FindBoneIndex( modelSkeletal, pCluster->GetLink()->GetName() );
+					const int boneIndex =  FindBoneIndex( modelSkeletal, pCluster->GetLink()->GetName() );
 
 					pMesh->boneIndices.emplace_back( boneIndex );
 				}
@@ -640,7 +665,7 @@ namespace Donya
 				BoneInfluence result{};
 				auto Assign = [&result]( size_t elementIndex, float weight, int index )
 				{
-					result.data[elementIndex].first = weight;
+					result.data[elementIndex].first  = weight;
 					result.data[elementIndex].second = index;
 				};
 
@@ -686,9 +711,9 @@ namespace Donya
 				return result;
 			};
 
-			const FBX::FbxVector4 *pControlPointsArray = pFBXMesh->GetControlPoints();
-			const Donya::Vector4x4 globalTransform = Convert( pNode->EvaluateGlobalTransform( 0 ) );
-
+			const FBX::FbxVector4 *pControlPointsArray	= pFBXMesh->GetControlPoints();
+			const Donya::Vector4x4 globalTransform		= Convert( pNode->EvaluateGlobalTransform( 0 ) );
+			
 			FBX::FbxStringList uvSetName;
 			pFBXMesh->GetUVSetNames( uvSetName );
 
@@ -703,8 +728,8 @@ namespace Donya
 				}
 
 				// Where should I save the vertex attribute index, according to the material.
-				auto &subset = pMesh->subsets[mtlIndex];
-				int indexOffset = scast<int>( subset.indexStart + subset.indexCount );
+				auto &subset	= pMesh->subsets[mtlIndex];
+				int indexOffset	= scast<int>( subset.indexStart + subset.indexCount );
 
 				FBX::FbxVector4		fbxNormal{};
 				Model::Vertex::Pos	pos{};
@@ -713,6 +738,7 @@ namespace Donya
 
 				Model::Polygon		polygon{};
 				polygon.materialIndex = mtlIndex;
+				polygon.materialName  = subset.name;
 
 				const int polygonSize = pFBXMesh->GetPolygonSize( polyIndex );
 				_ASSERT_EXPR( polygonSize == EXPECT_POLYGON_SIZE, L"Error : A mesh did not triangulated!" );
@@ -725,9 +751,9 @@ namespace Donya
 					pos.position.z = scast<float>( pControlPointsArray[ctrlPointIndex][2] );
 
 					pFBXMesh->GetPolygonVertexNormal( polyIndex, v, fbxNormal );
-					pos.normal.x = scast<float>( fbxNormal[0] );
-					pos.normal.y = scast<float>( fbxNormal[1] );
-					pos.normal.z = scast<float>( fbxNormal[2] );
+					pos.normal.x   = scast<float>( fbxNormal[0] );
+					pos.normal.y   = scast<float>( fbxNormal[1] );
+					pos.normal.z   = scast<float>( fbxNormal[2] );
 
 					const int uvCount = pFBXMesh->GetElementUVCount();
 					if ( !uvCount )
@@ -763,15 +789,15 @@ namespace Donya
 							return vec4.x;
 						};
 
-						const size_t sourceCount = infl.data.size();
-						const size_t firstLoopCount = std::min( sourceCount, MAX_INFLUENCE_COUNT );
+						const size_t sourceCount	= infl.data.size();
+						const size_t firstLoopCount	= std::min( sourceCount, MAX_INFLUENCE_COUNT );
 						size_t  i = 0;
-						for ( ; i < firstLoopCount; ++i )
+						for ( ; i <  firstLoopCount; ++i )
 						{
 							At( pInfl->weights, i ) = infl.data[i].first;
 							At( pInfl->indices, i ) = infl.data[i].second;
 						}
-						for ( ; i < MAX_INFLUENCE_COUNT; ++i )
+						for ( ; i <  MAX_INFLUENCE_COUNT; ++i )
 						{
 							At( pInfl->weights, i ) = ( i == 0 ) ? 1.0f : 0.0f;
 							At( pInfl->indices, i ) = NULL;
@@ -921,12 +947,12 @@ namespace Donya
 
 	void Loader::SaveByCereal( const std::string &filePath ) const
 	{
-		Donya::Serializer::Extension bin = Donya::Serializer::Extension::BINARY;
+		Donya::Serializer::Extension bin  = Donya::Serializer::Extension::BINARY;
 
 		std::lock_guard<std::mutex> lock( cerealMutex );
 
 		Donya::Serializer seria;
-		seria.Save( bin, filePath.c_str(), SERIAL_ID, *this );
+		seria.Save( bin, filePath.c_str(),  SERIAL_ID, *this );
 	}
 
 	bool Loader::LoadByCereal( const std::string &filePath, bool outputProgress )
@@ -954,7 +980,7 @@ namespace Donya
 		// reference to http://blog.livedoor.jp/tek_nishi/archives/9446152.html
 
 		std::unique_ptr<char[]> fullPath = std::make_unique<char[]>( filePathLengthMax );
-		auto writeLength = GetFullPathNameA( inputFilePath.c_str(), filePathLengthMax, fullPath.get(), nullptr );
+		auto writeLength = GetFullPathNameA( inputFilePath.c_str(),  filePathLengthMax, fullPath.get(), nullptr );
 
 		char *convertedPath = nullptr;
 		FBX::FbxAnsiToUTF8( fullPath.get(), convertedPath );
@@ -970,17 +996,17 @@ namespace Donya
 	{
 		OutputDebugProgress( "Start Separating File-Path.", outputProgress );
 
-		filePath = GetUTF8FullPath( sourceFilePath );
-		fileDirectory = ExtractFileDirectoryFromFullPath( sourceFilePath );
-		fileName = sourceFilePath.substr( fileDirectory.size() );
+		const std::string fullPathUTF8 = GetUTF8FullPath( sourceFilePath );
+		fileDirectory	= ExtractFileDirectoryFromFullPath( sourceFilePath );
+		fileName		= sourceFilePath.substr( fileDirectory.size() );
 
 		OutputDebugProgress( "Finish Separating File-Path.", outputProgress );
 
 		std::unique_ptr<std::lock_guard<std::mutex>> pLock{}; // Use scoped-lock without code-bracket.
 		pLock = std::make_unique<std::lock_guard<std::mutex>>( fbxMutex );
 
-		FBX::FbxManager *pManager = FBX::FbxManager::Create();
-		FBX::FbxIOSettings *pIOSettings = FBX::FbxIOSettings::Create( pManager, IOSROOT );
+		FBX::FbxManager		*pManager		= FBX::FbxManager::Create();
+		FBX::FbxIOSettings	*pIOSettings	= FBX::FbxIOSettings::Create( pManager, IOSROOT );
 		pManager->SetIOSettings( pIOSettings );
 
 		auto Uninitialize = [&]
@@ -995,7 +1021,7 @@ namespace Donya
 			OutputDebugProgress( "Start Import.", outputProgress );
 
 			FBX::FbxImporter *pImporter = FBX::FbxImporter::Create( pManager, "" );
-			if ( !pImporter->Initialize( filePath.c_str(), -1, pManager->GetIOSettings() ) )
+			if ( !pImporter->Initialize( fullPathUTF8.c_str(), -1, pManager->GetIOSettings() ) )
 			{
 				std::string errMsg = "Failed Initialize. What: ";
 				errMsg += pImporter->GetStatus().GetErrorString();
@@ -1003,6 +1029,7 @@ namespace Donya
 				Uninitialize();
 				return false;
 			}
+			// else
 
 			if ( !pImporter->Import( pScene ) )
 			{
@@ -1012,6 +1039,7 @@ namespace Donya
 				Uninitialize();
 				return false;
 			}
+			// else
 
 			pImporter->Destroy();
 
@@ -1054,7 +1082,7 @@ namespace Donya
 #endif // USE_FBX_SDK
 
 #if USE_IMGUI
-	void Loader::ShowEnumNode( const std::string &nodeCaption ) const
+	void Loader::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		const ImVec2 childFrameSize( 0.0f, 0.0f );
 
@@ -1064,7 +1092,7 @@ namespace Donya
 		const size_t meshCount = source.meshes.size();
 		for ( size_t i = 0; i < meshCount; ++i )
 		{
-			const auto &mesh = source.meshes[i];
+			auto &mesh = source.meshes[i];
 			const std::string meshCaption = "Mesh[" + std::to_string( i ) + "]";
 			if ( ImGui::TreeNode( meshCaption.c_str() ) )
 			{
@@ -1086,9 +1114,9 @@ namespace Donya
 							const size_t end = pos.size();
 							for ( size_t i = 0; i < end; ++i )
 							{
-								ImGui::Text( "Position:[No:%d][X:%6.3f][Y:%6.3f][Z:%6.3f]", i, pos[i].position.x, pos[i].position.y, pos[i].position.z );
-								ImGui::Text( "Normal:[No:%d][X:%6.3f][Y:%6.3f][Z:%6.3f]", i, pos[i].normal.x, pos[i].normal.y, pos[i].normal.z );
-								ImGui::Text( "TexCoord:[No:%d][X:%6.3f][Y:%6.3f]", i, tex[i].texCoord.x, tex[i].texCoord.y );
+								ImGui::Text( "Position:[No:%d][X:%6.3f][Y:%6.3f][Z:%6.3f]",	i, pos[i].position.x,	pos[i].position.y,	pos[i].position.z	);
+								ImGui::Text( "Normal:[No:%d][X:%6.3f][Y:%6.3f][Z:%6.3f]",	i, pos[i].normal.x,		pos[i].normal.y,	pos[i].normal.z		);
+								ImGui::Text( "TexCoord:[No:%d][X:%6.3f][Y:%6.3f]",			i, tex[i].texCoord.x,	tex[i].texCoord.y	);
 							}
 							ImGui::EndChild();
 						}
@@ -1117,69 +1145,47 @@ namespace Donya
 					size_t subsetCount = mesh.subsets.size();
 					for ( size_t j = 0; j < subsetCount; ++j )
 					{
-						const auto &subset = mesh.subsets[j];
+						auto &subset = mesh.subsets[j];
 						std::string subsetCaption = "Subset[" + std::to_string( j ) + "]";
 						if ( ImGui::TreeNode( subsetCaption.c_str() ) )
 						{
-							auto ShowMaterialContain = [this]( const Model::Source::Material &mtl )
+							auto ShowMaterial = [&]( const std::string &nodeCaption, Model::Source::Material *p )
 							{
-								ImGui::Text
-								(
-									"Color:[X:%05.3f][Y:%05.3f][Z:%05.3f][W:%05.3f]",
-									mtl.color.x, mtl.color.y, mtl.color.z, mtl.color.w
-								);
+								if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+								// else
+								
+								// ImGui::Text
+								// (
+								// 	"Color:[X:%05.3f][Y:%05.3f][Z:%05.3f][W:%05.3f]",
+								// 	p->color.x, p->color.y, p->color.z, p->color.w
+								// );
+								// Arrow the changes
+								ImGui::ColorEdit4( "Color", &p->color.x );
 
-								if ( mtl.textureName.empty() )
+								if ( p->textureName.empty() )
 								{
 									ImGui::Text( "This material don't have texture." );
-									return;
 								}
-								// else
-
-								if ( !Donya::IsExistFile( fileDirectory + mtl.textureName ) )
+								else	
+								if ( !Donya::IsExistFile( fileDirectory + p->textureName ) )
 								{
-									ImGui::Text( "!This texture was not found![%s]", mtl.textureName.c_str() );
+									ImGui::Text( "!This texture was not found![%s]", Donya::MultiToUTF8( p->textureName ).c_str() );
 								}
 								else
 								{
-									ImGui::Text( "Texture Name:[%s]", mtl.textureName.c_str() );
+									ImGui::Text( "Texture Name:[%s]", Donya::MultiToUTF8( p->textureName ).c_str() );
 								}
+
+								ImGui::TreePop();
 							};
 
-							if ( ImGui::TreeNode( "Ambient" ) )
-							{
-								ShowMaterialContain( subset.ambient );
+							ImGui::Text( Donya::MultiToUTF8( "Material Name:[" + subset.name + "]" ).c_str() );
 
-								ImGui::TreePop();
-							}
-
-							if ( ImGui::TreeNode( "Bump" ) )
-							{
-								ShowMaterialContain( subset.bump );
-
-								ImGui::TreePop();
-							}
-
-							if ( ImGui::TreeNode( "Diffuse" ) )
-							{
-								ShowMaterialContain( subset.diffuse );
-
-								ImGui::TreePop();
-							}
-
-							if ( ImGui::TreeNode( "Emissive" ) )
-							{
-								ShowMaterialContain( subset.emissive );
-
-								ImGui::TreePop();
-							}
-
-							if ( ImGui::TreeNode( "Specular" ) )
-							{
-								ShowMaterialContain( subset.specular );
-
-								ImGui::TreePop();
-							}
+							ShowMaterial( "Ambient",	&subset.ambient		);
+							ShowMaterial( "Bump",		&subset.bump		);
+							ShowMaterial( "Diffuse",	&subset.diffuse		);
+							ShowMaterial( "Emissive",	&subset.emissive	);
+							ShowMaterial( "Specular",	&subset.specular	);
 
 							ImGui::TreePop();
 						}
@@ -1228,7 +1234,7 @@ namespace Donya
 
 						ImGui::TreePop();
 					}
-
+						
 					ImGui::TreePop();
 				}
 

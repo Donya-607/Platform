@@ -337,8 +337,8 @@ void RenderingHelper::ActivateRasterizerSphere()
 }
 void RenderingHelper::ActivateSamplerModel()
 {
-	const auto desc = SamplerSetting();
-	Donya::Sampler::Activate( state.PS, desc.setSlot, desc.setVS, desc.setPS );
+	constexpr auto desc = SamplerSetting();
+	Donya::Sampler::SetPS( state.PS, desc.setSlot );
 }
 void RenderingHelper::DeactivateDepthStencilModel()
 {
@@ -366,7 +366,8 @@ void RenderingHelper::DeactivateRasterizerSphere()
 }
 void RenderingHelper::DeactivateSamplerModel()
 {
-	Donya::Sampler::Deactivate();
+	constexpr auto desc = SamplerSetting();
+	Donya::Sampler::ResetPS( state.PS );
 }
 
 void RenderingHelper::Render( const Donya::Model::StaticModel	&model, const Donya::Model::Pose &pose )

@@ -3,8 +3,6 @@
 #include <algorithm>	// Use std::max, min
 #include <memory>
 
-#include "Constant.h"
-
 #undef max
 #undef min
 
@@ -18,8 +16,13 @@ namespace Donya
 	class Singleton
 	{
 	protected:
-		Singleton() {}
-		DELETE_COPY_AND_ASSIGN( Singleton )
+		Singleton() = default;
+		Singleton( const Singleton &  ) = delete;
+		Singleton(	     Singleton && ) = delete;
+		Singleton &operator = ( const Singleton &  ) = delete;
+		Singleton &operator = (	      Singleton && ) = delete;
+	public:
+		~Singleton() = default;
 	public:
 		static T &Get()
 		{

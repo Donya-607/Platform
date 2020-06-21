@@ -325,6 +325,8 @@ namespace Donya
 				{
 					Donya::Vector4   drawColor;
 					Donya::Vector4x4 worldMatrix;	// Model space -> World space
+					Donya::Vector2   uvOrigin;		// It works an offset of tex-coord
+					Donya::Vector2   _padding;		// Will be ignored
 				};
 			}
 			/// <summary>

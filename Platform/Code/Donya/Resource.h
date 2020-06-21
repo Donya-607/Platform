@@ -80,6 +80,36 @@ namespace Donya
 
 		void ReleaseAllPixelShaderCaches();
 
+		/// <summary>
+		/// If file path is invalid, returns false.<para></para>
+		/// I doing; read cso-file, CreatePixelShader().
+		/// </summary>
+		bool CreateGeometryShaderFromCso
+		(
+			ID3D11Device *pd3dDevice,
+			const char *csoname,
+			const char *openMode,
+			ID3D11GeometryShader **pOutGeometryShaderAddress,
+			bool enableCache = true
+		);
+		/// <summary>
+		/// Create geometry-shader from embedded source code.<para></para>
+		/// "shaderIdentifyName" are used to key of map.<para></para>
+		/// "shaderEntryPointName" is shader files entry point(e.g. "main").<para></para>
+		/// Returns false when failed to create shader.
+		/// </summary>
+		bool CreateGeometryShaderFromSource
+		(
+			ID3D11Device *pDevice,
+			const std::string &shaderIdentifyName,
+			const std::string &shaderCode,
+			const std::string &shaderEntryPointName,
+			ID3D11GeometryShader **pOutGeometryShaderAddress,
+			bool isEnableCache = true
+		);
+
+		void ReleaseAllGeometryShaderCaches();
+
 		#pragma endregion
 
 		#pragma region Texture

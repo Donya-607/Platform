@@ -20,6 +20,7 @@
 #include "UseImGui.h"
 #include "Vector.h"
 
+
 #define USE_FBX_SDK ( false )
 
 #if USE_FBX_SDK
@@ -30,7 +31,7 @@ namespace fbxsdk
 }
 #endif // USE_FBX_SDK
 
-// Program version : 9
+// Program version : 10
 
 namespace Donya
 {
@@ -49,7 +50,7 @@ namespace Donya
 	private: // Loading parameters.
 		Model::Source		source;
 		Model::PolygonGroup	polyGroup;
-
+		
 		std::string			fileDirectory;	// The '/' terminated file directory.
 		std::string			fileName;		// The file name that contains the extension.
 	private:
@@ -95,19 +96,19 @@ namespace Donya
 		/// </summary>
 		void SaveByCereal( const std::string &filePath ) const;
 	public:
-		const Model::Source &GetModelSource()	const { return source; }
+		const Model::Source			&GetModelSource()	const { return source; }
 		void SetModelSource( const Model::Source &newSource ) { source = newSource; }
-		const Model::PolygonGroup &GetPolygonGroup()	const { return polyGroup; }
+		const Model::PolygonGroup	&GetPolygonGroup()	const { return polyGroup; }
 		void SetPolygonGroup( const Model::PolygonGroup &newSource ) { polyGroup = newSource; }
 	public:
 		/// <summary>
 		/// Ex. returns "Bar.fbx" from ["C:/Foo/Bar.fbx"].
 		/// </summary>
-		std::string GetFileName()						const { return fileName; }
+		std::string GetFileName()						const { return fileName;		}
 		/// <summary>
 		/// Ex. returns "C:/Foo/" from ["C:/Foo/Bar.fbx"].
 		/// </summary>
-		std::string GetFileDirectory()					const { return fileDirectory; }
+		std::string GetFileDirectory()					const { return fileDirectory;	}
 	private:
 		bool LoadByCereal( const std::string &filePath, bool outputDebugProgress );
 	#if USE_FBX_SDK
@@ -115,9 +116,8 @@ namespace Donya
 	#endif // USE_FBX_SDK
 	public:
 	#if USE_IMGUI
-		void ShowEnumNode( const std::string &nodeCaption ) const;
+		void ShowImGuiNode( const std::string &nodeCaption );
 	#endif // USE_IMGUI
-
 	};
 
 }

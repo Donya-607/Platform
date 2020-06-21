@@ -632,8 +632,14 @@ namespace Donya
 		}
 		bool Renderer::Default::ActivateSampler( ID3D11DeviceContext *pImmediateContext )
 		{
+			bool result = true;
+
 			const RegisterDesc desc = DescSampler();
-			return Donya::Sampler::Activate( pMember->idPSSampler, desc.setSlot, desc.setVS, desc.setPS, pImmediateContext );
+			if ( desc.setVS ) { result = Donya::Sampler::SetVS( pMember->idPSSampler, desc.setSlot, pImmediateContext ); }
+			if ( !result ) { return false; }
+			if ( desc.setPS ) { result = Donya::Sampler::SetPS( pMember->idPSSampler, desc.setSlot, pImmediateContext ); }
+			if ( !result ) { return false; }
+			return true;
 		}
 		void Renderer::Default::DeactivateDepthStencil( ID3D11DeviceContext *pImmediateContext )
 		{
@@ -645,7 +651,9 @@ namespace Donya
 		}
 		void Renderer::Default::DeactivateSampler( ID3D11DeviceContext *pImmediateContext )
 		{
-			Donya::Sampler::Deactivate( pImmediateContext );
+			const RegisterDesc desc = DescSampler();
+			if ( desc.setVS ) { Donya::Sampler::ResetVS( pMember->idPSSampler, pImmediateContext ); }
+			if ( desc.setPS ) { Donya::Sampler::ResetPS( pMember->idPSSampler, pImmediateContext ); }
 		}
 
 		void Renderer::Default::ActivateVertexShaderSkinning( ID3D11DeviceContext *pImmediateContext )

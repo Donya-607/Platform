@@ -292,17 +292,9 @@ namespace Donya
 			}
 			// else
 
-			FILE* fp = nullptr;
-			fopen_s( &fp, strCsoName.c_str(), openMode );
-			if ( !fp ) { _ASSERT_EXPR( 0, L"ps cso file not found" ); }
-
-			fseek( fp, 0, SEEK_END );
-			long csoSize = ftell( fp );
-			fseek( fp, 0, SEEK_SET );
-
-			std::unique_ptr<unsigned char[]> csoData = std::make_unique<unsigned char[]>( csoSize );
-			fread( csoData.get(), csoSize, 1, fp );
-			fclose( fp );
+			std::unique_ptr<unsigned char[]> csoData{ nullptr };
+			long csoSize = ReadByteCode( &csoData, strCsoName, openMode );
+			_ASSERT_EXPR( 0 < csoSize, L"ps cso file not found" );
 
 			hr = d3dDevice->CreatePixelShader
 			(
@@ -405,6 +397,138 @@ namespace Donya
 		void ReleaseAllPixelShaderCaches()
 		{
 			pixelShaderCache.clear();
+		}
+
+		#pragma endregion
+
+		#pragma region GeometryShaderCache
+
+		static std::unordered_map<std::string, Microsoft::WRL::ComPtr<ID3D11GeometryShader>> geometryShaderCache{};
+		
+		bool CreateGeometryShaderFromCso( ID3D11Device  *d3dDevice, const char *csoname, const char *openMode, ID3D11GeometryShader **d3dGeometryShader, bool enableCache )
+		{
+			HRESULT hr = S_OK;
+
+			std::string strCsoName = csoname;
+
+			if ( !Donya::IsExistFile( strCsoName ) ) { return false; }
+			// else
+
+			auto it = geometryShaderCache.find( strCsoName );
+			if ( it != geometryShaderCache.end() )
+			{
+				*d3dGeometryShader = it->second.Get();
+				( *d3dGeometryShader )->AddRef();
+
+				return true;
+			}
+			// else
+
+			std::unique_ptr<unsigned char[]> csoData{ nullptr };
+			long csoSize = ReadByteCode( &csoData, strCsoName, openMode );
+			_ASSERT_EXPR( 0 < csoSize, L"gs cso file not found" );
+
+			hr = d3dDevice->CreateGeometryShader
+			(
+				csoData.get(),
+				csoSize,
+				NULL,
+				d3dGeometryShader
+			);
+			_ASSERT_EXPR( SUCCEEDED( hr ), L"Failed : CreateGeometryShader()" );
+
+			if ( enableCache )
+			{
+				geometryShaderCache.insert
+				(
+					std::make_pair
+					(
+						strCsoName,
+						*d3dGeometryShader
+					)
+				);
+			}
+
+			return true;
+		}
+
+		bool CreateGeometryShaderFromSource( ID3D11Device *pDevice, const std::string &shaderId, const std::string &shaderCode, const std::string &shaderEntryPoint, ID3D11GeometryShader **pOutGeometryShader, bool isEnableCache )
+		{
+			HRESULT hr = S_OK;
+
+			auto it = geometryShaderCache.find( shaderId );
+			if ( it != geometryShaderCache.end() )
+			{
+				*pOutGeometryShader = it->second.Get();
+				( *pOutGeometryShader )->AddRef();
+
+				return true;
+			}
+			// else
+
+			DWORD flags = D3DCOMPILE_ENABLE_STRICTNESS;
+		#if DEBUG_MODE
+			flags |= D3DCOMPILE_DEBUG;
+			flags |= D3D10_SHADER_SKIP_OPTIMIZATION;
+		#endif
+
+			Microsoft::WRL::ComPtr<ID3DBlob> compiledShaderBlob;
+			Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
+
+			// D3DCompile() : https://docs.microsoft.com/en-us/windows/win32/api/d3dcompiler/nf-d3dcompiler-d3dcompile
+			hr = D3DCompile
+			(
+				shaderCode.c_str(),
+				shaderCode.length(),
+				NULL,
+				NULL,
+				NULL,
+				shaderEntryPoint.c_str(),
+				"ps_5_0",
+				flags,
+				NULL,
+				compiledShaderBlob.GetAddressOf(),
+				errorBlob.GetAddressOf()
+			);
+			if ( FAILED( hr ) )
+			{
+				_ASSERT_EXPR( 0, reinterpret_cast<LPCSTR>( errorBlob->GetBufferPointer() ) );
+				return false;
+			}
+			// else
+
+			hr = pDevice->CreateGeometryShader
+			(
+				compiledShaderBlob->GetBufferPointer(),
+				compiledShaderBlob->GetBufferSize(),
+				0,
+				pOutGeometryShader
+			);
+			if ( FAILED( hr ) )
+			{
+				_ASSERT_EXPR( 0, reinterpret_cast<LPCSTR>( errorBlob->GetBufferPointer() ) );
+				return false;
+			}
+			// else
+
+			if ( isEnableCache )
+			{
+				geometryShaderCache.insert
+				(
+					std::make_pair
+					(
+						shaderId,
+						*pOutGeometryShader
+					)
+				);
+			}
+
+			return true;
+		}
+
+		void ReleaseAllGeometryShaderCaches()
+		{
+			geometryShaderCache.clear();
 		}
 
 		#pragma endregion
@@ -1232,6 +1356,7 @@ namespace Donya
 		{
 			ReleaseAllVertexShaderCaches();
 			ReleaseAllPixelShaderCaches();
+			ReleaseAllGeometryShaderCaches();
 			ReleaseAllTexture2DCaches();
 			ReleaseAllSamplerStateCaches();
 			ReleaseAllObjFileCaches();

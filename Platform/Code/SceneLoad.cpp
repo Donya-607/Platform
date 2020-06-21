@@ -26,6 +26,7 @@
 #include "FilePath.h"
 #include "Music.h"
 #include "Parameter.h"
+#include "Player.h"
 
 
 #undef max
@@ -102,6 +103,34 @@ void SceneLoad::Init()
 	sceneParam.LoadParameter();
 	
 	constexpr auto CoInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
+	auto LoadingModels	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	{
+		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
+		// else
+
+		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		if ( FAILED( hr ) )
+		{
+			std::lock_guard<std::mutex> lock( *pSucceedMutex );
+
+			*pFinishFlag  = true;
+			*pSucceedFlag = false;
+			return;
+		}
+		// else
+
+		bool succeeded = true;
+
+		if ( !Player::LoadResource()		) { succeeded = false; }
+		
+		_ASSERT_EXPR( succeeded, L"Failed: Models load is failed." );
+
+		std::lock_guard<std::mutex> lock( *pSucceedMutex );
+		*pFinishFlag  = true;
+		*pSucceedFlag = succeeded;
+
+		CoUninitialize();
+	};
 	auto LoadingSprites	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
 	{
 		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
@@ -202,10 +231,12 @@ void SceneLoad::Init()
 		CoUninitialize();
 	};
 
+	finishModels	= false;
 	finishSprites	= false;
 	finishSounds	= false;
 	allSucceeded	= true;
 
+	pThreadModels	= std::make_unique<std::thread>( LoadingModels,		&finishModels,	&allSucceeded, &succeedMutex );
 	pThreadSounds	= std::make_unique<std::thread>( LoadingSounds,		&finishSounds,	&allSucceeded, &succeedMutex );
 	pThreadSprites	= std::make_unique<std::thread>( LoadingSprites,	&finishSprites,	&allSucceeded, &succeedMutex );
 
@@ -283,6 +314,7 @@ void SceneLoad::ReleaseAllThread()
 		}
 	};
 
+	JoinThenRelease( pThreadModels	);
 	JoinThenRelease( pThreadSprites	);
 	JoinThenRelease( pThreadSounds	);
 }
@@ -324,7 +356,7 @@ void SceneLoad::SpritesUpdate( float elapsedTime )
 
 bool SceneLoad::IsFinished() const
 {
-	return ( finishSprites && finishSounds );
+	return ( finishModels && finishSprites && finishSounds );
 }
 
 void SceneLoad::ClearBackGround() const
@@ -376,6 +408,7 @@ void SceneLoad::UseImGui()
 
 			sceneParam.ShowImGuiNode( u8"パラメータ調整" );
 
+			ImGui::Text( u8"終了フラグ・モデル[%s]",		GetBoolStr( finishModels	).c_str() );
 			ImGui::Text( u8"終了フラグ・スプライト[%s]",	GetBoolStr( finishSprites	).c_str() );
 			ImGui::Text( u8"終了フラグ・サウンド[%s]",	GetBoolStr( finishSounds	).c_str() );
 			

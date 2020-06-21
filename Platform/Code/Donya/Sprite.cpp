@@ -258,9 +258,9 @@ namespace Donya
 				standard.MaxAnisotropy	= 16;
 				*/
 				standard.Filter				= D3D11_FILTER_MIN_MAG_MIP_POINT;
-				standard.AddressU			= D3D11_TEXTURE_ADDRESS_BORDER;
-				standard.AddressV			= D3D11_TEXTURE_ADDRESS_BORDER;
-				standard.AddressW			= D3D11_TEXTURE_ADDRESS_BORDER;
+				standard.AddressU			= D3D11_TEXTURE_ADDRESS_WRAP;
+				standard.AddressV			= D3D11_TEXTURE_ADDRESS_WRAP;
+				standard.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;
 				standard.ComparisonFunc		= D3D11_COMPARISON_NEVER;
 				standard.MinLOD				= 0;
 				standard.MaxLOD				= D3D11_FLOAT32_MAX;
@@ -588,13 +588,8 @@ namespace Donya
 				Instance::display.shader.VS.Activate( pImmidiateContext );
 				Instance::display.shader.PS.Activate( pImmidiateContext );
 
-				Donya::Sampler::Activate
-				(
-					Instance::idSampler,
-					EmbeddedSourceCode::DisplaySlotSampler,
-					/* setVS = */ true, /* setPS = */true,
-					pImmidiateContext
-				);
+				Donya::Sampler::SetVS( Instance::idSampler, EmbeddedSourceCode::DisplaySlotSampler, pImmidiateContext );
+				Donya::Sampler::SetPS( Instance::idSampler, EmbeddedSourceCode::DisplaySlotSampler, pImmidiateContext );
 			}
 			void DeactivateDisplayShaders( ID3D11DeviceContext *pImmidiateContext = nullptr )
 			{
@@ -603,7 +598,8 @@ namespace Donya
 				Instance::display.shader.VS.Deactivate( pImmidiateContext );
 				Instance::display.shader.PS.Deactivate( pImmidiateContext );
 
-				Donya::Sampler::Deactivate( pImmidiateContext );
+				Donya::Sampler::ResetVS( EmbeddedSourceCode::DisplaySlotSampler, pImmidiateContext );
+				Donya::Sampler::ResetPS( EmbeddedSourceCode::DisplaySlotSampler, pImmidiateContext );
 			}
 
 			void ActivateSpriteShaders	( ID3D11DeviceContext *pImmidiateContext = nullptr )
@@ -613,13 +609,8 @@ namespace Donya
 				Instance::sprite.shader.VS.Activate( pImmidiateContext );
 				Instance::sprite.shader.PS.Activate( pImmidiateContext );
 
-				Donya::Sampler::Activate
-				(
-					Instance::idSampler,
-					EmbeddedSourceCode::SpriteSlotSampler,
-					/* setVS = */ true, /* setPS = */true,
-					pImmidiateContext
-				);
+				Donya::Sampler::SetVS( Instance::idSampler, EmbeddedSourceCode::SpriteSlotSampler, pImmidiateContext );
+				Donya::Sampler::SetPS( Instance::idSampler, EmbeddedSourceCode::SpriteSlotSampler, pImmidiateContext );
 			}
 			void DeactivateSpriteShaders( ID3D11DeviceContext *pImmidiateContext = nullptr )
 			{
@@ -628,7 +619,8 @@ namespace Donya
 				Instance::sprite.shader.VS.Deactivate( pImmidiateContext );
 				Instance::sprite.shader.PS.Deactivate( pImmidiateContext );
 
-				Donya::Sampler::Deactivate ( pImmidiateContext );
+				Donya::Sampler::ResetVS( EmbeddedSourceCode::SpriteSlotSampler, pImmidiateContext );
+				Donya::Sampler::ResetPS( EmbeddedSourceCode::SpriteSlotSampler, pImmidiateContext );
 			}
 
 			void ActivateRectShaders	( ID3D11DeviceContext *pImmidiateContext = nullptr )

@@ -222,20 +222,6 @@ namespace Donya
 			XMMatrixTranspose( ToMatrix() )
 		);
 	}
-	Vector4x4 Vector4x4::OrthographicLH( const Vector2 &view, float zNear, float zFar ) const
-	{
-		return FromMatrix
-		(
-			XMMatrixOrthographicLH( view.x, view.y, zNear, zFar )
-		);
-	}
-	Vector4x4 Vector4x4::PerspectiveFovLH( float FOV, float aspect, float zNear, float zFar ) const
-	{
-		return FromMatrix
-		(
-			XMMatrixPerspectiveFovLH( FOV, aspect, zNear, zFar )
-		);
-	}
 	
 	Vector4x4 Vector4x4::FromMatrix( const XMMATRIX &M )
 	{
@@ -311,6 +297,34 @@ namespace Donya
 		return M;
 	}
 
+	Vector4x4 Vector4x4::MakeLookAtLH( const Vector3 &eye, const Vector3 &focus, const Vector3 &up )
+	{
+		const Vector3 zAxis = Vector3{ focus - eye }.Unit();
+		const Vector3 xAxis = Vector3{ Cross( up, zAxis ) }.Unit();
+		const Vector3 yAxis = Cross( zAxis, xAxis ).Unit();
+
+		Vector4x4 m = MakeRotationOrthogonalAxis( xAxis, yAxis, zAxis );
+		m._41 = -Dot( xAxis, eye );
+		m._42 = -Dot( yAxis, eye );
+		m._43 = -Dot( zAxis, eye );
+		m._43 = 1.0f;
+		return m;
+	}
+
+	Vector4x4 Vector4x4::MakeOrthographicLH( const Vector2 &view, float zNear, float zFar )
+	{
+		return FromMatrix
+		(
+			XMMatrixOrthographicLH( view.x, view.y, zNear, zFar )
+		);
+	}
+	Vector4x4 Vector4x4::MakePerspectiveFovLH( float FOV, float aspect, float zNear, float zFar )
+	{
+		return FromMatrix
+		(
+			XMMatrixPerspectiveFovLH( FOV, aspect, zNear, zFar )
+		);
+	}
 
 	bool operator == ( const Vector4x4 &L, const Vector4x4 &R )
 	{

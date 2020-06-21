@@ -919,6 +919,133 @@ namespace Donya
 		return ( distance <= R.radius ) ? true : false;
 	}
 
+	RayIntersectResult CalcIntersectionPoint( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd, const AABB &box )
+	{
+		const auto &a  = rayStart;
+		const auto &b  = rayEnd;
+		// const auto dir = ( rayEnd - rayStart ).Unit();
+		const auto dir = ( rayEnd - rayStart );
+		const Donya::Vector3 invDir
+		{
+			1.0f / dir.x,
+			1.0f / dir.y,
+			1.0f / dir.z,
+		};
+		const bool isInf[]
+		{
+			std::isinf( invDir.x ),
+			std::isinf( invDir.y ),
+			std::isinf( invDir.z )
+		};
+
+		const auto boxMin = box.pos - box.size;
+		const auto boxMax = box.pos + box.size;
+		
+		Donya::Vector3 tMin;
+		Donya::Vector3 tMax;
+		for ( int i = 0; i < 3; ++i )
+		{
+			tMin[i] = ( boxMin[i] - a[i] ) * invDir[i];
+			tMax[i] = ( boxMax[i] - a[i] ) * invDir[i];
+
+			if ( tMax[i] < tMin[i] )
+			{
+				auto tmp = tMax[i];
+				tMax[i] = tMin[i];
+				tMin[i] = tmp;
+			}
+		}
+
+		float greatestMin = -FLT_MAX;
+		float smallestMax = +FLT_MAX;
+		for ( int i = 0; i < 3; ++i )
+		{
+			if ( isInf[i] ) { continue; }
+			// else
+
+			greatestMin = std::max( tMin[i], greatestMin );
+			smallestMax = std::min( tMax[i], smallestMax );
+		}
+
+		bool isIntersect = true;
+		for ( int i = 0; i < 3; ++i )
+		{
+			if ( tMax[i] < 0.0f			) { isIntersect = false; break; }
+			if ( tMax[i] < tMin[i]		) { isIntersect = false; break; }
+			if ( tMax[i] < greatestMin	) { isIntersect = false; break; }
+			if ( smallestMax < tMin[i]	) { isIntersect = false; break; }
+		}
+
+		RayIntersectResult  result;
+		result.isIntersect  = isIntersect;
+		result.intersection = a + dir * greatestMin;
+		if ( greatestMin < 0.0f )
+		{
+			// The ray start inside the box, so the first intersection is max.
+			result.intersection = a + dir * smallestMax;
+		}
+
+		result.normal = 0.0f;
+		Donya::Vector3 diff = result.intersection - box.pos;
+		diff.x = fabsf( diff.x );
+		diff.y = fabsf( diff.y );
+		diff.z = fabsf( diff.z );
+		if ( diff.y < diff.x && diff.z < diff.x ) { result.normal.x = scast<float>( Donya::SignBit( diff.x ) ); }
+		if ( diff.x < diff.y && diff.z < diff.y ) { result.normal.y = scast<float>( Donya::SignBit( diff.y ) ); }
+		if ( diff.x < diff.z && diff.y < diff.z ) { result.normal.z = scast<float>( Donya::SignBit( diff.z ) ); }
+
+		return result;
+	}
+	RayIntersectResult CalcIntersectionPoint( const Donya::Vector3 &rayStart, const Donya::Vector3 &rayEnd, const Plane &plane )
+	{
+		// see http://www.sousakuba.com/Programming/gs_plane_line_intersect.html
+
+		const Donya::Vector3 planePoint = plane.distance * plane.normal;
+		const Donya::Vector3 vPS = rayStart - planePoint;
+		const Donya::Vector3 vPE = rayEnd   - planePoint;
+		const float	dotPS  = Dot( vPS, plane.normal );
+		const float	dotPE  = Dot( vPE, plane.normal );
+		const int	signPS = Donya::SignBit( dotPS );
+		const int	signPE = Donya::SignBit( dotPE );
+
+		if ( signPS == signPE )
+		{
+			if ( signPS == 0 )
+			{
+				// The two edges place onto the plane, so I can't decide the intersection point.
+				// We returns start point temporary.
+				RayIntersectResult tmp;
+				tmp.intersection	= rayStart;
+				tmp.normal			= Donya::Vector3::Zero();
+				tmp.isIntersect		= true;
+				return tmp;
+			}
+			else
+			{
+				// The two edges place to the same side by the plane.
+				RayIntersectResult notHit{};
+				notHit.isIntersect = false;
+				return notHit;
+			}
+		}
+		// else
+
+		RayIntersectResult result{};
+		result.isIntersect = true;
+
+		const float absDotPS = fabsf( dotPS );
+		const float absDotPE = fabsf( dotPE );
+		const float distPercent = absDotPS / ( absDotPS + absDotPE + EPSILON );
+		const Donya::Vector3 sourceRay = rayEnd - rayStart;
+		result.intersection = rayStart + ( sourceRay * distPercent );
+		
+		const float dotRN = Dot( sourceRay.Unit(), plane.normal );
+		const float normalSign = ( dotRN < 0.0f ) ? -1.0f : 1.0f;
+		result.normal = plane.normal * normalSign;
+
+		return result;
+	}
+
 	bool operator == ( const Box	&L, const Box		&R )
 	{
 		if ( !IsZero( L.pos.x  - R.pos.x  ) )	{ return false; }

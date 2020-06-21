@@ -10,6 +10,7 @@
 #include "Donya/Serializer.h"
 #include "Donya/Vector.h"
 
+#include "Grid.h"
 #include "ObjectBase.h"
 
 
@@ -18,6 +19,8 @@
 /// </summary>
 class Tile : public Solid
 {
+public:
+	static constexpr float unitWholeSize = 1.0f; // Whole size of a standard tile.
 private:
 	using Solid::body;
 	Donya::Int2 texOffset;	// Texture space, Left-Top
@@ -59,6 +62,32 @@ class Map
 private:
 	std::vector<Tile> tiles;
 private:
+#if DEBUG_MODE
+	class EditOperator
+	{
+	private:
+		enum class Mode
+		{
+			NotEnabled,
+			Placement,
+		};
+	private:
+		Mode		mode = Mode::NotEnabled;
+		GridLine	gridline;
+	public:
+		void Init( int stageNumber );
+		void Uninit();
+		void Activate();
+		void Deactivate();
+	public:
+		void Update( float elapsedTime, const Donya::Int2 &ssMousePos, const Donya::Vector4x4 &matViewProjection );
+		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
+	private:
+		Donya::Vector4x4 MakeScreenTransformMatrix( const Donya::Vector4x4 &matViewProjection );
+	};
+	EditOperator editOperator;
+#endif // DEBUG_MODE
+private:
 	friend class cereal::access;
 	template<class Archive>
 	void serialize( Archive &archive, std::uint32_t version )
@@ -76,6 +105,13 @@ public:
 	void Update( float elapsedTime );
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
+public:
+#if DEBUG_MODE
+	void ActivateEditorMode();
+	void DeactivateEditorMode();
+	void EditorUpdate( float elapsedTime, const Donya::Int2 &ssMousePos, const Donya::Vector4x4 &matViewProjection );
+	void EditorDraw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
+#endif // DEBUG_MODE
 public:
 	const std::vector<Tile> &GetTiles() const;
 private:
