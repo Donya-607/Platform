@@ -22,26 +22,32 @@ namespace Donya
 		}
 
 		template<typename Box, typename Coord>
-		bool IsHitBox( const Box &a, const Coord &b )
+		bool IsHitBox( const Box &a, const Coord &b, unsigned int dimension )
 		{
-			return	(
-						Within( b.x, a.pos.x - a.size.x, a.pos.x + a.size.x ) &&
-						Within( b.y, a.pos.y - a.size.y, a.pos.y + a.size.y )
-					);
+			const auto aMin = a.Min();
+			const auto aMax = a.Max();
+			for ( unsigned int i = 0; i < dimension; ++i )
+			{
+				if ( !Within( b[i], aMin[i], aMax[i] ) )
+				{
+					return false;
+				}
+			}
+			return true;
 		}
 		template<typename Box>
-		bool IsHitBox( const Box &a, const Box &b )
+		bool IsHitBox( const Box &a, const Box &b, unsigned int dimension )
 		{
 			// Judge by "AABB of extended by other size" vs "position of other".
 			Box ext = a;
 			ext.size += b.size;
-			return IsHitBox( ext, b.pos );
+			return IsHitBox( ext, b.pos, dimension );
 		}
 
 		template<typename Sphere, typename Coord>
 		bool IsHitSphere( const Sphere &a, const Coord &b )
 		{
-			const Coord diff = b - a.pos;
+			const Coord diff = b - a.WorldPosition();
 			return diff.LengthSq() < ( a.radius * a.radius );
 		}
 		template<typename Sphere>
@@ -56,73 +62,73 @@ namespace Donya
 		{
 			if ( consider && !b.exist ) { return false; }
 			// else
-			return IsHitBox( b, a );
+			return IsHitBox( b, a, 2U );
 		}
 		bool IsHit( const Box2 &a, const Donya::Int2 &b, bool consider )
 		{
 			if ( consider && !a.exist ) { return false; }
 			// else
-			return IsHitBox( a, b );
+			return IsHitBox( a, b, 2U );
 		}
 		bool IsHit( const Box2 &a, const Box2 &b, bool consider )
 		{
 			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
 			// else
-			return IsHitBox( a, b );
+			return IsHitBox( a, b, 2U );
 		}
 		bool IsHit( const Donya::Int3 &a, const Box3 &b, bool consider )
 		{
 			if ( consider && !b.exist ) { return false; }
 			// else
-			return IsHitBox( b, a );
+			return IsHitBox( b, a, 3U );
 		}
 		bool IsHit( const Box3 &a, const Donya::Int3 &b, bool consider )
 		{
 			if ( consider && !a.exist ) { return false; }
 			// else
-			return IsHitBox( a, b );
+			return IsHitBox( a, b, 3U );
 		}
 		bool IsHit( const Box3 &a, const Box3 &b, bool consider )
 		{
 			if ( consider && !a.exist ) { return false; }
 			// else
-			return IsHitBox( a, b );
+			return IsHitBox( a, b, 3U );
 		}
 		bool IsHit( const Donya::Vector2 &a, const Box2F &b, bool consider )
 		{
 			if ( consider && !b.exist ) { return false; }
 			// else
-			return IsHitBox( b, a );
+			return IsHitBox( b, a, 2U );
 		}
 		bool IsHit( const Box2F &a, const Donya::Vector2 &b, bool consider )
 		{
 			if ( consider && !a.exist ) { return false; }
 			// else
-			return IsHitBox( a, b );
+			return IsHitBox( a, b, 2U );
 		}
 		bool IsHit( const Box2F &a, const Box2F &b, bool consider )
 		{
 			if ( consider && !a.exist ) { return false; }
 			// else
-			return IsHitBox( a, b );
+			return IsHitBox( a, b, 2U );
 		}
 		bool IsHit( const Donya::Vector3 &a, const Box3F &b, bool consider )
 		{
 			if ( consider && !b.exist ) { return false; }
 			// else
-			return IsHitBox( b, a );
+			return IsHitBox( b, a, 3U );
 		}
 		bool IsHit( const Box3F &a, const Donya::Vector3 &b, bool consider )
 		{
 			if ( consider && !a.exist ) { return false; }
 			// else
-			return IsHitBox( a, b );
+			return IsHitBox( a, b, 3U );
 		}
 		bool IsHit( const Box3F &a, const Box3F &b, bool consider )
 		{
 			if ( consider && !a.exist ) { return false; }
 			// else
-			return IsHitBox( a, b );
+			return IsHitBox( a, b, 3U );
 		}
 		bool IsHit( const Donya::Int2 &a, const Sphere2 &b, bool consider )
 		{
@@ -200,8 +206,9 @@ namespace Donya
 		template<typename Box, typename Sphere>
 		bool IsHitBoxSphere( const Box &a, const Sphere &b )
 		{
-			const auto closestPoint = FindClosestPoint( a, b.pos );
-			const auto diff  = b.pos - closestPoint;
+			const auto wsPosB = b.WorldPosition();
+			const auto closestPoint = FindClosestPoint( a, wsPosB );
+			const auto diff  = wsPosB - closestPoint;
 			const auto lenSq = diff.LengthSq();
 			const auto radSq = b.radius * b.radius;
 			return ( lenSq <= radSq );
@@ -271,8 +278,8 @@ namespace Donya
 		template<typename Sphere, typename Coord>
 		Coord FindClosestPointSphere( const Sphere &from, const Coord &to )
 		{
-			const Coord v = to - from.pos;
-			return from.pos + ( v.Unit() * from.radius );
+			const Coord v = to - from.WorldPosition();
+			return from.WorldPosition() + ( v.Unit() * from.radius );
 		}
 
 		Donya::Int2 FindClosestPoint( const Donya::Int2 &from, const Box2 &to )
@@ -343,17 +350,19 @@ namespace Donya
 		template<typename Box>
 		bool IsEqualBox( const Box &a, const Box &b )
 		{
-			if ( !( a.pos  - b.pos  ).IsZero()	)	{ return false; }
-			if ( !( a.size - b.size ).IsZero()	)	{ return false; }
-			if ( a.exist != b.exist				)	{ return false; }
+			if ( !( a.pos    - b.pos    ).IsZero()	)	{ return false; }
+			if ( !( a.offset - b.offset ).IsZero()	)	{ return false; }
+			if ( !( a.size   - b.size   ).IsZero()	)	{ return false; }
+			if ( a.exist != b.exist					)	{ return false; }
 			return true;
 		}
 		template<typename Sphere>
 		bool IsEqualSphere( const Sphere &a, const Sphere &b )
 		{
-			if ( !( a.pos  - b.pos  ).IsZero()	)	{ return false; }
-			if ( !IsZero( a.radius - b.radius )	)	{ return false; }
-			if ( a.exist != b.exist				)	{ return false; }
+			if ( !( a.pos    - b.pos    ).IsZero()	)	{ return false; }
+			if ( !( a.offset - b.offset ).IsZero()	)	{ return false; }
+			if ( !IsZero( a.radius - b.radius )		)	{ return false; }
+			if ( a.exist != b.exist					)	{ return false; }
 			return true;
 		}
 

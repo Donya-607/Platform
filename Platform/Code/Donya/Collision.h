@@ -22,19 +22,27 @@ namespace Donya
 			class Box
 			{
 			public:
-				T		pos;	// Center position.
+				T		pos;	// Center position. World position is pos + offset.
+				T		offset;	// World position is pos + offset.
 				T		size;	// Half size.
 				bool	exist;	// Used for ignore a collision.
 			public:
-				Box() : pos(), size(), exist( true ) {}
+				Box() : pos(), offset(), size(), exist( true ) {}
+				/// <summary>
+				/// The offset will be default.
+				/// </summary>
 				Box( const T &pos, const T &size, bool exist = true )
-					: pos( pos ), size( size ), exist( exist )
+					: pos( pos ), offset(), size( size ), exist( exist )
+				{}
+				Box( const T &pos, const T &offset, const T &size, bool exist = true )
+					: pos( pos ), offset( offset ), size( size ), exist( exist )
 				{}
 			public:
-				T Min() const { return pos - size; }
-				T Max() const { return pos + size; }
+				T WorldPosition() const { return pos + offset; }
+				T Min() const { return WorldPosition() - size; }
+				T Max() const { return WorldPosition() + size; }
 			public:
-				static Box Nil() { return Box{ T{}, T{}, false }; }
+				static Box Nil() { return Box{ T{}, T{}, T{}, false }; }
 			private:
 				friend class cereal::access;
 				template<class Archive>
@@ -43,12 +51,13 @@ namespace Donya
 					archive
 					(
 						CEREAL_NVP( pos		),
+						CEREAL_NVP( offset	),
 						CEREAL_NVP( size	),
 						CEREAL_NVP( exist	)
 					);
 					if ( 1 <= version )
 					{
-						// archive();
+						// archive( CEREAL_NVP( x ) );
 					}
 				}
 			};
@@ -61,16 +70,25 @@ namespace Donya
 			class Sphere
 			{
 			public:
-				CoordT	pos;	// Center position.
+				CoordT	pos;	// Center position. World position is pos + offset.
+				CoordT	offset;	// World position is pos + offset.
 				RadiusT	radius;	// Half size.
 				bool	exist;	// Used for ignore a collision.
 			public:
-				Sphere() : pos(), radius(), exist( true ) {}
+				Sphere() : pos(), offset(), radius(), exist( true ) {}
+				/// <summary>
+				/// The offset will be zero.
+				/// </summary>
 				Sphere( const CoordT &pos, const RadiusT &radius, bool exist = true )
-					: pos( pos ), radius( radius ), exist( exist )
+					: pos( pos ), offset(), radius( radius ), exist( exist )
+				{}
+				Sphere( const CoordT &pos, const CoordT &offset, const RadiusT &radius, bool exist = true )
+					: pos( pos ), offset(), radius( radius ), exist( exist )
 				{}
 			public:
-				static Sphere Nil() { return Sphere{ CoordT{}, RadiusT{}, false }; }
+				CoordT WorldPosition() const { return pos + offset; }
+			public:
+				static Sphere Nil() { return Sphere{ CoordT{}, CoordT{}, RadiusT{}, false }; }
 			private:
 				friend class cereal::access;
 				template<class Archive>
@@ -79,6 +97,7 @@ namespace Donya
 					archive
 					(
 						CEREAL_NVP( pos		),
+						CEREAL_NVP( offset	),
 						CEREAL_NVP( radius	),
 						CEREAL_NVP( exist	)
 					);

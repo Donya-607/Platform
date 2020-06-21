@@ -261,7 +261,10 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst ) const
 
 void Player::Init( const PlayerInitializer &initializer )
 {
-	pos			= initializer.GetWorldInitialPos();
+	const auto &data = Parameter().Get();
+	body		= data.hitBox;
+	hurtBox		= data.hurtBox;
+	body.pos	= initializer.GetWorldInitialPos();
 	velocity	= 0.0f;
 	motionManager.Init();
 	onGround	= false;
@@ -282,8 +285,15 @@ void Player::Update( float elapsedTime, Input input )
 	{
 		// Apply for be able to see an adjustment immediately
 		const auto &data = Parameter().Get();
-		hitBox  = data.hitBox;
-		hurtBox = data.hurtBox;
+		auto ApplyExceptPosition = []( Donya::Collision::Box3F *p, const Donya::Collision::Box3F &source )
+		{
+			p->offset	= source.offset;
+			p->size		= source.size;
+			p->exist	= source.exist;
+		};
+
+		ApplyExceptPosition( &body,		data.hitBox  );
+		ApplyExceptPosition( &hurtBox,	data.hurtBox );
 	}
 #endif // USE_IMGUI
 
@@ -318,13 +328,16 @@ void Player::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision
 	{
 		onGround = false;
 	}
+
+	hurtBox.pos = body.pos; // We must apply world position to hurt box also.
 }
 void Player::Draw( RenderingHelper *pRenderer )
 {
 	if ( !pRenderer ) { return; }
 	// else
 
-	const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, GetPosition() );
+	const Donya::Vector3 &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
+	const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
 
 	const auto &drawModel = GetModel();
 	const auto &drawPose  = motionManager.GetPose();
@@ -355,7 +368,7 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 		(
 			box.size * 2.0f,
 			/* enableRotation = */ false,
-			box.pos
+			box.WorldPosition()
 		);
 
 		constant.matWorld  = W;
@@ -365,10 +378,9 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 	
 	constexpr Donya::Vector4 bodyColor{ 0.0f, 1.0f, 0.3f, 0.6f };
 	constexpr Donya::Vector4 hurtColor{ 0.0f, 0.3f, 1.0f, 0.6f };
-	const auto  body		= GetWorldHitBox();
-	const auto  hurt		= GetWorldHurtBox();
-	const float bodyNear	= body.pos.z - body.size.z;
-	const float hurtNear	= hurt.pos.z - hurt.size.z;
+	const auto  &hurt		= hurtBox;
+	const float bodyNear	= body.WorldPosition().z - body.size.z;
+	const float hurtNear	= hurt.WorldPosition().z - hurt.size.z;
 	// Drawing the far box first
 	if ( bodyNear < hurtNear )
 	{
@@ -382,11 +394,9 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 	}
 #endif // DEBUG_MODE
 }
-Donya::Collision::Box3F	Player::GetWorldHurtBox() const
+Donya::Collision::Box3F	Player::GetHurtBox() const
 {
-	Donya::Collision::Box3F tmp = hurtBox;
-	tmp.pos += GetPosition();
-	return tmp;
+	return hurtBox;
 }
 Donya::Quaternion		Player::GetOrientation() const
 {
@@ -460,7 +470,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::DragFloat3( u8"ワールド座標",	&pos.x,			0.01f );
+	ImGui::DragFloat3( u8"ワールド座標",	&body.pos.x,	0.01f );
 	ImGui::DragFloat3( u8"速度",			&velocity.x,	0.01f );
 
 	Donya::Vector3 front = orientation.LocalFront();

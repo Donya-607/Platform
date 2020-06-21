@@ -25,7 +25,7 @@ namespace
 	Donya::Collision::Box2F ToFloat( const Donya::Collision::Box2 &intBox, const Donya::Vector2 &remainder )
 	{
 		Donya::Collision::Box2F tmp{};
-		tmp.pos   = intBox.pos.Float()  + remainder;
+		tmp.pos   = intBox.WorldPosition().Float() + remainder;
 		tmp.size  = intBox.size.Float() + ( remainder * 0.5f /* To half size */ );
 		tmp.exist = intBox.exist;
 		return tmp;
@@ -33,23 +33,25 @@ namespace
 
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Collision::Box3F &box )
 	{
+		const auto wsPos = box.WorldPosition();
 		Donya::Vector4x4 W{};
 		W._11 = box.size.x * 2.0f;
 		W._22 = box.size.y * 2.0f;
 		W._33 = box.size.z * 2.0f;
-		W._41 = box.pos.x;
-		W._42 = box.pos.y;
-		W._43 = box.pos.z;
+		W._41 = wsPos.x;
+		W._42 = wsPos.y;
+		W._43 = wsPos.z;
 		return W;
 	}
 
 	// A drawing origin will be regarded as a center. Returns drawing result.
 	bool DrawHitBoxImpl( const Donya::Collision::Box2F &drawBoxF, const Donya::Vector4 &color )
 	{
+		const auto wsPos = drawBoxF.WorldPosition();
 		return Donya::Sprite::DrawRect
 		(
-			drawBoxF.pos.x,
-			drawBoxF.pos.y,
+			wsPos.x,
+			wsPos.y,
 			drawBoxF.size.x * 2.0f /* To whole size*/,
 			drawBoxF.size.y * 2.0f /* To whole size*/,
 			color.x, color.y, color.z, color.w, 0.0f,
@@ -95,7 +97,7 @@ int Actor2D::MoveAxis( Actor2D *p, int axis, float sourceMovement, const std::ve
 	while ( !IsZero( movement ) ) // Moves 1 pixel at a time.
 	{
 		// Verify some solid is there at destination first.
-		movedBody = p->GetWorldHitBox();
+		movedBody = p->GetHitBox();
 		movedBody.pos[axis] += moveSign;
 		const int collideIndex = FindCollidingIndex( movedBody, solids );
 
@@ -103,7 +105,7 @@ int Actor2D::MoveAxis( Actor2D *p, int axis, float sourceMovement, const std::ve
 		if ( collideIndex != -1 ) { return collideIndex; }
 		// else
 
-		p->pos[axis] += moveSign;
+		p->body.pos[axis] += moveSign;
 		movement -= moveSignF; // The movement is float, but this was made by round(), that will be zero and then break this loop.
 	}
 
@@ -119,35 +121,31 @@ int Actor2D::MoveY( float movement, const std::vector<Donya::Collision::Box2> &s
 }
 bool Actor2D::IsRiding( const Donya::Collision::Box2 &onto ) const
 {
-	const auto body  = GetWorldHitBox();
-	const int  foot  = body.pos.y + body.size.y;
-	const int  floor = onto.pos.y - onto.size.y;
+	const auto body  = GetHitBox();
+	const int  foot  = body.WorldPosition().y + body.size.y;
+	const int  floor = onto.WorldPosition().y - onto.size.y;
 
 	return ( foot + 1 == floor );
 }
 Donya::Int2 Actor2D::GetPosition() const
 {
-	return pos + hitBox.pos;
+	return body.WorldPosition();
 }
 Donya::Vector2 Actor2D::GetPositionFloat() const
 {
 	return GetPosition().Float() + posRemainder;
 }
-Donya::Collision::Box2 Actor2D::GetWorldHitBox() const
+Donya::Collision::Box2  Actor2D::GetHitBox() const
 {
-	Donya::Collision::Box2 tmp;
-	tmp.pos		= GetPosition();
-	tmp.size	= hitBox.size;
-	tmp.exist	= hitBox.exist;
-	return tmp;
+	return body;
 }
-Donya::Collision::Box2F Actor2D::GetWorldHitBoxFloat() const
+Donya::Collision::Box2F Actor2D::GetHitBoxFloat() const
 {
-	return ToFloat( GetWorldHitBox(), posRemainder );
+	return ToFloat( body, posRemainder );
 }
 bool Actor2D::DrawHitBox( const Donya::Vector4 &color ) const
 {
-	const auto drawBoxF = GetWorldHitBoxFloat();
+	const auto drawBoxF = GetHitBoxFloat();
 	return DrawHitBoxImpl( drawBoxF, color );
 }
 
@@ -160,14 +158,13 @@ int Actor::MoveAxis( Actor *p, int axis, float movement, const std::vector<Donya
 
 	const int moveSign = Donya::SignBit( movement );
 
-	const Donya::Collision::Box3F wsPrevBody = p->GetWorldHitBox();
-	Donya::Collision::Box3F wsMovedBody = wsPrevBody;
+	Donya::Collision::Box3F wsMovedBody = p->body;
 	wsMovedBody.pos[axis] += movement;
 
 	auto CalcPenetration	= []( int axis, int moveSign, const Donya::Collision::Box3F &myself, const Donya::Collision::Box3F &other )
 	{
-		const float plusPenetration  = fabsf( ( myself.pos[axis] + myself.size[axis] ) - ( other.pos[axis] - other.size[axis] ) );
-		const float minusPenetration = fabsf( ( myself.pos[axis] - myself.size[axis] ) - ( other.pos[axis] + other.size[axis] ) );
+		const float plusPenetration  = fabsf( ( myself.Max()[axis] ) - ( other.Min()[axis] ) );
+		const float minusPenetration = fabsf( ( myself.Min()[axis] ) - ( other.Max()[axis] ) );
 		const float penetration
 					= ( moveSign < 0 ) ? minusPenetration
 					: ( moveSign > 0 ) ? plusPenetration
@@ -202,8 +199,8 @@ int Actor::MoveAxis( Actor *p, int axis, float movement, const std::vector<Donya
 		wsMovedBody.pos[axis] += resolver;
 	}
 
-	const Donya::Vector3 diff = wsMovedBody.pos - wsPrevBody.pos;
-	p->pos[axis] += diff[axis];
+	const Donya::Vector3 diff = wsMovedBody.pos - p->body.pos;
+	p->body.pos[axis] += diff[axis];
 
 	return lastCollideIndex;
 }
@@ -221,26 +218,22 @@ int Actor::MoveZ( float movement, const std::vector<Donya::Collision::Box3F> &so
 }
 bool Actor::IsRiding( const Donya::Collision::Box3F &onto, float checkLength ) const
 {
-	const auto  body  = GetWorldHitBox();
-	const float foot  = body.pos.y - body.size.y;
-	const float floor = onto.pos.y + onto.size.y;
+	const float foot  = body.WorldPosition().y - body.size.y;
+	const float floor = onto.WorldPosition().y + onto.size.y;
 
 	return ( floor <= foot && foot - checkLength <= floor );
 }
 Donya::Vector3 Actor::GetPosition() const
 {
-	return pos + hitBox.pos;
+	return body.WorldPosition();
 }
-Donya::Collision::Box3F Actor::GetWorldHitBox() const
+Donya::Collision::Box3F Actor::GetHitBox() const
 {
-	Donya::Collision::Box3F tmp = hitBox;
-	tmp.pos += GetPosition();
-	return tmp;
+	return body;
 }
 void Actor::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
 {
-	const auto drawBox = GetWorldHitBox();
-	DrawCube( pRenderer, MakeWorldMatrix( drawBox ), VP, color );
+	DrawCube( pRenderer, MakeWorldMatrix( body ), VP, color );
 }
 
 
@@ -251,14 +244,12 @@ void Solid2D::Move( const Donya::Int2		&sourceMovement, const std::vector<Actor2
 }
 void Solid2D::Move( const Donya::Vector2	&sourceMovement, const std::vector<Actor2D *> &affectedActor2DPtrs, const std::vector<Donya::Collision::Box2> &solids )
 {
-	const Donya::Collision::Box2 oldBody = GetWorldHitBox();
-
 	// Store riding actors. This process must do before the move(if do it after the move, we may be out of riding range).
 	std::vector<Actor2D *> ridingActor2DPtrs{};
 	for ( const auto &it : affectedActor2DPtrs )
 	{
 		if ( !it ) { continue; }
-		if ( !it->IsRiding( oldBody ) ) { continue; }
+		if ( !it->IsRiding( body ) ) { continue; }
 		// else
 
 		ridingActor2DPtrs.emplace_back( it );
@@ -286,13 +277,13 @@ void Solid2D::Move( const Donya::Vector2	&sourceMovement, const std::vector<Acto
 		// else
 
 		remainder -= movement;
-		pos[axis] += scast<int>( movement );
+		body.pos[axis] += scast<int>( movement );
 
-		const Donya::Collision::Box2 movedBody = GetWorldHitBox();
+		const Donya::Collision::Box2 movedBody = body;
 
 		// Makes an actor that moved by me will ignore me.
 		// so the actor will not consider to collide to me.
-		hitBox.exist = false;
+		body.exist = false;
 
 		// Pushing and Carrying actors
 		Donya::Collision::Box2 actorBody{};
@@ -311,7 +302,7 @@ void Solid2D::Move( const Donya::Vector2	&sourceMovement, const std::vector<Acto
 				}
 			};
 
-			actorBody = it->GetWorldHitBox();
+			actorBody = it->GetHitBox();
 			if ( Donya::Collision::IsHit( actorBody, movedBody ) )
 			{
 				// Push the actor
@@ -338,7 +329,7 @@ void Solid2D::Move( const Donya::Vector2	&sourceMovement, const std::vector<Acto
 			}
 		}
 
-		hitBox.exist = true;
+		body.exist = true;
 	};
 
 	MovePerAxis( Dimension::X );
@@ -346,40 +337,34 @@ void Solid2D::Move( const Donya::Vector2	&sourceMovement, const std::vector<Acto
 }
 Donya::Int2 Solid2D::GetPosition() const
 {
-	return pos + hitBox.pos;
+	return body.WorldPosition();
 }
 Donya::Vector2 Solid2D::GetPositionFloat() const
 {
 	return GetPosition().Float() + posRemainder;
 }
-Donya::Collision::Box2 Solid2D::GetWorldHitBox() const
+Donya::Collision::Box2  Solid2D::GetHitBox() const
 {
-	Donya::Collision::Box2 tmp;
-	tmp.pos		= GetPosition();
-	tmp.size	= hitBox.size;
-	tmp.exist	= hitBox.exist;
-	return tmp;
+	return body;
 }
-Donya::Collision::Box2F Solid2D::GetWorldHitBoxFloat() const
+Donya::Collision::Box2F Solid2D::GetHitBoxFloat() const
 {
-	return ToFloat( GetWorldHitBox(), posRemainder );
+	return ToFloat( body, posRemainder );
 }
 bool Solid2D::DrawHitBox( const Donya::Vector4 &color ) const
 {
-	const auto drawBoxF = GetWorldHitBoxFloat();
+	const auto drawBoxF = GetHitBoxFloat();
 	return DrawHitBoxImpl( drawBoxF, color );
 }
 
 void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box3F> &solids )
 {
-	const Donya::Collision::Box3F oldBody = GetWorldHitBox();
-
 	// Store riding actors. This process must do before the move(if do it after the move, we may be out of riding range).
 	std::vector<Actor *> ridingActorPtrs{};
 	for ( const auto &it : affectedActorPtrs )
 	{
 		if ( !it ) { continue; }
-		if ( !it->IsRiding( oldBody ) ) { continue; }
+		if ( !it->IsRiding( body ) ) { continue; }
 		// else
 
 		ridingActorPtrs.emplace_back( it );
@@ -403,13 +388,13 @@ void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor 
 		if ( IsZero( movement ) ) { return; }
 		// else
 
-		pos[axis] += movement;
+		body.pos[axis] += movement;
 
-		const Donya::Collision::Box3F movedBody = GetWorldHitBox();
+		const Donya::Collision::Box3F movedBody = body;
 
 		// Makes an actor that moved by me will ignore me.
 		// so the actor will not consider to collide to me.
-		hitBox.exist = false;
+		body.exist = false;
 
 		// Pushing and Carrying actors
 		Donya::Collision::Box3F actorBody{};
@@ -429,7 +414,7 @@ void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor 
 				}
 			};
 
-			actorBody = it->GetWorldHitBox();
+			actorBody = it->GetHitBox();
 			if ( Donya::Collision::IsHit( actorBody, movedBody ) )
 			{
 				// Push the actor
@@ -456,7 +441,7 @@ void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor 
 			}
 		}
 
-		hitBox.exist = true;
+		body.exist = true;
 	};
 
 	MovePerAxis( Dimension::X );
@@ -465,16 +450,13 @@ void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor 
 }
 Donya::Vector3 Solid::GetPosition() const
 {
-	return pos + hitBox.pos;
+	return body.WorldPosition();
 }
-Donya::Collision::Box3F Solid::GetWorldHitBox() const
+Donya::Collision::Box3F Solid::GetHitBox() const
 {
-	Donya::Collision::Box3F tmp = hitBox;
-	tmp.pos += GetPosition();
-	return tmp;
+	return body;
 }
 void Solid::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
 {
-	const auto drawBox = GetWorldHitBox();
-	DrawCube( pRenderer, MakeWorldMatrix( drawBox ), VP, color );
+	DrawCube( pRenderer, MakeWorldMatrix( body ), VP, color );
 }

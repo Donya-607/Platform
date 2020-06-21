@@ -101,8 +101,7 @@ private:
 		MotionKind CalcNowKind( Player &instance ) const;
 	};
 private:
-	using Actor::pos;
-	using Actor::hitBox;				// VS a terrain
+	using Actor::body;					// VS a terrain
 	Donya::Collision::Box3F	hurtBox;	// VS an attack
 	Donya::Vector3			velocity;	// Z element is almost unused.
 	Donya::Quaternion		orientation;
@@ -120,9 +119,9 @@ public:
 	void Draw( RenderingHelper *pRenderer );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
 public:
-	using Actor::GetWorldHitBox;
-	Donya::Collision::Box3F	GetWorldHurtBox() const;
-	Donya::Quaternion		GetOrientation() const;
+	using Actor::GetHitBox;
+	Donya::Collision::Box3F	GetHurtBox()		const;
+	Donya::Quaternion		GetOrientation()	const;
 private:
 	using Actor::MoveX;
 	using Actor::MoveY;

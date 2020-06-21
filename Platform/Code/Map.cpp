@@ -9,11 +9,11 @@
 
 void Tile::Init( const Donya::Vector3 &wsTilePos, const Donya::Vector3 &wsTileWholeSize, const Donya::Int2 &texCoordOffset )
 {
-	pos				= wsTilePos;
-	hitBox.pos		= Donya::Vector3::Zero();
-	hitBox.size		= wsTileWholeSize * 0.5f;
-	hitBox.exist	= true;
-	texOffset		= texCoordOffset;
+	body.pos	= wsTilePos;
+	body.offset	= Donya::Vector3::Zero();
+	body.size	= wsTileWholeSize * 0.5f;
+	body.exist	= true;
+	texOffset	= texCoordOffset;
 }
 void Tile::Uninit() {}
 void Tile::Update( float elapsedTime ) {}
@@ -25,12 +25,13 @@ void Tile::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP
 #if DEBUG_MODE
 	Donya::Model::Cube::Constant constant;
 	auto &W = constant.matWorld;
-	W._11 = hitBox.size.x * 2.0f;
-	W._22 = hitBox.size.y * 2.0f;
-	W._33 = hitBox.size.z * 2.0f;
-	W._41 = pos.x + hitBox.pos.x;
-	W._42 = pos.y + hitBox.pos.y;
-	W._43 = pos.z + hitBox.pos.z;
+	const auto wsPos = body.WorldPosition();
+	W._11 = body.size.x * 2.0f;
+	W._22 = body.size.y * 2.0f;
+	W._33 = body.size.z * 2.0f;
+	W._41 = wsPos.x;
+	W._42 = wsPos.y;
+	W._43 = wsPos.z;
 	constant.matViewProj	= matVP;
 	constant.drawColor		= { 0.8f, 0.8f, 0.8f, 0.6f };
 	constant.lightDirection	= -Donya::Vector3::Up();
@@ -44,9 +45,8 @@ void Tile::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::DragFloat3( u8"ワールド座標",			&pos.x, 0.01f );
-	ImGui::Helper::ShowAABBNode( u8"当たり判定",	&hitBox );
-	ImGui::DragInt2  ( u8"テクスチャオフセット",	&texOffset.x );
+	ImGui::Helper::ShowAABBNode( u8"体",			&body );
+	ImGui::DragInt2( u8"テクスチャオフセット",	&texOffset.x );
 
 	ImGui::TreePop();
 }
@@ -129,7 +129,9 @@ const std::vector<Tile> &Map::GetTiles() const
 }
 bool Map::LoadMap( int stageNumber, bool fromBinary )
 {
-	const std::string filePath = MakeStageParamPathBinary( ID, stageNumber );
+	const std::string filePath	= ( fromBinary )
+								? MakeStageParamPathBinary( ID, stageNumber )
+								: MakeStageParamPathJson  ( ID, stageNumber );
 	return Donya::Serializer::Load( *this, filePath.c_str(), ID, fromBinary );
 }
 #if USE_IMGUI

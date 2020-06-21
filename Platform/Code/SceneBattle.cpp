@@ -129,39 +129,6 @@ void SceneBattle::Init()
 	pPlayer->Init( data.testPlayerInit );
 
 	CameraInit();
-
-#if DEBUG_MODE
-	// Temporary process, unnecessary
-	{
-		// Generate test solids
-		constexpr float halfSize = 0.5f;
-		constexpr Donya::Vector3 base  {-halfSize * 2.0f, 0.0f, 0.0f };
-		constexpr Donya::Vector3 offset{ halfSize * 2.0f, 0.0f, 0.0f };
-		constexpr Donya::Vector3 points[]
-		{
-			base + ( offset * 0.0f ),
-			base + ( offset * 1.0f ),
-			base + ( offset * 2.0f ),
-			base + ( offset * 3.0f ),
-			base + ( offset * 4.0f ),
-			base + ( offset * 5.0f ),
-			base + ( offset * 6.0f ),
-		};
-		for ( const auto &it : points )
-		{
-			Solid tmp{};
-			tmp.pos			= it;
-			tmp.hitBox.pos	= 0;
-			tmp.hitBox.size	= halfSize;
-			solids.emplace_back( std::move( tmp ) );
-		}
-
-		actor.pos			= 0.0f;
-		actor.pos.y			= 3.0f;
-		actor.hitBox.size	= halfSize;
-		actorVelocity		= 0.0f;
-	}
-#endif // DEBUG_MODE
 }
 void SceneBattle::Uninit()
 {
@@ -270,7 +237,7 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 			const auto &tiles = pMap->GetTiles();
 			for ( const auto &it : tiles )
 			{
-				hitBoxes.emplace_back( it.GetWorldHitBox() );
+				hitBoxes.emplace_back( it.GetHitBox() );
 			}
 		}
 

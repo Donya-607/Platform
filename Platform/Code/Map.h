@@ -19,8 +19,7 @@
 class Tile : public Solid
 {
 private:
-	using Solid::pos;
-	using Solid::hitBox;
+	using Solid::body;
 	Donya::Int2 texOffset;	// Texture space, Left-Top
 private:
 	friend class cereal::access;

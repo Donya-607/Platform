@@ -23,9 +23,8 @@ public:
 	/// </summary>
 	static int MoveAxis( Actor2D *pTarget, int moveDimension, float movement, const std::vector<Donya::Collision::Box2> &solids );
 public:
-	Donya::Int2				pos;
 	Donya::Vector2			posRemainder;
-	Donya::Collision::Box2	hitBox;			// The "pos" acts as an offset.
+	Donya::Collision::Box2	body;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -33,9 +32,8 @@ private:
 	{
 		archive
 		(
-			CEREAL_NVP( pos				),
 			CEREAL_NVP( posRemainder	),
-			CEREAL_NVP( hitBox			)
+			CEREAL_NVP( body			)
 		);
 		if ( 1 <= version )
 		{
@@ -58,10 +56,10 @@ public:
 	/// </summary>
 	virtual void Squish() {}
 public:
-	virtual Donya::Int2				GetPosition()			const;
-	virtual Donya::Vector2			GetPositionFloat()		const;
-	virtual Donya::Collision::Box2	GetWorldHitBox()		const;
-	virtual Donya::Collision::Box2F	GetWorldHitBoxFloat()	const;
+	virtual Donya::Int2				GetPosition()		const;
+	virtual Donya::Vector2			GetPositionFloat()	const;
+	virtual Donya::Collision::Box2	GetHitBox()			const;
+	virtual Donya::Collision::Box2F	GetHitBoxFloat()	const;
 public:
 	/// <summary>
 	/// A drawing origin will be regarded as a center. Returns drawing result.
@@ -81,18 +79,13 @@ public:
 	/// </summary>
 	static int MoveAxis( Actor *pTarget, int moveDimension, float movement, const std::vector<Donya::Collision::Box3F> &solids );
 public:
-	Donya::Vector3			pos;
-	Donya::Collision::Box3F	hitBox;	// The "pos" acts as an offset.
+	Donya::Collision::Box3F	body;
 private:
 	friend class cereal::access;
 	template<class Archive>
 	void serialize( Archive &archive, std::uint32_t version )
 	{
-		archive
-		(
-			CEREAL_NVP( pos		),
-			CEREAL_NVP( hitBox	)
-		);
+		archive( CEREAL_NVP( body ) );
 		if ( 1 <= version )
 		{
 			// archive();
@@ -118,8 +111,8 @@ public:
 	/// </summary>
 	virtual void Squish() {}
 public:
-	virtual Donya::Vector3			GetPosition()		const;
-	virtual Donya::Collision::Box3F	GetWorldHitBox()	const;
+	virtual Donya::Vector3			GetPosition()	const;
+	virtual Donya::Collision::Box3F	GetHitBox()		const;
 public:
 	/// <summary>
 	/// A drawing origin will be regarded as a center. Returns drawing result.
@@ -135,9 +128,8 @@ CEREAL_CLASS_VERSION( Actor, 0 );
 class Solid2D
 {
 public:
-	Donya::Int2				pos;
 	Donya::Vector2			posRemainder;
-	Donya::Collision::Box2	hitBox;			// The "pos" acts as an offset.
+	Donya::Collision::Box2	body;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -145,9 +137,8 @@ private:
 	{
 		archive
 		(
-			CEREAL_NVP( pos				),
 			CEREAL_NVP( posRemainder	),
-			CEREAL_NVP( hitBox			)
+			CEREAL_NVP( body			)
 		);
 		if ( 1 <= version )
 		{
@@ -164,10 +155,10 @@ public:
 	/// </summary>
 	void Move( const Donya::Vector2	&movement, const std::vector<Actor2D *> &affectedActorPtrs, const std::vector<Donya::Collision::Box2> &solids );
 public:
-	Donya::Int2				GetPosition()			const;
-	Donya::Vector2			GetPositionFloat()		const;
-	Donya::Collision::Box2	GetWorldHitBox()		const;
-	Donya::Collision::Box2F	GetWorldHitBoxFloat()	const;
+	Donya::Int2				GetPosition()		const;
+	Donya::Vector2			GetPositionFloat()	const;
+	Donya::Collision::Box2	GetHitBox()			const;
+	Donya::Collision::Box2F	GetHitBoxFloat()	const;
 public:
 	/// <summary>
 	/// A drawing origin will be regarded as a center. Returns drawing result.
@@ -182,18 +173,13 @@ CEREAL_CLASS_VERSION( Solid2D, 0 );
 class Solid
 {
 public:
-	Donya::Vector3			pos;
-	Donya::Collision::Box3F	hitBox;	// The "pos" acts as an offset.
+	Donya::Collision::Box3F body;
 private:
 	friend class cereal::access;
 	template<class Archive>
 	void serialize( Archive &archive, std::uint32_t version )
 	{
-		archive
-		(
-			CEREAL_NVP( pos		),
-			CEREAL_NVP( hitBox	)
-		);
+		archive( CEREAL_NVP( body ) );
 		if ( 1 <= version )
 		{
 			// archive();
@@ -205,8 +191,8 @@ public:
 	/// </summary>
 	void Move( const Donya::Vector3	&movement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box3F> &solids );
 public:
-	Donya::Vector3			GetPosition()		const;
-	Donya::Collision::Box3F	GetWorldHitBox()	const;
+	Donya::Vector3			GetPosition()	const;
+	Donya::Collision::Box3F	GetHitBox()		const;
 public:
 	/// <summary>
 	/// A drawing origin will be regarded as a center. Returns drawing result.
