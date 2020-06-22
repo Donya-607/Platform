@@ -67,6 +67,33 @@ namespace ImGui
 	
 	namespace Helper
 	{
+		void ShowEaseParam ( const std::string &nodeCaption, Donya::Easing::Kind *pKind, Donya::Easing::Type *pType )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			using namespace Donya;
+
+			int intKind = scast<int>( *pKind );
+			int intType = scast<int>( *pType );
+
+			std::string name{};
+			name =  u8"現在：";
+			name += u8"[";
+			name += Easing::KindName( intKind );
+			name += u8":";
+			name += Easing::TypeName( intType );
+			name += u8"]";
+			ImGui::Text( name.c_str() );
+
+			ImGui::SliderInt( u8"種類",		&intKind, 0, Easing::GetKindCount() - 1 );
+			ImGui::SliderInt( u8"タイプ",	&intType, 0, Easing::GetTypeCount() - 1 );
+
+			*pKind = scast<Easing::Kind>( intKind );
+			*pType = scast<Easing::Type>( intType );
+
+			ImGui::TreePop();
+		}
 		void ShowAABBNode  ( const std::string &nodeCaption, Donya::Collision::Box3F	*p )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }

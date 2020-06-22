@@ -51,12 +51,28 @@ namespace ImGui
 
 }
 #include "Collision.h"
+#include "Easing.h"
 namespace ImGui
 {
 	namespace Helper
 	{
+		void ShowEaseParam( const std::string &nodeCaption, Donya::Easing::Kind *pKind, Donya::Easing::Type *pType );
+
 		void ShowAABBNode  ( const std::string &nodeCaption, Donya::Collision::Box3F	*pBox );
 		void ShowSphereNode( const std::string &nodeCaption, Donya::Collision::Sphere3F	*pSphere );
+
+		template<class T>
+		void ResizeByButton( std::vector<T> *p, const T &initializeValue = T{}, const char *captionAppend = u8"’Ç‰Á", const char *captionPop = u8"––”ö‚ðíœ" )
+		{
+			if ( ImGui::Button( captionAppend ) )
+			{
+				p->emplace_back( initializeValue );
+			}
+			if ( p->size() && ImGui::Button( captionPop ) )
+			{
+				p->pop_back();
+			}
+		}
 	}
 }
 

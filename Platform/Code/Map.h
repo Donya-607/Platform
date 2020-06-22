@@ -24,6 +24,9 @@ public:
 private:
 	using Solid::body;
 	Donya::Int2 texOffset;	// Texture space, Left-Top
+#if USE_IMGUI
+	bool wantRemove = false;
+#endif // USE_IMGUI
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -44,6 +47,8 @@ public:
 	void Uninit();
 	void Update( float elapsedTime );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
+public:
+	bool ShouldRemove() const;
 public:
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption );
@@ -115,6 +120,7 @@ public:
 public:
 	const std::vector<Tile> &GetTiles() const;
 private:
+	void RemoveTiles();
 	bool LoadMap( int stageNumber, bool fromBinary );
 #if USE_IMGUI
 	void SaveMap( int stageNumber, bool fromBinary );

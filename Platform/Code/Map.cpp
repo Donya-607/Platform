@@ -1,5 +1,7 @@
 #include "Map.h"
 
+#include <algorithm>		// Use remove_if
+
 #include "Donya/Sprite.h"
 #include "Donya/Constant.h"	// Use scast macro
 
@@ -40,11 +42,21 @@ void Tile::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP
 	pRenderer->ProcessDrawingCube( constant );
 #endif // DEBUG_MODE
 }
+bool Tile::ShouldRemove() const
+{
+#if USE_IMGUI
+	if ( wantRemove ) { return true; }
+	// else
+#endif // USE_IMGUI
+	return false;
+}
 #if USE_IMGUI
 void Tile::ShowImGuiNode( const std::string &nodeCaption )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
+
+	wantRemove = ImGui::Button( ( nodeCaption + u8"を削除" ).c_str() );
 
 	ImGui::Helper::ShowAABBNode( u8"体",			&body );
 	ImGui::DragInt2( u8"テクスチャオフセット",	&texOffset.x );
@@ -62,7 +74,6 @@ namespace
 	constexpr bool IOFromBinaryFile = true;
 #endif // DEBUG_MODE
 }
-
 
 #if DEBUG_MODE
 void Map::EditOperator::Init( int stageNumber )
@@ -101,7 +112,6 @@ Donya::Vector4x4 Map::EditOperator::MakeScreenTransformMatrix( const Donya::Vect
 	return matViewProjection * matViewport;
 }
 #endif // DEBUG_MODE
-
 
 bool Map::Init( int stageNumber )
 {
@@ -152,7 +162,14 @@ void Map::Update( float elapsedTime )
 	for ( auto &it : tiles )
 	{
 		it.Update( elapsedTime );
+
+		if ( it.ShouldRemove() )
+		{
+			it.Uninit();
+		}
 	}
+
+	RemoveTiles();
 }
 void Map::Draw( RenderingHelper *pRenderer ) const
 {
@@ -187,6 +204,18 @@ const std::vector<Tile> &Map::GetTiles() const
 {
 	return tiles;
 }
+void Map::RemoveTiles()
+{
+	auto itr = std::remove_if
+	(
+		tiles.begin(), tiles.end(),
+		[]( Tile &element )
+		{
+			return element.ShouldRemove();
+		}
+	);
+	tiles.erase( itr, tiles.end() );
+}
 bool Map::LoadMap( int stageNumber, bool fromBinary )
 {
 	const std::string filePath	= ( fromBinary )
@@ -209,6 +238,29 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
+
+	if ( ImGui::TreeNode( u8"実体操作" ) )
+	{
+		// Resize
+		{
+		constexpr float				wholeSize = Tile::unitWholeSize;
+		constexpr Donya::Vector3	wsPos = Donya::Vector3::Zero();
+		constexpr Donya::Int2		texOrigin{ 0, 0 };
+		Tile ctorArg;
+		ctorArg.Init( wsPos, wholeSize, texOrigin );
+		ImGui::Helper::ResizeByButton( &tiles, ctorArg );
+	}
+
+		std::string caption;
+		const size_t count = tiles.size();
+		for ( size_t i = 0; i < count; ++i )
+		{
+			caption = Donya::MakeArraySuffix( i );
+			tiles[i].ShowImGuiNode( caption );
+		}
+
+		ImGui::TreePop();
+	}
 
 	const auto result = ParameterHelper::ShowIONode();
 	using Op = ParameterHelper::IOOperation;

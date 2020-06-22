@@ -132,6 +132,11 @@ namespace Donya
 	/// MakeArraySuffix( -1 ) returns "[-1]".
 	/// </summary>
 	std::string MakeArraySuffix( int index );
+	/// <summary>
+	/// MakeArraySuffix( 2 ) returns "[2]".
+	/// MakeArraySuffix( -1 ) returns "[-1]".
+	/// </summary>
+	std::string MakeArraySuffix( size_t index );
 
 #pragma region Convert Character Functions
 

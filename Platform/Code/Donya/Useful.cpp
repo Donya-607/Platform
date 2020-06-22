@@ -103,9 +103,18 @@ namespace Donya
 		return digits;
 	}
 
-	std::string MakeArraySuffix( int index )
+	template<typename T>
+	std::string MakeArraySuffixImpl( T index )
 	{
 		return std::string{ "[" + std::to_string( index ) + "]" };
+	}
+	std::string MakeArraySuffix( int index )
+	{
+		return MakeArraySuffixImpl( index );
+	}
+	std::string MakeArraySuffix( size_t index )
+	{
+		return MakeArraySuffixImpl( index );
 	}
 
 #pragma region Convert Character Functions
