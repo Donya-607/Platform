@@ -6,7 +6,7 @@
 #include "Donya/Sprite.h"	// For change the sprites depth.
 
 #include "Fader.h"
-#include "SceneBattle.h"
+#include "SceneGame.h"
 #include "SceneLoad.h"
 #include "SceneLogo.h"
 #include "SceneTitle.h"
