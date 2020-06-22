@@ -2,8 +2,9 @@
 
 #include <algorithm>		// Use remove_if
 
-#include "Donya/Sprite.h"
 #include "Donya/Constant.h"	// Use scast macro
+#include "Donya/Mouse.h"
+#include "Donya/Sprite.h"
 
 #include "Common.h"			// Use IsShowCollision()
 #include "FilePath.h"
@@ -75,50 +76,16 @@ namespace
 #endif // DEBUG_MODE
 }
 
-#if DEBUG_MODE
-void Map::EditOperator::Init( int stageNumber )
-{
-	mode = Mode::NotEnabled;
-
-	gridline.Init();
-	// My prefer initial settings.
-	gridline.SetDrawOrigin  ( { 0.0f,	0.0f,	0.0f } );
-	gridline.SetDrawLength  ( { 16.0f,	64.0f } );
-	gridline.SetDrawInterval( {  1.0f,	 1.0f } );
-}
-void Map::EditOperator::Uninit()
-{
-	gridline.Uninit();
-}
-void Map::EditOperator::Activate()
-{
-	mode = Mode::Placement;
-}
-void Map::EditOperator::Deactivate()
-{
-	mode = Mode::NotEnabled;
-}
-void Map::EditOperator::Update( float elapsedTime, const Donya::Int2 &mousePos, const Donya::Vector4x4 &matVP )
-{
-
-}
-void Map::EditOperator::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP )
-{
-	gridline.Draw( matVP );
-}
-Donya::Vector4x4 Map::EditOperator::MakeScreenTransformMatrix( const Donya::Vector4x4 &matViewProjection )
-{
-	const Donya::Vector4x4 matViewport = Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
-	return matViewProjection * matViewport;
-}
-#endif // DEBUG_MODE
-
 bool Map::Init( int stageNumber )
 {
 	const bool succeeded = LoadMap( stageNumber, IOFromBinaryFile );
 
 #if DEBUG_MODE
-	editOperator.Init( stageNumber );
+	// const std::string filePath = ( IOFromBinaryFile )
+	// 	? MakeStageParamPathBinary( ID, stageNumber )
+	// 	: MakeStageParamPathJson  ( ID, stageNumber );
+	constexpr const char *filePath = "./Data/TestMap.csv";
+	loader.Load( filePath );
 
 	// Generate test solids
 	if ( tiles.empty() )
@@ -182,24 +149,6 @@ void Map::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matV
 		it.DrawHitBox( pRenderer, matVP );
 	}
 }
-#if DEBUG_MODE
-void Map::ActivateEditorMode()
-{
-	editOperator.Activate();
-}
-void Map::DeactivateEditorMode()
-{
-	editOperator.Deactivate();
-}
-void Map::EditorUpdate( float elapsedTime, const Donya::Int2 &mousePos, const Donya::Vector4x4 &matVP )
-{
-	editOperator.Update( elapsedTime, mousePos, matVP );
-}
-void Map::EditorDraw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP )
-{
-	editOperator.Draw( pRenderer, matVP );
-}
-#endif // DEBUG_MODE
 const std::vector<Tile> &Map::GetTiles() const
 {
 	return tiles;
@@ -238,6 +187,30 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
+
+	if ( ImGui::TreeNode( u8"CSVÉçÅ[É_ÇÃíÜêg" ) )
+	{
+		const auto &data = loader.Get();
+		
+		std::string line;
+		const size_t rowCount = data.size();
+		for ( size_t r = 0; r < rowCount; ++r )
+		{
+			line = "";
+
+			const size_t columnCount = data[r].size();
+			for ( size_t c = 0; c < columnCount; ++c )
+			{
+				const auto &cell = data[r][c];
+				line += cell;
+				line += ",";
+			}
+
+			ImGui::Text( line.c_str() );
+		}
+		
+		ImGui::TreePop();
+	}
 
 	if ( ImGui::TreeNode( u8"é¿ëÃëÄçÏ" ) )
 	{

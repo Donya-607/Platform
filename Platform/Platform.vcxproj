@@ -134,6 +134,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Code\Common.cpp" />
+    <ClCompile Include="Code\CSVLoader.cpp" />
     <ClCompile Include="Code\Donya\AudioSystem.cpp" />
     <ClCompile Include="Code\Donya\Blend.cpp" />
     <ClCompile Include="Code\Donya\Camera.cpp" />
@@ -193,6 +194,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Common.h" />
+    <ClInclude Include="Code\CSVLoader.h" />
     <ClInclude Include="Code\Donya\AudioSystem.h" />
     <ClInclude Include="Code\Donya\Benchmark.h" />
     <ClInclude Include="Code\Donya\Blend.h" />

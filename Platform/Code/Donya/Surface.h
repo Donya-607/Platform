@@ -18,21 +18,20 @@ namespace Donya
 		bool wasCreated{ false };
 		Donya::Int2 wholeSize{ -1, -1 };
 
-		mutable unsigned int	slotVS{};	// Store a specified slot of VS. Use for reset the shader-resource.
-		mutable unsigned int	slotPS{};	// Store a specified slot of PS. Use for reset the shader-resource.
-		mutable unsigned int	slotGS{};	// Store a specified slot of GS. Use for reset the shader-resource.
-		mutable D3D11_VIEWPORT	viewport{};
+		mutable D3D11_VIEWPORT viewport{};
 
 		template<typename T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 		mutable ComPtr<ID3D11RenderTargetView>		pRTV{};
+		mutable ComPtr<ID3D11ShaderResourceView>	pRTSRV{};
 		mutable ComPtr<ID3D11DepthStencilView>		pDSV{};
-		mutable ComPtr<ID3D11ShaderResourceView>	pSRV{};
+		mutable ComPtr<ID3D11ShaderResourceView>	pDSSRV{};
 	public:
 		/// <summary>
 		/// Returns true if the initialization was succeeded, or already initialized.<para></para>
+		/// If you set DXGI_UNKNOWN to format, that parameter is not create.<para></para>
 		/// If set nullptr to pDevice, a default device will be used.
 		/// </summary>
-		bool Init( int wholeWidth, int wholeHeight, DXGI_FORMAT renderTargetFormat, ID3D11Device *pDevice = nullptr );
+		bool Init( int wholeWidth, int wholeHeight, DXGI_FORMAT renderTargetTexture2DFormat, bool needRenderTargetSRV = true, DXGI_FORMAT depthStencilTexture2DFormat = DXGI_FORMAT_R24G8_TYPELESS, bool needDepthStencilSRV = true, ID3D11Device *pDevice = nullptr );
 		/// <summary>
 		/// Returns true if already initialized.
 		/// </summary>
@@ -47,9 +46,13 @@ namespace Donya
 		/// </summary>
 		Donya::Vector2	GetSurfaceSizeF() const;
 		/// <summary>
-		/// Returns shader-resource view with the com-pointer.
+		/// Returns render-target's shader-resource view with the com-pointer.
 		/// </summary>
-		ComPtr<ID3D11ShaderResourceView> GetShaderResourceView() const;
+		ComPtr<ID3D11ShaderResourceView> GetRenderTargetShaderResource() const;
+		/// <summary>
+		/// Returns depth-stencil's shader-resource view with the com-pointer.
+		/// </summary>
+		ComPtr<ID3D11ShaderResourceView> GetDepthStencilShaderResource() const;
 	public:
 		/// <summary>
 		/// Set render-target to me.<para></para>
@@ -73,45 +76,60 @@ namespace Donya
 		void Clear( Donya::Color::Code clearColor, float alpha = 1.0f, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
 	public:
 		/// <summary>
-		/// Set my shader-resource view to vertex-shader.<para></para>
+		/// Set render-target's shader-resource view to vertex-shader.<para></para>
 		/// If set nullptr to pImmediateContext, a default device will be used.
 		/// </summary>
-		void SetShaderResourceVS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void SetRenderTargetShaderResourceVS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		/// <summary>
+		/// Set depth-stencil's shader-resource view to vertex-shader.<para></para>
+		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// </summary>
+		void SetDepthStencilShaderResourceVS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		/// <summary>
+		/// Set render-target's shader-resource view to geometry-shader.<para></para>
+		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// </summary>
+		void SetRenderTargetShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		/// <summary>
+		/// Set depth-stencil's shader-resource view to geometry-shader.<para></para>
+		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// </summary>
+		void SetDepthStencilShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		/// <summary>
+		/// Set render-target's shader-resource view to pixel-shader.<para></para>
+		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// </summary>
+		void SetRenderTargetShaderResourcePS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		/// <summary>
+		/// Set depth-stencil's shader-resource view to pixel-shader.<para></para>
+		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// </summary>
+		void SetDepthStencilShaderResourcePS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
 		/// <summary>
 		/// Set the NULL shader-resource view to vertex-shader.<para></para>
 		/// If set nullptr to pImmediateContext, a default device will be used.
 		/// </summary>
-		void ResetShaderResourceVS( ID3D11DeviceContext *pImmediateContext = nullptr ) const;
-
-		/// <summary>
-		/// Set my shader-resource view to pixel-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
-		/// </summary>
-		void SetShaderResourcePS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void ResetShaderResourceVS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
 		/// <summary>
 		/// Set the NULL shader-resource view to pixel-shader.<para></para>
 		/// If set nullptr to pImmediateContext, a default device will be used.
 		/// </summary>
-		void ResetShaderResourcePS( ID3D11DeviceContext *pImmediateContext = nullptr ) const;
-
-		/// <summary>
-		/// Set my shader-resource view to geometry-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
-		/// </summary>
-		void SetShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void ResetShaderResourcePS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
 		/// <summary>
 		/// Set the NULL shader-resource view to geometry-shader.<para></para>
 		/// If set nullptr to pImmediateContext, a default device will be used.
 		/// </summary>
-		void ResetShaderResourceGS( ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void ResetShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
 	public:
 	#if USE_IMGUI
-
 		/// <summary>
 		/// Only call ImGui::Image(), so you should call this between ImGui::Begin() and ImGui::End().
 		/// </summary>
-		void RenderToImGui( const Donya::Vector2 drawSize ) const;
-
+		void DrawRenderTargetToImGui( const Donya::Vector2 drawSize ) const;
+		/// <summary>
+		/// Only call ImGui::Image(), so you should call this between ImGui::Begin() and ImGui::End().
+		/// </summary>
+		void DrawDepthStencilToImGui( const Donya::Vector2 drawSize ) const;
 	#endif // USE_IMGUI
 	};
 }

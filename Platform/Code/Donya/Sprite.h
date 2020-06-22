@@ -55,7 +55,7 @@ namespace Donya
 		float GetDrawDepth();
 
 		/// <summary>
-		/// This class roles showing a texture(shader-resource view, or Donya::Surface).
+		/// This class roles showing a texture(shader-resource view).
 		/// </summary>
 		class Display
 		{
@@ -67,8 +67,11 @@ namespace Donya
 				DirectX::XMFLOAT2 texCoord;
 			};
 		private:
-			bool wasInitialized;
-
+			bool wasInitialized		= false;
+			bool useDefaultShader	= true;
+			bool useDefaultSampler	= true;
+			int  SRVSlot			= 0;		// It will valid when useDefaultShader is false.
+			
 			// This mutable modifier is for modify to const the draw methods.
 			mutable Microsoft::WRL::ComPtr<ID3D11Buffer> pVertexBuffer;
 		public:
@@ -78,6 +81,27 @@ namespace Donya
 			/// </summary>
 			bool Init( ID3D11Device *pDevice = nullptr );
 			void Uninit();
+		public:
+			/// <summary>
+			/// I will set default shader in Draw.
+			/// </summary>
+			void EnableDefaultShader();
+			/// <summary>
+			/// I will set default sampler in Draw.
+			/// </summary>
+			void EnableDefaultSampler();
+			/// <summary>
+			/// I will not set default shader in Draw. So you must set the shader before call Draw.
+			/// </summary>
+			void DisableDefaultShader();
+			/// <summary>
+			/// I will not set default sampler in Draw. So you must set the sampler before call Draw.
+			/// </summary>
+			void DisableDefaultSampler();
+			/// <summary>
+			/// This value will valid when the default shader is disabled(DisableDefaultShader() was called).
+			/// </summary>
+			void SpecifySRVSlot( unsigned int setSlot );
 		public:
 		#pragma region Normal
 			/// <summary>
@@ -95,37 +119,11 @@ namespace Donya
 			) const;
 			/// <summary>
 			/// Drawing size is sprite size.<para></para>
-			/// Texture origin is left-top(0, 0), using whole size.<para></para>
-			/// Colors are 1.0f.
-			/// </summary>
-			bool Draw
-			(
-				const Donya::Surface &surface,
-				const Donya::Vector2 &screenSpacePosition,
-				float degree = 0.0f,
-				float alpha  = 1.0f,
-				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
-			) const;
-			/// <summary>
-			/// Drawing size is sprite size.<para></para>
 			/// Texture origin is left-top(0, 0), using whole size.
 			/// </summary>
 			bool DrawExt
 			(
 				ID3D11ShaderResourceView *pSRV,
-				const Donya::Vector2 &screenSpacePosition,
-				const Donya::Vector2 &scale,
-				float degree = 0.0f,
-				const Donya::Vector4 &colorRGBA = { 1.0f, 1.0f, 1.0f, 1.0f },
-				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
-			) const;
-			/// <summary>
-			/// Drawing size is sprite size.<para></para>
-			/// Texture origin is left-top(0, 0), using whole size.
-			/// </summary>
-			bool DrawExt
-			(
-				const Donya::Surface &surface,
 				const Donya::Vector2 &screenSpacePosition,
 				const Donya::Vector2 &scale,
 				float degree = 0.0f,
@@ -149,37 +147,11 @@ namespace Donya
 				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
 			) const;
 			/// <summary>
-			/// Texture origin is left-top(0, 0), using whole size.<para></para>
-			/// Colors are 1.0f.
-			/// </summary>
-			bool DrawStretched
-			(
-				const Donya::Surface &surface,
-				const Donya::Vector2 &screenSpacePosition,
-				const Donya::Vector2 &screenSpaceWholeSize,
-				float degree = 0.0f,
-				float alpha  = 1.0f,
-				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
-			) const;
-			/// <summary>
 			/// Texture origin is left-top(0, 0), using whole size.
 			/// </summary>
 			bool DrawStretchedExt
 			(
 				ID3D11ShaderResourceView *pSRV,
-				const Donya::Vector2 &screenSpacePosition,
-				const Donya::Vector2 &screenSpaceWholeSize,
-				const Donya::Vector2 &scale,
-				float degree = 0.0f,
-				const Donya::Vector4 &colorRGBA = { 1.0f, 1.0f, 1.0f, 1.0f },
-				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
-			) const;
-			/// <summary>
-			/// Texture origin is left-top(0, 0), using whole size.
-			/// </summary>
-			bool DrawStretchedExt
-			(
-				const Donya::Surface &surface,
 				const Donya::Vector2 &screenSpacePosition,
 				const Donya::Vector2 &screenSpaceWholeSize,
 				const Donya::Vector2 &scale,
@@ -205,39 +177,11 @@ namespace Donya
 				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
 			) const;
 			/// <summary>
-			/// Drawing size is specified texture size.<para></para>
-			/// Colors are 1.0f.
-			/// </summary>
-			bool DrawPart
-			(
-				const Donya::Surface &surface,
-				const Donya::Vector2 &screenSpacePosition,
-				const Donya::Vector2 &textureOriginLeftTop,
-				const Donya::Vector2 &textureWholeSize,
-				float degree = 0.0f,
-				float alpha  = 1.0f,
-				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
-			) const;
-			/// <summary>
 			/// Drawing size is specified texture size.
 			/// </summary>
 			bool DrawPartExt
 			(
 				ID3D11ShaderResourceView *pSRV,
-				const Donya::Vector2 &screenSpacePosition,
-				const Donya::Vector2 &textureOriginLeftTop,
-				const Donya::Vector2 &textureWholeSize,
-				const Donya::Vector2 &scale,
-				float degree = 0.0f,
-				const Donya::Vector4 &colorRGBA = { 1.0f, 1.0f, 1.0f, 1.0f },
-				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
-			) const;
-			/// <summary>
-			/// Drawing size is specified texture size.
-			/// </summary>
-			bool DrawPartExt
-			(
-				const Donya::Surface &surface,
 				const Donya::Vector2 &screenSpacePosition,
 				const Donya::Vector2 &textureOriginLeftTop,
 				const Donya::Vector2 &textureWholeSize,
@@ -267,35 +211,9 @@ namespace Donya
 				float alpha  = 1.0f,
 				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
 			) const;
-			/// <summary>
-			/// Colors are 1.0f.
-			/// </summary>
-			bool DrawGeneral
-			(
-				const Donya::Surface &surface,
-				const Donya::Vector2 &screenSpacePosition,
-				const Donya::Vector2 &screenSpaceWholeSize,
-				const Donya::Vector2 &textureOriginLeftTop,
-				const Donya::Vector2 &textureWholeSize,
-				float degree = 0.0f,
-				float alpha  = 1.0f,
-				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
-			) const;
 			bool DrawGeneralExt
 			(
 				ID3D11ShaderResourceView *pSRV,
-				const Donya::Vector2 &screenSpacePosition,
-				const Donya::Vector2 &screenSpaceWholeSize,
-				const Donya::Vector2 &textureOriginLeftTop,
-				const Donya::Vector2 &textureWholeSize,
-				const Donya::Vector2 &scale,
-				float degree = 0.0f,
-				const Donya::Vector4 &colorRGBA = { 1.0f, 1.0f, 1.0f, 1.0f },
-				const Donya::Vector2 &normOriginCoord = { 0.5f, 0.5f }
-			) const;
-			bool DrawGeneralExt
-			(
-				const Donya::Surface &surface,
 				const Donya::Vector2 &screenSpacePosition,
 				const Donya::Vector2 &screenSpaceWholeSize,
 				const Donya::Vector2 &textureOriginLeftTop,

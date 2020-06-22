@@ -116,6 +116,14 @@ namespace Donya
 			desc.DepthFunc		= D3D11_COMPARISON_LESS_EQUAL;
 			result = CreateState( scast<int>( Defined::Write_PassLessEq ), desc, pDevice );
 			if ( !result ) { succeeded = false; }
+			
+			desc.DepthFunc		= D3D11_COMPARISON_GREATER;
+			result = CreateState( scast<int>( Defined::Write_PassLess ), desc, pDevice );
+			if ( !result ) { succeeded = false; }
+
+			desc.DepthFunc		= D3D11_COMPARISON_GREATER_EQUAL;
+			result = CreateState( scast<int>( Defined::Write_PassLessEq ), desc, pDevice );
+			if ( !result ) { succeeded = false; }
 
 
 			return succeeded;
@@ -357,6 +365,13 @@ namespace Donya
 			
 			desc.BorderColor[3]	= 0.0f;
 			result = CreateState( scast<int>( Defined::Point_Border_Clear ), desc, pDevice );
+			if ( !result ) { succeeded = false; }
+			
+			desc.BorderColor[0] = 1.0f;
+			desc.BorderColor[1] = 1.0f;
+			desc.BorderColor[2] = 1.0f;
+			desc.BorderColor[3]	= 1.0f;
+			result = CreateState( scast<int>( Defined::Point_Border_White ), desc, pDevice );
 			if ( !result ) { succeeded = false; }
 
 			return succeeded;

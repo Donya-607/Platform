@@ -21,6 +21,8 @@ namespace Donya
 		{
 			Write_PassLess		= -1,	// Z-Test:ON. Z-Write:On. Pass if less than Z-buffer.
 			Write_PassLessEq	= -2,	// Z-Test:ON. Z-Write:On. Pass if less equal than Z-buffer.
+			Write_PassGreater	= -3,	// Z-Test:ON. Z-Write:On. Pass if greater than Z-buffer.
+			Write_PassGreaterEq	= -4,	// Z-Test:ON. Z-Write:On. Pass if greater equal than Z-buffer.
 		};
 
 		/// <summary>
@@ -138,6 +140,7 @@ namespace Donya
 			Aniso_Wrap			= -3,	// Filter:Anisotropic. Address:Wrap. Comparison:Never.
 			Point_Border_Black	= -4,	// Filter:Point. Address:Border. BorderColor:(0, 0, 0, 1). Comparison:Never.
 			Point_Border_Clear	= -5,	// Filter:Point. Address:Border. BorderColor:(0, 0, 0, 0). Comparison:Never.
+			Point_Border_White	= -6,	// Filter:Point. Address:Border. BorderColor:(1, 1, 1, 1). Comparison:Never.
 		};
 
 		/// <summary>

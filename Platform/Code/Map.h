@@ -10,7 +10,9 @@
 #include "Donya/Serializer.h"
 #include "Donya/Vector.h"
 
-#include "Grid.h"
+#if DEBUG_MODE
+#include "CSVLoader.h"
+#endif // DEBUG_MODE
 #include "ObjectBase.h"
 
 
@@ -65,33 +67,11 @@ CEREAL_CLASS_VERSION( Tile, 0 )
 class Map
 {
 private:
-	std::vector<Tile> tiles;
-private:
 #if DEBUG_MODE
-	class EditOperator
-	{
-	private:
-		enum class Mode
-		{
-			NotEnabled,
-			Placement,
-		};
-	private:
-		Mode		mode = Mode::NotEnabled;
-		GridLine	gridline;
-	public:
-		void Init( int stageNumber );
-		void Uninit();
-		void Activate();
-		void Deactivate();
-	public:
-		void Update( float elapsedTime, const Donya::Int2 &ssMousePos, const Donya::Vector4x4 &matViewProjection );
-		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
-	private:
-		Donya::Vector4x4 MakeScreenTransformMatrix( const Donya::Vector4x4 &matViewProjection );
-	};
-	EditOperator editOperator;
+	CSVLoader loader;
 #endif // DEBUG_MODE
+
+	std::vector<Tile> tiles;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -110,13 +90,6 @@ public:
 	void Update( float elapsedTime );
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
-public:
-#if DEBUG_MODE
-	void ActivateEditorMode();
-	void DeactivateEditorMode();
-	void EditorUpdate( float elapsedTime, const Donya::Int2 &ssMousePos, const Donya::Vector4x4 &matViewProjection );
-	void EditorDraw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
-#endif // DEBUG_MODE
 public:
 	const std::vector<Tile> &GetTiles() const;
 private:

@@ -566,91 +566,99 @@ namespace Donya
 				return Instance::wasInitialized;
 			}
 
-			void ActivateStates			( ID3D11DeviceContext *pImmidiateContext = nullptr )
+			void ActivateStates			( ID3D11DeviceContext *pContext = nullptr )
 			{
-				if ( !pImmidiateContext ) { pImmidiateContext = Donya::GetImmediateContext(); }
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
 
-				Donya::DepthStencil::Activate( Instance::idDepthStencil, pImmidiateContext );
-				Donya::Rasterizer::Activate( Instance::idRasterizer, pImmidiateContext );
+				Donya::DepthStencil::Activate( Instance::idDepthStencil, pContext );
+				Donya::Rasterizer::Activate( Instance::idRasterizer, pContext );
 			}
-			void DeactivateStates		( ID3D11DeviceContext *pImmidiateContext = nullptr )
+			void DeactivateStates		( ID3D11DeviceContext *pContext = nullptr )
 			{
-				if ( !pImmidiateContext ) { pImmidiateContext = Donya::GetImmediateContext(); }
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
 
-				Donya::DepthStencil::Deactivate( pImmidiateContext );
-				Donya::Rasterizer::Deactivate( pImmidiateContext );
-			}
-
-			void ActivateDisplayShaders( ID3D11DeviceContext *pImmidiateContext = nullptr )
-			{
-				if ( !pImmidiateContext ) { pImmidiateContext = Donya::GetImmediateContext(); }
-
-				Instance::display.shader.VS.Activate( pImmidiateContext );
-				Instance::display.shader.PS.Activate( pImmidiateContext );
-
-				Donya::Sampler::SetVS( Instance::idSampler, EmbeddedSourceCode::DisplaySlotSampler, pImmidiateContext );
-				Donya::Sampler::SetPS( Instance::idSampler, EmbeddedSourceCode::DisplaySlotSampler, pImmidiateContext );
-			}
-			void DeactivateDisplayShaders( ID3D11DeviceContext *pImmidiateContext = nullptr )
-			{
-				if ( !pImmidiateContext ) { pImmidiateContext = Donya::GetImmediateContext(); }
-
-				Instance::display.shader.VS.Deactivate( pImmidiateContext );
-				Instance::display.shader.PS.Deactivate( pImmidiateContext );
-
-				Donya::Sampler::ResetVS( EmbeddedSourceCode::DisplaySlotSampler, pImmidiateContext );
-				Donya::Sampler::ResetPS( EmbeddedSourceCode::DisplaySlotSampler, pImmidiateContext );
+				Donya::DepthStencil::Deactivate( pContext );
+				Donya::Rasterizer::Deactivate( pContext );
 			}
 
-			void ActivateSpriteShaders	( ID3D11DeviceContext *pImmidiateContext = nullptr )
+			void ActivateDisplayShaders( ID3D11DeviceContext *pContext = nullptr )
 			{
-				if ( !pImmidiateContext ) { pImmidiateContext = Donya::GetImmediateContext(); }
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
 
-				Instance::sprite.shader.VS.Activate( pImmidiateContext );
-				Instance::sprite.shader.PS.Activate( pImmidiateContext );
-
-				Donya::Sampler::SetVS( Instance::idSampler, EmbeddedSourceCode::SpriteSlotSampler, pImmidiateContext );
-				Donya::Sampler::SetPS( Instance::idSampler, EmbeddedSourceCode::SpriteSlotSampler, pImmidiateContext );
+				Instance::display.shader.VS.Activate( pContext );
+				Instance::display.shader.PS.Activate( pContext );
 			}
-			void DeactivateSpriteShaders( ID3D11DeviceContext *pImmidiateContext = nullptr )
+			void DeactivateDisplayShaders( ID3D11DeviceContext *pContext = nullptr )
 			{
-				if ( !pImmidiateContext ) { pImmidiateContext = Donya::GetImmediateContext(); }
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
 
-				Instance::sprite.shader.VS.Deactivate( pImmidiateContext );
-				Instance::sprite.shader.PS.Deactivate( pImmidiateContext );
+				Instance::display.shader.VS.Deactivate( pContext );
+				Instance::display.shader.PS.Deactivate( pContext );
+			}
+			void ActivateDisplaySampler( ID3D11DeviceContext *pContext = nullptr )
+			{
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
 
-				Donya::Sampler::ResetVS( EmbeddedSourceCode::SpriteSlotSampler, pImmidiateContext );
-				Donya::Sampler::ResetPS( EmbeddedSourceCode::SpriteSlotSampler, pImmidiateContext );
+				// Donya::Sampler::SetVS( Instance::idSampler, EmbeddedSourceCode::DisplaySlotSampler, pContext );
+				Donya::Sampler::SetPS( Instance::idSampler, EmbeddedSourceCode::DisplaySlotSampler, pContext );
+			}
+			void DeactivateDisplaySampler( ID3D11DeviceContext *pContext = nullptr )
+			{
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
+				
+				// Donya::Sampler::ResetVS( EmbeddedSourceCode::DisplaySlotSampler, pContext );
+				Donya::Sampler::ResetPS( EmbeddedSourceCode::DisplaySlotSampler, pContext );
 			}
 
-			void ActivateRectShaders	( ID3D11DeviceContext *pImmidiateContext = nullptr )
+			void ActivateSpriteShaders	( ID3D11DeviceContext *pContext = nullptr )
 			{
-				if ( !pImmidiateContext ) { pImmidiateContext = Donya::GetImmediateContext(); }
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
 
-				Instance::rect.shader.VS.Activate( pImmidiateContext );
-				Instance::rect.shader.PS.Activate( pImmidiateContext );
+				Instance::sprite.shader.VS.Activate( pContext );
+				Instance::sprite.shader.PS.Activate( pContext );
+
+				// Donya::Sampler::SetVS( Instance::idSampler, EmbeddedSourceCode::SpriteSlotSampler, pContext );
+				Donya::Sampler::SetPS( Instance::idSampler, EmbeddedSourceCode::SpriteSlotSampler, pContext );
 			}
-			void DeactivateRectShaders	( ID3D11DeviceContext *pImmidiateContext = nullptr )
+			void DeactivateSpriteShaders( ID3D11DeviceContext *pContext = nullptr )
 			{
-				if ( !pImmidiateContext ) { pImmidiateContext = Donya::GetImmediateContext(); }
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
 
-				Instance::rect.shader.VS.Deactivate( pImmidiateContext );
-				Instance::rect.shader.PS.Deactivate( pImmidiateContext );
+				Instance::sprite.shader.VS.Deactivate( pContext );
+				Instance::sprite.shader.PS.Deactivate( pContext );
+
+				// Donya::Sampler::ResetVS( EmbeddedSourceCode::SpriteSlotSampler, pContext );
+				Donya::Sampler::ResetPS( EmbeddedSourceCode::SpriteSlotSampler, pContext );
+			}
+
+			void ActivateRectShaders	( ID3D11DeviceContext *pContext = nullptr )
+			{
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
+
+				Instance::rect.shader.VS.Activate( pContext );
+				Instance::rect.shader.PS.Activate( pContext );
+			}
+			void DeactivateRectShaders	( ID3D11DeviceContext *pContext = nullptr )
+			{
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
+
+				Instance::rect.shader.VS.Deactivate( pContext );
+				Instance::rect.shader.PS.Deactivate( pContext );
 			}
 			
-			void ActivateCircleShaders	( ID3D11DeviceContext *pImmidiateContext = nullptr )
+			void ActivateCircleShaders	( ID3D11DeviceContext *pContext = nullptr )
 			{
-				if ( !pImmidiateContext ) { pImmidiateContext = Donya::GetImmediateContext(); }
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
 
-				Instance::circle.shader.VS.Activate( pImmidiateContext );
-				Instance::circle.shader.PS.Activate( pImmidiateContext );
+				Instance::circle.shader.VS.Activate( pContext );
+				Instance::circle.shader.PS.Activate( pContext );
 			}
-			void DeactivateCircleShaders( ID3D11DeviceContext *pImmidiateContext = nullptr )
+			void DeactivateCircleShaders( ID3D11DeviceContext *pContext = nullptr )
 			{
-				if ( !pImmidiateContext ) { pImmidiateContext = Donya::GetImmediateContext(); }
+				if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
 
-				Instance::circle.shader.VS.Deactivate( pImmidiateContext );
-				Instance::circle.shader.PS.Deactivate( pImmidiateContext );
+				Instance::circle.shader.VS.Deactivate( pContext );
+				Instance::circle.shader.PS.Deactivate( pContext );
 			}
 		}
 
@@ -740,6 +748,24 @@ namespace Donya
 			// No op.
 		}
 
+		void Display::EnableDefaultShader()
+		{
+			useDefaultShader = true;
+		}
+		void Display::EnableDefaultSampler()
+		{
+			useDefaultSampler = true;
+		}
+		void Display::DisableDefaultShader()
+		{
+			useDefaultShader = false;
+		}
+		void Display::DisableDefaultSampler()
+		{
+			useDefaultSampler = false;
+		}
+		void Display::SpecifySRVSlot( unsigned int setSlot ) { SRVSlot = setSlot; }
+		
 	#pragma region Normal
 		bool Display::Draw( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, float degree, float alpha, const Donya::Vector2 &origin ) const
 		{
@@ -751,32 +777,9 @@ namespace Donya
 				DEFAULT.MakeColor( alpha ), origin
 			);
 		}
-		bool Display::Draw( const Donya::Surface &surface,  const Donya::Vector2 &ssPos, float degree, float alpha, const Donya::Vector2 &origin ) const
-		{
-			return DrawExt
-			(
-				surface,
-				ssPos,
-				DEFAULT.scale, degree,
-				DEFAULT.MakeColor( alpha ), origin
-			);
-		}
 		bool Display::DrawExt( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
 		{
 			const Donya::Vector2 wholeSize = FetchTextureSizeF( pSRV );
-			return DrawGeneralExt
-			(
-				pSRV,
-				ssPos, wholeSize,
-				Donya::Vector2::Zero(), wholeSize,
-				scale, degree,
-				color, origin
-			);
-		}
-		bool Display::DrawExt( const Donya::Surface &surface,  const Donya::Vector2 &ssPos, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
-		{
-			const Donya::Vector2 wholeSize = surface.GetSurfaceSizeF();
-			ID3D11ShaderResourceView *pSRV = surface.GetShaderResourceView().Get();
 			return DrawGeneralExt
 			(
 				pSRV,
@@ -799,30 +802,8 @@ namespace Donya
 				DEFAULT.MakeColor( alpha ), origin
 			);
 		}
-		bool Display::DrawStretched( const Donya::Surface &surface,  const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, float degree, float alpha, const Donya::Vector2 &origin ) const
-		{
-			return DrawStretchedExt
-			(
-				surface,
-				ssPos, ssSize,
-				DEFAULT.scale, degree,
-				DEFAULT.MakeColor( alpha ), origin
-			);
-		}
 		bool Display::DrawStretchedExt( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
 		{
-			return DrawGeneralExt
-			(
-				pSRV,
-				ssPos, ssSize,
-				Donya::Vector2::Zero(), ssSize,
-				scale, degree,
-				color, origin
-			);
-		}
-		bool Display::DrawStretchedExt( const Donya::Surface &surface,  const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
-		{
-			ID3D11ShaderResourceView *pSRV = surface.GetShaderResourceView().Get();
 			return DrawGeneralExt
 			(
 				pSRV,
@@ -846,35 +827,12 @@ namespace Donya
 				DEFAULT.MakeColor( alpha ), origin
 			);
 		}
-		bool Display::DrawPart( const Donya::Surface &surface,  const Donya::Vector2 &ssPos, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, float degree, float alpha, const Donya::Vector2 &origin ) const
-		{
-			return DrawPartExt
-			(
-				surface,
-				ssPos,
-				texPos, texSize,
-				DEFAULT.scale, degree,
-				DEFAULT.MakeColor( alpha ), origin
-			);
-		}
 		bool Display::DrawPartExt( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
 		{
 			return DrawGeneralExt
 			(
 				pSRV,
 				ssPos, FetchTextureSizeF( pSRV ),
-				texPos, texSize,
-				scale, degree,
-				color, origin
-			);
-		}
-		bool Display::DrawPartExt( const Donya::Surface &surface,  const Donya::Vector2 &ssPos, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
-		{
-			ID3D11ShaderResourceView *pSRV = surface.GetShaderResourceView().Get();
-			return DrawGeneralExt
-			(
-				pSRV,
-				ssPos, surface.GetSurfaceSizeF(),
 				texPos, texSize,
 				scale, degree,
 				color, origin
@@ -896,17 +854,6 @@ namespace Donya
 				texPos, texSize,
 				DEFAULT.scale, degree,
 				Donya::Vector4{ DEFAULT.color, alpha }, origin
-			);
-		}
-		bool Display::DrawGeneral( const Donya::Surface &surface,  const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, float degree, float alpha, const Donya::Vector2 &origin ) const
-		{
-			return DrawGeneralExt
-			(
-				surface.GetShaderResourceView().Get(),
-				ssPos, ssSize,
-				texPos, texSize,
-				DEFAULT.scale, degree,
-				DEFAULT.MakeColor( alpha ), origin
 			);
 		}
 		bool Display::DrawGeneralExt( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
@@ -954,35 +901,44 @@ namespace Donya
 				pImmediateContext->IASetVertexBuffers( 0, 1, pVertexBuffer.GetAddressOf(), &stride, &offset );
 				pImmediateContext->IASetPrimitiveTopology( D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
 
-				pImmediateContext->PSSetShaderResources( EmbeddedSourceCode::DisplaySlotSRV, 1, &pSRV );
-
-				Shared::ActivateStates();
-				Shared::ActivateDisplayShaders();
+				if ( useDefaultSampler )
+				{
+					Shared::ActivateDisplaySampler();
+				}
+				if ( useDefaultShader )
+				{
+					Shared::ActivateDisplayShaders();
+					pImmediateContext->PSSetShaderResources( EmbeddedSourceCode::DisplaySlotSRV, 1, &pSRV );
+				}
+				else
+				{
+					pImmediateContext->PSSetShaderResources( SRVSlot, 1, &pSRV );
+				}
 			}
+
 
 			pImmediateContext->Draw( NDCVertices.size(), 0 );
 
 			// PostProcess.
 			{
 				ID3D11ShaderResourceView *NullSRV = nullptr;
-				pImmediateContext->PSSetShaderResources( EmbeddedSourceCode::DisplaySlotSRV, 1, &NullSRV );
 
-				Shared::DeactivateStates();
-				Shared::DeactivateDisplayShaders();
+				if ( useDefaultSampler )
+				{
+					Shared::DeactivateDisplaySampler();
+				}
+				if ( useDefaultShader )
+				{
+					Shared::DeactivateDisplayShaders();
+					pImmediateContext->PSSetShaderResources( EmbeddedSourceCode::DisplaySlotSRV, 1, &NullSRV );
+				}
+				else
+				{
+					pImmediateContext->PSSetShaderResources( SRVSlot, 1, &NullSRV );
+				}
 			}
 
 			return true;
-		}
-		bool Display::DrawGeneralExt( const Donya::Surface &surface,  const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
-		{
-			return DrawGeneralExt
-			(
-				surface.GetShaderResourceView().Get(),
-				ssPos, ssSize,
-				texPos, texSize,
-				scale, degree,
-				color, origin
-			);
 		}
 	#pragma endregion
 
