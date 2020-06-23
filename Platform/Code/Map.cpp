@@ -84,7 +84,7 @@ bool Map::Init( int stageNumber )
 	// const std::string filePath = ( IOFromBinaryFile )
 	// 	? MakeStageParamPathBinary( ID, stageNumber )
 	// 	: MakeStageParamPathJson  ( ID, stageNumber );
-	constexpr const char *filePath = "./Data/TestMap.csv";
+	constexpr const char *filePath = "./Data/Test.csv";
 	loader.Load( filePath );
 
 	// Generate test solids
@@ -190,24 +190,7 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 
 	if ( ImGui::TreeNode( u8"CSVÉçÅ[É_ÇÃíÜêg" ) )
 	{
-		const auto &data = loader.Get();
-		
-		std::string line;
-		const size_t rowCount = data.size();
-		for ( size_t r = 0; r < rowCount; ++r )
-		{
-			line = "";
-
-			const size_t columnCount = data[r].size();
-			for ( size_t c = 0; c < columnCount; ++c )
-			{
-				const auto &cell = data[r][c];
-				line += cell;
-				line += ",";
-			}
-
-			ImGui::Text( line.c_str() );
-		}
+		loader.ShowDataToImGui();
 		
 		ImGui::TreePop();
 	}
