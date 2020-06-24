@@ -27,6 +27,11 @@
 #include "PlayerParam.h"
 
 #if DEBUG_MODE
+#include "CSVLoader.h"
+#pragma comment( lib, "comdlg32.lib" ) // Used for common-dialog
+#endif // DEBUG_MODE
+
+#if DEBUG_MODE
 namespace
 {
 	constexpr int debugTmpStageNo = -1;
@@ -100,6 +105,32 @@ namespace
 	{
 		return sceneParam.Get();
 	}
+
+#if DEBUG_MODE
+	constexpr unsigned int maxPathBufferSize = MAX_PATH;
+	std::string FetchStageFilePathByCommonDialog()
+	{
+		char chosenFullPaths[maxPathBufferSize] = { 0 };
+		char chosenFileName [maxPathBufferSize] = { 0 };
+
+		OPENFILENAMEA ofn{ 0 };
+		ofn.lStructSize		= sizeof( decltype( ofn ) );
+		ofn.hwndOwner		= Donya::GetHWnd();
+		ofn.lpstrFilter		= "CSV-file(*.csv)\0*.csv\0"
+							  "\0";
+		ofn.lpstrFile		= chosenFullPaths;
+		ofn.nMaxFile		= maxPathBufferSize;
+		ofn.lpstrFileTitle	= chosenFileName;
+		ofn.nMaxFileTitle	= maxPathBufferSize;
+		ofn.Flags			= OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR; // Prevent the current directory of this application will be changed.
+
+		auto  result = GetOpenFileNameA( &ofn );
+		if ( !result ) { return std::string{}; }
+		// else
+
+		return std::string{ ofn.lpstrFile };
+	}
+#endif // DEBUG_MODE
 }
 CEREAL_CLASS_VERSION( SceneParam, 0 )
 
@@ -557,6 +588,57 @@ void SceneBattle::UseImGui()
 			ImGui::Text( "" );
 
 			ImGui::TreePop();
+		}
+
+		if ( ImGui::Button( u8"CSVファイルからステージを生成" ) )
+		{
+			auto PrepareCSVData = []()
+			{
+				CSVLoader loader;
+				loader.Clear();
+
+				const auto filePath = FetchStageFilePathByCommonDialog();
+				if ( filePath.empty() || !Donya::IsExistFile( filePath ) )
+				{
+					std::string msg = u8"ファイルロードに失敗しました。\n";
+					msg += u8"ファイル：[" + filePath + u8"]";
+					Donya::ShowMessageBox
+					(
+						msg,
+						"Loading stage is failed",
+						MB_ICONEXCLAMATION | MB_OK
+					);
+
+					return loader;
+				}
+				// else
+
+				if ( !loader.Load( filePath ) )
+				{
+					Donya::ShowMessageBox
+					(
+						u8"パースに失敗しました。",
+						"Loading stage is failed",
+						MB_ICONEXCLAMATION | MB_OK
+					);
+					loader.Clear();
+					return loader;
+				}
+				// else
+
+				return loader;
+			};
+			const auto loader = PrepareCSVData();
+			const auto &data = loader.Get();
+			if ( !data.empty() )
+			{
+				// The data was loaded successfully here
+
+				if ( pMap )
+				{
+					pMap->RemakeByCSV( loader );
+				}
+			}
 		}
 
 		Player::UpdateParameter( u8"自機のパラメータ" );

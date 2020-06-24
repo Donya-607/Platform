@@ -13,6 +13,7 @@
 #include "ObjectBase.h"
 
 
+class CSVLoader;
 /// <summary>
 /// A piece of map(map-chip).
 /// </summary>
@@ -85,6 +86,7 @@ public:
 	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
 	const std::vector<Tile> &GetTiles() const;
+	void RemakeByCSV( const CSVLoader &loadedData );
 private:
 	void RemoveTiles();
 	bool LoadMap( int stageNumber, bool fromBinary );

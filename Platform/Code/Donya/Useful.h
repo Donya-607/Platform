@@ -149,6 +149,12 @@ namespace Donya
 	/// </summary>
 	std::string MakeArraySuffix( size_t index );
 
+	/// <summary>
+	/// ToString( 123.45, 8, 3, '_' ) returns "_123.450".
+	/// ToString( 123.45, 5, 1, '_' ) returns "123.4".
+	/// </summary>
+	std::string ToString( float value, size_t wholeCharacterCount = 7U, size_t decimalCount = 3U, char fillCharacter = ' ' );
+
 #pragma region Convert Character Functions
 
 	/// <summary>

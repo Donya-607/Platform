@@ -6,9 +6,11 @@
 #include <direct.h>		// Use _mkdir(), _wmkdir().
 #include <float.h>
 #include <fstream>
+#include <iomanip>		// Use std::setprecesion(), etc
 #include <locale>
 #include <mutex>
 #include <Shlwapi.h>	// Use PathRemoveFileSpecA(), PathAddBackslashA(), In AcquireDirectoryFromFullPath().
+#include <sstream>		// Use ostringstream at ToString()
 #include <vector>
 #include <Windows.h>
 
@@ -135,6 +137,19 @@ namespace Donya
 	std::string MakeArraySuffix( size_t index )
 	{
 		return MakeArraySuffixImpl( index );
+	}
+
+	std::string ToString( float value, size_t width, size_t decimalCount, char fill )
+	{
+		std::ostringstream oss{};
+		oss
+			<< std::fixed
+			<< std::setw( width )
+			<< std::setprecision( decimalCount )
+			<< std::setfill( fill )
+			<< value
+			;
+		return oss.str();
 	}
 
 #pragma region Convert Character Functions
