@@ -9,6 +9,14 @@
 #include "Common.h"			// Use IsShowCollision()
 #include "FilePath.h"
 #include "Parameter.h"		// Use ParameterHelper
+#include "StageFormat.h"
+#if USE_IMGUI
+#include "CSVLoader.h"
+#endif // USE_IMGUI
+
+#if DEBUG_MODE
+#pragma comment( lib, "comdlg32.lib" ) // Used for common-dialog
+#endif // DEBUG_MODE
 
 
 void Tile::Init( const Donya::Vector3 &wsTilePos, const Donya::Vector3 &wsTileWholeSize, const Donya::Int2 &texCoordOffset )
@@ -74,6 +82,32 @@ namespace
 #else
 	constexpr bool IOFromBinaryFile = true;
 #endif // DEBUG_MODE
+
+#if DEBUG_MODE
+	constexpr unsigned int maxPathBufferSize = MAX_PATH;
+	std::string FetchStageFilePathByCommonDialog()
+	{
+		char chosenFullPaths[maxPathBufferSize] = { 0 };
+		char chosenFileName [maxPathBufferSize] = { 0 };
+
+		OPENFILENAMEA ofn{ 0 };
+		ofn.lStructSize		= sizeof( decltype( ofn ) );
+		ofn.hwndOwner		= Donya::GetHWnd();
+		ofn.lpstrFilter		= "CSV-file(*.csv)\0*.csv\0"
+							  "\0";
+		ofn.lpstrFile		= chosenFullPaths;
+		ofn.nMaxFile		= maxPathBufferSize;
+		ofn.lpstrFileTitle	= chosenFileName;
+		ofn.nMaxFileTitle	= maxPathBufferSize;
+		ofn.Flags			= OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR; // Prevent the current directory of this application will be changed.
+
+		auto  result = GetOpenFileNameA( &ofn );
+		if ( !result ) { return std::string{}; }
+		// else
+
+		return std::string{ ofn.lpstrFile };
+	}
+#endif // DEBUG_MODE
 }
 
 bool Map::Init( int stageNumber )
@@ -81,12 +115,6 @@ bool Map::Init( int stageNumber )
 	const bool succeeded = LoadMap( stageNumber, IOFromBinaryFile );
 
 #if DEBUG_MODE
-	// const std::string filePath = ( IOFromBinaryFile )
-	// 	? MakeStageParamPathBinary( ID, stageNumber )
-	// 	: MakeStageParamPathJson  ( ID, stageNumber );
-	constexpr const char *filePath = "./Data/Test.csv";
-	loader.Load( filePath );
-
 	// Generate test solids
 	if ( tiles.empty() )
 	{
@@ -188,11 +216,87 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	if ( ImGui::TreeNode( u8"CSVローダの中身" ) )
+	if ( ImGui::Button( u8"CSVファイルからステージを生成" ) )
 	{
-		loader.ShowDataToImGui();
-		
-		ImGui::TreePop();
+		const auto filePath = FetchStageFilePathByCommonDialog();
+		if ( !filePath.empty() && Donya::IsExistFile( filePath ) )
+		{
+			CSVLoader loader;
+			const bool result = loader.Load( filePath );
+			if ( result )
+			{
+				auto IsIgnoreID	= []( int id )
+				{
+					switch ( id )
+					{
+					case StageFormat::StartPoint:	return true;
+					case StageFormat::Space:		return true;
+					case StageFormat::EmptyValue:	return true;
+					default: break;
+					}
+
+					return false;
+				};
+				auto Append		= [&]( int id, size_t row, size_t column )
+				{
+					if ( IsIgnoreID( id ) ) { return; }
+					// else
+
+					// I expect the CSV stage data is screen space, so the Y component must be reverse.(stage's Y+ is down, application's Y+ is up)
+
+					constexpr Donya::Vector3 halfOffset
+					{
+						Tile::unitWholeSize * 0.5f,
+						Tile::unitWholeSize * 0.5f * -1.0f,
+						0.0f,
+					};
+					const Donya::Vector3 generatePos
+					{
+						Tile::unitWholeSize * column,
+						Tile::unitWholeSize * row * -1.0f,
+						0.0f,
+					};
+
+					Tile tmp;
+					tmp.Init( generatePos + halfOffset, Tile::unitWholeSize, 0 );
+					tiles.emplace_back( std::move( tmp ) );
+				};
+
+				for ( auto &it : tiles ) { it.Uninit(); }
+				tiles.clear();
+
+				const auto &data = loader.Get();
+				const size_t rowCount = data.size();
+				for ( size_t r = 0; r < rowCount; ++r )
+				{
+					const size_t columnCount = data[r].size();
+					for ( size_t c = 0; c < columnCount; ++c )
+					{
+						Append( data[r][c], r, c );
+					}
+				}
+			}
+			else
+			{
+				Donya::ShowMessageBox
+				(
+					u8"パースに失敗しました。",
+					"Loading stage is failed",
+					MB_ICONEXCLAMATION | MB_OK
+				);
+			}
+		}
+		else
+		{
+			std::string msg = u8"ファイルロードに失敗しました。\n";
+			msg += u8"ファイル：[" + filePath + u8"]";
+			Donya::ShowMessageBox
+			(
+				msg,
+				"Loading stage is failed",
+				MB_ICONEXCLAMATION | MB_OK
+			);
+		}
 	}
 
 	if ( ImGui::TreeNode( u8"実体操作" ) )

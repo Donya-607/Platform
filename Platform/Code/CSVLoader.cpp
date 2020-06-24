@@ -3,13 +3,15 @@
 #include <fstream>
 #include <sstream>
 
+#include "StageFormat.h"
+
 bool CSVLoader::Load( const std::string &filePath, const char delimiter )
 {
 	// Reference: https://www.tetsuyanbo.net/tetsuyanblog/23821
 
 	Clear();
 
-	std::fstream fs{ filePath };
+	std::ifstream fs{ filePath };
 	if ( !fs.is_open() ) { return false; }
 	// else
 
@@ -60,7 +62,7 @@ void CSVLoader::Assign( const std::vector<std::vector<std::string>> &source )
 		for ( size_t c = 0; c < columnCount; ++c )
 		{
 			const auto &str = source[r][c];
-			data[r][c] = ( str.empty() ) ? emptyValue : std::stoi( str );
+			data[r][c] = ( str.empty() ) ? StageFormat::EmptyValue : std::stoi( str );
 		}
 	}
 }
@@ -77,7 +79,7 @@ void CSVLoader::ShowDataToImGui( const char *emptyCharacter ) const
 		for ( size_t c = 0; c < columnCount; ++c )
 		{
 			const auto &cell = data[r][c];
-			line += ( cell == CSVLoader::emptyValue ) ? emptyCharacter : std::to_string( cell );
+			line += ( cell == StageFormat::EmptyValue ) ? emptyCharacter : std::to_string( cell );
 			line += ",";
 		}
 

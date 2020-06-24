@@ -114,6 +114,17 @@ namespace Donya
 	/// </summary>
 	void OutputDebugStr( const wchar_t	*string );
 
+	/// <summary>
+	/// Call MessageBox with library's hwnd.
+	/// Returns a result of MessageBox.
+	/// </summary>
+	int ShowMessageBox( const std::string &textUTF8, const std::string &msgBoxCaptionUTF8, unsigned int message );
+	/// <summary>
+	/// Call MessageBox with library's hwnd.
+	/// Returns a result of MessageBox.
+	/// </summary>
+	int ShowMessageBox( const std::wstring &text, const std::wstring &msgBoxCaption, unsigned int message );
+
 	bool IsExistFile( const std::string &wholePath );
 	bool IsExistFile( const std::wstring &wholePath );
 

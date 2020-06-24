@@ -10,9 +10,6 @@
 #include "Donya/Serializer.h"
 #include "Donya/Vector.h"
 
-#if DEBUG_MODE
-#include "CSVLoader.h"
-#endif // DEBUG_MODE
 #include "ObjectBase.h"
 
 
@@ -67,10 +64,6 @@ CEREAL_CLASS_VERSION( Tile, 0 )
 class Map
 {
 private:
-#if DEBUG_MODE
-	CSVLoader loader;
-#endif // DEBUG_MODE
-
 	std::vector<Tile> tiles;
 private:
 	friend class cereal::access;

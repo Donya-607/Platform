@@ -258,6 +258,7 @@
     <ClInclude Include="Code\SceneManager.h" />
     <ClInclude Include="Code\ScenePause.h" />
     <ClInclude Include="Code\SceneTitle.h" />
+    <ClInclude Include="Code\StageFormat.h" />
     <ClInclude Include="Code\UI.h" />
     <ClInclude Include="External\Cereal\include\cereal\access.hpp" />
     <ClInclude Include="External\Cereal\include\cereal\archives\adapters.hpp" />

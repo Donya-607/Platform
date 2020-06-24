@@ -7,8 +7,6 @@
 
 class CSVLoader
 {
-public:
-	static constexpr int emptyValue = INT_MAX;
 private:
 	std::vector<std::vector<int>> data;
 public:

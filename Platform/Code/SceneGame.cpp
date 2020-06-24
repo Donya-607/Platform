@@ -370,6 +370,11 @@ void SceneBattle::CameraUpdate()
 {
 	const auto &data = FetchParameter();
 
+#if USE_IMGUI
+	iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
+	iCamera.SetProjectionPerspective();
+#endif // USE_IMGUI
+
 	Donya::ICamera::Controller input{};
 	input.SetNoOperation();
 	input.slerpPercent = data.camera.slerpFactor;

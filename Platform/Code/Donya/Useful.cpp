@@ -64,6 +64,26 @@ namespace Donya
 	#endif // DEBUG_MODE
 	}
 
+	int ShowMessageBox( const std::string &text, const std::string &caption, unsigned int message )
+	{
+		return ShowMessageBox
+		(
+			Donya::UTF8ToWide( text    ),
+			Donya::UTF8ToWide( caption ), 
+			message
+		);
+	}
+	int ShowMessageBox( const std::wstring &text, const std::wstring &caption, unsigned int message )
+	{
+		return MessageBox
+		(
+			Donya::GetHWnd(),
+			text.c_str(),
+			caption.c_str(),
+			message
+		);
+	}
+
 	bool IsExistFile( const std::string &wholePath )
 	{
 		std::ifstream ifs( wholePath );
