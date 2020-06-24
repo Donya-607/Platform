@@ -246,7 +246,8 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 		for ( size_t i = 0; i < count; ++i )
 		{
 			caption =  "[";
-			if ( i < 10 ) { caption += "0"; }
+			if ( i < 100 ) { caption += "_"; } // Align
+			if ( i < 10  ) { caption += "_"; } // Align
 			caption += std::to_string( i );
 			caption += "]";
 			tiles[i].ShowImGuiNode( caption );
