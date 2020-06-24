@@ -175,6 +175,7 @@
     <ClCompile Include="Code\Grid.cpp" />
     <ClCompile Include="Code\Main.cpp" />
     <ClCompile Include="Code\Map.cpp" />
+    <ClCompile Include="Code\ModelHelper.cpp" />
     <ClCompile Include="Code\ObjectBase.cpp" />
     <ClCompile Include="Code\Parameter.cpp" />
     <ClCompile Include="Code\Player.cpp" />
@@ -247,6 +248,7 @@
     <ClInclude Include="Code\Grid.h" />
     <ClInclude Include="Code\Icon.h" />
     <ClInclude Include="Code\Map.h" />
+    <ClInclude Include="Code\ModelHelper.h" />
     <ClInclude Include="Code\Music.h" />
     <ClInclude Include="Code\ObjectBase.h" />
     <ClInclude Include="Code\Parameter.h" />

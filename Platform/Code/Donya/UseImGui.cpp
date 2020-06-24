@@ -67,7 +67,7 @@ namespace ImGui
 	
 	namespace Helper
 	{
-		void ShowEaseParam ( const std::string &nodeCaption, Donya::Easing::Kind *pKind, Donya::Easing::Type *pType )
+		void ShowEaseParam	( const std::string &nodeCaption, Donya::Easing::Kind *pKind, Donya::Easing::Type *pType )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
@@ -94,7 +94,7 @@ namespace ImGui
 
 			ImGui::TreePop();
 		}
-		void ShowAABBNode  ( const std::string &nodeCaption, Donya::Collision::Box3F	*p )
+		void ShowAABBNode	( const std::string &nodeCaption, Donya::Collision::Box3F *p )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
@@ -106,7 +106,7 @@ namespace ImGui
 
 			ImGui::TreePop();
 		}
-		void ShowSphereNode( const std::string &nodeCaption, Donya::Collision::Sphere3F	*p )
+		void ShowSphereNode	( const std::string &nodeCaption, Donya::Collision::Sphere3F *p )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
@@ -117,6 +117,29 @@ namespace ImGui
 			ImGui::Checkbox  ( u8"判定を有効にする",		&p->exist				);
 
 			ImGui::TreePop();
+		}
+		void ShowFrontNode	( const std::string &nodeCaption, Donya::Quaternion *p, bool freezeUp, bool useTreeNode )
+		{
+			if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			Donya::Vector3 localFront = p->LocalFront();
+			ImGui::SliderFloat3( u8"前方向", &localFront.x, -1.0f, 1.0f );
+			*p = Donya::Quaternion::LookAt
+			(
+				Donya::Vector3::Front(),
+				localFront.Unit(),
+				( freezeUp )
+				? Donya::Quaternion::Freeze::Up
+				: Donya::Quaternion::Freeze::None
+			);
+
+			if ( ImGui::Button( u8"姿勢をリセット" ) )
+			{
+				*p = Donya::Quaternion::Identity();
+			}
+
+			if ( useTreeNode ) { ImGui::TreePop(); }
 		}
 	}
 }

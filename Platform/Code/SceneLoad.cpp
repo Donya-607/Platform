@@ -22,6 +22,7 @@
 #endif // DEBUG_MODE
 
 #include "Common.h"
+#include "Bullet.h"
 #include "Fader.h"
 #include "FilePath.h"
 #include "Music.h"
@@ -121,6 +122,7 @@ void SceneLoad::Init()
 
 		bool succeeded = true;
 
+		if ( !Bullet::LoadResource()		) { succeeded = false; }
 		if ( !Player::LoadResource()		) { succeeded = false; }
 		
 		_ASSERT_EXPR( succeeded, L"Failed: Models load is failed." );

@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Donya/Collision.h"
+#include "Donya/Quaternion.h"
 #include "Donya/Serializer.h"
 #include "Donya/Template.h"		// Use Donya::Singleton<>
 #include "Donya/UseImGui.h"
@@ -13,6 +14,8 @@
 
 namespace Bullet
 {
+	bool LoadResource();
+
 	/// <summary>
 	/// Generate parameters. Descriptor.
 	/// </summary>
@@ -48,16 +51,20 @@ namespace Bullet
 	{
 	private:
 		using Solid::body;
-		Donya::Vector3	velocity; // [m/s]
-		bool			wantRemove = false;
+		Donya::Vector3		velocity; // [m/s]
+		Donya::Quaternion	orientation;
+		bool				wantRemove = false;
 	public:
 		void Init( const FireDesc &parameter );
 		void Uninit();
 		void Update( float elasedTime );
+		void PhysicUpdate( float elasedTime );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
 		bool ShouldRemove() const;
+	protected:
+		Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:
 	#if USE_IMGUI
 		void ShowImGuiNode( const std::string &nodeCaption );
@@ -78,6 +85,7 @@ namespace Bullet
 		Admin();
 	public:
 		void Update( float elapsedTime );
+		void PhysicUpdate( float elasedTime );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
