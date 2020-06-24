@@ -133,6 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Code\Bullet.cpp" />
     <ClCompile Include="Code\Common.cpp" />
     <ClCompile Include="Code\CSVLoader.cpp" />
     <ClCompile Include="Code\Donya\AudioSystem.cpp" />
@@ -193,6 +194,7 @@
     <ClCompile Include="External\ImGui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Code\Bullet.h" />
     <ClInclude Include="Code\Common.h" />
     <ClInclude Include="Code\CSVLoader.h" />
     <ClInclude Include="Code\Donya\AudioSystem.h" />
