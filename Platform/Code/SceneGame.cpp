@@ -677,6 +677,7 @@ void SceneGame::UseImGui()
 		ImGui::TreePop();
 	}
 
+	Bullet::Parameter::Update( u8"’e‚Ìƒpƒ‰ƒ[ƒ^" );
 	Bullet::Admin::Get().ShowImGuiNode( u8"’e‚ÌŒ»İ" );
 	
 	ImGui::End();

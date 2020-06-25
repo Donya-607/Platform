@@ -17,9 +17,9 @@ namespace Bullet
 	struct BusterParam;
 	namespace Parameter
 	{
-		static const BusterParam &GetBuster();
+		const BusterParam &GetBuster();
 	#if USE_IMGUI
-		static void Update( const std::string &nodeCaption );
+		void Update( const std::string &nodeCaption );
 	#endif // USE_IMGUI
 	}
 
