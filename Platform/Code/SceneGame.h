@@ -22,11 +22,8 @@ private:
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 
-	std::vector<Solid>					solids;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<Map>				pMap;
-	Actor								actor;
-	Donya::Vector3						actorVelocity;
 
 #if DEBUG_MODE
 	bool nowDebugMode			= false;

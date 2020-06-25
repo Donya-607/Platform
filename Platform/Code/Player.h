@@ -107,6 +107,7 @@ private:
 	Donya::Quaternion		orientation;
 	MotionManager			motionManager;
 	float					keepJumpSecond			= 0.0f;
+	float					keepShotSecond			= 0.0f;
 	bool					wasReleasedJumpInput	= false;
 	bool					onGround				= false;
 public:
@@ -129,6 +130,7 @@ private:
 	using Actor::DrawHitBox;
 	void MoveHorizontal( float elapsedTime, Input input );
 	void MoveVertical  ( float elapsedTime, Input input );
+	void Shot( float elapsedTime, Input input );
 private:
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 public:

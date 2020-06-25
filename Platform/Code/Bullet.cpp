@@ -55,9 +55,31 @@ namespace Bullet
 		return ::LoadModel();
 	}
 
+#if USE_IMGUI
+	void FireDesc::ShowImGuiNode( const std::string &nodeCaption, bool isRelativePos )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		ImGui::DragFloat( u8"初速[m/s]", &initialSpeed, 0.1f );
+		initialSpeed = std::max( 0.0f, initialSpeed );
+
+		ImGui::SliderFloat3( u8"方向", &direction.x, -1.0f, 1.0f );
+		if ( ImGui::Button( u8"方向を正規化" ) )
+		{
+			direction.Normalize();
+		}
+
+		const char *caption = ( isRelativePos ) ? u8"生成位置（ローカル・相対）" : u8"ワールド座標";
+		ImGui::DragFloat3( caption, &position.x, 0.1f );
+
+		ImGui::TreePop();
+	}
+#endif // USE_IMGUI
+
 	void Buster::Init( const FireDesc &parameter )
 	{
-		body.pos	= parameter.wsPos;
+		body.pos	= parameter.position;
 	#if DEBUG_MODE
 		body.offset	= 0.0f;
 		body.size.x	= 0.5f;

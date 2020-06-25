@@ -176,6 +176,7 @@ void PlayerParam::ShowImGuiNode()
 	ImGui::DragFloat( u8"最高落下速度",		&maxFallSpeed,		0.01f );
 	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定", &hitBox  );
 	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定", &hurtBox );
+	fireParam.ShowImGuiNode( u8"ショット設定" );
 
 	auto MakePositive = []( float *v )
 	{
@@ -282,8 +283,8 @@ void Player::Uninit()
 void Player::Update( float elapsedTime, Input input )
 {
 #if USE_IMGUI
+	// Apply for be able to see an adjustment immediately
 	{
-		// Apply for be able to see an adjustment immediately
 		const auto &data = Parameter().Get();
 		auto ApplyExceptPosition = []( Donya::Collision::Box3F *p, const Donya::Collision::Box3F &source )
 		{
@@ -299,6 +300,8 @@ void Player::Update( float elapsedTime, Input input )
 
 	MoveHorizontal( elapsedTime, input );
 	MoveVertical  ( elapsedTime, input );
+
+	Shot( elapsedTime, input );
 
 	motionManager.Update( *this, elapsedTime );
 }
@@ -452,6 +455,36 @@ void Player::MoveVertical  ( float elapsedTime, Input input )
 		velocity.y = std::max( -data.maxFallSpeed, velocity.y );
 	}
 }
+void Player::Shot( float elapsedTime, Input input )
+{
+	if ( !input.useShot )
+	{
+		keepShotSecond = 0.0f;
+		return;
+	}
+	// else
+
+	const bool nowTriggered = IsZero( keepShotSecond );
+
+	keepShotSecond += elapsedTime;
+
+	if ( nowTriggered )
+	{
+		const auto &data = Parameter().Get();
+
+		const Donya::Vector3 front = orientation.LocalFront();
+		const float dot = Donya::Dot( front, Donya::Vector3::Right() );
+		const float lookingSign = Donya::SignBitF( dot );
+
+		Bullet::FireDesc desc = data.fireParam;
+		desc.direction	=  Donya::Vector3::Right() * lookingSign;
+		desc.position.x	*= lookingSign;
+		desc.position	+= GetPosition();
+		
+		Bullet::Admin::Get().RequestFire( desc );
+		Donya::Sound::Play( Music::Player_Shot );
+	}
+}
 Donya::Vector4x4 Player::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 {
 	Donya::Vector4x4 W{};
@@ -477,6 +510,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::SliderFloat3( u8"前方向",		&front.x, -1.0f, 1.0f );
 	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), front.Unit(), Donya::Quaternion::Freeze::Up );
 
+	ImGui::DragFloat( u8"ショットを入力し続けている秒数", &keepShotSecond, 0.01f );
 	ImGui::DragFloat( u8"ジャンプを入力し続けている秒数", &keepJumpSecond, 0.01f );
 	ImGui::Checkbox( u8"ジャンプ入力を離したか",	&wasReleasedJumpInput );
 	ImGui::Checkbox( u8"地上にいるか",			&onGround );

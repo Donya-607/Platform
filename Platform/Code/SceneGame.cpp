@@ -19,6 +19,7 @@
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
 
+#include "Bullet.h"
 #include "Common.h"
 #include "Fader.h"
 #include "FilePath.h"
@@ -160,6 +161,8 @@ void SceneBattle::Init()
 	pPlayer->Init( data.testPlayerInit );
 
 	CameraInit();
+
+	Bullet::Admin::Get().ClearInstances();
 }
 void SceneBattle::Uninit()
 {
@@ -167,6 +170,8 @@ void SceneBattle::Uninit()
 	if ( pPlayer	) { pPlayer->Uninit();	}
 	pMap.reset();
 	pPlayer.reset();
+
+	Bullet::Admin::Get().ClearInstances();
 
 	// Donya::Sound::Stop( Music::BGM_Game );
 }
@@ -205,62 +210,20 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 		const bool pressRight = Donya::Keyboard::Press( VK_RIGHT );
 		const bool pressLeft  = Donya::Keyboard::Press( VK_LEFT  );
 		const bool pressJump  = Donya::Keyboard::Press( VK_SHIFT );
+		const bool pressShot  = Donya::Keyboard::Press( 'Z' );
 
 		Player::Input input;
 		if ( pressRight ) { input.moveVelocity.x += 1.0f; }
 		if ( pressLeft  ) { input.moveVelocity.x -= 1.0f; }
 		input.useJump = pressJump;
+		input.useShot = pressShot;
 
 		pPlayer->Update( elapsedTime, input );
 	}
 
-	// Update actor velocity
-	{
-		if ( Donya::Keyboard::Trigger( VK_SHIFT ) )
-		{
-			constexpr float strength = 0.8f;
-			actorVelocity.y = strength;
-		}
-		else
-		{
-			constexpr float gravity		= 0.1f;
-			constexpr float resistance	= 0.5f;
-			constexpr float maxSpeed	= 0.4f;
+	Bullet::Admin::Get().Update( elapsedTime );
 
-			constexpr int resistGravityFrame = 35;
-			static int pressTimer = 0;
-			pressTimer = ( Donya::Keyboard::Press( VK_SHIFT ) ) ? pressTimer + 1 : 0;
-
-
-			actorVelocity.y -=	( 0 < pressTimer && pressTimer <= resistGravityFrame )
-								? gravity * resistance
-								: gravity;
-			actorVelocity.y = Donya::Clamp( actorVelocity.y, -maxSpeed, maxSpeed );
-		}
-
-		constexpr float accel = 999.0f;
-		constexpr float decel = 999.0f;
-		constexpr float maxSpeed = 0.05f;
-		if ( Donya::Keyboard::Press( VK_RIGHT ) )
-		{ actorVelocity.x += accel; }
-		else
-		if ( Donya::Keyboard::Press( VK_LEFT  ) )
-		{ actorVelocity.x -= accel; }
-		else
-		{
-			const int sign = Donya::SignBit( actorVelocity.x );
-			actorVelocity.x -= decel * sign;
-
-			const int currSign = Donya::SignBit( actorVelocity.x );
-			if ( currSign != sign )
-			{
-				actorVelocity.x = 0.0f;
-			}
-		}
-		actorVelocity.x = Donya::Clamp( actorVelocity.x, -maxSpeed, maxSpeed );
-	}
-
-	// Move the actors
+	// PhysicUpdates
 	{
 		std::vector<Donya::Collision::Box3F> hitBoxes;
 		if ( pMap )
@@ -276,16 +239,8 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 		{
 			pPlayer->PhysicUpdate( elapsedTime, hitBoxes );
 		}
-		else
-		{
-			actor.MoveX( actorVelocity.x, hitBoxes );
-			actor.MoveZ( actorVelocity.z, hitBoxes );
-			const int collideIndex = actor.MoveY( actorVelocity.y, hitBoxes );
-			if ( collideIndex != -1 )
-			{
-				actorVelocity.y = 0.0f;
-			}
-		}
+
+		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
 	}
 
 	CameraUpdate();
@@ -324,6 +279,7 @@ void SceneBattle::Draw( float elapsedTime )
 		pRenderer->DeactivateShaderNormalSkinning();
 
 		pRenderer->ActivateShaderNormalStatic();
+		Bullet::Admin::Get().Draw( pRenderer.get() );
 		if ( pMap ) { pMap->Draw( pRenderer.get() ); }
 		pRenderer->DeactivateShaderNormalStatic();
 	}
@@ -333,15 +289,10 @@ void SceneBattle::Draw( float elapsedTime )
 	pRenderer->DeactivateRasterizerModel();
 	pRenderer->DeactivateSamplerModel();
 
-	// for ( const auto &it : solids )
-	// {
-	// 	it.DrawHitBox( pRenderer.get(), VP, { 1.0f, 0.5f, 0.0f, 1.0f } );
-	// }
-	// actor.DrawHitBox( pRenderer.get(), VP, { 0.4f, 1.0f, 0.4f, 1.0f } );
-
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
+		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		if ( pMap		) { pMap->DrawHitBoxes( pRenderer.get(), VP ); }
 		if ( pPlayer	) { pPlayer->DrawHitBox( pRenderer.get(), VP ); }
 	}
@@ -648,6 +599,8 @@ void SceneBattle::UseImGui()
 
 		ImGui::TreePop();
 	}
+
+	Bullet::Admin::Get().ShowImGuiNode( u8"íeÇÃåªç›" );
 	
 	ImGui::End();
 }

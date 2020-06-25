@@ -24,7 +24,7 @@ namespace Bullet
 	public:
 		float			initialSpeed = 1.0f;			// [m/s]
 		Donya::Vector3	direction{ 1.0f, 0.0f, 0.0f };	// Unit vector
-		Donya::Vector3	wsPos;
+		Donya::Vector3	position;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -34,13 +34,17 @@ namespace Bullet
 			(
 				CEREAL_NVP( initialSpeed	),
 				CEREAL_NVP( direction		),
-				CEREAL_NVP( wsPos			)
+				CEREAL_NVP( position			)
 			);
 			if ( 1 <= version )
 			{
 				// archive();
 			}
 		}
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const std::string &nodeCaption, bool positionIsRelative = true );
+	#endif // USE_IMGUI
 	};
 
 
@@ -82,7 +86,7 @@ namespace Bullet
 		std::vector<Buster>		bullets;
 		std::vector<FireDesc>	generateRequests;
 	private:
-		Admin();
+		Admin() = default;
 	public:
 		void Update( float elapsedTime );
 		void PhysicUpdate( float elasedTime );

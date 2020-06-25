@@ -5,6 +5,8 @@
 #include "Donya/Collision.h"
 #include "Donya/Serializer.h"
 
+#include "Bullet.h"		// Use Bullet::FireDesc
+
 struct PlayerParam
 {
 public:
@@ -14,8 +16,9 @@ public:
 	float	gravityResistance	= 0.5f;	// Multiply to gravity if while pressing a jump key
 	float	resistableSeconds	= 0.5f;
 	float	maxFallSpeed		= 1.0f;
-	Donya::Collision::Box3F hitBox;		// VS a terrain
-	Donya::Collision::Box3F hurtBox;	// VS an attack(e.g. enemy)
+	Donya::Collision::Box3F	hitBox;		// VS a terrain
+	Donya::Collision::Box3F	hurtBox;	// VS an attack(e.g. enemy)
+	Bullet::FireDesc		fireParam;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -35,6 +38,10 @@ private:
 
 		if ( 1 <= version )
 		{
+			archive( CEREAL_NVP( fireParam ) );
+		}
+		if ( 2 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -43,4 +50,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 0 )
+CEREAL_CLASS_VERSION( PlayerParam, 1 )
