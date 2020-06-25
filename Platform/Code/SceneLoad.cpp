@@ -151,14 +151,14 @@ void SceneLoad::Init()
 
 		using Attr = SpriteAttribute;
 
-		auto MakeTextureCache = []( Attr attr, size_t maxInstanceCount )->bool
+		auto MakeTextureCache = []( Attr attr )->bool
 		{
-			const auto handle = Donya::Sprite::Load( GetSpritePath( attr ), maxInstanceCount );
+			const auto handle = Donya::Sprite::Load( GetSpritePath( attr ), GetSpriteInstanceCount( attr ) );
 			return  (  handle == NULL ) ? false : true;
 		};
 
 		bool succeeded = true;
-		//if ( !MakeTextureCache( Attr::,		2U ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::TitleLogo ) ) { succeeded = false; }
 		
 		_ASSERT_EXPR( succeeded, L"Failed: Sprites load is failed." );
 

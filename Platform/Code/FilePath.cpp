@@ -60,20 +60,52 @@ bool MakeFileIfNotExists( const std::string &filePath, bool binaryMode )
 	return wasCreated;
 }
 
-std::wstring GetSpritePath( SpriteAttribute sprAttribute )
+
+namespace
 {
-	switch ( sprAttribute )
+	struct SpriteSet
 	{
-	case SpriteAttribute::FMODLogoBlack:
-		return L"./Data/Images/Rights/FMOD Logo Black - White Background.png";	// break;
-	case SpriteAttribute::FMODLogoWhite:
-		return L"./Data/Images/Rights/FMOD Logo White - Black Background.png";	// break;
-	case SpriteAttribute::NowLoading:
-		return L"./Data/Images/UI/NowLoading.png";	// break;
+		const wchar_t	*path			= L"ERROR_PATH";
+		const size_t	instanceCount	= 32U;
+	public:
+		SpriteSet( const wchar_t *filePath, size_t instanceCount )
+			: path( filePath ), instanceCount( instanceCount )
+		{}
+		SpriteSet( const SpriteSet & ) = default;
+	};
 
-	default:
-		assert( !"Error : Specified unexpect sprite type." ); break;
+	SpriteSet GetSpriteInfo( SpriteAttribute attr )
+	{
+		auto Make = []( const std::wstring &sprName, size_t instanceCount )
+		{
+			constexpr const wchar_t *directory = L"./Data/Images/";
+			return SpriteSet{ ( directory + sprName ).c_str(), instanceCount };
+		};
+
+		switch ( attr )
+		{
+		case SpriteAttribute::FMODLogoBlack:
+			return Make( L"Rights/FMOD Logo Black - White Background.png", 2U );
+		case SpriteAttribute::FMODLogoWhite:
+			return Make( L"Rights/FMOD Logo White - Black Background.png", 2U );
+
+		case SpriteAttribute::NowLoading:
+			return Make( L"UI/NowLoading.png",	1U );
+		case SpriteAttribute::TitleLogo:
+			return Make( L"Title/Logo.png",		2U );
+
+		default: break;
+		}
+
+		_ASSERT_EXPR( 0, L"Error : Specified unexpect sprite type!" );
+		return SpriteSet{ L"ERROR", 0U };
 	}
-
-	return L"ERROR_ATTRIBUTE";
+}
+std::wstring	GetSpritePath( SpriteAttribute attr )
+{
+	return GetSpriteInfo( attr ).path;
+}
+size_t			GetSpriteInstaceCount( SpriteAttribute attr )
+{
+	return GetSpriteInfo( attr ).instanceCount;
 }

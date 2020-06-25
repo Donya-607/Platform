@@ -24,7 +24,9 @@ enum class SpriteAttribute
 {
 	FMODLogoBlack,
 	FMODLogoWhite,
-	NowLoading,
-};
 
-std::wstring GetSpritePath( SpriteAttribute spriteAttribute );
+	NowLoading,
+	TitleLogo,
+};
+std::wstring	GetSpritePath( SpriteAttribute spriteAttribute );
+size_t			GetSpriteInstanceCount( SpriteAttribute spriteAttribute );
