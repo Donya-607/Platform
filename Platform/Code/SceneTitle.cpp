@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
-#include "Donya/Constant.h"
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"

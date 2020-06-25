@@ -105,7 +105,7 @@ std::wstring	GetSpritePath( SpriteAttribute attr )
 {
 	return GetSpriteInfo( attr ).path;
 }
-size_t			GetSpriteInstaceCount( SpriteAttribute attr )
+size_t			GetSpriteInstanceCount( SpriteAttribute attr )
 {
 	return GetSpriteInfo( attr ).instanceCount;
 }
