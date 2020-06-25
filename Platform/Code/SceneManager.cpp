@@ -174,7 +174,7 @@ void SceneMng::PushScene( Scene::Type type, bool toFront )
 	case Scene::Type::Logo:		PushSceneImpl<SceneLogo>  ( toFront ); return;
 	case Scene::Type::Load:		PushSceneImpl<SceneLoad>  ( toFront ); return;
 	case Scene::Type::Title:	PushSceneImpl<SceneTitle> ( toFront ); return;
-	case Scene::Type::Game:		PushSceneImpl<SceneBattle>( toFront ); return;
+	case Scene::Type::Game:		PushSceneImpl<SceneGame>( toFront ); return;
 	case Scene::Type::Pause:	PushSceneImpl<ScenePause> ( toFront ); return;
 	default: _ASSERT_EXPR( 0, L"Error: The scene does not exist."   ); return;
 	}

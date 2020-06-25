@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Donya/Camera.h"
+#include "Donya/Collision.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
 #include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
@@ -14,11 +15,12 @@
 #include "Renderer.h"
 #include "Scene.h"
 
-class SceneBattle : public Scene
+class SceneGame : public Scene
 {
 private:
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
+	Donya::Collision::Box2F				currentScreen;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 
@@ -33,7 +35,7 @@ private:
 	bool isReverseCameraRotY	= false;
 #endif // DEBUG_MODE
 public:
-	SceneBattle() : Scene() {}
+	SceneGame() : Scene() {}
 public:
 	void	Init() override;
 	void	Uninit() override;
@@ -42,6 +44,9 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
+	Donya::Vector4x4 MakeScreenTransform() const;
+	Donya::Collision::Box2F CalcCurrentScreenPlane() const;
+
 	void	CameraInit();
 	void	AssignCameraPos();
 	void	CameraUpdate();

@@ -135,7 +135,7 @@ namespace
 }
 CEREAL_CLASS_VERSION( SceneParam, 0 )
 
-void SceneBattle::Init()
+void SceneGame::Init()
 {
 	// Donya::Sound::Play( Music::BGM_Game );
 #if DEBUG_MODE
@@ -164,7 +164,7 @@ void SceneBattle::Init()
 
 	Bullet::Admin::Get().ClearInstances();
 }
-void SceneBattle::Uninit()
+void SceneGame::Uninit()
 {
 	if ( pMap		) { pMap->Uninit();		}
 	if ( pPlayer	) { pPlayer->Uninit();	}
@@ -176,7 +176,7 @@ void SceneBattle::Uninit()
 	// Donya::Sound::Stop( Music::BGM_Game );
 }
 
-Scene::Result SceneBattle::Update( float elapsedTime )
+Scene::Result SceneGame::Update( float elapsedTime )
 {
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
@@ -200,6 +200,8 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 #endif // USE_IMGUI
 
 	controller.Update();
+
+	currentScreen = CalcCurrentScreenPlane();
 
 	if ( pMap )
 	{
@@ -248,7 +250,7 @@ Scene::Result SceneBattle::Update( float elapsedTime )
 	return ReturnResult();
 }
 
-void SceneBattle::Draw( float elapsedTime )
+void SceneGame::Draw( float elapsedTime )
 {
 	// elapsedTime = 1.0f; // Disable
 
@@ -303,7 +305,7 @@ void SceneBattle::Draw( float elapsedTime )
 	{
 		Donya::Model::Cube::Constant constant;
 		constant.matViewProj	= VP;
-		constant.drawColor		= Donya::Vector4{ 0.5f, 1.0f, 0.8f, 0.5f };
+		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 0.6f };
 		constant.lightDirection	= data.directionalLight.direction.XYZ();
 		
 		auto DrawCube = [&]( const Donya::Vector3 &pos, const Donya::Vector3 &scale = { 1.0f, 1.0f, 1.0f } )
@@ -317,11 +319,76 @@ void SceneBattle::Draw( float elapsedTime )
 			pRenderer->ProcessDrawingCube( constant );
 		};
 
+		constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( Donya::Color::Code::TEAL ), 0.6f };
+		DrawCube( Donya::Vector3{ currentScreen.WorldPosition(), 0.0f }, Donya::Vector3{ 1.0f, 1.0f, 0.2f } );
 	}
 #endif // DEBUG_MODE
 }
 
-void SceneBattle::CameraInit()
+Donya::Vector4x4 SceneGame::MakeScreenTransform() const
+{
+	const Donya::Vector4x4 matViewProj = iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix();
+	const Donya::Vector4x4 matViewport = Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
+	return matViewProj * matViewport;
+}
+Donya::Collision::Box2F SceneGame::CalcCurrentScreenPlane() const
+{
+	const Donya::Vector4x4 toWorld = MakeScreenTransform().Inverse();
+
+	Donya::Plane xyPlane;
+	xyPlane.distance	= 0.0f;
+	xyPlane.normal		= -Donya::Vector3::Front();
+
+	auto Transform		= [&]( const Donya::Vector3 &v, float fourthParam, const Donya::Vector4x4 &m )
+	{
+		Donya::Vector4 tmp = m.Mul( v, fourthParam );
+		tmp /= tmp.w;
+		return tmp.XYZ();
+	};
+	auto CalcWorldPos	= [&]( const Donya::Vector2 &ssPos, const Donya::Vector3 &oldPos )
+	{
+		const Donya::Vector3 ssRayStart{ ssPos, 0.0f };
+		const Donya::Vector3 ssRayEnd  { ssPos, 1.0f };
+
+		const Donya::Vector3 wsRayStart	= Transform( ssRayStart,	1.0f, toWorld );
+		const Donya::Vector3 wsRayEnd	= Transform( ssRayEnd,		1.0f, toWorld );
+
+		const auto result = Donya::CalcIntersectionPoint( wsRayStart, wsRayEnd, xyPlane );
+		return ( result.isIntersect ) ? result.intersection : oldPos;
+	};
+
+	const Donya::Vector2 halfScreenSize
+	{
+		Common::HalfScreenWidthF(),
+		Common::HalfScreenHeightF(),
+	};
+	const Donya::Vector2 left	{ 0.0f,						halfScreenSize.y		};
+	const Donya::Vector2 top	{ halfScreenSize.x,			0.0f					};
+	const Donya::Vector2 right	{ halfScreenSize.x * 2.0f,	halfScreenSize.y		};
+	const Donya::Vector2 bottom	{ halfScreenSize.x,			halfScreenSize.y * 2.0f	};
+
+	Donya::Vector3 nowLeft		{ currentScreen.Min().x,	currentScreen.pos.y,	0.0f };
+	Donya::Vector3 nowTop		{ currentScreen.pos.x,		currentScreen.Min().y,	0.0f };
+	Donya::Vector3 nowRight		{ currentScreen.Max().x,	currentScreen.pos.y,	0.0f };
+	Donya::Vector3 nowBottom	{ currentScreen.pos.x,		currentScreen.Max().y,	0.0f };
+
+	nowLeft		= CalcWorldPos( left,	nowLeft		);
+	nowTop		= CalcWorldPos( top,	nowTop		);
+	nowRight	= CalcWorldPos( right,	nowRight	);
+	nowBottom	= CalcWorldPos( bottom, nowBottom	);
+
+	const Donya::Vector3 halfWidth	= nowRight - nowLeft;
+	const Donya::Vector3 halfHeight	= nowBottom - nowTop;
+
+	Donya::Collision::Box2F nowScreen;
+	nowScreen.pos.x = ( nowLeft + halfWidth  ).x;
+	nowScreen.pos.y = ( nowTop  + halfHeight ).y;
+	nowScreen.size.x = halfWidth.x;
+	nowScreen.size.y = halfHeight.y;
+	return nowScreen;
+}
+
+void SceneGame::CameraInit()
 {
 	const auto &data = FetchParameter();
 
@@ -340,7 +407,7 @@ void SceneBattle::CameraInit()
 	moveInitPoint.slerpPercent = 1.0f;
 	iCamera.Update( moveInitPoint );
 }
-void SceneBattle::AssignCameraPos()
+void SceneGame::AssignCameraPos()
 {
 	const auto &data = FetchParameter();
 	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
@@ -348,7 +415,7 @@ void SceneBattle::AssignCameraPos()
 	iCamera.SetPosition  ( playerPos + data.camera.offsetPos   );
 	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
 }
-void SceneBattle::CameraUpdate()
+void SceneGame::CameraUpdate()
 {
 	const auto &data = FetchParameter();
 
@@ -434,7 +501,7 @@ void SceneBattle::CameraUpdate()
 #endif // !DEBUG_MODE
 }
 
-void SceneBattle::ClearBackGround() const
+void SceneGame::ClearBackGround() const
 {
 	constexpr Donya::Vector3 gray = Donya::Color::MakeColor( Donya::Color::Code::GRAY );
 	constexpr FLOAT BG_COLOR[4]{ gray.x, gray.y, gray.z, 1.0f };
@@ -450,7 +517,7 @@ void SceneBattle::ClearBackGround() const
 #endif // DEBUG_MODE
 }
 
-void SceneBattle::StartFade() const
+void SceneGame::StartFade() const
 {
 	Fader::Configuration config{};
 	config.type			= Fader::Type::Gradually;
@@ -459,7 +526,7 @@ void SceneBattle::StartFade() const
 	Fader::Get().StartFadeOut( config );
 }
 
-Scene::Result SceneBattle::ReturnResult()
+Scene::Result SceneGame::ReturnResult()
 {
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
@@ -496,7 +563,7 @@ Scene::Result SceneBattle::ReturnResult()
 }
 
 #if USE_IMGUI
-void SceneBattle::UseImGui()
+void SceneGame::UseImGui()
 {
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
