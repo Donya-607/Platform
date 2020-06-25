@@ -174,9 +174,10 @@ void PlayerParam::ShowImGuiNode()
 	ImGui::SliderFloat( u8"重力抵抗力",		&gravityResistance,	0.0f, 1.0f );
 	ImGui::DragFloat( u8"重力抵抗可能秒数",	&resistableSeconds,	0.01f );
 	ImGui::DragFloat( u8"最高落下速度",		&maxFallSpeed,		0.01f );
+	fireParam.ShowImGuiNode( u8"ショット設定" );
+	ImGui::DragInt( u8"画面内に出せる弾数",	&maxBusterCount );
 	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定", &hitBox  );
 	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定", &hurtBox );
-	fireParam.ShowImGuiNode( u8"ショット設定" );
 
 	auto MakePositive = []( float *v )
 	{
@@ -187,6 +188,7 @@ void PlayerParam::ShowImGuiNode()
 	MakePositive( &gravity				);
 	MakePositive( &resistableSeconds	);
 	MakePositive( &maxFallSpeed			);
+	maxBusterCount = std::max( 1, maxBusterCount );
 }
 #endif // USE_IMGUI
 
@@ -472,18 +474,20 @@ void Player::Shot( float elapsedTime, Input input )
 	if ( nowTriggered )
 	{
 		const auto &data = Parameter().Get();
+		if ( Bullet::Buster::GetLivingCount() < data.maxBusterCount )
+		{
+			const Donya::Vector3 front = orientation.LocalFront();
+			const float dot = Donya::Dot( front, Donya::Vector3::Right() );
+			const float lookingSign = Donya::SignBitF( dot );
 
-		const Donya::Vector3 front = orientation.LocalFront();
-		const float dot = Donya::Dot( front, Donya::Vector3::Right() );
-		const float lookingSign = Donya::SignBitF( dot );
-
-		Bullet::FireDesc desc = data.fireParam;
-		desc.direction	=  Donya::Vector3::Right() * lookingSign;
-		desc.position.x	*= lookingSign;
-		desc.position	+= GetPosition();
+			Bullet::FireDesc desc = data.fireParam;
+			desc.direction	=  Donya::Vector3::Right() * lookingSign;
+			desc.position.x	*= lookingSign;
+			desc.position	+= GetPosition();
 		
-		Bullet::Admin::Get().RequestFire( desc );
-		Donya::Sound::Play( Music::Player_Shot );
+			Bullet::Admin::Get().RequestFire( desc );
+			Donya::Sound::Play( Music::Player_Shot );
+		}
 	}
 }
 Donya::Vector4x4 Player::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const

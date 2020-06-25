@@ -2,9 +2,11 @@
 
 #include <algorithm>	// Use std::remove_if
 
+#include "BulletParam.h"
 #include "Common.h"		// Use IsShowCollision()
 #include "FilePath.h"
 #include "ModelHelper.h"
+#include "Parameter.h"
 
 namespace
 {
@@ -50,8 +52,26 @@ namespace
 }
 namespace Bullet
 {
+	namespace Parameter
+	{
+		static ParamOperator<BusterParam> busterParam{ "Buster" };
+
+		const BusterParam &GetBuster()
+		{
+			return busterParam.Get();
+		}
+	#if USE_IMGUI
+		void Update( const std::string &nodeCaption )
+		{
+			busterParam.ShowImGuiNode( nodeCaption );
+		}
+	#endif // USE_IMGUI
+	}
+
 	bool LoadResource()
 	{
+		Parameter::busterParam.LoadParameter();
+
 		return ::LoadModel();
 	}
 
@@ -77,21 +97,29 @@ namespace Bullet
 	}
 #endif // USE_IMGUI
 
+	int  Buster::livingCount = 0;
+	int  Buster::GetLivingCount()
+	{
+		return livingCount;
+	}
 	void Buster::Init( const FireDesc &parameter )
 	{
+		livingCount++;
+
+		const auto &data = Parameter::GetBuster();
+
 		body.pos	= parameter.position;
-	#if DEBUG_MODE
-		body.offset	= 0.0f;
-		body.size.x	= 0.5f;
-		body.size.y	= 0.15f;
-		body.size.z	= 0.15f;
-	#endif // DEBUG_MODE
+		body.offset	= data.hitBoxOffset;
+		body.size	= data.hitBoxSize;
 
 		velocity	= parameter.direction * parameter.initialSpeed;
 		orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), parameter.direction );
 		wantRemove	= false;
 	}
-	void Buster::Uninit() {}
+	void Buster::Uninit()
+	{
+		livingCount--;
+	}
 	void Buster::Update( float elapsedTime, const Donya::Collision::Box2F &wsScreen )
 	{
 		if ( OnOutSide( wsScreen ) )
@@ -185,6 +213,14 @@ namespace Bullet
 
 		ImGui::TreePop();
 	}
+	void BusterParam::ShowImGuiNode()
+	{
+		ImGui::DragFloat3( u8"当たり判定・オフセット（半分を指定）",	&hitBoxOffset.x,	0.01f );
+		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",		&hitBoxSize.x,		0.01f );
+		hitBoxSize.x = std::max( 0.0f, hitBoxSize.x );
+		hitBoxSize.y = std::max( 0.0f, hitBoxSize.y );
+		hitBoxSize.z = std::max( 0.0f, hitBoxSize.z );
+	}
 #endif // USE_IMGUI
 
 
@@ -199,7 +235,7 @@ namespace Bullet
 
 			if ( it.ShouldRemove() )
 			{
-				it.Uninit();
+				it.Uninit(); // It will be removed at RemoveInstancesIfNeeds(), so we should finalize here.
 			}
 		}
 

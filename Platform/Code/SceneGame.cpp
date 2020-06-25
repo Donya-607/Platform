@@ -320,6 +320,7 @@ void SceneGame::Draw( float elapsedTime )
 		};
 
 		// Screen box
+		if ( 0 )
 		{
 			const auto hWidth  = currentScreen.size.x;
 			const auto hHeight = currentScreen.size.y;

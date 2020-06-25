@@ -14,6 +14,15 @@
 
 namespace Bullet
 {
+	struct BusterParam;
+	namespace Parameter
+	{
+		static const BusterParam &GetBuster();
+	#if USE_IMGUI
+		static void Update( const std::string &nodeCaption );
+	#endif // USE_IMGUI
+	}
+
 	bool LoadResource();
 
 	/// <summary>
@@ -50,14 +59,21 @@ namespace Bullet
 
 	/// <summary>
 	/// Kind of the player fires.
+	/// You must call Init() when generate and Uninit() before remove. Because these method manages instance count.
 	/// </summary>
 	class Buster : Solid
 	{
+	private:
+		static int livingCount;
+	public:
+		static int GetLivingCount();
 	private:
 		using Solid::body;
 		Donya::Vector3		velocity; // [m/s]
 		Donya::Quaternion	orientation;
 		bool				wantRemove = false;
+	public:
+		virtual ~Buster() = default;
 	public:
 		void Init( const FireDesc &parameter );
 		void Uninit();

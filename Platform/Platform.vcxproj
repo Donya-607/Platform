@@ -196,6 +196,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Bullet.h" />
+    <ClInclude Include="Code\BulletParam.h" />
     <ClInclude Include="Code\Common.h" />
     <ClInclude Include="Code\CSVLoader.h" />
     <ClInclude Include="Code\Donya\AudioSystem.h" />

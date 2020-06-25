@@ -25,6 +25,13 @@ public:
 public:
 	Donya::Vector2			posRemainder;
 	Donya::Collision::Box2	body;
+public:
+	Actor2D() = default;
+	Actor2D( const Actor2D &  ) = default;
+	Actor2D(       Actor2D && ) = default;
+	Actor2D &operator  = ( const Actor2D &  ) = default;
+	Actor2D &operator  = (       Actor2D && ) = default;
+	virtual ~Actor2D() = default;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -80,6 +87,13 @@ public:
 	static int MoveAxis( Actor *pTarget, int moveDimension, float movement, const std::vector<Donya::Collision::Box3F> &solids );
 public:
 	Donya::Collision::Box3F	body;
+public:
+	Actor() = default;
+	Actor( const Actor &  ) = default;
+	Actor(       Actor && ) = default;
+	Actor &operator  = ( const Actor &  ) = default;
+	Actor &operator  = (       Actor && ) = default;
+	virtual ~Actor() = default;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -130,6 +144,13 @@ class Solid2D
 public:
 	Donya::Vector2			posRemainder;
 	Donya::Collision::Box2	body;
+public:
+	Solid2D() = default;
+	Solid2D( const Solid2D &  ) = default;
+	Solid2D(       Solid2D && ) = default;
+	Solid2D &operator  = ( const Solid2D &  ) = default;
+	Solid2D &operator  = (       Solid2D && ) = default;
+	virtual ~Solid2D() = default;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -174,6 +195,13 @@ class Solid
 {
 public:
 	Donya::Collision::Box3F body;
+public:
+	Solid() = default;
+	Solid( const Solid &  ) = default;
+	Solid(       Solid && ) = default;
+	Solid &operator  = ( const Solid &  ) = default;
+	Solid &operator  = (       Solid && ) = default;
+	virtual ~Solid() = default;
 private:
 	friend class cereal::access;
 	template<class Archive>

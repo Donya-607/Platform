@@ -4,12 +4,14 @@
 
 #include "Donya/Collision.h"
 #include "Donya/Serializer.h"
+#include "Donya/UseImGui.h"		// use US_IMGUI macro
 
-#include "Bullet.h"		// Use Bullet::FireDesc
+#include "Bullet.h"				// Use Bullet::FireDesc
 
 struct PlayerParam
 {
 public:
+	int		maxBusterCount		= 3;	// Max generatable count of buster at same time.
 	float	moveSpeed			= 1.0f;
 	float	jumpStrength		= 1.0f;
 	float	gravity				= 1.0f;
@@ -42,6 +44,10 @@ private:
 		}
 		if ( 2 <= version )
 		{
+			archive( CEREAL_NVP( maxBusterCount ) );
+		}
+		if ( 3 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -50,4 +56,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 1 )
+CEREAL_CLASS_VERSION( PlayerParam, 2 )
