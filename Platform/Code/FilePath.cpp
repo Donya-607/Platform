@@ -65,23 +65,24 @@ namespace
 {
 	struct SpriteSet
 	{
-		const wchar_t	*path			= L"ERROR_PATH";
-		const size_t	instanceCount	= 32U;
+		const std::wstring	path			= L"ERROR_PATH";
+		const size_t		instanceCount	= 32U;
 	public:
-		SpriteSet( const wchar_t *filePath, size_t instanceCount )
+		SpriteSet( const std::wstring &filePath, size_t instanceCount )
 			: path( filePath ), instanceCount( instanceCount )
 		{}
-		SpriteSet( const SpriteSet & ) = default;
+		SpriteSet( const SpriteSet &copy )
+			: path( copy.path ), instanceCount( copy.instanceCount )
+		{}
 	};
 
+	SpriteSet Make( const wchar_t *sprName, size_t instanceCount )
+	{
+		constexpr const wchar_t *directory = L"./Data/Images/";
+		return SpriteSet{ std::wstring{ directory + std::wstring{ sprName } }, instanceCount };
+	}
 	SpriteSet GetSpriteInfo( SpriteAttribute attr )
 	{
-		auto Make = []( const std::wstring &sprName, size_t instanceCount )
-		{
-			constexpr const wchar_t *directory = L"./Data/Images/";
-			return SpriteSet{ ( directory + sprName ).c_str(), instanceCount };
-		};
-
 		switch ( attr )
 		{
 		case SpriteAttribute::FMODLogoBlack:

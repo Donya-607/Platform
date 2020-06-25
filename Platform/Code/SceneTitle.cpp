@@ -99,6 +99,10 @@ void SceneTitle::Init()
 	result = pRenderer->Init();
 	assert( result );
 
+	using Spr = SpriteAttribute;
+	result = sprTitleLogo.LoadSprite( GetSpritePath( Spr::TitleLogo ), GetSpriteInstanceCount( Spr::TitleLogo ) );
+	assert( result );
+
 	sceneParam.LoadParameter();
 
 	CameraInit();
@@ -187,12 +191,21 @@ void SceneTitle::Draw( float elapsedTime )
 	pRenderer->DeactivateRasterizerModel();
 	pRenderer->DeactivateSamplerModel();
 
+#if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
 
 	}
+#endif // DEBUG_MODE
 
-	// Drawing to far for avoiding to trans the BG's blue.
+	// Drawing to far for avoiding to trans the BG's color.
+
+	{
+		sprTitleLogo.pos.x = Common::HalfScreenWidthF();
+		sprTitleLogo.pos.y = 480.0f;
+		sprTitleLogo.alpha = 1.0f;
+		sprTitleLogo.Draw();
+	}
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )

@@ -9,6 +9,7 @@
 
 #include "Renderer.h"
 #include "Scene.h"
+#include "UI.h"
 
 class SceneTitle : public Scene
 {
@@ -17,6 +18,8 @@ private:
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
+
+	UIObject sprTitleLogo;
 
 #if DEBUG_MODE
 	bool nowDebugMode			= false;
