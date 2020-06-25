@@ -319,8 +319,17 @@ void SceneGame::Draw( float elapsedTime )
 			pRenderer->ProcessDrawingCube( constant );
 		};
 
-		constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( Donya::Color::Code::TEAL ), 0.6f };
-		DrawCube( Donya::Vector3{ currentScreen.WorldPosition(), 0.0f }, Donya::Vector3{ 1.0f, 1.0f, 0.2f } );
+		// Screen box
+		{
+			const auto hWidth  = currentScreen.size.x;
+			const auto hHeight = currentScreen.size.y;
+			const Donya::Vector2 scale{ hWidth * 2.0f / 0.5f, hHeight * 2.0f / 0.5f };
+
+			constexpr auto  color = Donya::Color::Code::TEAL;
+			constexpr float alpha = 0.6f;
+			constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( color ), alpha };
+			DrawCube( Donya::Vector3{ currentScreen.WorldPosition(), 0.0f }, Donya::Vector3{ scale, 0.2f } );
+		}
 	}
 #endif // DEBUG_MODE
 }
@@ -377,14 +386,14 @@ Donya::Collision::Box2F SceneGame::CalcCurrentScreenPlane() const
 	nowRight	= CalcWorldPos( right,	nowRight	);
 	nowBottom	= CalcWorldPos( bottom, nowBottom	);
 
-	const Donya::Vector3 halfWidth	= nowRight - nowLeft;
-	const Donya::Vector3 halfHeight	= nowBottom - nowTop;
+	const float halfWidth	= fabsf( nowRight.x - nowLeft.x ) * 0.5f;
+	const float halfHeight	= fabsf( nowBottom.y - nowTop.y ) * 0.5f;
 
 	Donya::Collision::Box2F nowScreen;
-	nowScreen.pos.x = ( nowLeft + halfWidth  ).x;
-	nowScreen.pos.y = ( nowTop  + halfHeight ).y;
-	nowScreen.size.x = halfWidth.x;
-	nowScreen.size.y = halfHeight.y;
+	nowScreen.pos.x  = nowLeft.x + halfWidth;	// Specify center
+	nowScreen.pos.y  = nowTop.y  - halfHeight;	// Specify center
+	nowScreen.size.x = halfWidth;
+	nowScreen.size.y = halfHeight;
 	return nowScreen;
 }
 
