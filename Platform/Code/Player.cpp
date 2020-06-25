@@ -449,9 +449,10 @@ void Player::MoveVertical  ( float elapsedTime, Input input )
 			wasReleasedJumpInput = true;
 		}
 
-		velocity.y	-= ( resistGravity )
-					? data.gravity * data.gravityResistance
-					: data.gravity;
+		const float applyGravity =	( resistGravity )
+									? data.gravity * data.gravityResistance
+									: data.gravity;
+		velocity.y -= applyGravity * elapsedTime;
 		velocity.y = std::max( -data.maxFallSpeed, velocity.y );
 	}
 }
