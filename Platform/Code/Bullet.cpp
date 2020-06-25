@@ -215,8 +215,8 @@ namespace Bullet
 	}
 	void BusterParam::ShowImGuiNode()
 	{
-		ImGui::DragFloat3( u8"当たり判定・オフセット（半分を指定）",	&hitBoxOffset.x,	0.01f );
-		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",		&hitBoxSize.x,		0.01f );
+		ImGui::DragFloat3( u8"Buster-当たり判定・オフセット（半分を指定）",	&hitBoxOffset.x,	0.01f );
+		ImGui::DragFloat3( u8"Buster-当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f );
 		hitBoxSize.x = std::max( 0.0f, hitBoxSize.x );
 		hitBoxSize.y = std::max( 0.0f, hitBoxSize.y );
 		hitBoxSize.z = std::max( 0.0f, hitBoxSize.z );
