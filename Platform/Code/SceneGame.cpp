@@ -223,7 +223,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		pPlayer->Update( elapsedTime, input );
 	}
 
-	Bullet::Admin::Get().Update( elapsedTime );
+	Bullet::Admin::Get().Update( elapsedTime, currentScreen );
 
 	// PhysicUpdates
 	{

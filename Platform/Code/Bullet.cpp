@@ -92,7 +92,13 @@ namespace Bullet
 		wantRemove	= false;
 	}
 	void Buster::Uninit() {}
-	void Buster::Update( float elapsedTime ) {}
+	void Buster::Update( float elapsedTime, const Donya::Collision::Box2F &wsScreen )
+	{
+		if ( OnOutSide( wsScreen ) )
+		{
+			wantRemove = true;
+		}
+	}
 	void Buster::PhysicUpdate( float elapsedTime )
 	{
 		const auto movement = velocity * elapsedTime;
@@ -141,6 +147,15 @@ namespace Bullet
 	{
 		return wantRemove;
 	}
+	bool Buster::OnOutSide( const Donya::Collision::Box2F &wsScreen ) const
+	{
+		Donya::Collision::Box3F wsScreen3D;
+		wsScreen3D.pos		= Donya::Vector3{ wsScreen.pos,  0.0f };
+		wsScreen3D.offset	= 0.0f;
+		wsScreen3D.size		= Donya::Vector3{ wsScreen.size, FLT_MAX };
+		wsScreen3D.exist	= true;
+		return ( !Donya::Collision::IsHit( body, wsScreen3D ) );
+	}
 	Donya::Vector4x4 Buster::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 	{
 		Donya::Vector4x4 W{};
@@ -173,14 +188,14 @@ namespace Bullet
 #endif // USE_IMGUI
 
 
-	void Admin::Update( float elapsedTime )
+	void Admin::Update( float elapsedTime, const Donya::Collision::Box2F &wsScreen )
 	{
 		GenerateRequestedFires();
 		generateRequests.clear();
 
 		for ( auto &it : bullets )
 		{
-			it.Update( elapsedTime );
+			it.Update( elapsedTime, wsScreen );
 
 			if ( it.ShouldRemove() )
 			{

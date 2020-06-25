@@ -61,12 +61,13 @@ namespace Bullet
 	public:
 		void Init( const FireDesc &parameter );
 		void Uninit();
-		void Update( float elasedTime );
+		void Update( float elasedTime, const Donya::Collision::Box2F &wsScreenHitBox );
 		void PhysicUpdate( float elasedTime );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
 		bool ShouldRemove() const;
+		bool OnOutSide( const Donya::Collision::Box2F &wsScreenHitBox ) const;
 	protected:
 		Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:
@@ -88,7 +89,7 @@ namespace Bullet
 	private:
 		Admin() = default;
 	public:
-		void Update( float elapsedTime );
+		void Update( float elapsedTime, const Donya::Collision::Box2F &wsScreenHitBox );
 		void PhysicUpdate( float elasedTime );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
