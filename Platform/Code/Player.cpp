@@ -2,12 +2,17 @@
 
 #include "Donya/Loader.h"
 #include "Donya/Sound.h"
+#if DEBUG_MODE
+#include "Donya/Useful.h"	// Use ShowMessageBox
+#endif // DEBUG_MODE
 
 #include "Common.h"
 #include "FilePath.h"
+#include "Map.h"			// Use Map::ToWorldPos()
 #include "Music.h"
 #include "Parameter.h"
 #include "PlayerParam.h"
+#include "StageFormat.h"
 
 namespace
 {
@@ -85,8 +90,124 @@ void PlayerInitializer::LoadParameter( int stageNo )
 {
 #if DEBUG_MODE
 	LoadJson( stageNo );
+	// If a user was changed only a json file, the user wanna apply the changes to binary file also.
+	// So save here.
+	SaveBin( stageNo );
 #else
 	LoadBin( stageNo );
+#endif // DEBUG_MODE
+}
+void PlayerInitializer::RemakeByCSV( const CSVLoader &loadedData )
+{
+	auto ShouldConsider = []( int id )
+	{
+		return ( id == StageFormat::StartPointRight || id == StageFormat::StartPointLeft );
+	};
+	auto ApplyIfNeeded  = [&]( int id, size_t r, size_t c )->bool
+	{
+		if ( !ShouldConsider( id ) ) { return false; }
+		// else
+
+		wsInitialPos = Map::ToWorldPos( r, c );
+		lookingRight = ( id == StageFormat::StartPointRight );
+		return true;
+	};
+
+	bool wasApplied = false;
+
+#if DEBUG_MODE
+	struct Cell
+	{
+		size_t row = 0;
+		size_t column = 0;
+	};
+	std::vector<Cell> duplications;
+	Cell appliedCell{};
+#endif // DEBUG_MODE
+
+	const auto &data = loadedData.Get();
+	const size_t rowCount = data.size();
+	for ( size_t r = 0; r < rowCount; ++r )
+	{
+		const size_t columnCount = data[r].size();
+		for ( size_t c = 0; c < columnCount; ++c )
+		{
+		#if DEBUG_MODE
+			if ( wasApplied )
+			{
+				if ( ShouldConsider( data[r][c] ) )
+				{
+					Cell tmp;
+					tmp.row = r;
+					tmp.column = c;
+					duplications.emplace_back( std::move( tmp ) );
+				}
+				continue;
+			}
+			// else
+		#endif // DEBUG_MODE
+
+			if ( ApplyIfNeeded( data[r][c], r, c ) )
+			{
+				wasApplied = true;
+			#if DEBUG_MODE
+				appliedCell.row		= r;
+				appliedCell.column	= c;
+			#else
+				break;
+			#endif // DEBUG_MODE
+			}
+		}
+
+	#if !DEBUG_MODE
+		if ( wasApplied ) { break; }
+	#endif // !DEBUG_MODE
+	}
+
+#if DEBUG_MODE
+	if ( !duplications.empty() )
+	{
+		std::string msg = u8"初期位置が複数個検出されました。\n";
+		msg += u8"（初めに見つかったもののみ適用されます）\n";
+
+		auto Append = [&msg]( const Cell &cell )
+		{
+			auto AppendAlignment = [&msg]( size_t v )
+			{
+				if ( v < 100 ) { msg += u8"_"; }
+				if ( v < 10  ) { msg += u8"_"; }
+			};
+
+			msg += u8"[行：";
+			AppendAlignment( cell.row );
+			msg += std::to_string( cell.row    );
+			msg += u8"]";
+			
+			msg += u8"[列：";
+			AppendAlignment( cell.column );
+			msg += std::to_string( cell.column );
+			msg += u8"]";
+		};
+
+		msg += u8"適用位置";
+		Append( appliedCell );
+		msg += u8"\n";
+
+		const size_t count = duplications.size();
+		for ( size_t i = 0; i < count; ++i )
+		{
+			msg += u8"重複" + Donya::MakeArraySuffix( i );
+			Append( duplications[i] );
+			msg += u8"\n";
+		}
+
+		Donya::ShowMessageBox
+		(
+			msg,
+			"Many initial position was detected.",
+			MB_ICONEXCLAMATION | MB_OK
+		);
+	}
 #endif // DEBUG_MODE
 }
 void PlayerInitializer::LoadBin( int stageNo )

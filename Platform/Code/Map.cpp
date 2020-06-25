@@ -7,7 +7,6 @@
 #include "Donya/Sprite.h"
 
 #include "Common.h"			// Use IsShowCollision()
-#include "CSVLoader.h"
 #include "FilePath.h"
 #include "Parameter.h"		// Use ParameterHelper
 #include "StageFormat.h"
@@ -78,9 +77,36 @@ namespace
 #endif // DEBUG_MODE
 }
 
+Donya::Vector3 Map::ToWorldPos( size_t row, size_t column, bool alignToCenter )
+{
+	// I expect the CSV stage data is screen space, so the Y component must be reverse.(stage's Y+ is down, application's Y+ is up)
+
+	constexpr Donya::Vector3 halfOffset
+	{
+		Tile::unitWholeSize * 0.5f,
+		Tile::unitWholeSize * 0.5f * -1.0f,
+		0.0f,
+	};
+	const Donya::Vector3 generatePos
+	{
+		Tile::unitWholeSize * column,
+		Tile::unitWholeSize * row * -1.0f,
+		0.0f,
+	};
+
+	return	( alignToCenter )
+			? generatePos + halfOffset
+			: generatePos;
+}
 bool Map::Init( int stageNumber )
 {
 	const bool succeeded = LoadMap( stageNumber, IOFromBinaryFile );
+
+#if DEBUG_MODE
+	// If a user was changed only a json file, the user wanna apply the changes to binary file also.
+	// So save here.
+	SaveMap( stageNumber, /* fromBinary = */ true );
+#endif // DEBUG_MODE
 
 #if DEBUG_MODE
 	// Generate safe plane
@@ -147,9 +173,10 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 	{
 		switch ( id )
 		{
-		case StageFormat::StartPoint:	return true;
-		case StageFormat::Space:		return true;
-		case StageFormat::EmptyValue:	return true;
+		case StageFormat::StartPointRight:	return true;
+		case StageFormat::StartPointLeft:	return true;
+		case StageFormat::Space:			return true;
+		case StageFormat::EmptyValue:		return true;
 		default: break;
 		}
 
@@ -160,23 +187,8 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 		if ( IsIgnoreID( id ) ) { return; }
 		// else
 
-		// I expect the CSV stage data is screen space, so the Y component must be reverse.(stage's Y+ is down, application's Y+ is up)
-
-		constexpr Donya::Vector3 halfOffset
-		{
-			Tile::unitWholeSize * 0.5f,
-			Tile::unitWholeSize * 0.5f * -1.0f,
-			0.0f,
-		};
-		const Donya::Vector3 generatePos
-		{
-			Tile::unitWholeSize * column,
-			Tile::unitWholeSize * row * -1.0f,
-			0.0f,
-		};
-
 		Tile tmp;
-		tmp.Init( generatePos + halfOffset, Tile::unitWholeSize, 0 );
+		tmp.Init( ToWorldPos( row, column ), Tile::unitWholeSize, 0 );
 		tiles.emplace_back( std::move( tmp ) );
 	};
 

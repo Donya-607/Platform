@@ -60,6 +60,9 @@ public:
 	{
 	#if DEBUG_MODE
 		LoadJson();
+		// If a user was changed only a json file, the user wanna apply the changes to binary file also.
+		// So save here.
+		SaveBinary();
 	#else
 		LoadBinary();
 	#endif // DEBUG_MODE
@@ -68,6 +71,10 @@ public:
 	const ParameterClass &Get() const
 	{
 		return param;
+	}
+	void Set( const ParameterClass &assignment )
+	{
+		param = assignment;
 	}
 private:
 	void LoadBinary()

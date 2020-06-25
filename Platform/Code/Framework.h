@@ -27,8 +27,6 @@ public:
 	// The "elapsedTime" is elapsed seconds from last frame.
 	void Draw( float elapsedTime );
 private:
-	bool LoadSounds();
-	
 #if USE_IMGUI
 	void DebugShowInformation();
 #endif // USE_IMGUI

@@ -179,6 +179,15 @@ void SceneGame::Uninit()
 Scene::Result SceneGame::Update( float elapsedTime )
 {
 #if DEBUG_MODE
+	if ( wantSuppressElapsedTime )
+	{
+		wantSuppressElapsedTime = false;
+
+		constexpr float preferFPS		= 60.0f;
+		constexpr float goodElapsedTime	= 1.0f / preferFPS;
+		elapsedTime = goodElapsedTime;
+	}
+
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
 	{
 		nowDebugMode = !nowDebugMode;
@@ -618,7 +627,7 @@ void SceneGame::UseImGui()
 			ImGui::TreePop();
 		}
 
-		if ( ImGui::Button( u8"CSVファイルからステージを生成" ) )
+		if ( ImGui::Button( u8"ステージファイル.csvを読み込む" ) )
 		{
 			auto PrepareCSVData = []()
 			{
@@ -657,15 +666,36 @@ void SceneGame::UseImGui()
 				return loader;
 			};
 			const auto loader = PrepareCSVData();
-			const auto &data = loader.Get();
-			if ( !data.empty() )
+			if ( !loader.Get().empty() )
 			{
 				// The data was loaded successfully here
+
+				wantSuppressElapsedTime = true;
 
 				if ( pMap )
 				{
 					pMap->RemakeByCSV( loader );
+					pMap->SaveMap( debugTmpStageNo, /* fromBinary = */ true  );
+					pMap->SaveMap( debugTmpStageNo, /* fromBinary = */ false );
 				}
+
+				// Update the parameter's PlayerInitializer
+				{
+					SceneParam tmp = sceneParam.Get();
+					tmp.testPlayerInit.RemakeByCSV( loader );
+					sceneParam.Set( tmp );
+
+					if ( pPlayer )
+					{
+						pPlayer->Uninit();
+						pPlayer.reset();
+					}
+
+					pPlayer = std::make_unique<Player>();
+					pPlayer->Init( data.testPlayerInit );
+				}
+
+				Bullet::Admin::Get().ClearInstances();
 			}
 		}
 

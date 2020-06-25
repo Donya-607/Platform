@@ -10,6 +10,7 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+#include "CSVLoader.h"
 #include "ObjectBase.h"
 #include "Parameter.h"
 #include "Renderer.h"
@@ -42,6 +43,7 @@ public:
 	bool			ShouldLookingRight() const;
 public:
 	void LoadParameter( int stageNo );
+	void RemakeByCSV( const CSVLoader &loadedData );
 private:
 	void LoadBin( int stageNo );
 	void LoadJson( int stageNo );

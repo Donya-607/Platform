@@ -10,10 +10,10 @@
 #include "Donya/Serializer.h"
 #include "Donya/Vector.h"
 
+#include "CSVLoader.h"
 #include "ObjectBase.h"
 
 
-class CSVLoader;
 /// <summary>
 /// A piece of map(map-chip).
 /// </summary>
@@ -64,6 +64,12 @@ CEREAL_CLASS_VERSION( Tile, 0 )
 /// </summary>
 class Map
 {
+public:
+	/// <summary>
+	/// Convert from 2D row/column(screen space) to 3D XYZ(world space, Z is zero).
+	/// "alignToCenterOfTile" adds an half size of tile.
+	/// </summary>
+	static Donya::Vector3 ToWorldPos( size_t row, size_t column, bool alignToCenterOfTile = true );
 private:
 	std::vector<Tile> tiles;
 private:
@@ -91,6 +97,7 @@ private:
 	void RemoveTiles();
 	bool LoadMap( int stageNumber, bool fromBinary );
 #if USE_IMGUI
+public:
 	void SaveMap( int stageNumber, bool fromBinary );
 public:
 	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );

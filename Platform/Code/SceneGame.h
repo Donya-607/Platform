@@ -28,11 +28,12 @@ private:
 	std::unique_ptr<Map>				pMap;
 
 #if DEBUG_MODE
-	bool nowDebugMode			= false;
-	bool isReverseCameraMoveX	= true;
-	bool isReverseCameraMoveY	= false;
-	bool isReverseCameraRotX	= false;
-	bool isReverseCameraRotY	= false;
+	bool wantSuppressElapsedTime	= false;
+	bool nowDebugMode				= false;
+	bool isReverseCameraMoveX		= true;
+	bool isReverseCameraMoveY		= false;
+	bool isReverseCameraRotX		= false;
+	bool isReverseCameraRotY		= false;
 #endif // DEBUG_MODE
 public:
 	SceneGame() : Scene() {}

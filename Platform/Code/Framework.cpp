@@ -16,8 +16,6 @@ bool Framework::Init()
 {
 	bool succeeded = true;
 
-	if ( !LoadSounds() ) { succeeded = false; }
-
 	pSceneMng = std::make_unique<SceneMng>();
 
 #if DEBUG_MODE
@@ -68,51 +66,6 @@ void Framework::Draw( float elapsedTime )
 	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 
 	pSceneMng->Draw( elapsedTime );
-}
-
-bool Framework::LoadSounds()
-{
-	using Music::ID;
-
-	struct Bundle
-	{
-		ID			id;
-		std::string	fileName;
-		bool		isEnableLoop;
-	public:
-		Bundle( ID id, const char *fileName, bool isEnableLoop )
-			: id( id ), fileName( fileName ), isEnableLoop( isEnableLoop ) {}
-	};
-
-	const std::array<Bundle, ID::MUSIC_COUNT> bundles
-	{
-		// ID, FilePath, isEnableLoop
-
-		// { ID::BGM_Title,				"./Data/Sounds/BGM/.wav",					true  },
-			
-		Bundle{ ID::Player_Jump,	"./Data/Sounds/SE/Player/Jump.wav",		false },
-		Bundle{ ID::Player_Landing,	"./Data/Sounds/SE/Player/Landing.wav",	false },
-		Bundle{ ID::Player_Shot,	"./Data/Sounds/SE/Player/Shot.wav",		false },
-
-	#if DEBUG_MODE
-		Bundle{ ID::DEBUG_Strong,	"./Data/Sounds/SE/_DEBUG/Strong.wav",	false },
-		Bundle{ ID::DEBUG_Weak,		"./Data/Sounds/SE/_DEBUG/Weak.wav",		false },
-	#endif // DEBUG_MODE
-	};
-
-	bool  successed = true;
-	for ( size_t  i = 0; i < ID::MUSIC_COUNT; ++i )
-	{
-		bool result = Donya::Sound::Load
-		(
-			bundles[i].id,
-			bundles[i].fileName,
-			bundles[i].isEnableLoop
-		);
-		if ( !result ) { successed = false; }
-	}
-
-	return successed;
 }
 
 #if USE_IMGUI

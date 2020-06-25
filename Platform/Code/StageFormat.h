@@ -6,9 +6,10 @@ namespace StageFormat
 {
 	enum ID
 	{
-		StartPoint	= -1,
-		Space		= 0,
-		Normal		= 1,
+		StartPointRight	= -1, // Looking right
+		StartPointLeft	= -2, // Looking left
+		Space			= 0,
+		Normal			= 1,
 
 		EmptyValue	= INT_MAX
 	};
