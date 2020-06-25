@@ -50,7 +50,7 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 		framework.Update( Donya::GetElapsedTime() );
 
 		framework.Draw( Donya::GetElapsedTime() );
-		Donya::Present( 1 );
+		Donya::Present();
 	}
 
 	framework.Uninit();
