@@ -20,7 +20,7 @@ class SceneGame : public Scene
 private:
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
-	Donya::Collision::Box2F				currentScreen;
+	Donya::Collision::Box3F				currentScreen;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 
@@ -46,7 +46,7 @@ public:
 	void	Draw( float elapsedTime ) override;
 private:
 	Donya::Vector4x4 MakeScreenTransform() const;
-	Donya::Collision::Box2F CalcCurrentScreenPlane() const;
+	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
 
 	void	CameraInit();
 	void	AssignCameraPos();

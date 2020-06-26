@@ -209,8 +209,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	controller.Update();
 
-	currentScreen = CalcCurrentScreenPlane();
-
 	if ( pMap )
 	{
 		pMap->Update( elapsedTime );
@@ -253,6 +251,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
 	}
 
+	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
+	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate();
 
 	return ReturnResult();
@@ -337,7 +337,7 @@ void SceneGame::Draw( float elapsedTime )
 			constexpr auto  color = Donya::Color::Code::TEAL;
 			constexpr float alpha = 0.6f;
 			constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( color ), alpha };
-			DrawCube( Donya::Vector3{ currentScreen.WorldPosition(), 0.0f }, Donya::Vector3{ scale, 0.2f } );
+			DrawCube( currentScreen.WorldPosition(), Donya::Vector3{ scale, 0.2f } );
 		}
 	}
 #endif // DEBUG_MODE
@@ -349,7 +349,7 @@ Donya::Vector4x4 SceneGame::MakeScreenTransform() const
 	const Donya::Vector4x4 matViewport = Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
 	return matViewProj * matViewport;
 }
-Donya::Collision::Box2F SceneGame::CalcCurrentScreenPlane() const
+Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 {
 	const Donya::Vector4x4 toWorld = MakeScreenTransform().Inverse();
 
@@ -398,11 +398,13 @@ Donya::Collision::Box2F SceneGame::CalcCurrentScreenPlane() const
 	const float halfWidth	= fabsf( nowRight.x - nowLeft.x ) * 0.5f;
 	const float halfHeight	= fabsf( nowBottom.y - nowTop.y ) * 0.5f;
 
-	Donya::Collision::Box2F nowScreen;
+	Donya::Collision::Box3F nowScreen;
 	nowScreen.pos.x  = nowLeft.x + halfWidth;	// Specify center
 	nowScreen.pos.y  = nowTop.y  - halfHeight;	// Specify center
+	nowScreen.pos.z  = 0.0f;
 	nowScreen.size.x = halfWidth;
 	nowScreen.size.y = halfHeight;
+	nowScreen.size.z = FLT_MAX;
 	return nowScreen;
 }
 
@@ -428,10 +430,21 @@ void SceneGame::CameraInit()
 void SceneGame::AssignCameraPos()
 {
 	const auto &data = FetchParameter();
-	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+	Donya::Vector3 focusPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 
-	iCamera.SetPosition  ( playerPos + data.camera.offsetPos   );
-	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
+	// TODO: Clamp focus point to a point that make "edge points" will within the screen range.
+	//if ( !Donya::Collision::IsHit( focusPos, currentScreen ) )
+	//{
+	//	const auto min = currentScreen.Min();
+	//	const auto max = currentScreen.Max();
+
+	//	focusPos.x = Donya::Clamp( focusPos.x, min.x, max.x );
+	//	focusPos.y = Donya::Clamp( focusPos.y, min.y, max.y );
+	//	focusPos.z = Donya::Clamp( focusPos.z, min.z, max.z );
+	//}
+
+	iCamera.SetPosition  ( focusPos + data.camera.offsetPos   );
+	iCamera.SetFocusPoint( focusPos + data.camera.offsetFocus );
 }
 void SceneGame::CameraUpdate()
 {
@@ -441,6 +454,8 @@ void SceneGame::CameraUpdate()
 	iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
 	iCamera.SetProjectionPerspective();
 #endif // USE_IMGUI
+
+	currentScreen = CalcCurrentScreenPlane();
 
 	Donya::ICamera::Controller input{};
 	input.SetNoOperation();

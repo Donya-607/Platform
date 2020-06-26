@@ -43,7 +43,7 @@ namespace Bullet
 			(
 				CEREAL_NVP( initialSpeed	),
 				CEREAL_NVP( direction		),
-				CEREAL_NVP( position			)
+				CEREAL_NVP( position		)
 			);
 			if ( 1 <= version )
 			{
@@ -77,13 +77,13 @@ namespace Bullet
 	public:
 		void Init( const FireDesc &parameter );
 		void Uninit();
-		void Update( float elasedTime, const Donya::Collision::Box2F &wsScreenHitBox );
+		void Update( float elasedTime, const Donya::Collision::Box3F &wsScreenHitBox );
 		void PhysicUpdate( float elasedTime );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
 		bool ShouldRemove() const;
-		bool OnOutSide( const Donya::Collision::Box2F &wsScreenHitBox ) const;
+		bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
 	protected:
 		Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:
@@ -105,7 +105,7 @@ namespace Bullet
 	private:
 		Admin() = default;
 	public:
-		void Update( float elapsedTime, const Donya::Collision::Box2F &wsScreenHitBox );
+		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox );
 		void PhysicUpdate( float elasedTime );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
