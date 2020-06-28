@@ -442,7 +442,8 @@ void SceneGame::AssignCameraPos()
 	{
 		constexpr int debugRoomID = 0;
 		const auto area = pHouse->CalcRoomArea( debugRoomID );
-		if ( Donya::Collision::operator != ( Donya::Collision::Box3F::Nil(), area ) )
+		// if ( Donya::Collision::operator != ( Donya::Collision::Box3F::Nil(), area ) )
+		if ( area != Donya::Collision::Box3F::Nil() )
 		{
 			const auto min = area.Min();
 			const auto max = area.Max();

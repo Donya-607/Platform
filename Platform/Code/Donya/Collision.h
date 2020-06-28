@@ -107,6 +107,35 @@ namespace Donya
 					}
 				}
 			};
+
+			template<typename T>
+			static bool operator == ( const Base::Box<T> &a, const Base::Box<T> &b )
+			{
+				if ( a.pos		!= b.pos	) { return false; }
+				if ( a.offset	!= b.offset	) { return false; }
+				if ( a.size		!= b.size	) { return false; }
+				if ( a.exist	!= b.exist	) { return false; }
+				return true;
+			}
+			template<typename CoordT, typename RadiusT>
+			static bool operator == ( const Base::Sphere<CoordT, RadiusT> &a, const Base::Sphere<CoordT, RadiusT> &b )
+			{
+				if ( a.pos		!= b.pos	) { return false; }
+				if ( a.offset	!= b.offset	) { return false; }
+				if ( a.radius	!= b.radius	) { return false; }
+				if ( a.exist	!= b.exist	) { return false; }
+				return true;
+			}
+			template<typename T>
+			static bool operator != ( const Base::Box<T> &a, const Base::Box<T> &b )
+			{
+				return !( a == b );
+			}
+			template<typename CoordT, typename RadiusT>
+			static bool operator != ( const Base::Sphere<CoordT, RadiusT> &a, const Base::Sphere<CoordT, RadiusT> &b )
+			{
+				return !( a == b );
+			}
 		}
 
 		using Box2		= Base::Box<Donya::Int2>;
@@ -169,23 +198,6 @@ namespace Donya
 		Donya::Vector2 FindClosestPoint( const Sphere2F &from, const Donya::Vector2 &to );
 		Donya::Vector3 FindClosestPoint( const Donya::Vector3 &from, const Sphere3F &to );
 		Donya::Vector3 FindClosestPoint( const Sphere3F &from, const Donya::Vector3 &to );
-
-		bool		operator == ( const Box2		&a, const Box2		&b );
-		bool		operator == ( const Box2F		&a, const Box2F		&b );
-		bool		operator == ( const Box3		&a, const Box3		&b );
-		bool		operator == ( const Box3F		&a, const Box3F		&b );
-		bool		operator == ( const Sphere2		&a, const Sphere2	&b );
-		bool		operator == ( const Sphere2F	&a, const Sphere2F	&b );
-		bool		operator == ( const Sphere3		&a, const Sphere3	&b );
-		bool		operator == ( const Sphere3F	&a, const Sphere3F	&b );
-		static bool	operator != ( const Box2		&a, const Box2		&b ) { return !( a == b ); }
-		static bool	operator != ( const Box2F		&a, const Box2F		&b ) { return !( a == b ); }
-		static bool	operator != ( const Box3		&a, const Box3		&b ) { return !( a == b ); }
-		static bool	operator != ( const Box3F		&a, const Box3F		&b ) { return !( a == b ); }
-		static bool	operator != ( const Sphere2		&a, const Sphere2	&b ) { return !( a == b ); }
-		static bool	operator != ( const Sphere2F	&a, const Sphere2F	&b ) { return !( a == b ); }
-		static bool	operator != ( const Sphere3		&a, const Sphere3	&b ) { return !( a == b ); }
-		static bool	operator != ( const Sphere3F	&a, const Sphere3F	&b ) { return !( a == b ); }
 	}
 
 	class Circle;

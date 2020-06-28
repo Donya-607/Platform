@@ -346,58 +346,6 @@ namespace Donya
 		{
 			return FindClosestPointSphere( from, to );
 		}
-
-		template<typename Box>
-		bool IsEqualBox( const Box &a, const Box &b )
-		{
-			if ( !( a.pos    - b.pos    ).IsZero()	)	{ return false; }
-			if ( !( a.offset - b.offset ).IsZero()	)	{ return false; }
-			if ( !( a.size   - b.size   ).IsZero()	)	{ return false; }
-			if ( a.exist != b.exist					)	{ return false; }
-			return true;
-		}
-		template<typename Sphere>
-		bool IsEqualSphere( const Sphere &a, const Sphere &b )
-		{
-			if ( !( a.pos    - b.pos    ).IsZero()	)	{ return false; }
-			if ( !( a.offset - b.offset ).IsZero()	)	{ return false; }
-			if ( !IsZero( a.radius - b.radius )		)	{ return false; }
-			if ( a.exist != b.exist					)	{ return false; }
-			return true;
-		}
-
-		bool operator == ( const Box2		&a, const Box2		&b )
-		{
-			return IsEqualBox( a, b );
-		}
-		bool operator == ( const Box2F		&a, const Box2F		&b )
-		{
-			return IsEqualBox( a, b );
-		}
-		bool operator == ( const Box3		&a, const Box3		&b )
-		{
-			return IsEqualBox( a, b );
-		}
-		bool operator == ( const Box3F		&a, const Box3F		&b )
-		{
-			return IsEqualBox( a, b );
-		}
-		bool operator == ( const Sphere2	&a, const Sphere2	&b )
-		{
-			return IsEqualSphere( a, b );
-		}
-		bool operator == ( const Sphere2F	&a, const Sphere2F	&b )
-		{
-			return IsEqualSphere( a, b );
-		}
-		bool operator == ( const Sphere3	&a, const Sphere3	&b )
-		{
-			return IsEqualSphere( a, b );
-		}
-		bool operator == ( const Sphere3F	&a, const Sphere3F	&b )
-		{
-			return IsEqualSphere( a, b );
-		}
 	}
 
 	void Box::Set			( float centerX, float centerY, float halfWidth, float halfHeight, bool isExist )
