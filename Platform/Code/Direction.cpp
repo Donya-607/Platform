@@ -58,6 +58,10 @@ namespace Definition
 		for ( int i = 0; i < directionCount; ++i )
 		{
 			ImGui::Checkbox( captions[i], &states[i] );
+			if ( i + 1 < directionCount )
+			{
+				ImGui::SameLine();
+			}
 		}
 
 		for ( int i = 0; i < directionCount; ++i )

@@ -106,8 +106,8 @@ void Room::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::Text( u8"Myself's ID:%d", id );
-	ImGui::Text( u8"Connect  ID:%d", connectingRoomID );
+	ImGui::Text( u8"Myself__ID:%d", id );
+	ImGui::Text( u8"Connect_ID:%d", connectingRoomID );
 	Definition::ShowImGuiNode( u8"‘JˆÚ‰Â”\•ûŒü‚Ìİ’è", &transition, /* useTreeNode = */ false );
 	ImGui::Helper::ShowAABBNode( u8"”ÍˆÍİ’è", &area );
 
