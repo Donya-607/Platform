@@ -52,8 +52,6 @@ namespace
 		camera;
 		
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
-
-		PlayerInitializer testPlayerInit;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -66,8 +64,7 @@ namespace
 				CEREAL_NVP( camera.offsetPos			),
 				CEREAL_NVP( camera.offsetFocus			),
 				CEREAL_NVP( directionalLight.color		),
-				CEREAL_NVP( directionalLight.direction	),
-				CEREAL_NVP( testPlayerInit				)
+				CEREAL_NVP( directionalLight.direction	)
 			);
 
 			if ( 1 <= version )
@@ -95,8 +92,6 @@ namespace
 				
 				ImGui::TreePop();
 			}
-
-			testPlayerInit.ShowImGuiNode( u8"Ž©‹@‚Ì‰ŠúˆÊ’u", debugTmpStageNo, false );
 		}
 	};
 
@@ -587,7 +582,7 @@ void SceneGame::UpdateCurrentRoomID()
 	// else
 
 	const auto playerPos = pPlayer->GetPosition();
-	if ( !Donya::Collision::IsHit( playerPos, currentScreen ) ) { return; }
+	if ( Donya::Collision::IsHit( playerPos, currentScreen ) ) { return; }
 	// else
 
 	const int nextID = pHouse->CalcBelongRoomID( playerPos );
