@@ -136,6 +136,7 @@ void SceneGame::Init()
 	// Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
 #endif // DEBUG_MODE
 
+	wantSuppressElapsedTime = true;
 	bool result{};
 
 	pRenderer = std::make_unique<RenderingHelper>();
@@ -703,12 +704,15 @@ void SceneGame::UseImGui()
 		if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
 		{
 			static bool applyMap	= true;
-			static bool applyHouse	= true;
+			static bool applyHouse	= false;
 			static bool applyPlayer	= true;
 			static bool thenSave	= true;
 			ImGui::Checkbox( u8"マップに適用",		&applyMap		);
-			ImGui::Checkbox( u8"ルームに適用",		&applyHouse		);
+			ImGui::SameLine();
 			ImGui::Checkbox( u8"自機に適用",			&applyPlayer	);
+
+			ImGui::Checkbox( u8"ルームに適用",		&applyHouse		);
+			
 			ImGui::Checkbox( u8"適用後にセーブする",	&thenSave		);
 
 			if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
@@ -795,7 +799,6 @@ void SceneGame::UseImGui()
 			ImGui::TreePop();
 		}
 		
-
 		Player::UpdateParameter( u8"自機のパラメータ" );
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
 

@@ -6,13 +6,13 @@ namespace StageFormat
 {
 	enum ID
 	{
-		StartPointRight	= -1, // Looking right
-		StartPointLeft	= -2, // Looking left
-		Space			= 0,
-		Normal			= 1,
+		EmptyValue		= -1,
+		Space			= EmptyValue,
+		StartPointRight	= 0,	// Looking right
+		StartPointLeft	= 1,	// Looking left
+		Normal			= 2,
 
-		RoomStart		= 100, // [RoomStart <= N < RoomEnd] is room identifier
-		RoomEnd			= 200, // [RoomStart <= N < RoomEnd] is room identifier
-		EmptyValue		= INT_MAX
+		RoomStart		= 8,	// [RoomStart <= N < RoomEnd] is room identifier
+		RoomEnd			= 15,	// [RoomStart <= N < RoomEnd] is room identifier
 	};
 }
