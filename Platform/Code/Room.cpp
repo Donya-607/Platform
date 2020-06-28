@@ -171,11 +171,14 @@ Donya::Collision::Box3F House::CalcRoomArea( int roomID ) const
 }
 void House::RemakeByCSV( const CSVLoader &loadedData )
 {
+	for ( auto &it : rooms ) { it.second.Uninit(); }
+	rooms.clear();
+
 	class Area
 	{
 	public:
-		Donya::Vector3 min;
-		Donya::Vector3 max;
+		Donya::Vector3 min{ +FLT_MAX, +FLT_MAX, +FLT_MAX };
+		Donya::Vector3 max{ -FLT_MAX, -FLT_MAX, -FLT_MAX };
 	public:
 		void Register( const Donya::Vector3 &pos )
 		{
@@ -200,9 +203,19 @@ void House::RemakeByCSV( const CSVLoader &loadedData )
 		// else
 
 		const Donya::Vector3 wsPos = Map::ToWorldPos( row, column );
-		Area tmp;
-		tmp.Register( wsPos );
-		areas.insert( std::make_pair( id, std::move( tmp ) ) );
+
+		auto found = areas.find( id );
+		if ( found == areas.end() )
+		{
+			Area tmp;
+			tmp.Register( wsPos );
+			areas.insert( std::make_pair( id, std::move( tmp ) ) );
+		}
+		else
+		{
+			found->second.Register( wsPos );
+		}
+
 	};
 
 	const auto &data = loadedData.Get();
@@ -216,8 +229,21 @@ void House::RemakeByCSV( const CSVLoader &loadedData )
 		}
 	}
 
-	for ( auto &it : rooms ) { it.second.Uninit(); }
-	rooms.clear();
+	// Append function will register the center pos of tile,
+	// But I want the full size, so expand half tile size to outside.
+	{
+		constexpr Donya::Vector3 halfTileSize
+		{
+			Tile::unitWholeSize * 0.5f,
+			Tile::unitWholeSize * 0.5f,
+			0.0f
+		};
+		for ( auto &it : areas )
+		{
+			it.second.min -= halfTileSize;
+			it.second.max += halfTileSize;
+		}
+	}
 
 	Room argument;
 	for ( const auto &it : areas )
