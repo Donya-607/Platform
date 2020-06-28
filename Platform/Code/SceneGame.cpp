@@ -709,6 +709,13 @@ void SceneGame::UseImGui()
 					pMap->SaveMap( debugTmpStageNo, /* fromBinary = */ false );
 				}
 
+				if ( pHouse )
+				{
+					pHouse->RemakeByCSV( loader );
+					pHouse->SaveRooms( debugTmpStageNo, /* fromBinary = */ true  );
+					pHouse->SaveRooms( debugTmpStageNo, /* fromBinary = */ false );
+				}
+
 				// Update the parameter's PlayerInitializer
 				{
 					SceneParam tmp = sceneParam.Get();

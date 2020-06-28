@@ -167,14 +167,11 @@ const std::vector<Tile> &Map::GetTiles() const
 }
 void Map::RemakeByCSV( const CSVLoader &loadedData )
 {
-	auto IsIgnoreID	= []( int id )
+	auto IsTileID	= []( int id )
 	{
 		switch ( id )
 		{
-		case StageFormat::StartPointRight:	return true;
-		case StageFormat::StartPointLeft:	return true;
-		case StageFormat::Space:			return true;
-		case StageFormat::EmptyValue:		return true;
+		case StageFormat::Normal:	return true;
 		default: break;
 		}
 
@@ -182,7 +179,7 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 	};
 	auto Append		= [&]( int id, size_t row, size_t column )
 	{
-		if ( IsIgnoreID( id ) ) { return; }
+		if ( !IsTileID( id ) ) { return; }
 		// else
 
 		Tile tmp;

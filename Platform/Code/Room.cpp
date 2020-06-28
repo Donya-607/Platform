@@ -1,11 +1,13 @@
 #include "Room.h"
 
-#include <algorithm>	// Use std::sort, std::find
+#include <algorithm>		// Use std::sort, std::find
 
 #include "Donya/Color.h"
 
 #include "FilePath.h"
+#include "Map.h"			// Use Map::ToWorldPos()
 #include "Parameter.h"
+#include "StageFormat.h"
 
 
 void Room::Init( int assignID, const Donya::Vector3 &wsMin, const Donya::Vector3 &wsMax )
@@ -169,7 +171,60 @@ Donya::Collision::Box3F House::CalcRoomArea( int roomID ) const
 }
 void House::RemakeByCSV( const CSVLoader &loadedData )
 {
+	class Area
+	{
+	public:
+		Donya::Vector3 min;
+		Donya::Vector3 max;
+	public:
+		void Register( const Donya::Vector3 &pos )
+		{
+			min.x = std::min( pos.x, min.x );
+			min.y = std::min( pos.y, min.y );
+			min.z = std::min( pos.z, min.z );
+			
+			max.x = std::max( pos.x, max.x );
+			max.y = std::max( pos.y, max.y );
+			max.z = std::max( pos.z, max.z );
+		}
+	};
+	std::unordered_map<int, Area> areas;
 
+	auto IsRoomID	= []( int id )
+	{
+		return ( StageFormat::RoomStart <= id && id < StageFormat::RoomEnd );
+	};
+	auto Append		= [&IsRoomID, &areas]( int id, size_t row, size_t column )
+	{
+		if ( !IsRoomID( id ) ) { return; }
+		// else
+
+		const Donya::Vector3 wsPos = Map::ToWorldPos( row, column );
+		Area tmp;
+		tmp.Register( wsPos );
+		areas.insert( std::make_pair( id, std::move( tmp ) ) );
+	};
+
+	const auto &data = loadedData.Get();
+	const size_t rowCount = data.size();
+	for ( size_t r = 0; r < rowCount; ++r )
+	{
+		const size_t columnCount = data[r].size();
+		for ( size_t c = 0; c < columnCount; ++c )
+		{
+			Append( data[r][c], r, c );
+		}
+	}
+
+	for ( auto &it : rooms ) { it.second.Uninit(); }
+	rooms.clear();
+
+	Room argument;
+	for ( const auto &it : areas )
+	{
+		argument.Init( it.first, it.second.min, it.second.max );
+		rooms.insert( std::make_pair( it.first, argument ) );
+	}
 }
 bool House::LoadRooms( int stageNo, bool fromBinary )
 {
@@ -193,17 +248,6 @@ void House::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
-
-	if ( ImGui::Button( u8"Temp‚ð’Ç‰Á" ) )
-	{
-		static int id = -1;
-		static Room argument;
-		++id;
-		constexpr float size = 10.0f;
-		const Donya::Vector3 pos{ size * id, 0.0f, 0.0f };
-		argument.Init( id, pos, pos + Donya::Vector3{ size, -size, 0.0f } );
-		rooms.insert( std::make_pair( id, argument ) );
-	}
 
 	if ( ImGui::TreeNode( u8"ŽÀ‘Ì‚½‚¿" ) )
 	{

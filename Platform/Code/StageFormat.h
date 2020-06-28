@@ -11,6 +11,8 @@ namespace StageFormat
 		Space			= 0,
 		Normal			= 1,
 
-		EmptyValue	= INT_MAX
+		RoomStart		= 100, // [RoomStart <= N < RoomEnd] is room identifier
+		RoomEnd			= 200, // [RoomStart <= N < RoomEnd] is room identifier
+		EmptyValue		= INT_MAX
 	};
 }
