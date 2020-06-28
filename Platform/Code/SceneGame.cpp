@@ -450,13 +450,11 @@ void SceneGame::AssignCameraPos()
 			const float halfScreenWidth  = ( currentScreen.Max().x - currentScreen.Min().x ) * 0.5f;
 			const float halfScreenHeight = ( currentScreen.Max().y - currentScreen.Min().y ) * 0.5f;
 
-			// Clamp the center pos in offseted value
-			focusPos += data.camera.offsetFocus;
+			focusPos += data.camera.offsetFocus; // Clamp the center pos in offseted value
 			focusPos.x = Donya::Clamp( focusPos.x, min.x + halfScreenWidth,  max.x - halfScreenWidth  );
 			focusPos.y = Donya::Clamp( focusPos.y, min.y + halfScreenHeight, max.y - halfScreenHeight );
 			focusPos.z = Donya::Clamp( focusPos.z, min.z, max.z );
-			// Back to before offset pos because below setting process expects that value
-			focusPos -= data.camera.offsetFocus;
+			focusPos -= data.camera.offsetFocus; // Back to before offset pos because below setting process expects that value
 		}
 	}
 

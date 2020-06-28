@@ -5,6 +5,7 @@
 #include "Donya/Color.h"
 
 #include "FilePath.h"
+#include "Parameter.h"
 
 
 void Room::Init( int assignID, const Donya::Vector3 &wsMin, const Donya::Vector3 &wsMax )
@@ -239,6 +240,22 @@ void House::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 		}
 
 		ImGui::TreePop();
+	}
+
+	const auto result = ParameterHelper::ShowIONode();
+	using Op = ParameterHelper::IOOperation;
+	if ( result == Op::Save )
+	{
+		SaveRooms( stageNo, true  );
+		SaveRooms( stageNo, false );
+	}
+	else if ( result == Op::LoadBinary )
+	{
+		LoadRooms( stageNo, true );
+	}
+	else if ( result == Op::LoadJson )
+	{
+		LoadRooms( stageNo, false );
 	}
 
 	ImGui::TreePop();
