@@ -25,7 +25,7 @@ namespace Definition
 	std::string GetContainName( const Direction &value );
 
 #if USE_IMGUI
-	void ShowImGuiNode( const std::string &nodeCaption, Direction *p, bool useTreeNode );
+	void ShowImGuiNode( const std::string &nodeCaption, Direction *p, bool useTreeNode = true );
 #endif // USE_IMGUI
 }
 DEFINE_ENUM_FLAG_OPERATORS( Definition::Direction )

@@ -440,20 +440,23 @@ void SceneGame::AssignCameraPos()
 	
 	if ( pHouse )
 	{
-		constexpr int debugRoomID = 0;
+		constexpr int debugRoomID = 100;
 		const auto area = pHouse->CalcRoomArea( debugRoomID );
-		// if ( Donya::Collision::operator != ( Donya::Collision::Box3F::Nil(), area ) )
 		if ( area != Donya::Collision::Box3F::Nil() )
 		{
 			const auto min = area.Min();
 			const auto max = area.Max();
 			
-			const float halfScreenWidth  = ( currentScreen.Max().x - currentScreen.Min().x ) * 0.5f;
-			const float halfScreenHeight = ( currentScreen.Max().y - currentScreen.Min().y ) * 0.5f;
+			const float halfAreaWidth		= ( max.x - min.x ) * 0.5f;
+			const float halfAreaHeight		= ( max.y - min.y ) * 0.5f;
+			const float halfScreenWidth		= ( currentScreen.Max().x - currentScreen.Min().x ) * 0.5f;
+			const float halfScreenHeight	= ( currentScreen.Max().y - currentScreen.Min().y ) * 0.5f;
+			const float halfWidth			= std::min( halfAreaWidth,  halfScreenWidth  ); // If area size smaller than screen, set to center the focus point
+			const float halfHeight			= std::min( halfAreaHeight, halfScreenHeight ); // If area size smaller than screen, set to center the focus point
 
 			focusPos += data.camera.offsetFocus; // Clamp the center pos in offseted value
-			focusPos.x = Donya::Clamp( focusPos.x, min.x + halfScreenWidth,  max.x - halfScreenWidth  );
-			focusPos.y = Donya::Clamp( focusPos.y, min.y + halfScreenHeight, max.y - halfScreenHeight );
+			focusPos.x = Donya::Clamp( focusPos.x, min.x + halfWidth,  max.x - halfWidth  );
+			focusPos.y = Donya::Clamp( focusPos.y, min.y + halfHeight, max.y - halfHeight );
 			focusPos.z = Donya::Clamp( focusPos.z, min.z, max.z );
 			focusPos -= data.camera.offsetFocus; // Back to before offset pos because below setting process expects that value
 		}
