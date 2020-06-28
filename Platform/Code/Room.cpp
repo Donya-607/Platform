@@ -38,6 +38,10 @@ int  Room::GetID() const
 {
 	return id;
 }
+const Donya::Collision::Box3F &Room::GetArea() const
+{
+	return area;
+}
 Donya::Collision::Box3F Room::CalcRoomArea( const std::unordered_map<int, Room> &house, std::vector<int> &ignoreIDs ) const
 {
 	if ( connectingRoomID == invalidID ) { return area; }
@@ -168,6 +172,20 @@ Donya::Collision::Box3F House::CalcRoomArea( int roomID ) const
 {
 	const auto p = FindRoomOrNullptr( roomID );
 	return ( p ) ? p->CalcRoomArea( rooms ) : Donya::Collision::Box3F::Nil();
+}
+int House::CalcBelongRoomID( const Donya::Vector3 &wsSearchPoint ) const
+{
+	for ( const auto &it : rooms )
+	{
+		// Note: This method is not support an overlapping some rooms,
+		// but I am assuming a stage was not make as that.
+		if ( Donya::Collision::IsHit( wsSearchPoint, it.second.GetArea() ) )
+		{
+			return it.first;
+		}
+	}
+
+	return -1;
 }
 void House::RemakeByCSV( const CSVLoader &loadedData )
 {

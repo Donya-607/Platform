@@ -159,8 +159,11 @@ void SceneGame::Init()
 	pHouse = std::make_unique<House>();
 	pHouse->Init( debugTmpStageNo );
 
-	pPlayer = std::make_unique<Player>();
-	pPlayer->Init( data.testPlayerInit );
+	pPlayerIniter = std::make_unique<PlayerInitializer>();
+	pPlayerIniter->LoadParameter( debugTmpStageNo );
+	PlayerInit();
+
+	currentRoomID = pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
 
 	CameraInit();
 
@@ -218,21 +221,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	{
 		pMap->Update( elapsedTime );
 	}
-	if ( pPlayer )
-	{
-		const bool pressRight = Donya::Keyboard::Press( VK_RIGHT );
-		const bool pressLeft  = Donya::Keyboard::Press( VK_LEFT  );
-		const bool pressJump  = Donya::Keyboard::Press( VK_SHIFT );
-		const bool pressShot  = Donya::Keyboard::Press( 'Z' );
 
-		Player::Input input;
-		if ( pressRight ) { input.moveVelocity.x += 1.0f; }
-		if ( pressLeft  ) { input.moveVelocity.x -= 1.0f; }
-		input.useJump = pressJump;
-		input.useShot = pressShot;
-
-		pPlayer->Update( elapsedTime, input );
-	}
+	UpdateCurrentRoomID();
+	
+	PlayerUpdate( elapsedTime );
 
 	Bullet::Admin::Get().Update( elapsedTime, currentScreen );
 
@@ -440,8 +432,7 @@ void SceneGame::AssignCameraPos()
 	
 	if ( pHouse )
 	{
-		constexpr int debugRoomID = 100;
-		const auto area = pHouse->CalcRoomArea( debugRoomID );
+		const auto area = pHouse->CalcRoomArea( currentRoomID );
 		if ( area != Donya::Collision::Box3F::Nil() )
 		{
 			const auto min = area.Min();
@@ -553,6 +544,59 @@ void SceneGame::CameraUpdate()
 #endif // !DEBUG_MODE
 }
 
+void SceneGame::PlayerInit()
+{
+	if ( !pPlayerIniter )
+	{
+		_ASSERT_EXPR( 0, L"Error: Initializer is not available!" );
+		return;
+	}
+	// else
+
+	if ( pPlayer )
+	{
+		pPlayer->Uninit();
+		pPlayer.reset();
+	}
+
+	pPlayer = std::make_unique<Player>();
+	pPlayer->Init( *pPlayerIniter );
+}
+void SceneGame::PlayerUpdate( float elapsedTime )
+{
+	if ( !pPlayer ) { return; }
+	// else
+		
+	const bool pressRight = Donya::Keyboard::Press( VK_RIGHT );
+	const bool pressLeft  = Donya::Keyboard::Press( VK_LEFT  );
+	const bool pressJump  = Donya::Keyboard::Press( VK_SHIFT );
+	const bool pressShot  = Donya::Keyboard::Press( 'Z' );
+
+	Player::Input input;
+	if ( pressRight ) { input.moveVelocity.x += 1.0f; }
+	if ( pressLeft  ) { input.moveVelocity.x -= 1.0f; }
+	input.useJump = pressJump;
+	input.useShot = pressShot;
+
+	pPlayer->Update( elapsedTime, input );
+}
+
+void SceneGame::UpdateCurrentRoomID()
+{
+	if ( !pPlayer || !pHouse ) { return; }
+	// else
+
+	const auto playerPos = pPlayer->GetPosition();
+	if ( !Donya::Collision::IsHit( playerPos, currentScreen ) ) { return; }
+	// else
+
+	const int nextID = pHouse->CalcBelongRoomID( playerPos );
+	if ( nextID != Room::invalidID )
+	{
+		currentRoomID = nextID;
+	}
+}
+
 void SceneGame::ClearBackGround() const
 {
 	constexpr Donya::Vector3 gray = Donya::Color::MakeColor( Donya::Color::Code::GRAY );
@@ -661,84 +705,101 @@ void SceneGame::UseImGui()
 			ImGui::TreePop();
 		}
 
-		if ( ImGui::Button( u8"ステージファイル.csvを読み込む" ) )
+		if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
 		{
-			auto PrepareCSVData = []()
+			static bool applyMap	= true;
+			static bool applyHouse	= true;
+			static bool applyPlayer	= true;
+			static bool thenSave	= true;
+			ImGui::Checkbox( u8"マップに適用",		&applyMap		);
+			ImGui::Checkbox( u8"ルームに適用",		&applyHouse		);
+			ImGui::Checkbox( u8"自機に適用",			&applyPlayer	);
+			ImGui::Checkbox( u8"適用後にセーブする",	&thenSave		);
+
+			if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
 			{
-				CSVLoader loader;
-				loader.Clear();
-
-				const auto filePath = FetchStageFilePathByCommonDialog();
-				if ( filePath.empty() || !Donya::IsExistFile( filePath ) )
+				auto PrepareCSVData = []()
 				{
-					std::string msg = u8"ファイルロードに失敗しました。\n";
-					msg += u8"ファイル：[" + filePath + u8"]";
-					Donya::ShowMessageBox
-					(
-						msg,
-						"Loading stage is failed",
-						MB_ICONEXCLAMATION | MB_OK
-					);
-
-					return loader;
-				}
-				// else
-
-				if ( !loader.Load( filePath ) )
-				{
-					Donya::ShowMessageBox
-					(
-						u8"パースに失敗しました。",
-						"Loading stage is failed",
-						MB_ICONEXCLAMATION | MB_OK
-					);
+					CSVLoader loader;
 					loader.Clear();
-					return loader;
-				}
-				// else
 
-				return loader;
-			};
-			const auto loader = PrepareCSVData();
-			if ( !loader.Get().empty() )
-			{
-				// The data was loaded successfully here
-
-				wantSuppressElapsedTime = true;
-
-				if ( pMap )
-				{
-					pMap->RemakeByCSV( loader );
-					pMap->SaveMap( debugTmpStageNo, /* fromBinary = */ true  );
-					pMap->SaveMap( debugTmpStageNo, /* fromBinary = */ false );
-				}
-
-				if ( pHouse )
-				{
-					pHouse->RemakeByCSV( loader );
-					pHouse->SaveRooms( debugTmpStageNo, /* fromBinary = */ true  );
-					pHouse->SaveRooms( debugTmpStageNo, /* fromBinary = */ false );
-				}
-
-				// Update the parameter's PlayerInitializer
-				{
-					SceneParam tmp = sceneParam.Get();
-					tmp.testPlayerInit.RemakeByCSV( loader );
-					sceneParam.Set( tmp );
-
-					if ( pPlayer )
+					const auto filePath = FetchStageFilePathByCommonDialog();
+					if ( filePath.empty() || !Donya::IsExistFile( filePath ) )
 					{
-						pPlayer->Uninit();
-						pPlayer.reset();
+						std::string msg = u8"ファイルロードに失敗しました。\n";
+						msg += u8"ファイル：[" + filePath + u8"]";
+						Donya::ShowMessageBox
+						(
+							msg,
+							"Loading stage is failed",
+							MB_ICONEXCLAMATION | MB_OK
+						);
+
+						return loader;
+					}
+					// else
+
+					if ( !loader.Load( filePath ) )
+					{
+						Donya::ShowMessageBox
+						(
+							u8"パースに失敗しました。",
+							"Loading stage is failed",
+							MB_ICONEXCLAMATION | MB_OK
+						);
+						loader.Clear();
+						return loader;
+					}
+					// else
+
+					return loader;
+				};
+				const auto loader = PrepareCSVData();
+				if ( !loader.Get().empty() )
+				{
+					// The data was loaded successfully here
+
+					wantSuppressElapsedTime = true;
+
+					if ( applyMap && pMap )
+					{
+						pMap->RemakeByCSV( loader );
+						if ( thenSave )
+						{
+							pMap->SaveMap( debugTmpStageNo, /* fromBinary = */ true  );
+							pMap->SaveMap( debugTmpStageNo, /* fromBinary = */ false );
+						}
 					}
 
-					pPlayer = std::make_unique<Player>();
-					pPlayer->Init( data.testPlayerInit );
-				}
+					if ( applyHouse && pHouse )
+					{
+						pHouse->RemakeByCSV( loader );
+						if ( thenSave )
+						{
+							pHouse->SaveRooms( debugTmpStageNo, /* fromBinary = */ true  );
+							pHouse->SaveRooms( debugTmpStageNo, /* fromBinary = */ false );
+						}
+					}
 
-				Bullet::Admin::Get().ClearInstances();
+					if ( applyPlayer )
+					{
+						if ( !pPlayerIniter ) { pPlayerIniter = std::make_unique<PlayerInitializer>(); }
+						pPlayerIniter->RemakeByCSV( loader );
+						if ( thenSave )
+						{
+							pPlayerIniter->SaveBin ( debugTmpStageNo );
+							pPlayerIniter->SaveJson( debugTmpStageNo );
+						}
+						PlayerInit();
+					}
+
+					Bullet::Admin::Get().ClearInstances();
+				}
 			}
+
+			ImGui::TreePop();
 		}
+		
 
 		Player::UpdateParameter( u8"自機のパラメータ" );
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }

@@ -48,7 +48,14 @@ public:
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
 	int GetID() const;
+	const Donya::Collision::Box3F &GetArea() const;
+	/// <summary>
+	/// Also consider connecting room area.
+	/// </summary>
 	Donya::Collision::Box3F CalcRoomArea( const std::unordered_map<int, Room> &house, std::vector<int> &ignoreIDs ) const;
+	/// <summary>
+	/// Also consider connecting room area.
+	/// </summary>
 	Donya::Collision::Box3F CalcRoomArea( const std::unordered_map<int, Room> &house ) const;
 private:
 	Donya::Collision::Box3F MakeArea( const Donya::Vector3 &wsMinPos, const Donya::Vector3 &wsMaxPos ) const;
@@ -86,6 +93,10 @@ public:
 public:
 	const Room *FindRoomOrNullptr( int roomID ) const;
 	Donya::Collision::Box3F CalcRoomArea( int roomID ) const;
+	/// <summary>
+	/// Returns Room::invalidID(-1) if the argument is not belongs which rooms.
+	/// </summary>
+	int CalcBelongRoomID( const Donya::Vector3 &wsSearchPoint ) const;
 
 	void RemakeByCSV( const CSVLoader &loadedData );
 private:

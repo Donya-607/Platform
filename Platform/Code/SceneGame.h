@@ -22,12 +22,14 @@ private:
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 	Donya::Collision::Box3F				currentScreen;
+	int									currentRoomID = 0;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 
 	std::unique_ptr<Map>				pMap;
 	std::unique_ptr<House>				pHouse;
 	std::unique_ptr<Player>				pPlayer;
+	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 
 #if DEBUG_MODE
 	bool wantSuppressElapsedTime	= false;
@@ -53,6 +55,11 @@ private:
 	void	CameraInit();
 	void	AssignCameraPos();
 	void	CameraUpdate();
+
+	void	PlayerInit();
+	void	PlayerUpdate( float elapsedTime );
+
+	void	UpdateCurrentRoomID();
 
 	void	ClearBackGround() const;
 	void	StartFade() const;
