@@ -156,6 +156,9 @@ void SceneGame::Init()
 	pMap = std::make_unique<Map>();
 	pMap->Init( debugTmpStageNo );
 
+	pHouse = std::make_unique<House>();
+	pHouse->Init( debugTmpStageNo );
+
 	pPlayer = std::make_unique<Player>();
 	pPlayer->Init( data.testPlayerInit );
 
@@ -166,8 +169,10 @@ void SceneGame::Init()
 void SceneGame::Uninit()
 {
 	if ( pMap		) { pMap->Uninit();		}
+	if ( pHouse		) { pHouse->Uninit();	}
 	if ( pPlayer	) { pPlayer->Uninit();	}
 	pMap.reset();
+	pHouse.reset();
 	pPlayer.reset();
 
 	Bullet::Admin::Get().ClearInstances();
@@ -302,9 +307,10 @@ void SceneGame::Draw( float elapsedTime )
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
+		if ( pPlayer	) { pPlayer->DrawHitBox( pRenderer.get(), VP );		}
+		if ( pMap		) { pMap->DrawHitBoxes( pRenderer.get(), VP );		}
 		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		if ( pMap		) { pMap->DrawHitBoxes( pRenderer.get(), VP ); }
-		if ( pPlayer	) { pPlayer->DrawHitBox( pRenderer.get(), VP ); }
+		if ( pHouse		) { pHouse->DrawHitBoxes( pRenderer.get(), VP );	}
 	}
 #endif // DEBUG_MODE
 		
@@ -431,17 +437,28 @@ void SceneGame::AssignCameraPos()
 {
 	const auto &data = FetchParameter();
 	Donya::Vector3 focusPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+	
+	if ( pHouse )
+	{
+		constexpr int debugRoomID = 0;
+		const auto area = pHouse->CalcRoomArea( debugRoomID );
+		if ( Donya::Collision::operator != ( Donya::Collision::Box3F::Nil(), area ) )
+		{
+			const auto min = area.Min();
+			const auto max = area.Max();
+			
+			const float halfScreenWidth  = ( currentScreen.Max().x - currentScreen.Min().x ) * 0.5f;
+			const float halfScreenHeight = ( currentScreen.Max().y - currentScreen.Min().y ) * 0.5f;
 
-	// TODO: Clamp focus point to a point that make "edge points" will within the screen range.
-	//if ( !Donya::Collision::IsHit( focusPos, currentScreen ) )
-	//{
-	//	const auto min = currentScreen.Min();
-	//	const auto max = currentScreen.Max();
-
-	//	focusPos.x = Donya::Clamp( focusPos.x, min.x, max.x );
-	//	focusPos.y = Donya::Clamp( focusPos.y, min.y, max.y );
-	//	focusPos.z = Donya::Clamp( focusPos.z, min.z, max.z );
-	//}
+			// Clamp the center pos in offseted value
+			focusPos += data.camera.offsetFocus;
+			focusPos.x = Donya::Clamp( focusPos.x, min.x + halfScreenWidth,  max.x - halfScreenWidth  );
+			focusPos.y = Donya::Clamp( focusPos.y, min.y + halfScreenHeight, max.y - halfScreenHeight );
+			focusPos.z = Donya::Clamp( focusPos.z, min.z, max.z );
+			// Back to before offset pos because below setting process expects that value
+			focusPos -= data.camera.offsetFocus;
+		}
+	}
 
 	iCamera.SetPosition  ( focusPos + data.camera.offsetPos   );
 	iCamera.SetFocusPoint( focusPos + data.camera.offsetFocus );
@@ -596,6 +613,7 @@ Scene::Result SceneGame::ReturnResult()
 }
 
 #if USE_IMGUI
+#include "Room.h"
 void SceneGame::UseImGui()
 {
 	if ( !ImGui::BeginIfAllowed() ) { return; }
@@ -717,6 +735,8 @@ void SceneGame::UseImGui()
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
 
 		if ( pMap ) { pMap->ShowImGuiNode( u8"マップの現在", debugTmpStageNo ); }
+
+		if ( pHouse ) { pHouse->ShowImGuiNode( u8"部屋の現在", debugTmpStageNo ); }
 
 		ImGui::TreePop();
 	}

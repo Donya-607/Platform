@@ -1,1 +1,100 @@
 #pragma once
+
+#include <unordered_map>
+
+#undef max
+#undef min
+#include <cereal\types\unordered_map.hpp>
+
+#include "Donya/Collision.h"
+#include "Donya/Serializer.h"
+#include "Donya/UseImGui.h"
+#include "Donya/Vector.h"
+
+#include "CSVLoader.h"
+#include "Direction.h"
+#include "Renderer.h"
+
+
+class Room
+{
+public:
+	static constexpr int invalidID = -1;
+private:
+	int id					= 0;
+	int connectingRoomID	= invalidID;	// -1 is invalid
+	Definition::Direction	transition = Definition::Direction::Nil; // Direction that be able to transition
+	Donya::Collision::Box3F	area;			// Z component is infinite
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			CEREAL_NVP( id					),
+			CEREAL_NVP( connectingRoomID	),
+			CEREAL_NVP( transition			),
+			CEREAL_NVP( area				)
+		);
+		if ( 1 <= version )
+		{
+			// archive();
+		}
+	}
+public:
+	void Init( int id, const Donya::Vector3 &wsMinPos, const Donya::Vector3 &wsMaxPos );
+	void Uninit();
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
+public:
+	int GetID() const;
+	Donya::Collision::Box3F CalcRoomArea( const std::unordered_map<int, Room> &house, std::vector<int> &ignoreIDs ) const;
+	Donya::Collision::Box3F CalcRoomArea( const std::unordered_map<int, Room> &house ) const;
+private:
+	Donya::Collision::Box3F MakeArea( const Donya::Vector3 &wsMinPos, const Donya::Vector3 &wsMaxPos ) const;
+public:
+#if USE_IMGUI
+	void ShowImGuiNode( const std::string &nodeCaption );
+#endif // USE_IMGUI
+};
+CEREAL_CLASS_VERSION( Room, 0 )
+
+
+/// <summary>
+/// Contain many Rooms.
+/// </summary>
+class House
+{
+private:
+	std::unordered_map<int, Room> rooms; // Key is Room::id
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive( CEREAL_NVP( rooms ) );
+		if ( 1 <= version )
+		{
+			// archive();
+		}
+	}
+	static constexpr const char *serializeID = "House";
+public:
+	bool Init( int stageNo );
+	void Uninit();
+	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
+public:
+	const Room *FindRoomOrNullptr( int roomID ) const;
+	Donya::Collision::Box3F CalcRoomArea( int roomID ) const;
+
+	void RemakeByCSV( const CSVLoader &loadedData );
+private:
+	bool LoadRooms( int stageNo, bool fromBinary );
+#if USE_IMGUI
+public:
+	void SaveRooms( int stageNo, bool fromBinary );
+public:
+	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
+#endif // USE_IMGUI
+};
+CEREAL_CLASS_VERSION( House, 0 )

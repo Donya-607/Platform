@@ -13,6 +13,7 @@
 #include "ObjectBase.h"
 #include "Player.h"
 #include "Renderer.h"
+#include "Room.h"
 #include "Scene.h"
 
 class SceneGame : public Scene
@@ -24,8 +25,9 @@ private:
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 
-	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<Map>				pMap;
+	std::unique_ptr<House>				pHouse;
+	std::unique_ptr<Player>				pPlayer;
 
 #if DEBUG_MODE
 	bool wantSuppressElapsedTime	= false;

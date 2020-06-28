@@ -136,6 +136,7 @@
     <ClCompile Include="Code\Bullet.cpp" />
     <ClCompile Include="Code\Common.cpp" />
     <ClCompile Include="Code\CSVLoader.cpp" />
+    <ClCompile Include="Code\Direction.cpp" />
     <ClCompile Include="Code\Donya\AudioSystem.cpp" />
     <ClCompile Include="Code\Donya\Blend.cpp" />
     <ClCompile Include="Code\Donya\Camera.cpp" />
@@ -180,6 +181,7 @@
     <ClCompile Include="Code\Parameter.cpp" />
     <ClCompile Include="Code\Player.cpp" />
     <ClCompile Include="Code\Renderer.cpp" />
+    <ClCompile Include="Code\Room.cpp" />
     <ClCompile Include="Code\SceneGame.cpp" />
     <ClCompile Include="Code\SceneLoad.cpp" />
     <ClCompile Include="Code\SceneLogo.cpp" />
@@ -199,6 +201,7 @@
     <ClInclude Include="Code\BulletParam.h" />
     <ClInclude Include="Code\Common.h" />
     <ClInclude Include="Code\CSVLoader.h" />
+    <ClInclude Include="Code\Direction.h" />
     <ClInclude Include="Code\Donya\AudioSystem.h" />
     <ClInclude Include="Code\Donya\Benchmark.h" />
     <ClInclude Include="Code\Donya\Blend.h" />
@@ -211,7 +214,6 @@
     <ClInclude Include="Code\Donya\Direct3DUtil.h" />
     <ClInclude Include="Code\Donya\Donya.h" />
     <ClInclude Include="Code\Donya\Easing.h" />
-    <ClInclude Include="Code\Donya\EnumBitwiseOperators.h" />
     <ClInclude Include="Code\Donya\GamepadXInput.h" />
     <ClInclude Include="Code\Donya\GeometricPrimitive.h" />
     <ClInclude Include="Code\Donya\HighResolutionTimer.h" />
@@ -256,6 +258,7 @@
     <ClInclude Include="Code\Player.h" />
     <ClInclude Include="Code\PlayerParam.h" />
     <ClInclude Include="Code\Renderer.h" />
+    <ClInclude Include="Code\Room.h" />
     <ClInclude Include="Code\Scene.h" />
     <ClInclude Include="Code\SceneGame.h" />
     <ClInclude Include="Code\SceneLoad.h" />

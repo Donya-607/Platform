@@ -106,9 +106,7 @@ bool Map::Init( int stageNumber )
 	// If a user was changed only a json file, the user wanna apply the changes to binary file also.
 	// So save here.
 	SaveMap( stageNumber, /* fromBinary = */ true );
-#endif // DEBUG_MODE
 
-#if DEBUG_MODE
 	// Generate safe plane
 	if ( tiles.empty() )
 	{
@@ -232,7 +230,7 @@ void Map::SaveMap( int stageNumber, bool fromBinary )
 								? MakeStageParamPathBinary( ID, stageNumber )
 								: MakeStageParamPathJson  ( ID, stageNumber );
 	MakeDirectoryIfNotExists( filePath );
-	MakeFileIfNotExists( filePath, IOFromBinaryFile );
+	MakeFileIfNotExists( filePath, fromBinary );
 
 	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
 }
