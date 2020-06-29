@@ -1,7 +1,5 @@
 #pragma once
 
-#include <climits>	// Use INT_MAX
-
 namespace StageFormat
 {
 	enum ID

@@ -60,7 +60,7 @@ CEREAL_CLASS_VERSION( Tile, 0 )
 
 
 /// <summary>
-/// A container of the Tiles.
+/// A container of the Tiles of per stage.
 /// </summary>
 class Map
 {
@@ -92,12 +92,12 @@ public:
 	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
 	const std::vector<Tile> &GetTiles() const;
-	void RemakeByCSV( const CSVLoader &loadedData );
 private:
 	void RemoveTiles();
 	bool LoadMap( int stageNumber, bool fromBinary );
 #if USE_IMGUI
 public:
+	void RemakeByCSV( const CSVLoader &loadedData );
 	void SaveMap( int stageNumber, bool fromBinary );
 public:
 	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );

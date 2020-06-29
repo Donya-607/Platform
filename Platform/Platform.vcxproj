@@ -170,6 +170,7 @@
     <ClCompile Include="Code\Donya\UseImGui.cpp" />
     <ClCompile Include="Code\Donya\Vector.cpp" />
     <ClCompile Include="Code\Donya\WindowsUtil.cpp" />
+    <ClCompile Include="Code\Enemy.cpp" />
     <ClCompile Include="Code\Fader.cpp" />
     <ClCompile Include="Code\FilePath.cpp" />
     <ClCompile Include="Code\Framework.cpp" />
@@ -188,6 +189,7 @@
     <ClCompile Include="Code\SceneManager.cpp" />
     <ClCompile Include="Code\ScenePause.cpp" />
     <ClCompile Include="Code\SceneTitle.cpp" />
+    <ClCompile Include="Code\Terry.cpp" />
     <ClCompile Include="Code\UI.cpp" />
     <ClCompile Include="External\ImGui\imgui.cpp" />
     <ClCompile Include="External\ImGui\imgui_demo.cpp" />
@@ -245,6 +247,7 @@
     <ClInclude Include="Code\Donya\UseImGui.h" />
     <ClInclude Include="Code\Donya\Vector.h" />
     <ClInclude Include="Code\Donya\WindowsUtil.h" />
+    <ClInclude Include="Code\Enemy.h" />
     <ClInclude Include="Code\Fader.h" />
     <ClInclude Include="Code\FilePath.h" />
     <ClInclude Include="Code\Framework.h" />
@@ -267,6 +270,7 @@
     <ClInclude Include="Code\ScenePause.h" />
     <ClInclude Include="Code\SceneTitle.h" />
     <ClInclude Include="Code\StageFormat.h" />
+    <ClInclude Include="Code\Terry.h" />
     <ClInclude Include="Code\UI.h" />
     <ClInclude Include="External\Cereal\include\cereal\access.hpp" />
     <ClInclude Include="External\Cereal\include\cereal\archives\adapters.hpp" />

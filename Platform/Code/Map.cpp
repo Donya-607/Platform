@@ -165,6 +165,26 @@ const std::vector<Tile> &Map::GetTiles() const
 {
 	return tiles;
 }
+void Map::RemoveTiles()
+{
+	auto itr = std::remove_if
+	(
+		tiles.begin(), tiles.end(),
+		[]( Tile &element )
+		{
+			return element.ShouldRemove();
+		}
+	);
+	tiles.erase( itr, tiles.end() );
+}
+bool Map::LoadMap( int stageNumber, bool fromBinary )
+{
+	const std::string filePath	= ( fromBinary )
+								? MakeStageParamPathBinary( ID, stageNumber )
+								: MakeStageParamPathJson  ( ID, stageNumber );
+	return Donya::Serializer::Load( *this, filePath.c_str(), ID, fromBinary );
+}
+#if USE_IMGUI
 void Map::RemakeByCSV( const CSVLoader &loadedData )
 {
 	auto IsTileID	= []( int id )
@@ -201,26 +221,6 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 		}
 	}
 }
-void Map::RemoveTiles()
-{
-	auto itr = std::remove_if
-	(
-		tiles.begin(), tiles.end(),
-		[]( Tile &element )
-		{
-			return element.ShouldRemove();
-		}
-	);
-	tiles.erase( itr, tiles.end() );
-}
-bool Map::LoadMap( int stageNumber, bool fromBinary )
-{
-	const std::string filePath	= ( fromBinary )
-								? MakeStageParamPathBinary( ID, stageNumber )
-								: MakeStageParamPathJson  ( ID, stageNumber );
-	return Donya::Serializer::Load( *this, filePath.c_str(), ID, fromBinary );
-}
-#if USE_IMGUI
 void Map::SaveMap( int stageNumber, bool fromBinary )
 {
 	const std::string filePath	= ( fromBinary )
@@ -284,10 +284,14 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	}
 	else if ( result == Op::LoadBinary )
 	{
+		for ( auto &it : tiles ) { it.Uninit(); }
+		tiles.clear();
 		LoadMap( stageNo, true );
 	}
 	else if ( result == Op::LoadJson )
 	{
+		for ( auto &it : tiles ) { it.Uninit(); }
+		tiles.clear();
 		LoadMap( stageNo, false );
 	}
 

@@ -97,12 +97,11 @@ public:
 	/// Returns Room::invalidID(-1) if the argument is not belongs which rooms.
 	/// </summary>
 	int CalcBelongRoomID( const Donya::Vector3 &wsSearchPoint ) const;
-
-	void RemakeByCSV( const CSVLoader &loadedData );
 private:
 	bool LoadRooms( int stageNo, bool fromBinary );
 #if USE_IMGUI
 public:
+	void RemakeByCSV( const CSVLoader &loadedData );
 	void SaveRooms( int stageNo, bool fromBinary );
 public:
 	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );

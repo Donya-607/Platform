@@ -20,6 +20,7 @@
 
 #include "Bullet.h"
 #include "Common.h"
+#include "Enemy.h"
 #include "Fader.h"
 #include "FilePath.h"
 #include "Music.h"
@@ -31,12 +32,15 @@
 #pragma comment( lib, "comdlg32.lib" ) // Used for common-dialog
 #endif // DEBUG_MODE
 
-#if DEBUG_MODE
 namespace
 {
+#if DEBUG_MODE
 	constexpr int debugTmpStageNo = -1;
-}
+	constexpr bool IOFromBinary = false;
+#else
+	constexpr bool IOFromBinary = true;
 #endif // DEBUG_MODE
+}
 
 namespace
 {
@@ -164,6 +168,11 @@ void SceneGame::Init()
 	CameraInit();
 
 	Bullet::Admin::Get().ClearInstances();
+
+	auto &enemyAdmin = Enemy::Admin::Get();
+	enemyAdmin.ClearInstances();
+	enemyAdmin.LoadEnemies( debugTmpStageNo, IOFromBinary );
+	enemyAdmin.SaveEnemies( debugTmpStageNo, true );
 }
 void SceneGame::Uninit()
 {
@@ -175,6 +184,7 @@ void SceneGame::Uninit()
 	pPlayer.reset();
 
 	Bullet::Admin::Get().ClearInstances();
+	Enemy::Admin::Get().ClearInstances();
 
 	// Donya::Sound::Stop( Music::BGM_Game );
 }
@@ -223,6 +233,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	PlayerUpdate( elapsedTime );
 
 	Bullet::Admin::Get().Update( elapsedTime, currentScreen );
+	Enemy::Admin::Get().Update( elapsedTime, ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero() );
 
 	// PhysicUpdates
 	{
@@ -242,6 +253,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		}
 
 		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
+		Enemy::Admin::Get().PhysicUpdate( elapsedTime, hitBoxes );
 	}
 
 	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
@@ -283,6 +295,7 @@ void SceneGame::Draw( float elapsedTime )
 
 		pRenderer->ActivateShaderNormalStatic();
 		Bullet::Admin::Get().Draw( pRenderer.get() );
+		Enemy::Admin::Get().Draw( pRenderer.get() );
 		if ( pMap ) { pMap->Draw( pRenderer.get() ); }
 		pRenderer->DeactivateShaderNormalStatic();
 	}
@@ -298,6 +311,7 @@ void SceneGame::Draw( float elapsedTime )
 		if ( pPlayer	) { pPlayer->DrawHitBox( pRenderer.get(), VP );		}
 		if ( pMap		) { pMap->DrawHitBoxes( pRenderer.get(), VP );		}
 		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
+		Enemy::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		if ( pHouse		) { pHouse->DrawHitBoxes( pRenderer.get(), VP );	}
 	}
 #endif // DEBUG_MODE
@@ -811,6 +825,8 @@ void SceneGame::UseImGui()
 
 	Bullet::Parameter::Update( u8"弾のパラメータ" );
 	Bullet::Admin::Get().ShowImGuiNode( u8"弾の現在" );
+	Enemy::Parameter::Update( u8"敵のパラメータ" );
+	Enemy::Admin::Get().ShowImGuiNode( u8"敵の現在", debugTmpStageNo );
 	
 	ImGui::End();
 }

@@ -97,6 +97,17 @@ void PlayerInitializer::LoadParameter( int stageNo )
 	LoadBin( stageNo );
 #endif // DEBUG_MODE
 }
+void PlayerInitializer::LoadBin( int stageNo )
+{
+	constexpr bool fromBinary = true;
+	Donya::Serializer::Load( *this, MakeStageParamPathBinary( ID, stageNo ).c_str(), ID, fromBinary );
+}
+void PlayerInitializer::LoadJson( int stageNo )
+{
+	constexpr bool fromBinary = false;
+	Donya::Serializer::Load( *this, MakeStageParamPathJson( ID, stageNo ).c_str(), ID, fromBinary );
+}
+#if USE_IMGUI
 void PlayerInitializer::RemakeByCSV( const CSVLoader &loadedData )
 {
 	auto ShouldConsider = []( int id )
@@ -210,17 +221,6 @@ void PlayerInitializer::RemakeByCSV( const CSVLoader &loadedData )
 	}
 #endif // DEBUG_MODE
 }
-void PlayerInitializer::LoadBin( int stageNo )
-{
-	constexpr bool fromBinary = true;
-	Donya::Serializer::Load( *this, MakeStageParamPathBinary( ID, stageNo ).c_str(), ID, fromBinary );
-}
-void PlayerInitializer::LoadJson( int stageNo )
-{
-	constexpr bool fromBinary = false;
-	Donya::Serializer::Load( *this, MakeStageParamPathJson( ID, stageNo ).c_str(), ID, fromBinary );
-}
-#if USE_IMGUI
 void PlayerInitializer::SaveBin( int stageNo )
 {
 	constexpr bool fromBinary = true;
@@ -461,6 +461,8 @@ void Player::Draw( RenderingHelper *pRenderer )
 {
 	if ( !pRenderer ) { return; }
 	// else
+
+	// TODO: Change the model instance to ModelHelper's
 
 	const Donya::Vector3 &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
 	const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );

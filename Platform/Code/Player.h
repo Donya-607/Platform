@@ -43,12 +43,12 @@ public:
 	bool			ShouldLookingRight() const;
 public:
 	void LoadParameter( int stageNo );
-	void RemakeByCSV( const CSVLoader &loadedData );
 private:
 	void LoadBin( int stageNo );
 	void LoadJson( int stageNo );
 #if USE_IMGUI
 public:
+	void RemakeByCSV( const CSVLoader &loadedData );
 	void SaveBin( int stageNo );
 	void SaveJson( int stageNo );
 public:

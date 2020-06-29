@@ -187,6 +187,14 @@ int House::CalcBelongRoomID( const Donya::Vector3 &wsSearchPoint ) const
 
 	return -1;
 }
+bool House::LoadRooms( int stageNo, bool fromBinary )
+{
+	const std::string filePath	= ( fromBinary )
+								? MakeStageParamPathBinary( serializeID, stageNo )
+								: MakeStageParamPathJson  ( serializeID, stageNo );
+	return Donya::Serializer::Load( *this, filePath.c_str(), serializeID, fromBinary );
+}
+#if USE_IMGUI
 void House::RemakeByCSV( const CSVLoader &loadedData )
 {
 	for ( auto &it : rooms ) { it.second.Uninit(); }
@@ -270,14 +278,6 @@ void House::RemakeByCSV( const CSVLoader &loadedData )
 		rooms.insert( std::make_pair( it.first, argument ) );
 	}
 }
-bool House::LoadRooms( int stageNo, bool fromBinary )
-{
-	const std::string filePath	= ( fromBinary )
-								? MakeStageParamPathBinary( serializeID, stageNo )
-								: MakeStageParamPathJson  ( serializeID, stageNo );
-	return Donya::Serializer::Load( *this, filePath.c_str(), serializeID, fromBinary );
-}
-#if USE_IMGUI
 void House::SaveRooms( int stageNo, bool fromBinary )
 {
 	const std::string filePath	= ( fromBinary )
@@ -339,10 +339,12 @@ void House::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	}
 	else if ( result == Op::LoadBinary )
 	{
+		rooms.clear();
 		LoadRooms( stageNo, true );
 	}
 	else if ( result == Op::LoadJson )
 	{
+		rooms.clear();
 		LoadRooms( stageNo, false );
 	}
 
