@@ -24,7 +24,7 @@ namespace Enemy
 		}
 	public:
 		void Init( const InitializeParam &parameter ) override;
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
+		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
 		Kind GetKind() const override;
 	public:

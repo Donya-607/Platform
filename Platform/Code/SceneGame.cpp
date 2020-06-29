@@ -232,8 +232,9 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	
 	PlayerUpdate( elapsedTime );
 
+	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 	Bullet::Admin::Get().Update( elapsedTime, currentScreen );
-	Enemy::Admin::Get().Update( elapsedTime, ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero() );
+	Enemy::Admin::Get().Update( elapsedTime, playerPos, currentScreen );
 
 	// PhysicUpdates
 	{

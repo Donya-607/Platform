@@ -80,7 +80,10 @@ namespace Enemy
 		Donya::Collision::Box3F	hurtBox;	// VS an attack
 		Donya::Vector3			velocity;
 		Donya::Quaternion		orientation;
-		bool					wantRemove = false;
+		bool					wantRemove			= false;
+		bool					waitForRespawn		= false;
+		bool					onOutSidePrevious	= true; // Used for judging to respawn
+		bool					onOutSideCurrent	= true; // Used for judging to respawn
 	public:
 		Base() = default;
 		Base( const Base &  ) = default;
@@ -106,7 +109,7 @@ namespace Enemy
 	public:
 		virtual void Init( const InitializeParam &parameter );
 		virtual void Uninit();
-		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos );
+		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		virtual void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
@@ -115,6 +118,11 @@ namespace Enemy
 		virtual Kind GetKind() const = 0;
 		InitializeParam GetInitializer() const;
 	protected:
+		void UpdateOutSideState( const Donya::Collision::Box3F &wsScreenHitBox );
+		bool OnOutSide() const;
+		bool NowWaiting() const;
+		void BeginWaitIfActive();
+		void RespawnIfSpawnable();
 		virtual Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:
 	#if USE_IMGUI
@@ -147,7 +155,7 @@ namespace Enemy
 		static constexpr const char *ID = "Enemy";
 	public:
 		void Uninit();
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos );
+		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;

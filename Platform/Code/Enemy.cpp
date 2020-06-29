@@ -128,24 +128,36 @@ namespace Enemy
 
 	void Base::Init( const InitializeParam &parameter )
 	{
-		initializer	= parameter;
-		body.pos	= initializer.wsPos;
-		hurtBox.pos	= initializer.wsPos;
-		velocity	= 0.0f;
-		wantRemove	= false;
+		initializer		= parameter;
+		body.pos		= initializer.wsPos;
+		hurtBox.pos		= initializer.wsPos;
+		body.exist		= true;
+		hurtBox.exist	= true;
+		velocity		= 0.0f;
+		wantRemove		= false;
 		const float rotateSign = ( initializer.lookingRight ) ? 1.0f : -1.0f;
-		orientation = Donya::Quaternion::Make
+		orientation		= Donya::Quaternion::Make
 		(
 			Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
 		);
 	}
-	void Base::Uninit() {}
-	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Base::Uninit()
+	{
+		// Back to initialize pos for respawn
+		body.pos		= initializer.wsPos;
+		hurtBox.pos		= initializer.wsPos;
+		body.exist		= false;
+		hurtBox.exist	= false;
+	}
+	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 
 	}
 	void Base::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
+		if ( NowWaiting() ) { return; }
+		// else
+
 		const auto movement = velocity * elapsedTime;
 	
 		Actor::MoveX( movement.x, solids );
@@ -174,7 +186,8 @@ namespace Enemy
 	}
 	void Base::Draw( RenderingHelper *pRenderer ) const
 	{
-		if ( !pRenderer ) { return; }
+		if ( !pRenderer   ) { return; }
+		if ( NowWaiting() ) { return; }
 		// else
 
 		const ModelHelper::StaticSet *pModelSet = GetModelPtrOrNullptr( GetKind() );
@@ -198,6 +211,9 @@ namespace Enemy
 	}
 	void Base::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 	{
+		if ( NowWaiting() ) { return; }
+		// else
+		
 	#if DEBUG_MODE
 		Donya::Model::Cube::Constant constant;
 		constant.matViewProj	= matVP;
@@ -243,6 +259,34 @@ namespace Enemy
 	{
 		return initializer;
 	}
+	void Base::UpdateOutSideState( const Donya::Collision::Box3F &wsScreen )
+	{
+		onOutSidePrevious = onOutSideCurrent;
+		onOutSideCurrent  = ( !Donya::Collision::IsHit( body, wsScreen, /* considerExistFlag = */ false ) );
+	}
+	bool Base::OnOutSide() const
+	{
+		return onOutSideCurrent;
+	}
+	bool Base::NowWaiting() const
+	{
+		return waitForRespawn;
+	}
+	void Base::BeginWaitIfActive()
+	{
+		if ( NowWaiting() ) { return; }
+		// else
+		waitForRespawn = true;
+		Uninit();
+	}
+	void Base::RespawnIfSpawnable()
+	{
+		if ( !NowWaiting() ) { return; }
+		if ( onOutSideCurrent || !onOutSidePrevious ) { return;  }
+		// else
+		waitForRespawn = false;
+		Init( GetInitializer() );
+	}
 	Donya::Vector4x4 Base::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 	{
 		Donya::Vector4x4 W{};
@@ -269,6 +313,12 @@ namespace Enemy
 		initializer.ShowImGuiNode( u8"初期化パラメータ" );
 		ImGui::DragFloat3( u8"ワールド座標", &body.pos.x, 0.01f );
 		ImGui::Helper::ShowFrontNode( "", &orientation );
+		ImGui::Text( u8"画面内にいる：%d", ( onOutSideCurrent ) ? 0 : 1 );
+		ImGui::Text( u8"リスポーン待ち：%d", ( waitForRespawn ) ? 1 : 0 );
+		if ( ImGui::Button( u8"リスポーン待ち状態にする" ) )
+		{
+			BeginWaitIfActive();
+		}
 
 		ImGui::TreePop();
 	}
@@ -282,11 +332,11 @@ namespace Enemy
 			if ( pIt ) { pIt->Uninit(); }
 		}
 	}
-	void Admin::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Admin::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		for ( auto &pIt : enemyPtrs )
 		{
-			if ( pIt ) { pIt->Update( elapsedTime, wsTargetPos ); }
+			if ( pIt ) { pIt->Update( elapsedTime, wsTargetPos, wsScreen ); }
 		}
 	}
 	void Admin::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )

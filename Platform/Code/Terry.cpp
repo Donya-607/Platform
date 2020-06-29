@@ -37,8 +37,18 @@ namespace Enemy
 		hurtBox.offset	= data.hurtBoxOffset;
 		hurtBox.size	= data.hurtBoxSize;
 	}
-	void Terry::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Terry::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
+		UpdateOutSideState( wsScreen );
+		if ( NowWaiting() )
+		{
+			RespawnIfSpawnable();
+			if ( NowWaiting() ) // Still inactive
+			{
+				return;
+			}
+		}
+
 		const auto &data = Parameter::GetTerry();
 
 	#if USE_IMGUI
