@@ -32,11 +32,24 @@ namespace Enemy
 		Base::Init( parameter );
 
 		const auto &data = Parameter::GetTerry();
-
+		body.offset		= data.hitBoxOffset;
+		body.size		= data.hitBoxSize;
+		hurtBox.offset	= data.hurtBoxOffset;
+		hurtBox.size	= data.hurtBoxSize;
 	}
 	void Terry::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
 		const auto &data = Parameter::GetTerry();
+
+	#if USE_IMGUI
+		// Apply for be able to see an adjustment immediately
+		{
+			body.offset		= data.hitBoxOffset;
+			body.size		= data.hitBoxSize;
+			hurtBox.offset	= data.hurtBoxOffset;
+			hurtBox.size	= data.hurtBoxSize;
+		}
+	#endif // USE_IMGUI
 
 		// Move
 		{
