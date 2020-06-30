@@ -140,7 +140,6 @@ void SceneGame::Init()
 	// Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
 #endif // DEBUG_MODE
 
-	wantSuppressElapsedTime = true;
 	bool result{};
 
 	pRenderer = std::make_unique<RenderingHelper>();
@@ -191,16 +190,14 @@ void SceneGame::Uninit()
 
 Scene::Result SceneGame::Update( float elapsedTime )
 {
-#if DEBUG_MODE
-	if ( wantSuppressElapsedTime )
+	// Prevent the elapsedTime will be very larging
 	{
-		wantSuppressElapsedTime = false;
-
-		constexpr float preferFPS		= 60.0f;
-		constexpr float goodElapsedTime	= 1.0f / preferFPS;
-		elapsedTime = goodElapsedTime;
+		constexpr float lowestAllowFPS	= 10.0f;
+		constexpr float largestDelta	= 1.0f / lowestAllowFPS;
+		elapsedTime = std::min( largestDelta, elapsedTime );
 	}
 
+#if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
 	{
 		nowDebugMode = !nowDebugMode;
@@ -772,8 +769,6 @@ void SceneGame::UseImGui()
 				if ( !loader.Get().empty() )
 				{
 					// The data was loaded successfully here
-
-					wantSuppressElapsedTime = true;
 
 					if ( applyMap && pMap )
 					{

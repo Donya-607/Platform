@@ -32,7 +32,6 @@ private:
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 
 #if DEBUG_MODE
-	bool wantSuppressElapsedTime	= false;
 	bool nowDebugMode				= false;
 	bool isReverseCameraMoveX		= true;
 	bool isReverseCameraMoveY		= false;
