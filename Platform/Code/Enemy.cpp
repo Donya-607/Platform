@@ -129,11 +129,11 @@ namespace Enemy
 	void Base::Init( const InitializeParam &parameter )
 	{
 		initializer		= parameter;
-		body.pos		= initializer.wsPos;
-		hurtBox.pos		= initializer.wsPos;
+		AssignMyBody( parameter.wsPos );
 		body.exist		= true;
 		hurtBox.exist	= true;
 		velocity		= 0.0f;
+		hp				= GetInitialHP();
 		wantRemove		= false;
 		const float rotateSign = ( initializer.lookingRight ) ? 1.0f : -1.0f;
 		orientation		= Donya::Quaternion::Make
@@ -258,6 +258,14 @@ namespace Enemy
 	InitializeParam Base::GetInitializer() const
 	{
 		return initializer;
+	}
+	void Base::GiveDamage( const Definition::Damage &damage )
+	{
+		hp -= damage.amount;
+		if ( hp < 0 )
+		{
+			BeginWaitIfActive();
+		}
 	}
 	void Base::UpdateOutSideState( const Donya::Collision::Box3F &wsScreen )
 	{

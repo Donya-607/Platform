@@ -14,6 +14,7 @@
 #include "Donya/Vector.h"
 
 #include "CSVLoader.h"
+#include "Damage.h"
 #include "ObjectBase.h"
 
 namespace Enemy
@@ -80,10 +81,11 @@ namespace Enemy
 		Donya::Collision::Box3F	hurtBox;	// VS an attack
 		Donya::Vector3			velocity;
 		Donya::Quaternion		orientation;
+		int						hp					= 1;	// Alive if this is greater than 0(if 0 < hp)
 		bool					wantRemove			= false;
 		bool					waitForRespawn		= false;
-		bool					onOutSidePrevious	= true; // Used for judging to respawn
-		bool					onOutSideCurrent	= true; // Used for judging to respawn
+		bool					onOutSidePrevious	= true;	// Used for judging to respawn
+		bool					onOutSideCurrent	= true;	// Used for judging to respawn
 	public:
 		Base() = default;
 		Base( const Base &  ) = default;
@@ -103,7 +105,11 @@ namespace Enemy
 			);
 			if ( 1 <= version )
 			{
-				// archive();
+				archive( CEREAL_NVP( hp ) );
+			}
+			if ( 2 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	public:
@@ -117,12 +123,16 @@ namespace Enemy
 		virtual bool ShouldRemove() const;
 		virtual Kind GetKind() const = 0;
 		InitializeParam GetInitializer() const;
+		virtual void GiveDamage( const Definition::Damage &damage );
 	protected:
 		void UpdateOutSideState( const Donya::Collision::Box3F &wsScreenHitBox );
 		bool OnOutSide() const;
 		bool NowWaiting() const;
 		void BeginWaitIfActive();
 		void RespawnIfSpawnable();
+	protected:
+		virtual int GetInitialHP() const = 0;
+		virtual void AssignMyBody( const Donya::Vector3 &wsPos ) = 0;
 		virtual Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:
 	#if USE_IMGUI
@@ -175,7 +185,7 @@ namespace Enemy
 	};
 }
 CEREAL_CLASS_VERSION( Enemy::InitializeParam,	0 )
-CEREAL_CLASS_VERSION( Enemy::Base,				0 )
+CEREAL_CLASS_VERSION( Enemy::Base,				1 )
 CEREAL_REGISTER_TYPE( Enemy::Base )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Actor, Enemy::Base )
 CEREAL_CLASS_VERSION( Enemy::Admin,				0 )

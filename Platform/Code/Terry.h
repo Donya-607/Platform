@@ -23,10 +23,12 @@ namespace Enemy
 			}
 		}
 	public:
-		void Init( const InitializeParam &parameter ) override;
 		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
 		Kind GetKind() const override;
+	private:
+		int  GetInitialHP() const override;
+		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
 	public:
 	#if USE_IMGUI
 		void ShowImGuiNode( const std::string &nodeCaption ) override;
@@ -41,8 +43,10 @@ namespace Enemy
 		Donya::Vector3 hitBoxSize	{ 1.0f, 1.0f, 1.0f };
 		Donya::Vector3 hurtBoxSize	{ 1.0f, 1.0f, 1.0f };
 
-		float moveSpeed		= 1.0f;		// [m/s]
-		float rotateSpeed	= 360.0f;	// [degree/s]
+		float	moveSpeed	= 1.0f;		// [m/s]
+		float	rotateSpeed	= 360.0f;	// [degree/s]
+
+		int		hp			= 1;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -60,6 +64,10 @@ namespace Enemy
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( hp ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -69,6 +77,6 @@ namespace Enemy
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Enemy::Terry, 0 )
+CEREAL_CLASS_VERSION( Enemy::Terry, 1 )
 CEREAL_REGISTER_TYPE( Enemy::Terry )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Terry )

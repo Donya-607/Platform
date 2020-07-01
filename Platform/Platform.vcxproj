@@ -203,6 +203,7 @@
     <ClInclude Include="Code\BulletParam.h" />
     <ClInclude Include="Code\Common.h" />
     <ClInclude Include="Code\CSVLoader.h" />
+    <ClInclude Include="Code\Damage.h" />
     <ClInclude Include="Code\Direction.h" />
     <ClInclude Include="Code\Donya\AudioSystem.h" />
     <ClInclude Include="Code\Donya\Benchmark.h" />

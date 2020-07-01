@@ -27,16 +27,6 @@ namespace Enemy
 		}
 	}
 
-	void Terry::Init( const InitializeParam &parameter )
-	{
-		Base::Init( parameter );
-
-		const auto &data = Parameter::GetTerry();
-		body.offset		= data.hitBoxOffset;
-		body.size		= data.hitBoxSize;
-		hurtBox.offset	= data.hurtBoxOffset;
-		hurtBox.size	= data.hurtBoxSize;
-	}
 	void Terry::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		UpdateOutSideState( wsScreen );
@@ -78,6 +68,20 @@ namespace Enemy
 		}
 	}
 	Kind Terry::GetKind() const { return Kind::Terry; }
+	int  Terry::GetInitialHP() const
+	{
+		return Parameter::GetTerry().hp;
+	}
+	void Terry::AssignMyBody( const Donya::Vector3 &wsPos )
+	{
+		const auto &data = Parameter::GetTerry();
+		body.pos		= wsPos;
+		body.offset		= data.hitBoxOffset;
+		body.size		= data.hitBoxSize;
+		hurtBox.pos		= wsPos;
+		hurtBox.offset	= data.hurtBoxOffset;
+		hurtBox.size	= data.hurtBoxSize;
+	}
 #if USE_IMGUI
 	void Terry::ShowImGuiNode( const std::string &nodeCaption )
 	{
