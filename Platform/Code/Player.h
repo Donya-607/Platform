@@ -128,6 +128,9 @@ private:
 		virtual bool Drawable( Player &instance ) const { return true; }
 		virtual bool ShouldChangeMover( Player &instance ) const = 0;
 		virtual std::function<void()> GetChangeStateMethod( Player &instance ) const = 0;
+	#if USE_IMGUI
+		virtual std::string GetMoverName() const = 0;
+	#endif // USE_IMGUI
 	protected:
 		void MotionUpdate( Player &instance, float elapsedTime );
 		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
@@ -140,6 +143,9 @@ private:
 		void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
 		bool ShouldChangeMover( Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	#if USE_IMGUI
+		std::string GetMoverName() const override { return u8"í èÌ"; }
+	#endif // USE_IMGUI
 	};
 	class KnockBack : public MoverBase
 	{
@@ -153,8 +159,11 @@ private:
 		bool NowKnockBacking( Player &instance ) const override { return true; }
 		bool ShouldChangeMover( Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	#if USE_IMGUI
+		std::string GetMoverName() const override { return u8"ÇÃÇØÇºÇË"; }
+	#endif // USE_IMGUI
 	};
-	class Death : public MoverBase
+	class Miss : public MoverBase
 	{
 	public:
 		void Init( Player &instance ) override;
@@ -163,6 +172,9 @@ private:
 		bool Drawable( Player &instance ) const override;
 		bool ShouldChangeMover( Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	#if USE_IMGUI
+		std::string GetMoverName() const override { return u8"É~ÉX"; }
+	#endif // USE_IMGUI
 	};
 private:
 	using Actor::body;						// VS a terrain

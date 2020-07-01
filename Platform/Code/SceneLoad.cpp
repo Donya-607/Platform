@@ -206,8 +206,10 @@ void SceneLoad::Init()
 
 			Bundle{ ID::Bullet_HitBuster,	"./Data/Sounds/SE/Bullet/HitBuster.wav",	false	},
 			
+			Bundle{ ID::Player_Damage,		"./Data/Sounds/SE/Player/Damage.wav",		false	},
 			Bundle{ ID::Player_Jump,		"./Data/Sounds/SE/Player/Jump.wav",			false	},
 			Bundle{ ID::Player_Landing,		"./Data/Sounds/SE/Player/Landing.wav",		false	},
+			Bundle{ ID::Player_Miss,		"./Data/Sounds/SE/Player/Miss.wav",			false	},
 			Bundle{ ID::Player_Shot,		"./Data/Sounds/SE/Player/Shot.wav",			false	},
 
 			#if DEBUG_MODE

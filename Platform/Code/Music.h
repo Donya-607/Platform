@@ -10,8 +10,10 @@ namespace Music
 
 		Bullet_HitBuster,
 		
+		Player_Damage,
 		Player_Jump,
 		Player_Landing,
+		Player_Miss,
 		Player_Shot,
 		
 	#if DEBUG_MODE

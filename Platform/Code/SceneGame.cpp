@@ -683,6 +683,7 @@ void SceneGame::Collision_EnemyVSPlayer()
 	auto  &enemyAdmin		= Enemy::Admin::Get();
 	const size_t enemyCount	= enemyAdmin.GetInstanceCount();
 
+	Donya::Collision::Box3F other;
 	std::shared_ptr<const Enemy::Base> pEnemy = nullptr;
 	for ( size_t i = 0; i < enemyCount; ++i )
 	{
@@ -690,9 +691,10 @@ void SceneGame::Collision_EnemyVSPlayer()
 		if ( !pEnemy ) { continue; }
 		// else
 
-		if ( Donya::Collision::IsHit( pEnemy->GetHitBox(), playerBody ) )
+		other = pEnemy->GetHitBox();
+		if ( Donya::Collision::IsHit( other, playerBody ) )
 		{
-			char TODO = 0;
+			pPlayer->GiveDamage( pEnemy->GetTouchDamage(), other );
 		}
 	}
 }

@@ -499,6 +499,8 @@ void Player::KnockBack::Init( Player &inst )
 	inst.UpdateOrientation( knockedFromRight );
 	
 	timer = 0.0f;
+
+	Donya::Sound::Play( Music::Player_Damage );
 }
 void Player::KnockBack::Uninit( Player &inst )
 {
@@ -527,7 +529,7 @@ std::function<void()> Player::KnockBack::GetChangeStateMethod( Player &inst ) co
 	return [&inst]() { inst.AssignMover<Normal>(); };
 }
 
-void Player::Death::Init( Player &inst )
+void Player::Miss::Init( Player &inst )
 {
 	MoverBase::Init( inst );
 
@@ -535,26 +537,28 @@ void Player::Death::Init( Player &inst )
 	inst.hurtBox.exist	= false;
 	inst.velocity		= 0.0f;
 	inst.onGround		= false;
+
+	Donya::Sound::Play( Music::Player_Miss );
 }
-void Player::Death::Update( Player &inst, float elapsedTime, Input input )
+void Player::Miss::Update( Player &inst, float elapsedTime, Input input )
 {
 	// Overwrite forcely
 	inst.body.exist		= false;
 	inst.hurtBox.exist	= false;
 }
-void Player::Death::Move( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+void Player::Miss::Move( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 {
 	// No op
 }
-bool Player::Death::Drawable( Player &inst ) const
+bool Player::Miss::Drawable( Player &inst ) const
 {
 	return false;
 }
-bool Player::Death::ShouldChangeMover( Player &inst ) const
+bool Player::Miss::ShouldChangeMover( Player &inst ) const
 {
 	return false;
 }
-std::function<void()> Player::Death::GetChangeStateMethod( Player &inst ) const
+std::function<void()> Player::Miss::GetChangeStateMethod( Player &inst ) const
 {
 	return []() {}; // No op
 }
@@ -607,7 +611,16 @@ void Player::Update( float elapsedTime, Input input )
 
 	if ( pReceivedDamage )
 	{
-		AssignMover<KnockBack>();
+		currentHP -= pReceivedDamage->damage.amount;
+		if ( currentHP <= 0 )
+		{
+			AssignMover<Miss>();
+		}
+		else
+		{
+			AssignMover<KnockBack>();
+		}
+
 		pReceivedDamage.reset();
 	}
 
@@ -878,7 +891,9 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::DragInt   ( u8"現在体力",		&currentHP );
+	ImGui::DragInt   ( u8"現在の体力",		&currentHP );
+	ImGui::Text      ( u8"現在のステート：%s", pMover->GetMoverName().c_str() );
+
 	ImGui::DragFloat3( u8"ワールド座標",	&body.pos.x,	0.01f );
 	ImGui::DragFloat3( u8"速度",			&velocity.x,	0.01f );
 
