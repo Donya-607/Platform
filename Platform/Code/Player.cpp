@@ -496,7 +496,6 @@ void Player::KnockBack::Init( Player &inst )
 	const bool  knockedFromRight	= ( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight );
 	const float impulseSign			= ( knockedFromRight ) ? -1.0f : 1.0f;
 	inst.velocity.x = Parameter().Get().knockBackSpeed * impulseSign;
-	inst.velocity.y = 0.0f;
 	inst.UpdateOrientation( knockedFromRight );
 	
 	timer = 0.0f;
