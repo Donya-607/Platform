@@ -90,7 +90,7 @@ namespace Donya
 		}
 		bool IsHit( const Box3 &a, const Box3 &b, bool consider )
 		{
-			if ( consider && !a.exist ) { return false; }
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
 			// else
 			return IsHitBox( a, b, 3U );
 		}
@@ -108,7 +108,7 @@ namespace Donya
 		}
 		bool IsHit( const Box2F &a, const Box2F &b, bool consider )
 		{
-			if ( consider && !a.exist ) { return false; }
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
 			// else
 			return IsHitBox( a, b, 2U );
 		}
@@ -126,7 +126,7 @@ namespace Donya
 		}
 		bool IsHit( const Box3F &a, const Box3F &b, bool consider )
 		{
-			if ( consider && !a.exist ) { return false; }
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
 			// else
 			return IsHitBox( a, b, 3U );
 		}
@@ -144,7 +144,7 @@ namespace Donya
 		}
 		bool IsHit( const Sphere2 &a, const Sphere2 &b, bool consider )
 		{
-			if ( consider && !a.exist ) { return false; }
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
 			// else
 			return IsHitSphere( a, b );
 		}
@@ -162,7 +162,7 @@ namespace Donya
 		}
 		bool IsHit( const Sphere3 &a, const Sphere3 &b, bool consider )
 		{
-			if ( consider && !a.exist ) { return false; }
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
 			// else
 			return IsHitSphere( a, b );
 		}
@@ -180,7 +180,7 @@ namespace Donya
 		}
 		bool IsHit( const Sphere2F &a, const Sphere2F &b, bool consider )
 		{
-			if ( consider && !a.exist ) { return false; }
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
 			// else
 			return IsHitSphere( a, b );
 		}
@@ -198,7 +198,7 @@ namespace Donya
 		}
 		bool IsHit( const Sphere3F &a, const Sphere3F &b, bool consider )
 		{
-			if ( consider && !a.exist ) { return false; }
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
 			// else
 			return IsHitSphere( a, b );
 		}
