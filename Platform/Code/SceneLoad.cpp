@@ -204,6 +204,8 @@ void SceneLoad::Init()
 
 			// { ID::BGM_Title,				"./Data/Sounds/BGM/.wav",					true	},
 
+			Bundle{ ID::Bullet_HitBuster,	"./Data/Sounds/SE/Bullet/HitBuster.wav",	false	},
+			
 			Bundle{ ID::Player_Jump,		"./Data/Sounds/SE/Player/Jump.wav",			false	},
 			Bundle{ ID::Player_Landing,		"./Data/Sounds/SE/Player/Landing.wav",		false	},
 			Bundle{ ID::Player_Shot,		"./Data/Sounds/SE/Player/Shot.wav",			false	},

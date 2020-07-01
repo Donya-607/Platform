@@ -2,10 +2,13 @@
 
 #include <algorithm>	// Use std::remove_if
 
+#include "Donya/Sound.h"
+
 #include "BulletParam.h"
 #include "Common.h"		// Use IsShowCollision()
 #include "FilePath.h"
 #include "ModelHelper.h"
+#include "Music.h"
 #include "Parameter.h"
 
 namespace
@@ -178,6 +181,12 @@ namespace Bullet
 	bool Buster::OnOutSide( const Donya::Collision::Box3F &wsScreen ) const
 	{
 		return ( !Donya::Collision::IsHit( body, wsScreen ) );
+	}
+	void Buster::CollidedToObject()
+	{
+		wantRemove = true;
+		body.exist = false;
+		Donya::Sound::Play( Music::Bullet_HitBuster );
 	}
 	Donya::Vector4x4 Buster::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 	{

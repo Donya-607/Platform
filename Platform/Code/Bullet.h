@@ -84,6 +84,7 @@ namespace Bullet
 	public:
 		bool ShouldRemove() const;
 		bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
+		void CollidedToObject();
 	protected:
 		Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:

@@ -8,6 +8,8 @@ namespace Music
 	{
 		// BGM_Title = 0,
 
+		Bullet_HitBuster,
+		
 		Player_Jump,
 		Player_Landing,
 		Player_Shot,
