@@ -257,6 +257,10 @@ namespace Enemy
 	{
 		return wantRemove;
 	}
+	Donya::Collision::Box3F	Base::GetHurtBox() const
+	{
+		return hurtBox;
+	}
 	InitializeParam Base::GetInitializer() const
 	{
 		return initializer;

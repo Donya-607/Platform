@@ -122,9 +122,11 @@ namespace Enemy
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
-		virtual bool ShouldRemove() const;
-		virtual Kind GetKind() const = 0;
-		InitializeParam GetInitializer() const;
+		virtual bool ShouldRemove()				const;
+		using Actor::GetHitBox;
+		Donya::Collision::Box3F	GetHurtBox()	const;
+		virtual Kind GetKind()					const = 0;
+		InitializeParam GetInitializer()		const;
 		virtual void GiveDamage( const Definition::Damage &damage ) const;
 	protected:
 		void UpdateOutSideState( const Donya::Collision::Box3F &wsScreenHitBox );

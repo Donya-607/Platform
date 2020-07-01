@@ -634,7 +634,7 @@ void SceneGame::Collision_BulletVSEnemy()
 			if ( !pEnemy ) { continue; }
 			// else
 
-			if ( Donya::Collision::IsHit( pEnemy->GetHitBox(), other ) )
+			if ( Donya::Collision::IsHit( pEnemy->GetHurtBox(), other ) )
 			{
 				collidedEnemyIndices.emplace_back( i );
 				return pEnemy;
