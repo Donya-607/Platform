@@ -9,6 +9,7 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+#include "Damage.h"
 #include "ObjectBase.h"
 #include "Renderer.h"
 
@@ -61,7 +62,7 @@ namespace Bullet
 	/// Kind of the player fires.
 	/// You must call Init() when generate and Uninit() before remove. Because these method manages instance count.
 	/// </summary>
-	class Buster : Solid
+	class Buster : public Solid
 	{
 	private:
 		static int livingCount;
@@ -71,7 +72,8 @@ namespace Bullet
 		using Solid::body;
 		Donya::Vector3		velocity; // [m/s]
 		Donya::Quaternion	orientation;
-		bool				wantRemove = false;
+		bool				wantRemove	= false;
+		mutable bool		wasCollided	= false;
 	public:
 		virtual ~Buster() = default;
 	public:
@@ -84,7 +86,8 @@ namespace Bullet
 	public:
 		bool ShouldRemove() const;
 		bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
-		void CollidedToObject();
+		Definition::Damage GetDamage() const;
+		void CollidedToObject() const;
 	protected:
 		Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:
@@ -113,6 +116,10 @@ namespace Bullet
 	public:
 		void ClearInstances();
 		void RequestFire( const FireDesc &parameter );
+	public:
+		size_t GetInstanceCount() const;
+		bool IsOutOfRange( size_t instanceIndex ) const;
+		const Buster *GetInstanceOrNullptr( size_t instanceIndex ) const;
 	private:
 		void GenerateRequestedFires();
 		void RemoveInstancesIfNeeds();

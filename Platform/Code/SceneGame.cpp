@@ -1,5 +1,6 @@
 #include "SceneGame.h"
 
+#include <algorithm>				// Use std::find
 #include <vector>
 
 #undef max
@@ -257,6 +258,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate();
+
+	Collision_BulletVSEnemy();
 
 	return ReturnResult();
 }
@@ -605,6 +608,71 @@ void SceneGame::UpdateCurrentRoomID()
 	}
 }
 
+void SceneGame::Collision_BulletVSEnemy()
+{
+	auto &enemyAdmin	= Enemy::Admin::Get();
+	auto &bulletAdmin	= Bullet::Admin::Get();
+	const size_t enemyCount		= enemyAdmin.GetInstanceCount();
+	const size_t bulletCount	= bulletAdmin.GetInstanceCount();
+
+	// Makes every call the "FindCollidingEnemyOrNullptr" returns another enemy
+	std::vector<size_t> collidedEnemyIndices{};
+	auto IsAlreadyCollided				= [&]( size_t enemyIndex )
+	{
+		const auto result = std::find( collidedEnemyIndices.begin(), collidedEnemyIndices.end(), enemyIndex );
+		return ( result != collidedEnemyIndices.end() );
+	};
+	auto FindCollidingEnemyOrNullptr	= [&]( const Donya::Collision::Box3F &other )
+	{
+		std::shared_ptr<const Enemy::Base> pEnemy = nullptr;
+		for ( size_t i = 0; i < enemyCount; ++i )
+		{
+			if ( IsAlreadyCollided( i ) ) { continue; }
+			// else
+
+			pEnemy = enemyAdmin.GetInstanceOrNullptr( i );
+			if ( !pEnemy ) { continue; }
+			// else
+
+			if ( Donya::Collision::IsHit( pEnemy->GetHitBox(), other ) )
+			{
+				collidedEnemyIndices.emplace_back( i );
+				return pEnemy;
+			}
+		}
+
+		pEnemy = nullptr;
+		return pEnemy;
+	};
+
+	const Bullet::Buster *pBullet = nullptr;
+	std::shared_ptr<const Enemy::Base> pOther = nullptr;
+	for ( size_t i = 0; i < bulletCount; ++i )
+	{
+		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
+		if ( !pBullet ) { continue; }
+		// else
+
+		bool collided = false;
+
+		pOther = FindCollidingEnemyOrNullptr( pBullet->GetHitBox() );
+		while ( pOther )
+		{
+			collided = true;
+
+			pOther->GiveDamage( pBullet->GetDamage() );
+			pOther = FindCollidingEnemyOrNullptr( pBullet->GetHitBox() );
+		}
+
+		if ( collided )
+		{
+			pBullet->CollidedToObject();
+		}
+
+		collidedEnemyIndices.clear();
+	}
+}
+
 void SceneGame::ClearBackGround() const
 {
 	constexpr Donya::Vector3 gray = Donya::Color::MakeColor( Donya::Color::Code::GRAY );
@@ -620,7 +688,6 @@ void SceneGame::ClearBackGround() const
 	}
 #endif // DEBUG_MODE
 }
-
 void SceneGame::StartFade() const
 {
 	Fader::Configuration config{};

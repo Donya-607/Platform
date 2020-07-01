@@ -60,6 +60,8 @@ private:
 
 	void	UpdateCurrentRoomID();
 
+	void	Collision_BulletVSEnemy();
+
 	void	ClearBackGround() const;
 	void	StartFade() const;
 private:

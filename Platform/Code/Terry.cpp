@@ -101,12 +101,13 @@ namespace Enemy
 	}
 	void TerryParam::ShowImGuiNode()
 	{
-		ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f );
-		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f );
-		ImGui::DragFloat3( u8"喰らい判定・オフセット",			&hurtBoxOffset.x,	0.01f );
-		ImGui::DragFloat3( u8"喰らい判定・サイズ（半分を指定）",	&hurtBoxSize.x,		0.01f );
-		ImGui::DragFloat ( u8"移動速度",							&moveSpeed,			0.1f  );
-		ImGui::DragFloat ( u8"回転速度[degree/s]",				&rotateSpeed,		1.0f  );
+		ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f	);
+		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f	);
+		ImGui::DragFloat3( u8"喰らい判定・オフセット",			&hurtBoxOffset.x,	0.01f	);
+		ImGui::DragFloat3( u8"喰らい判定・サイズ（半分を指定）",	&hurtBoxSize.x,		0.01f	);
+		ImGui::DragFloat ( u8"移動速度",							&moveSpeed,			0.1f	);
+		ImGui::DragFloat ( u8"回転速度[degree/s]",				&rotateSpeed,		1.0f	);
+		ImGui::DragInt   ( u8"初期ＨＰ",							&hp							);
 		hitBoxSize.x	= std::max( 0.0f,	hitBoxSize.x	);
 		hitBoxSize.y	= std::max( 0.0f,	hitBoxSize.y	);
 		hitBoxSize.z	= std::max( 0.0f,	hitBoxSize.z	);
@@ -114,6 +115,7 @@ namespace Enemy
 		hurtBoxSize.y	= std::max( 0.0f,	hurtBoxSize.y	);
 		hurtBoxSize.z	= std::max( 0.0f,	hurtBoxSize.z	);
 		moveSpeed		= std::max( 0.001f,	moveSpeed		);
+		hp				= std::max( 1,		hp				);
 	}
 #endif // USE_IMGUI
 }

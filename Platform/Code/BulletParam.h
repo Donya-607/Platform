@@ -4,13 +4,16 @@
 #include "Donya/Serializer.h"
 #include "Donya/UseImGui.h"		// use US_IMGUI macro
 
+#include "Damage.h"
+
 namespace Bullet
 {
 	struct BusterParam
 	{
 	public:
-		Donya::Vector3 hitBoxOffset{ 0.0f, 0.0f, 0.0f };
-		Donya::Vector3 hitBoxSize  { 1.0f, 1.0f, 1.0f };
+		Donya::Vector3		hitBoxOffset{ 0.0f, 0.0f, 0.0f };
+		Donya::Vector3		hitBoxSize  { 1.0f, 1.0f, 1.0f };
+		Definition::Damage	damage;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -24,6 +27,10 @@ namespace Bullet
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( damage ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -33,4 +40,4 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::BusterParam, 0 )
+CEREAL_CLASS_VERSION( Bullet::BusterParam, 1 )

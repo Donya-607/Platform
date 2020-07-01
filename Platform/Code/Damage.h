@@ -1,12 +1,14 @@
 #pragma once
 
-#include <Windows.h>	// Use DEFINE_ENUM_FLAG_OPERATORS
+#include <string>
+#include <Windows.h>			// Use DEFINE_ENUM_FLAG_OPERATORS
 
 #include "Donya/Serializer.h"
+#include "Donya/UseImGui.h"		// Use USE_IMGUI macro
 
 namespace Definition
 {
-	struct Damage
+	class Damage
 	{
 	public:
 		/// <summary>
@@ -17,6 +19,17 @@ namespace Definition
 			None	= 0,
 			Buster	= 1 << 0,
 		};
+	public:
+		/// <summary>
+		/// GetContainName( Buster | XXX ) returns "[Buster][XXX]".
+		/// </summary>
+		static std::string GetContainName( Type value );
+		static Type Add( Type lhs, Type rhs );
+		static Type Subtract( Type lhs, Type rhs );
+		static bool Contain( Type value, Type verify );
+	#if USE_IMGUI
+		static void ShowImGuiNode( const std::string &nodeCaption, Type *p, bool useTreeNode = true );
+	#endif // USE_IMGUI
 	public:
 		int		amount	= 0;
 		Type	type	= Type::None;
@@ -35,6 +48,12 @@ namespace Definition
 				// archive();
 			}
 		}
+	public:
+		void Combine( const Damage &addition );
+	#if USE_IMGUI
+	public:
+		void ShowImGuiNode( const std::string &nodeCaption );
+	#endif // USE_IMGUI
 	};
 }
 DEFINE_ENUM_FLAG_OPERATORS( Definition::Damage::Type )

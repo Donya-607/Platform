@@ -136,6 +136,7 @@
     <ClCompile Include="Code\Bullet.cpp" />
     <ClCompile Include="Code\Common.cpp" />
     <ClCompile Include="Code\CSVLoader.cpp" />
+    <ClCompile Include="Code\Damage.cpp" />
     <ClCompile Include="Code\Direction.cpp" />
     <ClCompile Include="Code\Donya\AudioSystem.cpp" />
     <ClCompile Include="Code\Donya\Blend.cpp" />

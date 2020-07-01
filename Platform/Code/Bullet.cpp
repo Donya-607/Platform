@@ -66,7 +66,12 @@ namespace Bullet
 	#if USE_IMGUI
 		void Update( const std::string &nodeCaption )
 		{
-			busterParam.ShowImGuiNode( nodeCaption );
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			busterParam.ShowImGuiNode( u8"Buster" );
+
+			ImGui::TreePop();
 		}
 	#endif // USE_IMGUI
 	}
@@ -125,6 +130,13 @@ namespace Bullet
 	}
 	void Buster::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
 	{
+		if ( wasCollided )
+		{
+			wasCollided	= false;
+			wantRemove	= true;
+			body.exist	= false;
+		}
+
 		if ( OnOutSide( wsScreen ) )
 		{
 			wantRemove = true;
@@ -182,10 +194,13 @@ namespace Bullet
 	{
 		return ( !Donya::Collision::IsHit( body, wsScreen ) );
 	}
-	void Buster::CollidedToObject()
+	Definition::Damage Buster::GetDamage() const
 	{
-		wantRemove = true;
-		body.exist = false;
+		return Parameter::GetBuster().damage;
+	}
+	void Buster::CollidedToObject() const
+	{
+		wasCollided = true;
 		Donya::Sound::Play( Music::Bullet_HitBuster );
 	}
 	Donya::Vector4x4 Buster::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
@@ -219,11 +234,12 @@ namespace Bullet
 	}
 	void BusterParam::ShowImGuiNode()
 	{
-		ImGui::DragFloat3( u8"Buster-当たり判定・オフセット",				&hitBoxOffset.x,	0.01f );
-		ImGui::DragFloat3( u8"Buster-当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f );
+		ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f );
+		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f );
 		hitBoxSize.x = std::max( 0.0f, hitBoxSize.x );
 		hitBoxSize.y = std::max( 0.0f, hitBoxSize.y );
 		hitBoxSize.z = std::max( 0.0f, hitBoxSize.z );
+		damage.ShowImGuiNode( u8"基本ダメージ設定" );
 	}
 #endif // USE_IMGUI
 
@@ -290,6 +306,20 @@ namespace Bullet
 	void Admin::RequestFire( const FireDesc &parameter )
 	{
 		generateRequests.emplace_back( parameter );
+	}
+	size_t Admin::GetInstanceCount() const
+	{
+		return bullets.size();
+	}
+	bool Admin::IsOutOfRange( size_t instanceIndex ) const
+	{
+		return ( GetInstanceCount() <= instanceIndex ) ? true : false;
+	}
+	const Buster *Admin::GetInstanceOrNullptr( size_t instanceIndex ) const
+	{
+		if ( IsOutOfRange( instanceIndex ) ) { return nullptr; }
+		// else
+		return &bullets[instanceIndex];
 	}
 	void Admin::GenerateRequestedFires()
 	{

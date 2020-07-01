@@ -86,6 +86,8 @@ namespace Enemy
 		bool					waitForRespawn		= false;
 		bool					onOutSidePrevious	= true;	// Used for judging to respawn
 		bool					onOutSideCurrent	= true;	// Used for judging to respawn
+		// shared_ptr<> make be able to copy
+		mutable std::shared_ptr<Definition::Damage> pReceivedDamage	= nullptr; // Will be made at GiveDamage()
 	public:
 		Base() = default;
 		Base( const Base &  ) = default;
@@ -123,13 +125,17 @@ namespace Enemy
 		virtual bool ShouldRemove() const;
 		virtual Kind GetKind() const = 0;
 		InitializeParam GetInitializer() const;
-		virtual void GiveDamage( const Definition::Damage &damage );
+		virtual void GiveDamage( const Definition::Damage &damage ) const;
 	protected:
 		void UpdateOutSideState( const Donya::Collision::Box3F &wsScreenHitBox );
 		bool OnOutSide() const;
 		bool NowWaiting() const;
 		void BeginWaitIfActive();
 		void RespawnIfSpawnable();
+		/// <summary>
+		/// After this, the "pReceivedDamage" will be resetted.
+		/// </summary>
+		virtual void ApplyReceivedDamageIfHas();
 	protected:
 		virtual int GetInitialHP() const = 0;
 		virtual void AssignMyBody( const Donya::Vector3 &wsPos ) = 0;
@@ -172,6 +178,11 @@ namespace Enemy
 	public:
 		void ClearInstances();
 		bool LoadEnemies( int stageNumber, bool fromBinary );
+	public:
+	public:
+		size_t GetInstanceCount() const;
+		bool IsOutOfRange( size_t instanceIndex ) const;
+		std::shared_ptr<const Base> GetInstanceOrNullptr( size_t instanceIndex ) const;
 	private:
 		void RemoveEnemies();
 		void AppendEnemy( Kind appendKind, const InitializeParam &parameter );

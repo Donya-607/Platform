@@ -140,6 +140,8 @@ namespace Enemy
 		(
 			Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
 		);
+
+		pReceivedDamage.reset();
 	}
 	void Base::Uninit()
 	{
@@ -151,7 +153,7 @@ namespace Enemy
 	}
 	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
-
+		ApplyReceivedDamageIfHas();
 	}
 	void Base::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
@@ -259,13 +261,14 @@ namespace Enemy
 	{
 		return initializer;
 	}
-	void Base::GiveDamage( const Definition::Damage &damage )
+	void Base::GiveDamage( const Definition::Damage &damage ) const
 	{
-		hp -= damage.amount;
-		if ( hp < 0 )
+		if ( !pReceivedDamage )
 		{
-			BeginWaitIfActive();
+			pReceivedDamage = std::make_shared<Definition::Damage>();
 		}
+
+		pReceivedDamage->Combine( damage );
 	}
 	void Base::UpdateOutSideState( const Donya::Collision::Box3F &wsScreen )
 	{
@@ -294,6 +297,19 @@ namespace Enemy
 		// else
 		waitForRespawn = false;
 		Init( GetInitializer() );
+	}
+	void Base::ApplyReceivedDamageIfHas()
+	{
+		if ( !pReceivedDamage ) { return; }
+		// else
+
+		hp -= pReceivedDamage->amount;
+		if ( hp < 0 )
+		{
+			BeginWaitIfActive();
+		}
+
+		pReceivedDamage.reset();
 	}
 	Donya::Vector4x4 Base::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 	{
@@ -398,6 +414,20 @@ namespace Enemy
 		}
 
 		return succeeded;
+	}
+	size_t Admin::GetInstanceCount() const
+	{
+		return enemyPtrs.size();
+	}
+	bool Admin::IsOutOfRange( size_t instanceIndex ) const
+	{
+		return ( GetInstanceCount() <= instanceIndex ) ? true : false;
+	}
+	std::shared_ptr<const Base> Admin::GetInstanceOrNullptr( size_t instanceIndex ) const
+	{
+		if ( IsOutOfRange( instanceIndex ) ) { return nullptr; }
+		// else
+		return enemyPtrs[instanceIndex];
 	}
 	void Admin::RemoveEnemies()
 	{
