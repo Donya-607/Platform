@@ -41,7 +41,7 @@ namespace Donya
 			// Judge by "AABB of extended by other size" vs "position of other".
 			Box ext = a;
 			ext.size += b.size;
-			return IsHitBox( ext, b.pos, dimension );
+			return IsHitBox( ext, b.WorldPosition(), dimension );
 		}
 
 		template<typename Sphere, typename Coord>
@@ -55,7 +55,7 @@ namespace Donya
 		{
 			Sphere ext =  a;
 			ext.radius += b.radius;
-			return IsHitSphere( ext, b.pos );
+			return IsHitSphere( ext, b.WorldPosition() );
 		}
 
 		bool IsHit( const Donya::Int2 &a, const Box2 &b, bool consider )

@@ -61,6 +61,7 @@ private:
 	void	UpdateCurrentRoomID();
 
 	void	Collision_BulletVSEnemy();
+	void	Collision_EnemyVSPlayer();
 
 	void	ClearBackGround() const;
 	void	StartFade() const;

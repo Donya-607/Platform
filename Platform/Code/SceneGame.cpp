@@ -260,6 +260,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	CameraUpdate();
 
 	Collision_BulletVSEnemy();
+	Collision_EnemyVSPlayer();
 
 	return ReturnResult();
 }
@@ -670,6 +671,29 @@ void SceneGame::Collision_BulletVSEnemy()
 		}
 
 		collidedEnemyIndices.clear();
+	}
+}
+void SceneGame::Collision_EnemyVSPlayer()
+{
+	if ( !pPlayer ) { return; }
+	// else
+
+	const auto playerBody = pPlayer->GetHurtBox();
+
+	auto  &enemyAdmin		= Enemy::Admin::Get();
+	const size_t enemyCount	= enemyAdmin.GetInstanceCount();
+
+	std::shared_ptr<const Enemy::Base> pEnemy = nullptr;
+	for ( size_t i = 0; i < enemyCount; ++i )
+	{
+		pEnemy = enemyAdmin.GetInstanceOrNullptr( i );
+		if ( !pEnemy ) { continue; }
+		// else
+
+		if ( Donya::Collision::IsHit( pEnemy->GetHitBox(), playerBody ) )
+		{
+			Donya::ShowMessageBox( L"Player vs Enemy is true", L"test", MB_OK );
+		}
 	}
 }
 
