@@ -2,6 +2,7 @@
 
 #include "Donya/Quaternion.h"
 
+#include "Damage.h"
 #include "Enemy.h"
 
 namespace Enemy
@@ -26,6 +27,7 @@ namespace Enemy
 		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
 		Kind GetKind() const override;
+		Definition::Damage GetTouchDamage() const override;
 	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
@@ -45,8 +47,9 @@ namespace Enemy
 
 		float	moveSpeed	= 1.0f;		// [m/s]
 		float	rotateSpeed	= 360.0f;	// [degree/s]
-
 		int		hp			= 1;
+
+		Definition::Damage touchDamage;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -67,6 +70,10 @@ namespace Enemy
 				archive( CEREAL_NVP( hp ) );
 			}
 			if ( 2 <= version )
+			{
+				archive( CEREAL_NVP( touchDamage ) );
+			}
+			if ( 3 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}

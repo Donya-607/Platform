@@ -127,6 +127,7 @@ namespace Enemy
 		Donya::Collision::Box3F	GetHurtBox()	const;
 		virtual Kind GetKind()					const = 0;
 		InitializeParam GetInitializer()		const;
+		virtual Definition::Damage GetTouchDamage() const = 0;
 		virtual void GiveDamage( const Definition::Damage &damage ) const;
 	protected:
 		void UpdateOutSideState( const Donya::Collision::Box3F &wsScreenHitBox );

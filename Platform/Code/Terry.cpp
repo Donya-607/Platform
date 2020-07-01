@@ -70,6 +70,10 @@ namespace Enemy
 		}
 	}
 	Kind Terry::GetKind() const { return Kind::Terry; }
+	Definition::Damage Terry::GetTouchDamage() const
+	{
+		return Parameter::GetTerry().touchDamage;
+	}
 	int  Terry::GetInitialHP() const
 	{
 		return Parameter::GetTerry().hp;
@@ -110,6 +114,7 @@ namespace Enemy
 		ImGui::DragFloat ( u8"ˆÚ“®‘¬“x",							&moveSpeed,			0.1f	);
 		ImGui::DragFloat ( u8"‰ñ“]‘¬“x[degree/s]",				&rotateSpeed,		1.0f	);
 		ImGui::DragInt   ( u8"‰Šú‚g‚o",							&hp							);
+		touchDamage.ShowImGuiNode( u8"ÚGƒ_ƒ[ƒWİ’è" );
 		hitBoxSize.x	= std::max( 0.0f,	hitBoxSize.x	);
 		hitBoxSize.y	= std::max( 0.0f,	hitBoxSize.y	);
 		hitBoxSize.z	= std::max( 0.0f,	hitBoxSize.z	);
