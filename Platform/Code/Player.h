@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 
 #include "Donya/ModelMotion.h"
@@ -11,6 +12,7 @@
 #include "Donya/Vector.h"
 
 #include "CSVLoader.h"
+#include "Damage.h"
 #include "ObjectBase.h"
 #include "Parameter.h"
 #include "Renderer.h"
@@ -81,6 +83,7 @@ public:
 		Idle = 0,
 		Run,
 		Jump,
+		KnockBack,
 
 		MotionCount
 	};
@@ -103,16 +106,84 @@ private:
 		void AssignPose( MotionKind kind );
 		MotionKind CalcNowKind( Player &instance ) const;
 	};
+	class Flusher
+	{
+	private:
+		float workingSeconds	= 0.0f;
+		float timer				= 0.0f;
+	public:
+		void Start( float flushingSeconds );
+		void Update( float elapsedTime );
+		bool Drawable() const;
+		bool NowWorking() const;
+	};
+	class MoverBase
+	{
+	public:
+		virtual void Init( Player &instance ) {}
+		virtual void Uninit( Player &instance ) {}
+		virtual void Update( Player &instance, float elapsedTime, Input input ) = 0;
+		virtual void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) = 0;
+		virtual bool NowKnockBacking( Player &instance ) const { return false; }
+		virtual bool Drawable( Player &instance ) const { return true; }
+		virtual bool ShouldChangeMover( Player &instance ) const = 0;
+		virtual std::function<void()> GetChangeStateMethod( Player &instance ) const = 0;
+	protected:
+		void MotionUpdate( Player &instance, float elapsedTime );
+		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+		void MoveOnlyVertical( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+	};
+	class Normal : public MoverBase
+	{
+	public:
+		void Update( Player &instance, float elapsedTime, Input input ) override;
+		void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+		bool ShouldChangeMover( Player &instance ) const override;
+		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	};
+	class KnockBack : public MoverBase
+	{
+	private:
+		float timer = 0.0f;
+	public:
+		void Init( Player &instance ) override;
+		void Uninit( Player &instance ) override;
+		void Update( Player &instance, float elapsedTime, Input input ) override;
+		void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+		bool NowKnockBacking( Player &instance ) const override { return true; }
+		bool ShouldChangeMover( Player &instance ) const override;
+		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	};
+	class Death : public MoverBase
+	{
+	public:
+		void Init( Player &instance ) override;
+		void Update( Player &instance, float elapsedTime, Input input ) override;
+		void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+		bool Drawable( Player &instance ) const override;
+		bool ShouldChangeMover( Player &instance ) const override;
+		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	};
 private:
-	using Actor::body;					// VS a terrain
-	Donya::Collision::Box3F	hurtBox;	// VS an attack
-	Donya::Vector3			velocity;	// Z element is almost unused.
-	Donya::Quaternion		orientation;
-	MotionManager			motionManager;
-	float					keepJumpSecond			= 0.0f;
-	float					keepShotSecond			= 0.0f;
-	bool					wasReleasedJumpInput	= false;
-	bool					onGround				= false;
+	using Actor::body;						// VS a terrain
+	Donya::Collision::Box3F		hurtBox;	// VS an attack
+	Donya::Vector3				velocity;	// Z element is almost unused.
+	Donya::Quaternion			orientation;
+	MotionManager				motionManager;
+	Flusher						invincibleTimer;
+	std::unique_ptr<MoverBase>	pMover					= nullptr;
+	int							currentHP				= 1;
+	float						keepJumpSecond			= 0.0f;
+	float						keepShotSecond			= 0.0f;
+	bool						wasReleasedJumpInput	= false;
+	bool						onGround				= false;
+
+	struct DamageDesc
+	{
+		bool knockedFromRight = true;
+		Definition::Damage damage;
+	};
+	mutable std::unique_ptr<DamageDesc> pReceivedDamage	= nullptr; // Will be made at GiveDamage()
 public:
 	void Init( const PlayerInitializer &initializer );
 	void Uninit();
@@ -126,6 +197,20 @@ public:
 	using Actor::GetHitBox;
 	Donya::Collision::Box3F	GetHurtBox()		const;
 	Donya::Quaternion		GetOrientation()	const;
+	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F &collidingHitBox ) const;
+private:
+	template<class Mover>
+	void AssignMover()
+	{
+		if ( pMover )
+		{
+			pMover->Uninit( *this );
+			pMover.reset();
+		}
+
+		pMover = std::make_unique<Mover>();
+		pMover->Init( *this );
+	}
 private:
 	using Actor::MoveX;
 	using Actor::MoveY;

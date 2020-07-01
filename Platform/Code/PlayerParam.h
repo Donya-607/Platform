@@ -11,6 +11,7 @@
 struct PlayerParam
 {
 public:
+	int		maxHP				= 28;
 	int		maxBusterCount		= 3;	// Max generatable count of buster at same time.
 	float	moveSpeed			= 1.0f;
 	float	jumpStrength		= 1.0f;
@@ -18,6 +19,10 @@ public:
 	float	gravityResistance	= 0.5f;	// Multiply to gravity if while pressing a jump key
 	float	resistableSeconds	= 0.5f;
 	float	maxFallSpeed		= 1.0f;
+	float	knockBackSeconds	= 0.5f;
+	float	knockBackSpeed		= 1.0f;	// X speed
+	float	invincibleSeconds	= 2.0f;
+	float	flushingInterval	= 0.1f;	// Seconds
 	Donya::Collision::Box3F	hitBox;		// VS a terrain
 	Donya::Collision::Box3F	hurtBox;	// VS an attack(e.g. enemy)
 	Bullet::FireDesc		fireParam;
@@ -48,6 +53,17 @@ private:
 		}
 		if ( 3 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( maxHP				),
+				CEREAL_NVP( knockBackSeconds	),
+				CEREAL_NVP( knockBackSpeed		),
+				CEREAL_NVP( invincibleSeconds	),
+				CEREAL_NVP( flushingInterval	)
+			);
+		}
+		if ( 4 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -56,4 +72,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 2 )
+CEREAL_CLASS_VERSION( PlayerParam, 3 )

@@ -289,12 +289,17 @@ void Player::UpdateParameter( const std::string &nodeCaption )
 }
 void PlayerParam::ShowImGuiNode()
 {
-	ImGui::DragFloat( u8"移動速度",			&moveSpeed,			0.01f );
-	ImGui::DragFloat( u8"ジャンプ力",		&jumpStrength,		0.01f );
-	ImGui::DragFloat( u8"重力",				&gravity,			0.01f );
-	ImGui::SliderFloat( u8"重力抵抗力",		&gravityResistance,	0.0f, 1.0f );
-	ImGui::DragFloat( u8"重力抵抗可能秒数",	&resistableSeconds,	0.01f );
-	ImGui::DragFloat( u8"最高落下速度",		&maxFallSpeed,		0.01f );
+	ImGui::DragInt  ( u8"最大体力",				&maxHP						);
+	ImGui::DragFloat( u8"移動速度",				&moveSpeed,			0.01f	);
+	ImGui::DragFloat( u8"ジャンプ力",			&jumpStrength,		0.01f	);
+	ImGui::DragFloat( u8"重力",					&gravity,			0.01f	);
+	ImGui::SliderFloat( u8"重力抵抗力",			&gravityResistance,	0.0f, 1.0f );
+	ImGui::DragFloat( u8"重力抵抗可能秒数",		&resistableSeconds,	0.01f	);
+	ImGui::DragFloat( u8"最高落下速度",			&maxFallSpeed,		0.01f	);
+	ImGui::DragFloat( u8"のけぞる秒数",			&knockBackSeconds,	0.01f	);
+	ImGui::DragFloat( u8"のけぞり速度",			&knockBackSpeed,	0.01f	);
+	ImGui::DragFloat( u8"無敵秒数",				&invincibleSeconds,	0.01f	);
+	ImGui::DragFloat( u8"無敵中点滅間隔（秒）",	&flushingInterval,	0.01f	);
 	fireParam.ShowImGuiNode( u8"ショット設定" );
 	ImGui::DragInt( u8"画面内に出せる弾数",	&maxBusterCount );
 	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定", &hitBox  );
@@ -304,12 +309,17 @@ void PlayerParam::ShowImGuiNode()
 	{
 		*v = std::max( 0.001f, *v );
 	};
+	maxHP			= std::max( 1, maxHP			);
 	MakePositive( &moveSpeed			);
 	MakePositive( &jumpStrength			);
 	MakePositive( &gravity				);
 	MakePositive( &resistableSeconds	);
 	MakePositive( &maxFallSpeed			);
-	maxBusterCount = std::max( 1, maxBusterCount );
+	MakePositive( &knockBackSeconds		);
+	MakePositive( &knockBackSpeed		);
+	MakePositive( &invincibleSeconds	);
+	MakePositive( &flushingInterval		);
+	maxBusterCount	= std::max( 1, maxBusterCount	);
 }
 #endif // USE_IMGUI
 
@@ -348,9 +358,10 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 {
 	switch ( kind )
 	{
-	case MotionKind::Idle:	return true;
-	case MotionKind::Run:	return true;
-	case MotionKind::Jump:	return false;
+	case MotionKind::Idle:		return true;
+	case MotionKind::Run:		return true;
+	case MotionKind::Jump:		return false;
+	case MotionKind::KnockBack:	return true;
 	default: break;
 	}
 
@@ -374,6 +385,10 @@ void Player::MotionManager::AssignPose( MotionKind kind )
 }
 Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst ) const
 {
+	if ( inst.pMover && inst.pMover->NowKnockBacking( inst ) )
+	{ return MotionKind::KnockBack; }
+	// else
+
 	const bool nowMoving = IsZero( inst.velocity.x ) ? false : true;
 	const bool onGround  = inst.onGround;
 	
@@ -382,6 +397,170 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst ) const
 	// else
 	return MotionKind::Idle;
 }
+
+void Player::Flusher::Start( float flushingSeconds )
+{
+	workingSeconds	= flushingSeconds;
+	timer			= 0.0f;
+}
+void Player::Flusher::Update( float elapsedTime )
+{
+	timer += elapsedTime;
+}
+bool Player::Flusher::Drawable() const
+{
+	if ( NowWorking() ) { return true; }
+	// else
+
+	/*
+	--- cycle
+	Undrawable
+	--- cycle * 0.5f
+	Drawable
+	--- 0.0f
+	*/
+
+	const auto &cycle = Parameter().Get().flushingInterval;
+	const float remain = std::fmodf( timer, cycle );
+	return ( remain < cycle * 0.5f );
+}
+bool Player::Flusher::NowWorking() const
+{
+	return ( timer < workingSeconds ) ? true : false;
+}
+
+#pragma region Mover
+
+void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime )
+{
+	inst.motionManager.Update( inst, elapsedTime );
+}
+void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+{
+	inst.Actor::MoveX( inst.velocity.x * elapsedTime, solids );
+	inst.Actor::MoveZ( inst.velocity.z * elapsedTime, solids );
+
+	// We must apply world position to hurt box also.
+	inst.hurtBox.pos = inst.body.pos;
+}
+void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+{
+	const int collideIndex = inst.Actor::MoveY( inst.velocity.y * elapsedTime, solids );
+	if ( collideIndex != -1 ) // If collided to any
+	{
+		if ( inst.velocity.y <= 0.0f )
+		{
+			inst.Landing();
+		}
+
+		inst.velocity.y = 0.0f;
+	}
+	else
+	{
+		inst.onGround = false;
+	}
+
+	// We must apply world position to hurt box also.
+	inst.hurtBox.pos = inst.body.pos;
+}
+
+void Player::Normal::Update( Player &inst, float elapsedTime, Input input )
+{
+	inst.MoveHorizontal( elapsedTime, input );
+	inst.MoveVertical( elapsedTime, input );
+
+	inst.Shot( elapsedTime, input );
+
+	MotionUpdate( inst, elapsedTime );
+}
+void Player::Normal::Move( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+{
+	MoveOnlyHorizontal( inst, elapsedTime, solids );
+	MoveOnlyVertical  ( inst, elapsedTime, solids );
+}
+bool Player::Normal::ShouldChangeMover( Player &inst ) const
+{
+	return false;
+}
+std::function<void()> Player::Normal::GetChangeStateMethod( Player &inst ) const
+{
+	return []() {}; // No op
+}
+
+void Player::KnockBack::Init( Player &inst )
+{
+	MoverBase::Init( inst );
+
+	// TODO: I should consider the sliding status to knock-back sign
+
+	const bool  knockedFromRight	= ( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight );
+	const float impulseSign			= ( knockedFromRight ) ? -1.0f : 1.0f;
+	inst.velocity.x = Parameter().Get().knockBackSpeed * impulseSign;
+	inst.UpdateOrientation( knockedFromRight );
+	
+	timer = 0.0f;
+}
+void Player::KnockBack::Uninit( Player &inst )
+{
+	MoverBase::Uninit( inst );
+
+	inst.velocity.x = 0.0f;
+}
+void Player::KnockBack::Update( Player &inst, float elapsedTime, Input input )
+{
+	timer += elapsedTime;
+
+	MotionUpdate( inst, elapsedTime );
+}
+void Player::KnockBack::Move( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+{
+	MoveOnlyHorizontal( inst, elapsedTime, solids );
+	MoveOnlyVertical  ( inst, elapsedTime, solids );
+}
+bool Player::KnockBack::ShouldChangeMover( Player &inst ) const
+{
+	const auto &knockBackSecoonds = Parameter().Get().knockBackSeconds;
+	return ( knockBackSecoonds <= timer );
+}
+std::function<void()> Player::KnockBack::GetChangeStateMethod( Player &inst ) const
+{
+	return [&inst]() { inst.AssignMover<Normal>(); };
+}
+
+void Player::Death::Init( Player &inst )
+{
+	MoverBase::Init( inst );
+
+	inst.body.exist		= false;
+	inst.hurtBox.exist	= false;
+	inst.velocity		= 0.0f;
+	inst.onGround		= false;
+}
+void Player::Death::Update( Player &inst, float elapsedTime, Input input )
+{
+	// Overwrite forcely
+	inst.body.exist		= false;
+	inst.hurtBox.exist	= false;
+}
+void Player::Death::Move( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+{
+	// No op
+}
+bool Player::Death::Drawable( Player &inst ) const
+{
+	return false;
+}
+bool Player::Death::ShouldChangeMover( Player &inst ) const
+{
+	return false;
+}
+std::function<void()> Player::Death::GetChangeStateMethod( Player &inst ) const
+{
+	return []() {}; // No op
+}
+
+// region Mover
+#pragma endregion
 
 void Player::Init( const PlayerInitializer &initializer )
 {
@@ -394,6 +573,8 @@ void Player::Init( const PlayerInitializer &initializer )
 	onGround	= false;
 	
 	UpdateOrientation( initializer.ShouldLookingRight() );
+
+	AssignMover<Normal>();
 }
 void Player::Uninit()
 {
@@ -417,40 +598,49 @@ void Player::Update( float elapsedTime, Input input )
 	}
 #endif // USE_IMGUI
 
-	MoveHorizontal( elapsedTime, input );
-	MoveVertical  ( elapsedTime, input );
+	if ( !pMover )
+	{
+		_ASSERT_EXPR( 0, L"Error: Player's mover is not assigned!" );
+		return;
+	}
+	// else
 
-	Shot( elapsedTime, input );
+	if ( pReceivedDamage )
+	{
+		AssignMover<KnockBack>();
+		pReceivedDamage.reset();
+	}
 
-	motionManager.Update( *this, elapsedTime );
+	invincibleTimer.Update( elapsedTime );
+	hurtBox.exist = !invincibleTimer.NowWorking();
+
+	pMover->Update( *this, elapsedTime, input );
+	if ( pMover->ShouldChangeMover( *this ) )
+	{
+		auto ChangeMethod = pMover->GetChangeStateMethod( *this );
+		ChangeMethod();
+	}
 }
 void Player::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 {
-	const auto movement = velocity * elapsedTime;
-	
-	Actor::MoveX( movement.x, solids );
-	Actor::MoveZ( movement.z, solids );
-
-	const int collideIndex = Actor::MoveY( movement.y, solids );
-	if ( collideIndex != -1 ) // If collided to any
+	if ( !pMover )
 	{
-		if ( velocity.y <= 0.0f )
-		{
-			Landing();
-		}
-
-		velocity.y = 0.0f;
+		_ASSERT_EXPR( 0, L"Error: Player's mover is not assigned!" );
+		return;
 	}
-	else
-	{
-		onGround = false;
-	}
+	// else
 
-	hurtBox.pos = body.pos; // We must apply world position to hurt box also.
+	pMover->Move( *this, elapsedTime, solids );
 }
 void Player::Draw( RenderingHelper *pRenderer )
 {
 	if ( !pRenderer ) { return; }
+	if ( !pMover )
+	{
+		_ASSERT_EXPR( 0, L"Error: Player's mover is not assigned!" );
+		return;
+	}
+	if ( !pMover->Drawable( *this ) || !invincibleTimer.Drawable() ) { return; }
 	// else
 
 	// TODO: Change the model instance to ModelHelper's
@@ -520,6 +710,39 @@ Donya::Collision::Box3F	Player::GetHurtBox() const
 Donya::Quaternion		Player::GetOrientation() const
 {
 	return orientation;
+}
+void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F &collidingHitBox ) const
+{
+	// Receive only smallest damage if same timing
+	if ( pReceivedDamage && pReceivedDamage->damage.amount <= damage.amount ) { return; }
+	// else
+
+	const auto myCenter = body.WorldPosition();
+	const auto otherMax = collidingHitBox.Max();
+	const auto otherMin = collidingHitBox.Min();
+	const float distLeft	= otherMin.x - myCenter.x;
+	const float distRight	= otherMax.x - myCenter.x;
+
+	bool knockedFromRight{};
+	if ( 0.0f <= distLeft  ) { knockedFromRight = true;  }
+	else
+	if ( distRight <= 0.0f ) { knockedFromRight = false; }
+	else
+	{
+		/*
+		|	<-distLeft->	|	<-distRight->	|
+		Min				myCenter				Max
+		*/
+		knockedFromRight = ( fabsf( distLeft ) <= fabsf( distRight ) );
+	}
+
+	if ( !pReceivedDamage )
+	{
+		pReceivedDamage = std::make_unique<DamageDesc>();
+	}
+
+	pReceivedDamage->damage = damage;
+	pReceivedDamage->knockedFromRight = knockedFromRight;
 }
 void Player::MoveHorizontal( float elapsedTime, Input input )
 {
@@ -629,8 +852,10 @@ void Player::Landing()
 	{
 		onGround = true;
 
-		// TODO: Dont play the landing SE when invincible
-		Donya::Sound::Play( Music::Player_Landing );
+		if ( pMover && !pMover->NowKnockBacking( *this ) )
+		{
+			Donya::Sound::Play( Music::Player_Landing );
+		}
 	}
 
 	velocity.y = 0.0f;
@@ -653,6 +878,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
+	ImGui::DragInt   ( u8"現在体力",		&currentHP );
 	ImGui::DragFloat3( u8"ワールド座標",	&body.pos.x,	0.01f );
 	ImGui::DragFloat3( u8"速度",			&velocity.x,	0.01f );
 
@@ -664,6 +890,11 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::DragFloat( u8"ジャンプを入力し続けている秒数", &keepJumpSecond, 0.01f );
 	ImGui::Checkbox( u8"ジャンプ入力を離したか",	&wasReleasedJumpInput );
 	ImGui::Checkbox( u8"地上にいるか",			&onGround );
+	bool tmp{};
+	tmp = pMover->NowKnockBacking( *this );
+	ImGui::Checkbox( u8"操作可能か",				&tmp );
+	tmp = invincibleTimer.NowWorking();
+	ImGui::Checkbox( u8"無敵中か",				&tmp );
 
 	ImGui::TreePop();
 }
