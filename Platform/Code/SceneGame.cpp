@@ -595,7 +595,7 @@ void SceneGame::UpdateCurrentRoomID()
 	// else
 
 	const auto playerPos = pPlayer->GetPosition();
-	if ( Donya::Collision::IsHit( playerPos, currentScreen ) ) { return; }
+	if ( Donya::Collision::IsHit( playerPos, currentScreen, /* considerExistFlag = */ false ) ) { return; }
 	// else
 
 	const int nextID = pHouse->CalcBelongRoomID( playerPos );
