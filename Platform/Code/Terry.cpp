@@ -29,6 +29,8 @@ namespace Enemy
 
 	void Terry::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
+		Base::Update( elapsedTime, wsTargetPos, wsScreen );
+
 		UpdateOutSideState( wsScreen );
 		if ( NowWaiting() )
 		{

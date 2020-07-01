@@ -304,7 +304,7 @@ namespace Enemy
 		// else
 
 		hp -= pReceivedDamage->amount;
-		if ( hp < 0 )
+		if ( hp <= 0 )
 		{
 			BeginWaitIfActive();
 		}
