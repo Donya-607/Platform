@@ -409,7 +409,7 @@ void Player::Flusher::Update( float elapsedTime )
 }
 bool Player::Flusher::Drawable() const
 {
-	if ( NowWorking() ) { return true; }
+	if ( !NowWorking() ) { return true; }
 	// else
 
 	/*
@@ -496,6 +496,7 @@ void Player::KnockBack::Init( Player &inst )
 	const bool  knockedFromRight	= ( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight );
 	const float impulseSign			= ( knockedFromRight ) ? -1.0f : 1.0f;
 	inst.velocity.x = Parameter().Get().knockBackSpeed * impulseSign;
+	inst.velocity.y = 0.0f;
 	inst.UpdateOrientation( knockedFromRight );
 	
 	timer = 0.0f;
@@ -511,6 +512,9 @@ void Player::KnockBack::Uninit( Player &inst )
 void Player::KnockBack::Update( Player &inst, float elapsedTime, Input input )
 {
 	timer += elapsedTime;
+
+	Input emptyInput{}; // Discard the input for a resistance of gravity.
+	inst.Fall( elapsedTime, emptyInput );
 
 	MotionUpdate( inst, elapsedTime );
 }
@@ -574,6 +578,7 @@ void Player::Init( const PlayerInitializer &initializer )
 	body.pos	= initializer.GetWorldInitialPos();
 	velocity	= 0.0f;
 	motionManager.Init();
+	currentHP	= data.maxHP;
 	onGround	= false;
 	
 	UpdateOrientation( initializer.ShouldLookingRight() );
@@ -618,6 +623,7 @@ void Player::Update( float elapsedTime, Input input )
 		}
 		else
 		{
+			invincibleTimer.Start( Parameter().Get().invincibleSeconds );
 			AssignMover<KnockBack>();
 		}
 
@@ -907,7 +913,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Checkbox( u8"ínè„Ç…Ç¢ÇÈÇ©",			&onGround );
 	bool tmp{};
 	tmp = pMover->NowKnockBacking( *this );
-	ImGui::Checkbox( u8"ëÄçÏâ¬î\Ç©",				&tmp );
+	ImGui::Checkbox( u8"ÇÃÇØÇºÇËíÜÇ©",			&tmp );
 	tmp = invincibleTimer.NowWorking();
 	ImGui::Checkbox( u8"ñ≥ìGíÜÇ©",				&tmp );
 
