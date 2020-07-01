@@ -678,7 +678,7 @@ void SceneGame::Collision_EnemyVSPlayer()
 	if ( !pPlayer ) { return; }
 	// else
 
-	const auto playerBody = pPlayer->GetHurtBox();
+	const auto playerBody	= pPlayer->GetHurtBox();
 
 	auto  &enemyAdmin		= Enemy::Admin::Get();
 	const size_t enemyCount	= enemyAdmin.GetInstanceCount();
@@ -692,7 +692,7 @@ void SceneGame::Collision_EnemyVSPlayer()
 
 		if ( Donya::Collision::IsHit( pEnemy->GetHitBox(), playerBody ) )
 		{
-			Donya::ShowMessageBox( L"Player vs Enemy is true", L"test", MB_OK );
+			char TODO = 0;
 		}
 	}
 }

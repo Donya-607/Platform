@@ -393,11 +393,7 @@ void Player::Init( const PlayerInitializer &initializer )
 	motionManager.Init();
 	onGround	= false;
 	
-	const float rotateSign = ( initializer.ShouldLookingRight() ) ? 1.0f : -1.0f;
-	orientation = Donya::Quaternion::Make
-	(
-		Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
-	);
+	UpdateOrientation( initializer.ShouldLookingRight() );
 }
 void Player::Uninit()
 {
@@ -438,14 +434,9 @@ void Player::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision
 	const int collideIndex = Actor::MoveY( movement.y, solids );
 	if ( collideIndex != -1 ) // If collided to any
 	{
-		// Consider as landing
 		if ( velocity.y <= 0.0f )
 		{
-			if ( !onGround )
-			{
-				onGround = true;
-				Donya::Sound::Play( Music::Player_Landing );
-			}
+			Landing();
 		}
 
 		velocity.y = 0.0f;
@@ -539,46 +530,19 @@ void Player::MoveHorizontal( float elapsedTime, Input input )
 
 	if ( !IsZero( velocity.x ) )
 	{
-		const float rotateSign = ( 0.0f < velocity.x ) ? 1.0f : -1.0f;
-		orientation = Donya::Quaternion::Make
-		(
-			Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
-		);
+		const bool lookRight = ( 0.0f < velocity.x ) ? true : false;
+		UpdateOrientation( lookRight );
 	}
 }
 void Player::MoveVertical  ( float elapsedTime, Input input )
 {
-	const auto &data = Parameter().Get();
-
-	if ( input.useJump && onGround && wasReleasedJumpInput )
+	if ( input.useJump && Jumpable() )
 	{
-		onGround				= false;
-		velocity.y				= data.jumpStrength;
-		keepJumpSecond			= 0.0f;
-		wasReleasedJumpInput	= false;
-		Donya::Sound::Play( Music::Player_Jump );
+		Jump();
 	}
 	else
 	{
-		bool resistGravity = false;
-		if ( input.useJump && !wasReleasedJumpInput )
-		{
-			keepJumpSecond += elapsedTime;
-			if ( keepJumpSecond < data.resistableSeconds )
-			{
-				resistGravity = true;
-			}
-		}
-		else
-		{
-			wasReleasedJumpInput = true;
-		}
-
-		const float applyGravity =	( resistGravity )
-									? data.gravity * data.gravityResistance
-									: data.gravity;
-		velocity.y -= applyGravity * elapsedTime;
-		velocity.y = std::max( -data.maxFallSpeed, velocity.y );
+		Fall( elapsedTime, input );
 	}
 }
 void Player::Shot( float elapsedTime, Input input )
@@ -612,6 +576,64 @@ void Player::Shot( float elapsedTime, Input input )
 			Donya::Sound::Play( Music::Player_Shot );
 		}
 	}
+}
+void Player::UpdateOrientation( bool lookingRight )
+{
+	const float rotateSign = ( lookingRight ) ? 1.0f : -1.0f;
+	orientation = Donya::Quaternion::Make
+	(
+		Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
+	);
+}
+void Player::Jump()
+{
+	const auto &data = Parameter().Get();
+
+	onGround				= false;
+	velocity.y				= data.jumpStrength;
+	keepJumpSecond			= 0.0f;
+	wasReleasedJumpInput	= false;
+	Donya::Sound::Play( Music::Player_Jump );
+}
+bool Player::Jumpable() const
+{
+	return ( onGround && wasReleasedJumpInput ) ? true : false;
+}
+void Player::Fall( float elapsedTime, Input input )
+{
+	const auto &data = Parameter().Get();
+
+	bool resistGravity = false;
+	if ( input.useJump && !wasReleasedJumpInput )
+	{
+		keepJumpSecond += elapsedTime;
+		if ( keepJumpSecond < data.resistableSeconds )
+		{
+			resistGravity = true;
+		}
+	}
+	else
+	{
+		wasReleasedJumpInput = true;
+	}
+
+	const float applyGravity =	( resistGravity )
+								? data.gravity * data.gravityResistance
+								: data.gravity;
+	velocity.y -= applyGravity * elapsedTime;
+	velocity.y = std::max( -data.maxFallSpeed, velocity.y );
+}
+void Player::Landing()
+{
+	if ( !onGround )
+	{
+		onGround = true;
+
+		// TODO: Dont play the landing SE when invincible
+		Donya::Sound::Play( Music::Player_Landing );
+	}
+
+	velocity.y = 0.0f;
 }
 Donya::Vector4x4 Player::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 {

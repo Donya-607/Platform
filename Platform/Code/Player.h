@@ -134,6 +134,11 @@ private:
 	void MoveHorizontal( float elapsedTime, Input input );
 	void MoveVertical  ( float elapsedTime, Input input );
 	void Shot( float elapsedTime, Input input );
+	void UpdateOrientation( bool lookingRight );
+	void Jump();
+	bool Jumpable() const;
+	void Fall( float elapsedTime, Input input );
+	void Landing();
 private:
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 public:
