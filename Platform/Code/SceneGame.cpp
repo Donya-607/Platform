@@ -855,7 +855,7 @@ namespace
 	static GuiWindow adjustWindow{ { 194.0f, 510.0f }, { 364.0f, 300.0f } };
 	static GuiWindow playerWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static GuiWindow enemyWindow { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
-	static bool enableFloatWindow = false;
+	static bool enableFloatWindow = true;
 }
 void SceneGame::UseImGui()
 {
@@ -869,9 +869,9 @@ void SceneGame::UseImGui()
 	if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
 	{
 		static bool applyMap	= true;
-		static bool applyHouse	= false;
 		static bool applyPlayer	= true;
-		static bool applyEnemy	= true;
+		static bool applyHouse	= false;
+		static bool applyEnemy	= false;
 		static bool thenSave	= true;
 		ImGui::Checkbox( u8"マップに適用",		&applyMap		);
 		ImGui::SameLine();
