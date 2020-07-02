@@ -87,6 +87,6 @@ namespace Enemy
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Enemy::Terry, 1 )
+CEREAL_CLASS_VERSION( Enemy::Terry, 2 )
 CEREAL_REGISTER_TYPE( Enemy::Terry )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Terry )

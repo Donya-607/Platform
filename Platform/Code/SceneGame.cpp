@@ -207,12 +207,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	UseImGui();
 #endif // USE_IMGUI
 
-	if ( Fader::Get().IsClosed() && nextStatus == GotoState::Game )
+	if ( Fader::Get().IsClosed() && nextScene == Scene::Type::Game )
 	{
 		UninitStage();
 		InitStage( stageNumber );
-
-		nextStatus = GotoState::None;
 	}
 
 	controller.Update();
@@ -224,8 +222,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	PlayerUpdate( elapsedTime );
 	if ( FetchParameter().waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
 	{
-		StartFade();
-		nextStatus = GotoState::Game;
+		// Re-try process
+		StartFade( Scene::Type::Game );
 	}
 
 	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
@@ -754,8 +752,10 @@ void SceneGame::ClearBackGround() const
 	}
 #endif // DEBUG_MODE
 }
-void SceneGame::StartFade() const
+void SceneGame::StartFade( Scene::Type nextSceneType )
 {
+	nextScene = nextSceneType;
+
 	Fader::Configuration config{};
 	config.type			= Fader::Type::Gradually;
 	config.closeFrame	= Fader::GetDefaultCloseFrame();;
@@ -770,16 +770,16 @@ Scene::Result SceneGame::ReturnResult()
 	{
 		Donya::Sound::Play( Music::DEBUG_Strong );
 
-		StartFade();
+		StartFade( Scene::Type::Title );
 	}
 #endif // DEBUG_MODE
 
 	// TODO: Temporary condition, should fix this
-	if ( Fader::Get().IsClosed() && nextStatus != GotoState::Game )
+	if ( Fader::Get().IsClosed() && nextScene != Scene::Type::Null )
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
-		change.sceneType = Scene::Type::Title;
+		change.sceneType = nextScene;
 		return change;
 	}
 

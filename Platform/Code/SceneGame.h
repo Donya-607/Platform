@@ -19,19 +19,12 @@
 class SceneGame : public Scene
 {
 private:
-	enum class GotoState
-	{
-		None,
-		Game,
-		Clear,
-	};
-private:
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 	Donya::Collision::Box3F				currentScreen;
 	int									currentRoomID	= 0;
 	
-	GotoState							nextStatus		= GotoState::None;
+	Scene::Type							nextScene		= Scene::Type::Null;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 
@@ -79,7 +72,7 @@ private:
 	void	Collision_EnemyVSPlayer();
 
 	void	ClearBackGround() const;
-	void	StartFade() const;
+	void	StartFade( Scene::Type nextSceneType );
 private:
 	Result	ReturnResult();
 private:
