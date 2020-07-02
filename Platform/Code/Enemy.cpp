@@ -328,9 +328,9 @@ namespace Enemy
 		return W;
 	}
 #if USE_IMGUI
-	void Base::ShowImGuiNode( const std::string &nodeCaption )
+	bool Base::ShowImGuiNode( const std::string &nodeCaption )
 	{
-		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return false; }
 		// else
 		
 		if ( ImGui::Button( ( nodeCaption + u8"ÇçÌèúÇ∑ÇÈ" ).c_str() ) )
@@ -349,6 +349,7 @@ namespace Enemy
 		}
 
 		ImGui::TreePop();
+		return true;
 	}
 #endif // USE_IMGUI
 
@@ -497,22 +498,9 @@ namespace Enemy
 		{
 			const size_t enemyCount = enemyPtrs.size();
 
-			std::string caption;
 			for ( size_t i = 0; i < enemyCount; ++i )
 			{
-				auto &pEnemy = enemyPtrs[i];
-
-				if ( !pEnemy ) { continue; }
-				// else
-
-				caption = Donya::MakeArraySuffix( i );
-				pEnemy->ShowImGuiNode( caption );
-
-				caption = "[";
-				caption += GetModelName( pEnemy->GetKind() );
-				caption += "]";
-				ImGui::SameLine();
-				ImGui::Text( caption.c_str() );
+				ShowInstanceNode( i );
 			}
 
 			ImGui::TreePop();
@@ -535,6 +523,26 @@ namespace Enemy
 		}
 
 		ImGui::TreePop();
+	}
+	void Admin::ShowInstanceNode( size_t index )
+	{
+		if ( IsOutOfRange( index ) ) { return; }
+		// else
+
+		auto &pEnemy = enemyPtrs[index];
+		if ( !pEnemy ) { return; }
+		// else
+
+		std::string caption = Donya::MakeArraySuffix( index );
+		bool  treeIsOpen = pEnemy->ShowImGuiNode( caption );
+		if ( !treeIsOpen )
+		{
+			caption = "[";
+			caption += GetModelName( pEnemy->GetKind() );
+			caption += "]";
+			ImGui::SameLine();
+			ImGui::Text( caption.c_str() );
+		}
 	}
 #endif // USE_IMGUI
 }

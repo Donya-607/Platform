@@ -33,7 +33,10 @@ namespace Enemy
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
 	public:
 	#if USE_IMGUI
-		void ShowImGuiNode( const std::string &nodeCaption ) override;
+		/// <summary>
+		/// Returns the return value of ImGui::TreeNode().
+		/// </summary>
+		bool ShowImGuiNode( const std::string &nodeCaption ) override;
 	#endif // USE_IMGUI
 	};
 

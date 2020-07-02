@@ -89,9 +89,9 @@ namespace Enemy
 		hurtBox.size	= data.hurtBoxSize;
 	}
 #if USE_IMGUI
-	void Terry::ShowImGuiNode( const std::string &nodeCaption )
+	bool Terry::ShowImGuiNode( const std::string &nodeCaption )
 	{
-		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return false; }
 		// else
 
 		Base::ShowImGuiNode( u8"Šî’ê•”•ª" );
@@ -104,6 +104,7 @@ namespace Enemy
 		// }
 
 		ImGui::TreePop();
+		return true;
 	}
 	void TerryParam::ShowImGuiNode()
 	{

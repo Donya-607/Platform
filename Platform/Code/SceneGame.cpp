@@ -36,7 +36,6 @@
 namespace
 {
 #if DEBUG_MODE
-	constexpr int debugTmpStageNo = -1;
 	constexpr bool IOFromBinary = false;
 #else
 	constexpr bool IOFromBinary = true;
@@ -154,13 +153,13 @@ void SceneGame::Init()
 	assert( result );
 
 	pMap = std::make_unique<Map>();
-	pMap->Init( debugTmpStageNo );
+	pMap->Init( stageNumber );
 
 	pHouse = std::make_unique<House>();
-	pHouse->Init( debugTmpStageNo );
+	pHouse->Init( stageNumber );
 
 	pPlayerIniter = std::make_unique<PlayerInitializer>();
-	pPlayerIniter->LoadParameter( debugTmpStageNo );
+	pPlayerIniter->LoadParameter( stageNumber );
 	PlayerInit();
 
 	currentRoomID = pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
@@ -171,8 +170,8 @@ void SceneGame::Init()
 
 	auto &enemyAdmin = Enemy::Admin::Get();
 	enemyAdmin.ClearInstances();
-	enemyAdmin.LoadEnemies( debugTmpStageNo, IOFromBinary );
-	enemyAdmin.SaveEnemies( debugTmpStageNo, true );
+	enemyAdmin.LoadEnemies( stageNumber, IOFromBinary );
+	enemyAdmin.SaveEnemies( stageNumber, true );
 }
 void SceneGame::Uninit()
 {
@@ -760,22 +759,156 @@ Scene::Result SceneGame::ReturnResult()
 }
 
 #if USE_IMGUI
-#include "Room.h"
+namespace
+{
+	class GuiWindow
+	{
+	public:
+		Donya::Vector2 pos;		// Left-Top
+		Donya::Vector2 offset;
+		Donya::Vector2 size;	// Whole size
+	public:
+		GuiWindow()
+			: pos( 0.0f, 0.0f ), offset( 0.0f, 32.0f ), size( 256.0f, 128.0f )
+		{}
+		GuiWindow( const Donya::Vector2 &pos, const Donya::Vector2 &size )
+			: pos( pos ), offset( 0.0f, 32.0f ), size( size )
+		{}
+	public:
+		void SetNextWindow( ImGuiCond_ condition = ImGuiCond_::ImGuiCond_Always ) const
+		{
+			ImGui::SetNextWindowSize( ToImVec( size ), condition );
+
+			// Left-Top -> Center-Top
+			Donya::Vector2 topCenter = pos;
+			topCenter.x -= size.x * 0.5f;
+
+			ImGui::SetNextWindowPos( ToImVec( topCenter + offset ), condition );
+		}
+		void ShowImGuiNode( const std::string &nodeCaption )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ImGui::DragFloat2( u8"左上座標",			&pos.x		);
+			ImGui::DragFloat2( u8"座標オフセット",	&offset.x	);
+			ImGui::DragFloat2( u8"全体サイズ",		&size.x		);
+
+			ImGui::TreePop();
+		}
+	};
+	static GuiWindow adjustWindow{ { 194.0f, 510.0f }, { 364.0f, 300.0f } };
+	static GuiWindow playerWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
+	static GuiWindow enemyWindow { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
+}
 void SceneGame::UseImGui()
 {
+	UseScreenSpaceImGui();
+
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 	
-	if ( ImGui::TreeNode( u8"ゲーム・メンバーの調整" ) )
+	sceneParam.ShowImGuiNode( u8"ゲームシーンのパラメータ" );
+
+	if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
 	{
-		ImGui::Text( u8"「Ｆ５キー」を押すと，" );
-		ImGui::Text( u8"背景の色が変わりデバッグモードとなります。" );
-		ImGui::Text( "" );
+		static bool applyMap	= true;
+		static bool applyHouse	= false;
+		static bool applyPlayer	= true;
+		static bool thenSave	= true;
+		ImGui::Checkbox( u8"マップに適用",		&applyMap		);
+		ImGui::SameLine();
+		ImGui::Checkbox( u8"自機に適用",			&applyPlayer	);
 
-		sceneParam.ShowImGuiNode( u8"シーンのパラメータ" );
-		const auto &data = FetchParameter();
+		ImGui::Checkbox( u8"ルームに適用",		&applyHouse		);
+			
+		ImGui::Checkbox( u8"適用後にセーブする",	&thenSave		);
 
-		if ( ImGui::TreeNode( u8"カメラ情報" ) )
+		if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
+		{
+			auto PrepareCSVData = []()
+			{
+				CSVLoader loader;
+				loader.Clear();
+
+				const auto filePath = FetchStageFilePathByCommonDialog();
+				if ( filePath.empty() || !Donya::IsExistFile( filePath ) )
+				{
+					std::string msg = u8"ファイルロードに失敗しました。\n";
+					msg += u8"ファイル：[" + filePath + u8"]";
+					Donya::ShowMessageBox
+					(
+						msg,
+						"Loading stage is failed",
+						MB_ICONEXCLAMATION | MB_OK
+					);
+
+					return loader;
+				}
+				// else
+
+				if ( !loader.Load( filePath ) )
+				{
+					Donya::ShowMessageBox
+					(
+						u8"パースに失敗しました。",
+						"Loading stage is failed",
+						MB_ICONEXCLAMATION | MB_OK
+					);
+					loader.Clear();
+					return loader;
+				}
+				// else
+
+				return loader;
+			};
+			const auto loader = PrepareCSVData();
+			if ( !loader.Get().empty() )
+			{
+				// The data was loaded successfully here
+
+				if ( applyMap && pMap )
+				{
+					pMap->RemakeByCSV( loader );
+					if ( thenSave )
+					{
+						pMap->SaveMap( stageNumber, /* fromBinary = */ true  );
+						pMap->SaveMap( stageNumber, /* fromBinary = */ false );
+					}
+				}
+
+				if ( applyHouse && pHouse )
+				{
+					pHouse->RemakeByCSV( loader );
+					if ( thenSave )
+					{
+						pHouse->SaveRooms( stageNumber, /* fromBinary = */ true  );
+						pHouse->SaveRooms( stageNumber, /* fromBinary = */ false );
+					}
+				}
+
+				if ( applyPlayer )
+				{
+					if ( !pPlayerIniter ) { pPlayerIniter = std::make_unique<PlayerInitializer>(); }
+					pPlayerIniter->RemakeByCSV( loader );
+					if ( thenSave )
+					{
+						pPlayerIniter->SaveBin ( stageNumber );
+						pPlayerIniter->SaveJson( stageNumber );
+					}
+					PlayerInit();
+				}
+
+				Bullet::Admin::Get().ClearInstances();
+			}
+		}
+
+		ImGui::TreePop();
+	}
+
+	if ( ImGui::TreeNode( u8"各オブジェクトの調整" ) )
+	{
+		if ( ImGui::TreeNode( u8"カメラの現在" ) )
 		{
 			ImGui::Checkbox( u8"移動方向を反転する・Ｘ", &isReverseCameraMoveX );
 			ImGui::Checkbox( u8"移動方向を反転する・Ｙ", &isReverseCameraMoveY );
@@ -794,129 +927,103 @@ void SceneGame::UseImGui()
 			const Donya::Vector3 focusPoint = iCamera.GetFocusPoint();
 			ShowVec3( u8"注視点位置", focusPoint );
 			ImGui::Text( "" );
-
-			ImGui::Text( u8"【デバッグモード時のみ有効】" );
-			ImGui::Text( u8"「ＡＬＴキー」を押している間のみ，" );
-			ImGui::Text( u8"「左クリック」を押しながらマウス移動で，" );
-			ImGui::Text( u8"カメラの回転ができます。" );
-			ImGui::Text( u8"「マウスホイール」を押しながらマウス移動で，" );
-			ImGui::Text( u8"カメラの並行移動ができます。" );
-			ImGui::Text( "" );
-
 			ImGui::TreePop();
 		}
+		ImGui::Text( "" );
 
-		if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
-		{
-			static bool applyMap	= true;
-			static bool applyHouse	= false;
-			static bool applyPlayer	= true;
-			static bool thenSave	= true;
-			ImGui::Checkbox( u8"マップに適用",		&applyMap		);
-			ImGui::SameLine();
-			ImGui::Checkbox( u8"自機に適用",			&applyPlayer	);
-
-			ImGui::Checkbox( u8"ルームに適用",		&applyHouse		);
-			
-			ImGui::Checkbox( u8"適用後にセーブする",	&thenSave		);
-
-			if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
-			{
-				auto PrepareCSVData = []()
-				{
-					CSVLoader loader;
-					loader.Clear();
-
-					const auto filePath = FetchStageFilePathByCommonDialog();
-					if ( filePath.empty() || !Donya::IsExistFile( filePath ) )
-					{
-						std::string msg = u8"ファイルロードに失敗しました。\n";
-						msg += u8"ファイル：[" + filePath + u8"]";
-						Donya::ShowMessageBox
-						(
-							msg,
-							"Loading stage is failed",
-							MB_ICONEXCLAMATION | MB_OK
-						);
-
-						return loader;
-					}
-					// else
-
-					if ( !loader.Load( filePath ) )
-					{
-						Donya::ShowMessageBox
-						(
-							u8"パースに失敗しました。",
-							"Loading stage is failed",
-							MB_ICONEXCLAMATION | MB_OK
-						);
-						loader.Clear();
-						return loader;
-					}
-					// else
-
-					return loader;
-				};
-				const auto loader = PrepareCSVData();
-				if ( !loader.Get().empty() )
-				{
-					// The data was loaded successfully here
-
-					if ( applyMap && pMap )
-					{
-						pMap->RemakeByCSV( loader );
-						if ( thenSave )
-						{
-							pMap->SaveMap( debugTmpStageNo, /* fromBinary = */ true  );
-							pMap->SaveMap( debugTmpStageNo, /* fromBinary = */ false );
-						}
-					}
-
-					if ( applyHouse && pHouse )
-					{
-						pHouse->RemakeByCSV( loader );
-						if ( thenSave )
-						{
-							pHouse->SaveRooms( debugTmpStageNo, /* fromBinary = */ true  );
-							pHouse->SaveRooms( debugTmpStageNo, /* fromBinary = */ false );
-						}
-					}
-
-					if ( applyPlayer )
-					{
-						if ( !pPlayerIniter ) { pPlayerIniter = std::make_unique<PlayerInitializer>(); }
-						pPlayerIniter->RemakeByCSV( loader );
-						if ( thenSave )
-						{
-							pPlayerIniter->SaveBin ( debugTmpStageNo );
-							pPlayerIniter->SaveJson( debugTmpStageNo );
-						}
-						PlayerInit();
-					}
-
-					Bullet::Admin::Get().ClearInstances();
-				}
-			}
-
-			ImGui::TreePop();
-		}
-		
 		Player::UpdateParameter( u8"自機のパラメータ" );
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
+		ImGui::Text( "" );
 
-		if ( pMap ) { pMap->ShowImGuiNode( u8"マップの現在", debugTmpStageNo ); }
+		if ( pMap    ) { pMap->ShowImGuiNode( u8"マップの現在", stageNumber ); }
+		if ( pHouse  ) { pHouse->ShowImGuiNode( u8"部屋の現在", stageNumber ); }
+		ImGui::Text( "" );
 
-		if ( pHouse ) { pHouse->ShowImGuiNode( u8"部屋の現在", debugTmpStageNo ); }
+		Bullet::Parameter::Update( u8"弾のパラメータ" );
+		Bullet::Admin::Get().ShowImGuiNode( u8"弾の現在" );
+		ImGui::Text( "" );
+
+		Enemy::Parameter::Update( u8"敵のパラメータ" );
+		Enemy::Admin::Get().ShowImGuiNode( u8"敵の現在", stageNumber );
+		ImGui::Text( "" );
 
 		ImGui::TreePop();
 	}
-
-	Bullet::Parameter::Update( u8"弾のパラメータ" );
-	Bullet::Admin::Get().ShowImGuiNode( u8"弾の現在" );
-	Enemy::Parameter::Update( u8"敵のパラメータ" );
-	Enemy::Admin::Get().ShowImGuiNode( u8"敵の現在", debugTmpStageNo );
 	
 	ImGui::End();
+}
+void SceneGame::UseScreenSpaceImGui()
+{
+	const Donya::Vector4x4 toScreen = MakeScreenTransform();
+	auto WorldToScreen = [&toScreen]( const Donya::Vector3 &world, bool isPosition = 1.0f )
+	{
+		Donya::Vector4 tmp = toScreen.Mul( world, ( isPosition ) ? 1.0f : 0.0f );
+		tmp /= tmp.w;
+		return tmp.XYZ();
+	};
+
+	adjustWindow.SetNextWindow();
+	if ( ImGui::BeginIfAllowed( u8"ウィンドウサイズの調整" ) )
+	{
+		adjustWindow.ShowImGuiNode( u8"このウィンドウ"	);
+		playerWindow.ShowImGuiNode( u8"自機ウィンドウ"	);
+		enemyWindow .ShowImGuiNode( u8"敵ウィンドウ"		);
+
+		ImGui::End();
+	}
+
+	if ( pPlayer )
+	{
+		const Donya::Vector3 ssPos = WorldToScreen( pPlayer->GetPosition() );
+		playerWindow.pos = ssPos.XY();
+		playerWindow.SetNextWindow();
+
+		if ( ImGui::BeginIfAllowed( u8"自機" ) )
+		{
+			pPlayer->ShowImGuiNode( u8"現在" );
+			Player::UpdateParameter( u8"パラメータ" );
+
+			ImGui::End();
+		}
+	}
+
+	// Enemies
+	{
+		auto Show = [&]( const Donya::Vector2 &ssPos, auto ShowInstanceNodeMethod )
+		{
+			enemyWindow.pos = ssPos;
+			enemyWindow.SetNextWindow();
+
+			if ( ImGui::BeginIfAllowed( u8"敵" ) )
+			{
+				ShowInstanceNodeMethod();
+				Enemy::Parameter::Update( u8"敵のパラメータ" );
+
+				ImGui::End();
+			}
+		};
+
+		auto  &enemyAdmin		= Enemy::Admin::Get();
+		const size_t enemyCount	= enemyAdmin.GetInstanceCount();
+
+		Donya::Vector2 ssPos;
+		std::shared_ptr<const Enemy::Base> pEnemy = nullptr;
+		for ( size_t i = 0; i < enemyCount; ++i )
+		{
+			pEnemy = enemyAdmin.GetInstanceOrNullptr( i );
+			if ( !pEnemy ) { continue; }
+			// else
+
+			ssPos = WorldToScreen( pEnemy->GetPosition() ).XY();
+			Show
+			(
+				ssPos,
+				[&]()
+				{
+					enemyAdmin.ShowInstanceNode( i );
+				}
+			);
+		}
+	}
 }
 #endif // USE_IMGUI

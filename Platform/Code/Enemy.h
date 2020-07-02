@@ -145,7 +145,10 @@ namespace Enemy
 		virtual Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:
 	#if USE_IMGUI
-		virtual void ShowImGuiNode( const std::string &nodeCaption );
+		/// <summary>
+		/// Returns the return value of ImGui::TreeNode().
+		/// </summary>
+		virtual bool ShowImGuiNode( const std::string &nodeCaption );
 	#endif // USE_IMGUI
 	};
 	
@@ -195,6 +198,7 @@ namespace Enemy
 		void SaveEnemies( int stageNumber, bool fromBinary );
 	public:
 		void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
+		void ShowInstanceNode( size_t instanceIndex );
 	#endif // USE_IMGUI
 	};
 }

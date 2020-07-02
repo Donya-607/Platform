@@ -31,6 +31,8 @@ private:
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 
+	int  stageNumber				= 0;
+
 #if DEBUG_MODE
 	bool nowDebugMode				= false;
 	bool isReverseCameraMoveX		= true;
@@ -70,5 +72,6 @@ private:
 private:
 #if USE_IMGUI
 	void	UseImGui();
+	void	UseScreenSpaceImGui();
 #endif // USE_IMGUI
 };
