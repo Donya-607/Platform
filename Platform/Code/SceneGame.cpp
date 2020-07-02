@@ -842,6 +842,7 @@ namespace
 	static GuiWindow adjustWindow{ { 194.0f, 510.0f }, { 364.0f, 300.0f } };
 	static GuiWindow playerWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static GuiWindow enemyWindow { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
+	static bool enableFloatWindow = false;
 }
 void SceneGame::UseImGui()
 {
@@ -996,6 +997,11 @@ void SceneGame::UseImGui()
 }
 void SceneGame::UseScreenSpaceImGui()
 {
+	if ( Donya::Keyboard::Press( VK_MENU ) && Donya::Keyboard::Trigger( 'F' ) )
+	{
+		enableFloatWindow = !enableFloatWindow;
+	}
+
 	const Donya::Vector4x4 toScreen = MakeScreenTransform();
 	auto WorldToScreen = [&toScreen]( const Donya::Vector3 &world, bool isPosition = 1.0f )
 	{
@@ -1005,14 +1011,20 @@ void SceneGame::UseScreenSpaceImGui()
 	};
 
 	adjustWindow.SetNextWindow();
-	if ( ImGui::BeginIfAllowed( u8"ウィンドウサイズの調整" ) )
+	if ( ImGui::BeginIfAllowed( u8"フロートウィンドウの調整" ) )
 	{
+		ImGui::Text( u8"「ALT+F」でも切り替え可能" );
+		ImGui::Checkbox( u8"有効にするか", &enableFloatWindow );
+
 		adjustWindow.ShowImGuiNode( u8"このウィンドウ"	);
 		playerWindow.ShowImGuiNode( u8"自機ウィンドウ"	);
 		enemyWindow .ShowImGuiNode( u8"敵ウィンドウ"		);
 
 		ImGui::End();
 	}
+
+	if ( !enableFloatWindow ) { return; }
+	// else
 
 	if ( pPlayer )
 	{
