@@ -124,9 +124,10 @@ private:
 		virtual void Uninit( Player &instance ) {}
 		virtual void Update( Player &instance, float elapsedTime, Input input ) = 0;
 		virtual void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) = 0;
-		virtual bool NowKnockBacking( Player &instance ) const { return false; }
-		virtual bool Drawable( Player &instance ) const { return true; }
-		virtual bool ShouldChangeMover( Player &instance ) const = 0;
+		virtual bool NowKnockBacking( const Player &instance ) const { return false; }
+		virtual bool NowMiss( const Player &instance ) const { return false; }
+		virtual bool Drawable( const Player &instance ) const { return true; }
+		virtual bool ShouldChangeMover( const Player &instance ) const = 0;
 		virtual std::function<void()> GetChangeStateMethod( Player &instance ) const = 0;
 	#if USE_IMGUI
 		virtual std::string GetMoverName() const = 0;
@@ -141,7 +142,7 @@ private:
 	public:
 		void Update( Player &instance, float elapsedTime, Input input ) override;
 		void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
-		bool ShouldChangeMover( Player &instance ) const override;
+		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"í èÌ"; }
@@ -156,8 +157,8 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, Input input ) override;
 		void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
-		bool NowKnockBacking( Player &instance ) const override { return true; }
-		bool ShouldChangeMover( Player &instance ) const override;
+		bool NowKnockBacking( const Player &instance ) const override { return true; }
+		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"ÇÃÇØÇºÇË"; }
@@ -169,8 +170,9 @@ private:
 		void Init( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, Input input ) override;
 		void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
-		bool Drawable( Player &instance ) const override;
-		bool ShouldChangeMover( Player &instance ) const override;
+		bool NowMiss( const Player &instance ) const override { return true; }
+		bool Drawable( const Player &instance ) const override;
+		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"É~ÉX"; }
@@ -206,6 +208,7 @@ public:
 	void Draw( RenderingHelper *pRenderer );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
 public:
+	bool NowMiss() const;
 	using Actor::GetHitBox;
 	Donya::Collision::Box3F	GetHurtBox()		const;
 	Donya::Quaternion		GetOrientation()	const;

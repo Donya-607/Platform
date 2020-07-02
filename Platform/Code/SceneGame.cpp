@@ -56,6 +56,8 @@ namespace
 		camera;
 		
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
+
+		float waitSecondRetry = 1.0f; // Waiting second between Miss ~ Re-try
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -72,6 +74,10 @@ namespace
 			);
 
 			if ( 1 <= version )
+			{
+				archive( CEREAL_NVP( waitSecondRetry ) );
+			}
+			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -94,6 +100,13 @@ namespace
 				ImGui::ColorEdit4  ( u8"色",		&directionalLight.color.x );
 				ImGui::SliderFloat4( u8"方向",	&directionalLight.direction.x, -1.0f, 1.0f );
 				
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"秒数関連" ) )
+			{
+				ImGui::DragFloat( u8"ミスからリトライまでの待機秒数", &waitSecondRetry, 0.01f );
+
 				ImGui::TreePop();
 			}
 		}
@@ -140,50 +153,26 @@ void SceneGame::Init()
 	// Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
 #endif // DEBUG_MODE
 
+	sceneParam.LoadParameter();
+	
 	bool result{};
 
 	pRenderer = std::make_unique<RenderingHelper>();
 	result = pRenderer->Init();
 	assert( result );
 
-	sceneParam.LoadParameter();
-	const auto &data = FetchParameter();
-	
-	result = Player::LoadResource();
-	assert( result );
-
-	pMap = std::make_unique<Map>();
-	pMap->Init( stageNumber );
-
-	pHouse = std::make_unique<House>();
-	pHouse->Init( stageNumber );
+#if DEBUG_MODE
+	stageNumber = 0; // temporary debug stage
+#endif // DEBUG_MODE
 
 	pPlayerIniter = std::make_unique<PlayerInitializer>();
 	pPlayerIniter->LoadParameter( stageNumber );
-	PlayerInit();
 
-	currentRoomID = pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
-
-	CameraInit();
-
-	Bullet::Admin::Get().ClearInstances();
-
-	auto &enemyAdmin = Enemy::Admin::Get();
-	enemyAdmin.ClearInstances();
-	enemyAdmin.LoadEnemies( stageNumber, IOFromBinary );
-	enemyAdmin.SaveEnemies( stageNumber, true );
+	InitStage( stageNumber );
 }
 void SceneGame::Uninit()
 {
-	if ( pMap		) { pMap->Uninit();		}
-	if ( pHouse		) { pHouse->Uninit();	}
-	if ( pPlayer	) { pPlayer->Uninit();	}
-	pMap.reset();
-	pHouse.reset();
-	pPlayer.reset();
-
-	Bullet::Admin::Get().ClearInstances();
-	Enemy::Admin::Get().ClearInstances();
+	UninitStage();
 
 	// Donya::Sound::Stop( Music::BGM_Game );
 }
@@ -218,16 +207,26 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	UseImGui();
 #endif // USE_IMGUI
 
+	if ( Fader::Get().IsClosed() && nextStatus == GotoState::Game )
+	{
+		UninitStage();
+		InitStage( stageNumber );
+
+		nextStatus = GotoState::None;
+	}
+
 	controller.Update();
 
-	if ( pMap )
-	{
-		pMap->Update( elapsedTime );
-	}
+	if ( pMap ) { pMap->Update( elapsedTime ); }
 
 	UpdateCurrentRoomID();
 	
 	PlayerUpdate( elapsedTime );
+	if ( FetchParameter().waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
+	{
+		StartFade();
+		nextStatus = GotoState::Game;
+	}
 
 	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 	Bullet::Admin::Get().Update( elapsedTime, currentScreen );
@@ -245,10 +244,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 			}
 		}
 
-		if ( pPlayer )
-		{
-			pPlayer->PhysicUpdate( elapsedTime, hitBoxes );
-		}
+		if ( pPlayer ) { pPlayer->PhysicUpdate( elapsedTime, hitBoxes ); }
 
 		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
 		Enemy::Admin::Get().PhysicUpdate( elapsedTime, hitBoxes );
@@ -415,6 +411,42 @@ Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 	nowScreen.size.y = halfHeight;
 	nowScreen.size.z = FLT_MAX;
 	return nowScreen;
+}
+
+void SceneGame::InitStage( int stageNo )
+{
+	pMap = std::make_unique<Map>();
+	pMap->Init( stageNumber );
+
+	pHouse = std::make_unique<House>();
+	pHouse->Init( stageNumber );
+
+	PlayerInit();
+
+	currentRoomID = pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
+
+	CameraInit();
+
+	Bullet::Admin::Get().ClearInstances();
+
+	auto &enemyAdmin = Enemy::Admin::Get();
+	enemyAdmin.ClearInstances();
+	enemyAdmin.LoadEnemies( stageNumber, IOFromBinary );
+#if DEBUG_MODE
+	enemyAdmin.SaveEnemies( stageNumber, true );
+#endif // DEBUG_MODE
+}
+void SceneGame::UninitStage()
+{
+	if ( pMap		) { pMap->Uninit();		}
+	if ( pHouse		) { pHouse->Uninit();	}
+	if ( pPlayer	) { pPlayer->Uninit();	}
+	pMap.reset();
+	pHouse.reset();
+	pPlayer.reset();
+
+	Bullet::Admin::Get().ClearInstances();
+	Enemy::Admin::Get().ClearInstances();
 }
 
 void SceneGame::CameraInit()
@@ -590,6 +622,15 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	input.useShot = pressShot;
 
 	pPlayer->Update( elapsedTime, input );
+
+	if ( pPlayer->NowMiss() )
+	{
+		elapsedSecondsAfterMiss += elapsedTime;
+	}
+	else
+	{
+		elapsedSecondsAfterMiss = 0.0f;
+	}
 }
 
 void SceneGame::UpdateCurrentRoomID()
@@ -733,7 +774,8 @@ Scene::Result SceneGame::ReturnResult()
 	}
 #endif // DEBUG_MODE
 
-	if ( Fader::Get().IsClosed() )
+	// TODO: Temporary condition, should fix this
+	if ( Fader::Get().IsClosed() && nextStatus != GotoState::Game )
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
@@ -761,7 +803,7 @@ Scene::Result SceneGame::ReturnResult()
 #if USE_IMGUI
 namespace
 {
-	class GuiWindow
+	class  GuiWindow
 	{
 	public:
 		Donya::Vector2 pos;		// Left-Top

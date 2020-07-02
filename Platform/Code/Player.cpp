@@ -478,7 +478,7 @@ void Player::Normal::Move( Player &inst, float elapsedTime, const std::vector<Do
 	MoveOnlyHorizontal( inst, elapsedTime, solids );
 	MoveOnlyVertical  ( inst, elapsedTime, solids );
 }
-bool Player::Normal::ShouldChangeMover( Player &inst ) const
+bool Player::Normal::ShouldChangeMover( const Player &inst ) const
 {
 	return false;
 }
@@ -522,7 +522,7 @@ void Player::KnockBack::Move( Player &inst, float elapsedTime, const std::vector
 	MoveOnlyHorizontal( inst, elapsedTime, solids );
 	MoveOnlyVertical  ( inst, elapsedTime, solids );
 }
-bool Player::KnockBack::ShouldChangeMover( Player &inst ) const
+bool Player::KnockBack::ShouldChangeMover( const Player &inst ) const
 {
 	const auto &knockBackSecoonds = Parameter().Get().knockBackSeconds;
 	return ( knockBackSecoonds <= timer );
@@ -553,11 +553,11 @@ void Player::Miss::Move( Player &inst, float elapsedTime, const std::vector<Dony
 {
 	// No op
 }
-bool Player::Miss::Drawable( Player &inst ) const
+bool Player::Miss::Drawable( const Player &inst ) const
 {
 	return false;
 }
-bool Player::Miss::ShouldChangeMover( Player &inst ) const
+bool Player::Miss::ShouldChangeMover( const Player &inst ) const
 {
 	return false;
 }
@@ -720,6 +720,10 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 		DrawProcess( hurt, hurtColor );
 	}
 #endif // DEBUG_MODE
+}
+bool Player::NowMiss() const
+{
+	return ( !pMover ) ? true : ( pMover->NowMiss( *this ) ) ? true : false;
 }
 Donya::Collision::Box3F	Player::GetHurtBox() const
 {

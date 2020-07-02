@@ -19,10 +19,19 @@
 class SceneGame : public Scene
 {
 private:
+	enum class GotoState
+	{
+		None,
+		Game,
+		Clear,
+	};
+private:
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 	Donya::Collision::Box3F				currentScreen;
-	int									currentRoomID = 0;
+	int									currentRoomID	= 0;
+	
+	GotoState							nextStatus		= GotoState::None;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 
@@ -31,7 +40,8 @@ private:
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 
-	int  stageNumber				= 0;
+	int   stageNumber				= 0;
+	float elapsedSecondsAfterMiss	= 0.0f;
 
 #if DEBUG_MODE
 	bool nowDebugMode				= false;
@@ -52,6 +62,9 @@ public:
 private:
 	Donya::Vector4x4 MakeScreenTransform() const;
 	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
+
+	void	InitStage( int stageNo );
+	void	UninitStage();
 
 	void	CameraInit();
 	void	AssignCameraPos();
