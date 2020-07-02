@@ -2,11 +2,17 @@
 
 #include <array>
 
+#if USE_IMGUI
+#include "Donya/Useful.h"	// Use ShowMessageBox()
+#endif // USE_IMGUI
+
 #include "Common.h"
 #include "ModelHelper.h"
 #include "Terry.h"
 #if USE_IMGUI
+#include "Map.h"			// Use ToWorldPos()
 #include "Parameter.h"
+#include "StageFormat.h"
 #endif // USE_IMGUI
 
 namespace Enemy
@@ -449,7 +455,58 @@ namespace Enemy
 #if USE_IMGUI
 	void Admin::RemakeByCSV( const CSVLoader &loadedData )
 	{
+		auto IsEnemyID	= []( int id )
+		{
+			return ( StageFormat::EnemyStart <= id && id < StageFormat::EnemyEnd );
+		};
+		auto IsValidID	= []( int id )
+		{
+			id -= StageFormat::EnemyStart;
+			return ( 0 <= id && id < scast<int>( Kind::KindCount ) );
+		};
+		auto Append		= [&]( int id, size_t row, size_t column )
+		{
+			if ( !IsEnemyID( id ) ) { return; }
+			// else
 
+			if ( !IsValidID( id ) )
+			{
+				std::string msg = u8"ŽÀ‘•‚³‚ê‚Ä‚¢‚È‚¢“G‚Ì”Ô†‚ðŒŸo‚µ‚Ü‚µ‚½B\n";
+				msg += u8"s:" + std::to_string( row    ) + u8", ";
+				msg += u8"—ñ:" + std::to_string( column ) + u8", ";
+				msg += u8"ID:" + std::to_string( id     ) + u8".\n";
+
+				Donya::ShowMessageBox
+				(
+					msg, "Announce",
+					MB_ICONEXCLAMATION | MB_OK
+				);
+				return;
+			}
+			// else
+
+			InitializeParam tmp;
+			tmp.lookingRight	= true;
+			tmp.wsPos			= Map::ToWorldPos( row, column );
+			AppendEnemy( Kind::Terry, tmp );
+		};
+
+		for ( auto &pIt : enemyPtrs )
+		{
+			if ( pIt ) { pIt->Uninit(); }
+		}
+		enemyPtrs.clear();
+
+		const auto &data = loadedData.Get();
+		const size_t rowCount = data.size();
+		for ( size_t r = 0; r < rowCount; ++r )
+		{
+			const size_t columnCount = data[r].size();
+			for ( size_t c = 0; c < columnCount; ++c )
+			{
+				Append( data[r][c], r, c );
+			}
+		}
 	}
 	void Admin::AppendEnemy( Kind kind, const InitializeParam &parameter )
 	{

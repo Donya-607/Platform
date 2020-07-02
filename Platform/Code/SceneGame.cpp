@@ -801,6 +801,7 @@ Scene::Result SceneGame::ReturnResult()
 }
 
 #if USE_IMGUI
+#include "Donya/Useful.h"
 namespace
 {
 	class  GuiWindow
@@ -826,6 +827,18 @@ namespace
 			topCenter.x -= size.x * 0.5f;
 
 			ImGui::SetNextWindowPos( ToImVec( topCenter + offset ), condition );
+			
+			Donya::Collision::Box2F nextWindowRect;
+			nextWindowRect.pos		= topCenter + ( size * 0.5f );
+			nextWindowRect.offset	= offset;
+			nextWindowRect.size		= size * 0.5f;
+			Donya::Vector2 mouse
+			{
+				scast<float>( Donya::Mouse::Coordinate().x ),
+				scast<float>( Donya::Mouse::Coordinate().y ),
+			};
+			const bool mouseOnNextWindow = Donya::Collision::IsHit( mouse, nextWindowRect );
+			ImGui::SetNextWindowBgAlpha( ( mouseOnNextWindow ) ? 0.8f : 0.5f );
 		}
 		void ShowImGuiNode( const std::string &nodeCaption )
 		{
@@ -858,12 +871,15 @@ void SceneGame::UseImGui()
 		static bool applyMap	= true;
 		static bool applyHouse	= false;
 		static bool applyPlayer	= true;
+		static bool applyEnemy	= true;
 		static bool thenSave	= true;
 		ImGui::Checkbox( u8"マップに適用",		&applyMap		);
 		ImGui::SameLine();
 		ImGui::Checkbox( u8"自機に適用",			&applyPlayer	);
 
 		ImGui::Checkbox( u8"ルームに適用",		&applyHouse		);
+		
+		ImGui::Checkbox( u8"敵に適用",			&applyEnemy		);
 			
 		ImGui::Checkbox( u8"適用後にセーブする",	&thenSave		);
 
@@ -910,6 +926,9 @@ void SceneGame::UseImGui()
 			{
 				// The data was loaded successfully here
 
+				Enemy::Admin::Get().ClearInstances();
+				Bullet::Admin::Get().ClearInstances();
+
 				if ( applyMap && pMap )
 				{
 					pMap->RemakeByCSV( loader );
@@ -942,7 +961,17 @@ void SceneGame::UseImGui()
 					PlayerInit();
 				}
 
-				Bullet::Admin::Get().ClearInstances();
+				if ( applyEnemy )
+				{
+					Enemy::Admin::Get().ClearInstances();
+					Enemy::Admin::Get().RemakeByCSV( loader );
+
+					if ( thenSave )
+					{
+						Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ true  );
+						Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ false );
+					}
+				}
 			}
 		}
 
@@ -1015,7 +1044,6 @@ void SceneGame::UseScreenSpaceImGui()
 	{
 		ImGui::Text( u8"「ALT+F」でも切り替え可能" );
 		ImGui::Checkbox( u8"有効にするか", &enableFloatWindow );
-
 		adjustWindow.ShowImGuiNode( u8"このウィンドウ"	);
 		playerWindow.ShowImGuiNode( u8"自機ウィンドウ"	);
 		enemyWindow .ShowImGuiNode( u8"敵ウィンドウ"		);
@@ -1043,12 +1071,14 @@ void SceneGame::UseScreenSpaceImGui()
 
 	// Enemies
 	{
-		auto Show = [&]( const Donya::Vector2 &ssPos, auto ShowInstanceNodeMethod )
+		auto Show = [&]( const Donya::Vector2 &ssPos, size_t enemyIndex, auto ShowInstanceNodeMethod )
 		{
 			enemyWindow.pos = ssPos;
 			enemyWindow.SetNextWindow();
 
-			if ( ImGui::BeginIfAllowed( u8"敵" ) )
+			const std::string caption = u8"敵" + Donya::MakeArraySuffix( enemyIndex );
+
+			if ( ImGui::BeginIfAllowed( caption.c_str() ) )
 			{
 				ShowInstanceNodeMethod();
 				Enemy::Parameter::Update( u8"敵のパラメータ" );
@@ -1071,7 +1101,7 @@ void SceneGame::UseScreenSpaceImGui()
 			ssPos = WorldToScreen( pEnemy->GetPosition() ).XY();
 			Show
 			(
-				ssPos,
+				ssPos, i,
 				[&]()
 				{
 					enemyAdmin.ShowInstanceNode( i );

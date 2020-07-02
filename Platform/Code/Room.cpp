@@ -7,7 +7,9 @@
 #include "FilePath.h"
 #include "Map.h"			// Use Map::ToWorldPos()
 #include "Parameter.h"
+#if USE_IMGUI
 #include "StageFormat.h"
+#endif // USE_IMGUI
 
 
 void Room::Init( int assignID, const Donya::Vector3 &wsMin, const Donya::Vector3 &wsMax )

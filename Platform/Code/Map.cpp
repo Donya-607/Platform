@@ -9,7 +9,9 @@
 #include "Common.h"			// Use IsShowCollision()
 #include "FilePath.h"
 #include "Parameter.h"		// Use ParameterHelper
+#if USE_IMGUI
 #include "StageFormat.h"
+#endif // USE_IMGUI
 
 
 void Tile::Init( const Donya::Vector3 &wsTilePos, const Donya::Vector3 &wsTileWholeSize, const Donya::Int2 &texCoordOffset )

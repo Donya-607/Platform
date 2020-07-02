@@ -11,6 +11,9 @@ namespace StageFormat
 		Normal			= 2,
 
 		RoomStart		= 8,	// [RoomStart <= N < RoomEnd] is room identifier
-		RoomEnd			= 15,	// [RoomStart <= N < RoomEnd] is room identifier
+		RoomEnd			= 16,	// [RoomStart <= N < RoomEnd] is room identifier
+
+		EnemyStart		= 16,	// [EnemyStart <= N < EnemyEnd] is room identifier
+		EnemyEnd		= 24,	// [EnemyStart <= N < EnemyEnd] is room identifier
 	};
 }

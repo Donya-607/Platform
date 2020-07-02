@@ -70,13 +70,13 @@ namespace Enemy
 
 			if ( 1 <= version )
 			{
-				archive( CEREAL_NVP( hp ) );
+				archive
+				(
+					CEREAL_NVP( hp			),
+					CEREAL_NVP( touchDamage	)
+				);
 			}
 			if ( 2 <= version )
-			{
-				archive( CEREAL_NVP( touchDamage ) );
-			}
-			if ( 3 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -87,6 +87,7 @@ namespace Enemy
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Enemy::Terry, 2 )
+CEREAL_CLASS_VERSION( Enemy::Terry, 0 )
 CEREAL_REGISTER_TYPE( Enemy::Terry )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Terry )
+CEREAL_CLASS_VERSION( Enemy::TerryParam, 1 )
