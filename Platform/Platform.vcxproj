@@ -134,6 +134,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Code\Bullet.cpp" />
+    <ClCompile Include="Code\ClearEvent.cpp" />
     <ClCompile Include="Code\Common.cpp" />
     <ClCompile Include="Code\CSVLoader.cpp" />
     <ClCompile Include="Code\Damage.cpp" />
@@ -203,6 +204,7 @@
   <ItemGroup>
     <ClInclude Include="Code\Bullet.h" />
     <ClInclude Include="Code\BulletParam.h" />
+    <ClInclude Include="Code\ClearEvent.h" />
     <ClInclude Include="Code\Common.h" />
     <ClInclude Include="Code\CSVLoader.h" />
     <ClInclude Include="Code\Damage.h" />
