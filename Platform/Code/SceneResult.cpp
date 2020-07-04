@@ -78,6 +78,8 @@ void SceneResult::Init()
 	result = sprTmpDraw.LoadSprite( L"./Data/Images/Result/GotWeapon.png", 2U );
 	assert( result );
 #endif // DEBUG_MODE
+
+	CameraInit();
 }
 void SceneResult::Uninit()
 {
