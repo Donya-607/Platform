@@ -5,16 +5,16 @@ namespace StageFormat
 	enum ID
 	{
 		EmptyValue		= -1,
-		Space			= EmptyValue,
-		StartPointRight	= 0,	// Looking right
-		StartPointLeft	= 1,	// Looking left
-		Normal			= 2,
-		ClearEvent		= 3,
+		Space			= 0,
+		StartPointRight	= 1,	// Looking right
+		StartPointLeft	= 2,	// Looking left
+		Normal			= 3,
+		ClearEvent		= 4,
 
-		RoomStart		= 8,	// [RoomStart <= N < RoomEnd] is room identifier
-		RoomEnd			= 16,	// [RoomStart <= N < RoomEnd] is room identifier
+		RoomStart		= 8,	// [RoomStart <= N <= RoomLast] is room identifier
+		RoomLast		= 15,	// [RoomStart <= N <= RoomLast] is room identifier
 
-		EnemyStart		= 16,	// [EnemyStart <= N < EnemyEnd] is room identifier
-		EnemyEnd		= 24,	// [EnemyStart <= N < EnemyEnd] is room identifier
+		EnemyStart		= 16,	// [EnemyStart <= N <= EnemyLast] is room identifier
+		EnemyLast		= 23,	// [EnemyStart <= N <= EnemyLast] is room identifier
 	};
 }

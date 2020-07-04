@@ -457,7 +457,7 @@ namespace Enemy
 	{
 		auto IsEnemyID	= []( int id )
 		{
-			return ( StageFormat::EnemyStart <= id && id < StageFormat::EnemyEnd );
+			return ( StageFormat::EnemyStart <= id && id <= StageFormat::EnemyLast );
 		};
 		auto IsValidID	= []( int id )
 		{

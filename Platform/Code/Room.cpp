@@ -223,7 +223,7 @@ void House::RemakeByCSV( const CSVLoader &loadedData )
 
 	auto IsRoomID	= []( int id )
 	{
-		return ( StageFormat::RoomStart <= id && id < StageFormat::RoomEnd );
+		return ( StageFormat::RoomStart <= id && id <= StageFormat::RoomLast );
 	};
 	auto Append		= [&IsRoomID, &areas]( int id, size_t row, size_t column )
 	{

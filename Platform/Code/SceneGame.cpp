@@ -819,6 +819,7 @@ Scene::Result SceneGame::ReturnResult()
 }
 
 #if USE_IMGUI
+#include <functional>
 #include "Donya/Useful.h"
 namespace
 {
@@ -886,124 +887,202 @@ void SceneGame::UseImGui()
 
 	if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
 	{
-		static bool applyMap	= true;
-		static bool applyPlayer	= true;
-		static bool applyHouse	= false;
-		static bool applyEnemy	= false;
-		static bool applyClear	= false;
-		static bool thenSave	= true;
-		ImGui::Checkbox( u8"マップに適用",			&applyMap		);
-		ImGui::SameLine();
-		ImGui::Checkbox( u8"自機に適用",				&applyPlayer	);
+		static bool thenSave = true;
+		ImGui::Checkbox( u8"読み込み・適用後にセーブする", &thenSave );
 
-		ImGui::Checkbox( u8"ルームに適用",			&applyHouse		);
-		
-		ImGui::Checkbox( u8"敵に適用",				&applyEnemy		);
-		
-		ImGui::Checkbox( u8"クリアイベントに適用",	&applyClear		);
-			
-		ImGui::Checkbox( u8"適用後にセーブする",	&thenSave		);
-
-		if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
+		auto PrepareCSVData	= []( const std::string &filePath )
 		{
-			auto PrepareCSVData = []()
+			CSVLoader loader;
+			loader.Clear();
+
+			if ( filePath.empty() || !Donya::IsExistFile( filePath ) )
 			{
-				CSVLoader loader;
-				loader.Clear();
-
-				const auto filePath = FetchStageFilePathByCommonDialog();
-				if ( filePath.empty() || !Donya::IsExistFile( filePath ) )
-				{
-					std::string msg = u8"ファイルロードに失敗しました。\n";
-					msg += u8"ファイル：[" + filePath + u8"]";
-					Donya::ShowMessageBox
-					(
-						msg,
-						"Loading stage is failed",
-						MB_ICONEXCLAMATION | MB_OK
-					);
-
-					return loader;
-				}
-				// else
-
-				if ( !loader.Load( filePath ) )
-				{
-					Donya::ShowMessageBox
-					(
-						u8"パースに失敗しました。",
-						"Loading stage is failed",
-						MB_ICONEXCLAMATION | MB_OK
-					);
-					loader.Clear();
-					return loader;
-				}
-				// else
+				std::string msg = u8"ファイルオープンに失敗しました。\n";
+				msg += u8"ファイル名：[" + filePath + u8"]";
+				Donya::ShowMessageBox
+				(
+					msg,
+					"Loading stage is failed",
+					MB_ICONEXCLAMATION | MB_OK
+				);
 
 				return loader;
-			};
-			const auto loader = PrepareCSVData();
-			if ( !loader.Get().empty() )
-			{
-				// The data was loaded successfully here
+			}
+			// else
 
-				Enemy::Admin::Get().ClearInstances();
+			if ( !loader.Load( filePath ) )
+			{
+				Donya::ShowMessageBox
+				(
+					u8"パースに失敗しました。",
+					"Loading stage is failed",
+					MB_ICONEXCLAMATION | MB_OK
+				);
+				loader.Clear();
+				return loader;
+			}
+			// else
+
+			return loader;
+		};
+		auto IsValidData	= []( const CSVLoader &loadedData )
+		{
+			return ( !loadedData.Get().empty() );
+		};
+
+		auto ApplyToClear	= [&]( const CSVLoader &loadedData )
+		{
+			if ( !pClearEvent ) { return; }
+			// else
+
+			pClearEvent->RemakeByCSV( loadedData );
+			if ( pHouse )
+			{
+				pClearEvent->ApplyRoomID( *pHouse );
+			}
+
+			if ( thenSave )
+			{
+				pClearEvent->SaveEvents( stageNumber, /* fromBinary = */ true  );
+				pClearEvent->SaveEvents( stageNumber, /* fromBinary = */ false );
+			}
+		};
+		auto ApplyToEnemy	= [&]( const CSVLoader &loadedData )
+		{
+			Enemy::Admin::Get().ClearInstances();
+			Enemy::Admin::Get().RemakeByCSV( loadedData );
+
+			if ( thenSave )
+			{
+				Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ true  );
+				Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ false );
+			}
+		};
+		auto ApplyToMap		= [&]( const CSVLoader &loadedData )
+		{
+			if ( !pMap ) { return; }
+			// else
+
+			pMap->RemakeByCSV( loadedData );
+			if ( thenSave )
+			{
+				pMap->SaveMap( stageNumber, /* fromBinary = */ true  );
+				pMap->SaveMap( stageNumber, /* fromBinary = */ false );
+			}
+		};
+		auto ApplyToPlayer	= [&]( const CSVLoader &loadedData )
+		{
+			if ( !pPlayerIniter ) { pPlayerIniter = std::make_unique<PlayerInitializer>(); }
+			pPlayerIniter->RemakeByCSV( loadedData );
+
+			if ( thenSave )
+			{
+				pPlayerIniter->SaveBin ( stageNumber );
+				pPlayerIniter->SaveJson( stageNumber );
+			}
+
+			PlayerInit();
+		};
+		auto ApplyToRoom	= [&]( const CSVLoader &loadedData )
+		{
+			if ( !pHouse ) { return; }
+			// else
+
+			pHouse->RemakeByCSV( loadedData );
+			if ( thenSave )
+			{
+				pHouse->SaveRooms( stageNumber, /* fromBinary = */ true  );
+				pHouse->SaveRooms( stageNumber, /* fromBinary = */ false );
+			}
+		};
+
+		if ( ImGui::TreeNode( u8"バッチロード" ) )
+		{
+			constexpr size_t bufferSize			= 128U;
+			constexpr size_t bufferSizeWithNull	= bufferSize + 1;
+			using  BufferType = std::array<char, bufferSizeWithNull>;
+
+			// These default value are my prefer
+			static BufferType bufferDirectory	{ "./../../EdittedData/"	};
+			static BufferType bufferPrefix		{ "PlatformMap_"			};
+			static BufferType bufferClear		{ "Clear"					};
+			static BufferType bufferEnemy		{ "Enemy"					};
+			static BufferType bufferMap			{ "Map"						};
+			static BufferType bufferRoom		{ "Room"					};
+			static BufferType bufferExtension	{ ".csv"					};
+
+			ImGui::InputText( u8"ディレクトリ",			bufferDirectory.data(),	bufferSize );
+			ImGui::InputText( u8"接頭辞",				bufferPrefix.data(),	bufferSize );
+			ImGui::InputText( u8"識別子・クリアイベント",	bufferClear.data(),		bufferSize );
+			ImGui::InputText( u8"識別子・敵",			bufferEnemy.data(),		bufferSize );
+			ImGui::InputText( u8"識別子・マップ＆自機",	bufferMap.data(),		bufferSize );
+			ImGui::InputText( u8"識別子・ルーム",			bufferRoom.data(),		bufferSize );
+			ImGui::InputText( u8"拡張子",				bufferExtension.data(),	bufferSize );
+
+			if ( ImGui::Button( u8"読み込み開始" ) )
+			{
 				Bullet::Admin::Get().ClearInstances();
 
-				if ( applyMap && pMap )
+				const std::string fileDirectory	= bufferDirectory.data();
+				const std::string filePrefix	= bufferPrefix.data();
+				const std::string fileExtension	= bufferExtension.data();
+				std::string	filePath{};
+				CSVLoader	loader{};
+				auto ProcessOf = [&]( const BufferType &bufferIdentify, const std::function<void( const CSVLoader & )> &ApplyToXXX )
 				{
-					pMap->RemakeByCSV( loader );
-					if ( thenSave )
-					{
-						pMap->SaveMap( stageNumber, /* fromBinary = */ true  );
-						pMap->SaveMap( stageNumber, /* fromBinary = */ false );
-					}
-				}
+					filePath =	bufferDirectory.data() +
+								filePrefix + bufferIdentify.data() +
+								bufferExtension.data();
 
-				if ( applyHouse && pHouse )
-				{
-					pHouse->RemakeByCSV( loader );
-					if ( thenSave )
-					{
-						pHouse->SaveRooms( stageNumber, /* fromBinary = */ true  );
-						pHouse->SaveRooms( stageNumber, /* fromBinary = */ false );
-					}
-				}
+					loader.Clear();
+					loader = PrepareCSVData( filePath );
 
-				if ( applyPlayer )
-				{
-					if ( !pPlayerIniter ) { pPlayerIniter = std::make_unique<PlayerInitializer>(); }
-					pPlayerIniter->RemakeByCSV( loader );
-					if ( thenSave )
+					if ( IsValidData( loader ) )
 					{
-						pPlayerIniter->SaveBin ( stageNumber );
-						pPlayerIniter->SaveJson( stageNumber );
+						ApplyToXXX( loader );
 					}
-					PlayerInit();
-				}
+				};
 
-				if ( applyEnemy )
-				{
-					Enemy::Admin::Get().ClearInstances();
-					Enemy::Admin::Get().RemakeByCSV( loader );
+				ProcessOf( bufferClear,	ApplyToClear	);
+				ProcessOf( bufferEnemy,	ApplyToEnemy	);
+				ProcessOf( bufferMap,	ApplyToMap		);
+				ProcessOf( bufferRoom,	ApplyToRoom		);
+			}
 
-					if ( thenSave )
-					{
-						Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ true  );
-						Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ false );
-					}
-				}
-				
-				if ( applyClear )
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"個別ロード" ) )
+		{
+			static bool applyClear	= false;
+			static bool applyEnemy	= false;
+			static bool applyMap	= true;
+			static bool applyPlayer	= true;
+			static bool applyRoom	= false;
+
+			ImGui::Checkbox( u8"クリアイベントに適用",	&applyClear		);
+			ImGui::Checkbox( u8"敵に適用",				&applyEnemy		);
+			ImGui::Checkbox( u8"マップに適用",			&applyMap		); ImGui::SameLine();
+			ImGui::Checkbox( u8"自機に適用",				&applyPlayer	);
+			ImGui::Checkbox( u8"ルームに適用",			&applyRoom		);
+		
+			if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
+			{
+				const auto filePath	= FetchStageFilePathByCommonDialog();
+				const auto loader	= PrepareCSVData( filePath );
+				if ( IsValidData( loader ) )
 				{
-					pClearEvent->RemakeByCSV( loader );
-					if ( thenSave )
-					{
-						pClearEvent->SaveEvents( stageNumber, /* fromBinary = */ true  );
-						pClearEvent->SaveEvents( stageNumber, /* fromBinary = */ false );
-					}
+					Bullet::Admin::Get().ClearInstances();
+
+					if ( applyClear		) { ApplyToClear	( loader ); }
+					if ( applyEnemy		) { ApplyToEnemy	( loader ); }
+					if ( applyMap		) { ApplyToMap		( loader );	}
+					if ( applyPlayer	) { ApplyToPlayer	( loader );	}
+					if ( applyRoom		) { ApplyToRoom		( loader );	}
 				}
 			}
+
+			ImGui::TreePop();
 		}
 
 		ImGui::TreePop();
