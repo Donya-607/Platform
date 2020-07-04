@@ -179,13 +179,6 @@ void SceneGame::Uninit()
 
 Scene::Result SceneGame::Update( float elapsedTime )
 {
-	// Prevent the elapsedTime will be very larging
-	{
-		constexpr float lowestAllowFPS	= 10.0f;
-		constexpr float largestDelta	= 1.0f / lowestAllowFPS;
-		elapsedTime = std::min( largestDelta, elapsedTime );
-	}
-
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
 	{
