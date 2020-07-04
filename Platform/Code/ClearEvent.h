@@ -57,6 +57,8 @@ public:
 	void Uninit();
 	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
+	bool IsThereEvent( int roomID ) const;
+public:
 	void ApplyRoomID( const House &house );
 	bool LoadEvents( int stageNo, bool fromBinary );
 #if USE_IMGUI

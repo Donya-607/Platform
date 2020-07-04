@@ -217,12 +217,24 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	if ( pMap ) { pMap->Update( elapsedTime ); }
 
+	const int oldRoomID = currentRoomID;
 	UpdateCurrentRoomID();
+	if ( oldRoomID != currentRoomID )
+	{
+		if ( pClearEvent && pClearEvent->IsThereEvent( currentRoomID ) )
+		{
+			// TODO: Begin a clear performance here,
+			// then call it.
+			StartFade( Scene::Type::Result );
+		}
+	}
 	
 	PlayerUpdate( elapsedTime );
 	if ( FetchParameter().waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
 	{
-		// Re-try process
+		// TODO: Go to game-over scene here if the remains of player is less-eq than zero.
+
+		// Re-try the game
 		StartFade( Scene::Type::Game );
 	}
 
@@ -301,16 +313,18 @@ void SceneGame::Draw( float elapsedTime )
 	pRenderer->DeactivateSamplerModel();
 
 #if DEBUG_MODE
+	// Object's hit/hurt boxes
 	if ( Common::IsShowCollision() )
 	{
-		if ( pPlayer	) { pPlayer->DrawHitBox( pRenderer.get(), VP );		}
-		if ( pMap		) { pMap->DrawHitBoxes( pRenderer.get(), VP );		}
+		if ( pPlayer		) { pPlayer->DrawHitBox( pRenderer.get(), VP );			}
+		if ( pClearEvent	) { pClearEvent->DrawHitBoxes( pRenderer.get(), VP );	}
+		if ( pMap			) { pMap->DrawHitBoxes( pRenderer.get(), VP );			}
 		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		Enemy::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		if ( pHouse		) { pHouse->DrawHitBoxes( pRenderer.get(), VP );	}
+		Enemy ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
+		if ( pHouse			) { pHouse->DrawHitBoxes( pRenderer.get(), VP );		}
 	}
 #endif // DEBUG_MODE
-		
+
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
@@ -414,10 +428,13 @@ Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 void SceneGame::InitStage( int stageNo )
 {
 	pMap = std::make_unique<Map>();
-	pMap->Init( stageNumber );
+	pMap->Init( stageNo );
 
 	pHouse = std::make_unique<House>();
-	pHouse->Init( stageNumber );
+	pHouse->Init( stageNo );
+
+	pClearEvent = std::make_unique<ClearEvent>();
+	pClearEvent->Init( stageNo );
 
 	PlayerInit();
 
@@ -429,9 +446,9 @@ void SceneGame::InitStage( int stageNo )
 
 	auto &enemyAdmin = Enemy::Admin::Get();
 	enemyAdmin.ClearInstances();
-	enemyAdmin.LoadEnemies( stageNumber, IOFromBinary );
+	enemyAdmin.LoadEnemies( stageNo, IOFromBinary );
 #if DEBUG_MODE
-	enemyAdmin.SaveEnemies( stageNumber, true );
+	enemyAdmin.SaveEnemies( stageNo, true );
 #endif // DEBUG_MODE
 }
 void SceneGame::UninitStage()
@@ -440,6 +457,7 @@ void SceneGame::UninitStage()
 	if ( pHouse		) { pHouse->Uninit();	}
 	if ( pPlayer	) { pPlayer->Uninit();	}
 	pMap.reset();
+	pClearEvent.reset();
 	pHouse.reset();
 	pPlayer.reset();
 
@@ -872,14 +890,17 @@ void SceneGame::UseImGui()
 		static bool applyPlayer	= true;
 		static bool applyHouse	= false;
 		static bool applyEnemy	= false;
+		static bool applyClear	= false;
 		static bool thenSave	= true;
-		ImGui::Checkbox( u8"マップに適用",		&applyMap		);
+		ImGui::Checkbox( u8"マップに適用",			&applyMap		);
 		ImGui::SameLine();
-		ImGui::Checkbox( u8"自機に適用",			&applyPlayer	);
+		ImGui::Checkbox( u8"自機に適用",				&applyPlayer	);
 
-		ImGui::Checkbox( u8"ルームに適用",		&applyHouse		);
+		ImGui::Checkbox( u8"ルームに適用",			&applyHouse		);
 		
-		ImGui::Checkbox( u8"敵に適用",			&applyEnemy		);
+		ImGui::Checkbox( u8"敵に適用",				&applyEnemy		);
+		
+		ImGui::Checkbox( u8"クリアイベントに適用",	&applyClear		);
 			
 		ImGui::Checkbox( u8"適用後にセーブする",	&thenSave		);
 
@@ -970,6 +991,16 @@ void SceneGame::UseImGui()
 					{
 						Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ true  );
 						Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ false );
+					}
+				}
+				
+				if ( applyClear )
+				{
+					pClearEvent->RemakeByCSV( loader );
+					if ( thenSave )
+					{
+						pClearEvent->SaveEvents( stageNumber, /* fromBinary = */ true  );
+						pClearEvent->SaveEvents( stageNumber, /* fromBinary = */ false );
 					}
 				}
 			}

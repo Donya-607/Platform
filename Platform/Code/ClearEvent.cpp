@@ -61,6 +61,18 @@ void ClearEvent::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x
 		DrawEvent( it );
 	}
 }
+bool ClearEvent::IsThereEvent( int roomID ) const
+{
+	for ( const auto &it : events )
+	{
+		if ( it.roomID == roomID )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
 void ClearEvent::ApplyRoomID( const House &house )
 {
 	for ( auto &it : events )
