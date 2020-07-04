@@ -20,6 +20,7 @@ public:
 		Load,
 		Title,
 		Game,
+		Result,
 		Pause,
 	};
 	struct Result

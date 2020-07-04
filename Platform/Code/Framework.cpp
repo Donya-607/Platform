@@ -12,6 +12,9 @@
 #include "Common.h"
 #include "Music.h"
 
+#undef max
+#undef min
+
 bool Framework::Init()
 {
 	bool succeeded = true;
@@ -57,6 +60,13 @@ void Framework::Update( float elapsedTime )
 #if USE_IMGUI
 	DebugShowInformation();
 #endif // USE_IMGUI
+
+	// Prevent the elapsedTime will be very larging
+	{
+		constexpr float lowestAllowFPS	= 10.0f;
+		constexpr float largestDelta	= 1.0f / lowestAllowFPS;
+		elapsedTime = std::min( largestDelta, elapsedTime );
+	}
 
 	pSceneMng->Update( elapsedTime );
 }

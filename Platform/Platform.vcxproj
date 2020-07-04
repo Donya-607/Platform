@@ -189,6 +189,7 @@
     <ClCompile Include="Code\SceneLogo.cpp" />
     <ClCompile Include="Code\SceneManager.cpp" />
     <ClCompile Include="Code\ScenePause.cpp" />
+    <ClCompile Include="Code\SceneResult.cpp" />
     <ClCompile Include="Code\SceneTitle.cpp" />
     <ClCompile Include="Code\Terry.cpp" />
     <ClCompile Include="Code\UI.cpp" />
@@ -270,6 +271,7 @@
     <ClInclude Include="Code\SceneLogo.h" />
     <ClInclude Include="Code\SceneManager.h" />
     <ClInclude Include="Code\ScenePause.h" />
+    <ClInclude Include="Code\SceneResult.h" />
     <ClInclude Include="Code\SceneTitle.h" />
     <ClInclude Include="Code\StageFormat.h" />
     <ClInclude Include="Code\Terry.h" />

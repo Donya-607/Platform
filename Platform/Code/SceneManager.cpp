@@ -9,8 +9,9 @@
 #include "SceneGame.h"
 #include "SceneLoad.h"
 #include "SceneLogo.h"
-#include "SceneTitle.h"
 #include "ScenePause.h"
+#include "SceneResult.h"
+#include "SceneTitle.h"
 
 #undef max
 #undef min
@@ -174,7 +175,8 @@ void SceneMng::PushScene( Scene::Type type, bool toFront )
 	case Scene::Type::Logo:		PushSceneImpl<SceneLogo>  ( toFront ); return;
 	case Scene::Type::Load:		PushSceneImpl<SceneLoad>  ( toFront ); return;
 	case Scene::Type::Title:	PushSceneImpl<SceneTitle> ( toFront ); return;
-	case Scene::Type::Game:		PushSceneImpl<SceneGame>( toFront ); return;
+	case Scene::Type::Game:		PushSceneImpl<SceneGame>  ( toFront ); return;
+	case Scene::Type::Result:	PushSceneImpl<SceneResult>( toFront ); return;
 	case Scene::Type::Pause:	PushSceneImpl<ScenePause> ( toFront ); return;
 	default: _ASSERT_EXPR( 0, L"Error: The scene does not exist."   ); return;
 	}
