@@ -64,7 +64,7 @@ public:
 	void RemakeByCSV( const CSVLoader &loadedData );
 	void SaveEvents( int stageNo, bool fromBinary );
 public:
-	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
+	void ShowImGuiNode( const std::string &nodeCaption, const House &house, int stageNo );
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( ClearEvent,			0 )
