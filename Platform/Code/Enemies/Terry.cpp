@@ -1,6 +1,6 @@
 #include "Terry.h"
 
-#include "Parameter.h"
+#include "../Parameter.h"
 
 namespace Enemy
 {

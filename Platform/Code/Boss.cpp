@@ -1,29 +1,25 @@
-#include "Enemy.h"
-
-#include <array>
-
-#if USE_IMGUI
-#include "Donya/Useful.h"	// Use ShowMessageBox()
-#endif // USE_IMGUI
+#include "Boss.h"
 
 #include "Common.h"
-#include "Enemies/Terry.h"
+#include "Bosses/Skull.h"
+#include "FilePath.h"
 #include "ModelHelper.h"
+
 #if USE_IMGUI
-#include "Map.h"			// Use ToWorldPos()
+#include "Map.h"			// Use Map::ToWorldPos()
 #include "Parameter.h"
 #include "StageFormat.h"
 #endif // USE_IMGUI
 
-namespace Enemy
+namespace Boss
 {
 	namespace
 	{
 		constexpr size_t kindCount = scast<size_t>( Kind::KindCount );
-		constexpr const char *modelFolderName = "Enemy/";
+		constexpr const char *modelFolderName = "Boss/";
 		constexpr std::array<const char *, kindCount> modelNames
 		{
-			"Terry",
+			"Skull",
 		};
 
 		static std::array<std::unique_ptr<ModelHelper::StaticSet>, kindCount> modelPtrs{ nullptr };
@@ -77,7 +73,7 @@ namespace Enemy
 			const auto &ptr = modelPtrs[scast<size_t>( kind )];
 			if ( !ptr )
 			{
-				_ASSERT_EXPR( 0, L"Error: The Enemy's model is not initialized!" );
+				_ASSERT_EXPR( 0, L"Error: The Boss's model is not initialized!" );
 				return nullptr;
 			}
 			// else
@@ -97,7 +93,7 @@ namespace Enemy
 	{
 		void Load()
 		{
-			Impl::LoadTerry();
+			Impl::LoadSkull();
 		}
 
 	#if USE_IMGUI
@@ -106,7 +102,7 @@ namespace Enemy
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
 
-			Impl::UpdateTerry( u8"Terry" );
+			Impl::UpdateSkull( u8"Skull" );
 
 			ImGui::TreePop();
 		}
@@ -140,6 +136,7 @@ namespace Enemy
 		hurtBox.exist	= true;
 		velocity		= 0.0f;
 		hp				= GetInitialHP();
+		isDead			= false;
 		wantRemove		= false;
 		const float rotateSign = ( initializer.lookingRight ) ? 1.0f : -1.0f;
 		orientation		= Donya::Quaternion::Make
@@ -151,19 +148,17 @@ namespace Enemy
 	}
 	void Base::Uninit()
 	{
-		// Back to initialize pos for respawn
-		body.pos		= initializer.wsPos;
-		hurtBox.pos		= initializer.wsPos;
-		body.exist		= false;
-		hurtBox.exist	= false;
+		pReceivedDamage.reset();
 	}
-	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
+		if ( NowDead() ) { return; }
+		// else
 		ApplyReceivedDamageIfHas();
 	}
 	void Base::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
-		if ( NowWaiting() ) { return; }
+		if ( NowDead() ) { return; }
 		// else
 
 		const auto movement = velocity * elapsedTime;
@@ -194,8 +189,8 @@ namespace Enemy
 	}
 	void Base::Draw( RenderingHelper *pRenderer ) const
 	{
-		if ( !pRenderer   ) { return; }
-		if ( NowWaiting() ) { return; }
+		if ( !pRenderer	) { return; }
+		if ( NowDead()	) { return; }
 		// else
 
 		const ModelHelper::StaticSet *pModelSet = GetModelPtrOrNullptr( GetKind() );
@@ -219,7 +214,8 @@ namespace Enemy
 	}
 	void Base::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 	{
-		if ( NowWaiting() ) { return; }
+		if ( !pRenderer	) { return; }
+		if ( NowDead()	) { return; }
 		// else
 		
 	#if DEBUG_MODE
@@ -259,6 +255,10 @@ namespace Enemy
 		}
 	#endif // DEBUG_MODE
 	}
+	bool Base::NowDead() const
+	{
+		return isDead;
+	}
 	bool Base::ShouldRemove() const
 	{
 		return wantRemove;
@@ -275,38 +275,10 @@ namespace Enemy
 	{
 		if ( !pReceivedDamage )
 		{
-			pReceivedDamage = std::make_shared<Definition::Damage>();
+			pReceivedDamage = std::make_unique<Definition::Damage>();
 		}
 
 		pReceivedDamage->Combine( damage );
-	}
-	void Base::UpdateOutSideState( const Donya::Collision::Box3F &wsScreen )
-	{
-		onOutSidePrevious = onOutSideCurrent;
-		onOutSideCurrent  = ( !Donya::Collision::IsHit( body, wsScreen, /* considerExistFlag = */ false ) );
-	}
-	bool Base::OnOutSide() const
-	{
-		return onOutSideCurrent;
-	}
-	bool Base::NowWaiting() const
-	{
-		return waitForRespawn;
-	}
-	void Base::BeginWaitIfActive()
-	{
-		if ( NowWaiting() ) { return; }
-		// else
-		waitForRespawn = true;
-		Uninit();
-	}
-	void Base::RespawnIfSpawnable()
-	{
-		if ( !NowWaiting() ) { return; }
-		if ( onOutSideCurrent || !onOutSidePrevious ) { return;  }
-		// else
-		waitForRespawn = false;
-		Init( GetInitializer() );
 	}
 	void Base::ApplyReceivedDamageIfHas()
 	{
@@ -316,7 +288,8 @@ namespace Enemy
 		hp -= pReceivedDamage->amount;
 		if ( hp <= 0 )
 		{
-			BeginWaitIfActive();
+			isDead = true;
+			DieMoment();
 		}
 
 		pReceivedDamage.reset();
@@ -347,12 +320,7 @@ namespace Enemy
 		initializer.ShowImGuiNode( u8"初期化パラメータ" );
 		ImGui::DragFloat3( u8"ワールド座標", &body.pos.x, 0.01f );
 		ImGui::Helper::ShowFrontNode( "", &orientation );
-		ImGui::Text( u8"画面内にいる：%d", ( onOutSideCurrent ) ? 0 : 1 );
-		ImGui::Text( u8"リスポーン待ち：%d", ( waitForRespawn ) ? 1 : 0 );
-		if ( ImGui::Button( u8"リスポーン待ち状態にする" ) )
-		{
-			BeginWaitIfActive();
-		}
+		ImGui::Checkbox( u8"死んでいるか", &isDead );
 
 		ImGui::TreePop();
 		return true;
@@ -360,58 +328,70 @@ namespace Enemy
 #endif // USE_IMGUI
 
 
-	void Admin::Uninit()
+	namespace
 	{
-		for ( auto &pIt : enemyPtrs )
+	#if DEBUG_MODE
+		constexpr bool IOFromBinaryFile = false;
+	#else
+		constexpr bool IOFromBinaryFile = true;
+	#endif // DEBUG_MODE
+	}
+
+	bool Container::Init( int stageNumber )
+	{
+		const bool succeeded = LoadBosses( stageNumber, IOFromBinaryFile );
+
+	#if DEBUG_MODE
+		// If a user was changed only a json file, the user wanna apply the changes to binary file also.
+		// So save here.
+		SaveBosses( stageNumber, /* fromBinary = */ true );
+
+		return true;
+	#endif // DEBUG_MODE
+
+		return succeeded;
+	}
+	void Container::Uninit()
+	{
+		ClearAllBosses();
+	}
+	void Container::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	{
+		for ( auto &it : bossPtrs )
 		{
-			if ( pIt ) { pIt->Uninit(); }
+			if ( it.second ) { it.second->Update( elapsedTime, wsTargetPos ); }
 		}
 	}
-	void Admin::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void Container::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
-		for ( auto &pIt : enemyPtrs )
+		for ( auto &it : bossPtrs )
 		{
-			if ( pIt ) { pIt->Update( elapsedTime, wsTargetPos, wsScreen ); }
+			if ( it.second ) { it.second->PhysicUpdate( elapsedTime, solids ); }
 		}
 	}
-	void Admin::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
-	{
-		for ( auto &pIt : enemyPtrs )
-		{
-			if ( pIt ) { pIt->PhysicUpdate( elapsedTime, solids ); }
-		}
-	}
-	void Admin::Draw( RenderingHelper *pRenderer ) const
+	void Container::Draw( RenderingHelper *pRenderer ) const
 	{
 		if ( !pRenderer ) { return; }
 		// else
 
-		for ( const auto &pIt : enemyPtrs )
+		for ( const auto &it : bossPtrs )
 		{
-			if ( pIt ) { pIt->Draw( pRenderer ); }
+			if ( it.second ) { it.second->Draw( pRenderer ); }
 		}
 	}
-	void Admin::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
+	void Container::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 	{
 		if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 		// else
 
-		for ( const auto &pIt : enemyPtrs )
+		for ( const auto &it : bossPtrs )
 		{
-			if ( pIt ) { pIt->DrawHitBox( pRenderer, matVP ); }
+			if ( it.second ) { it.second->DrawHitBox( pRenderer, matVP ); }
 		}
 	}
-	void Admin::ClearInstances()
+	bool Container::LoadBosses( int stageNumber, bool fromBinary )
 	{
-		for ( auto &pIt : enemyPtrs )
-		{
-			if ( pIt ) { pIt->Uninit(); }
-		}
-		enemyPtrs.clear();
-	}
-	bool Admin::LoadEnemies( int stageNumber, bool fromBinary )
-	{
-		ClearInstances();
+		ClearAllBosses();
 
 		const std::string filePath	= ( fromBinary )
 									? MakeStageParamPathBinary( ID, stageNumber )
@@ -419,59 +399,91 @@ namespace Enemy
 		const bool succeeded = Donya::Serializer::Load( *this, filePath.c_str(), ID, fromBinary );
 
 		// I should call Init()
-		for ( auto &pIt : enemyPtrs )
+		for ( auto &it : bossPtrs )
 		{
-			if ( pIt ) { pIt->Init( pIt->GetInitializer() ); }
+			if ( it.second ) { it.second->Init( it.second->GetInitializer() ); }
 		}
 
 		return succeeded;
 	}
-	size_t Admin::GetInstanceCount() const
+	void Container::RemoveBosses()
 	{
-		return enemyPtrs.size();
-	}
-	bool Admin::IsOutOfRange( size_t instanceIndex ) const
-	{
-		return ( GetInstanceCount() <= instanceIndex ) ? true : false;
-	}
-	std::shared_ptr<const Base> Admin::GetInstanceOrNullptr( size_t instanceIndex ) const
-	{
-		if ( IsOutOfRange( instanceIndex ) ) { return nullptr; }
-		// else
-		return enemyPtrs[instanceIndex];
-	}
-	void Admin::RemoveEnemies()
-	{
-		auto itr = std::remove_if
-		(
-			enemyPtrs.begin(), enemyPtrs.end(),
-			[]( std::shared_ptr<Base> &element )
+		// An erase-remove idiom is can not use for unordered_map.
+		// So I do simple loop.
+		for ( auto it = bossPtrs.begin(); it != bossPtrs.end(); )
+		{
+			if ( !it->second || it->second->ShouldRemove() )
 			{
-				return ( element ) ? element->ShouldRemove() : true;
+				it = bossPtrs.erase( it );
 			}
-		);
-		enemyPtrs.erase( itr, enemyPtrs.end() );
+			else
+			{
+				++it;
+			}
+		}
+	}
+	void Container::ClearAllBosses()
+	{
+		for ( auto &it : bossPtrs )
+		{
+			if ( it.second )
+			{
+				it.second->Uninit();
+				it.second.reset();
+			}
+		}
 	}
 #if USE_IMGUI
-	void Admin::RemakeByCSV( const CSVLoader &loadedData )
+	void Container::AddBoss( Kind kind, const InitializeParam &parameter )
 	{
-		auto IsEnemyID	= []( int id )
+		std::unique_ptr<Base> instance = nullptr;
+
+		switch ( kind )
 		{
-			return ( StageFormat::EnemyStart <= id && id <= StageFormat::EnemyLast );
+		case Kind::Skull:	instance = std::make_unique<Boss::Skull>();	break;
+		default: break;
+		}
+
+		if ( !instance )
+		{
+			_ASSERT_EXPR( 0, L"Error: That boss kind is invalid!" );
+			return;
+		}
+		// else
+
+		instance->Init( parameter );
+		bossPtrs.insert
+		(
+			std::make_pair( Room::invalidID, std::move( instance ) )
+		);
+	}
+	void Container::RemakeByCSV( const CSVLoader &loadedData )
+	{
+		auto IsBossID	= []( int id )
+		{
+			return ( StageFormat::BossStart <= id && id <= StageFormat::BossLast );
 		};
-		auto IsValidID	= []( int id )
+		auto ToKind		= []( int id )
 		{
-			id -= StageFormat::EnemyStart;
-			return ( 0 <= id && id < scast<int>( Kind::KindCount ) );
+			id -= StageFormat::BossStart;
+			if ( id < 0 ) { id = INT_MAX; } // Make invalid number
+			return scast<Kind>( id );
+		};
+		auto IsValidKind= []( Kind kind )
+		{
+			const int intID = scast<int>( kind );
+			return ( 0 <= intID && intID < scast<int>( Kind::KindCount ) );
 		};
 		auto Append		= [&]( int id, size_t row, size_t column )
 		{
-			if ( !IsEnemyID( id ) ) { return; }
+			if ( !IsBossID( id ) ) { return; }
 			// else
 
-			if ( !IsValidID( id ) )
+			Kind kind = ToKind( id );
+
+			if ( !IsValidKind( kind ) )
 			{
-				std::string msg = u8"実装されていない敵の番号を検出しました。\n";
+				std::string msg = u8"実装されていないボスの番号を検出しました。\n";
 				msg += u8"行:" + std::to_string( row    ) + u8", ";
 				msg += u8"列:" + std::to_string( column ) + u8", ";
 				msg += u8"ID:" + std::to_string( id     ) + u8".\n";
@@ -486,16 +498,12 @@ namespace Enemy
 			// else
 
 			InitializeParam tmp;
-			tmp.lookingRight	= true;
+			tmp.lookingRight	= false;
 			tmp.wsPos			= Map::ToWorldPos( row, column );
-			AppendEnemy( Kind::Terry, tmp );
+			AddBoss( kind, tmp );
 		};
 
-		for ( auto &pIt : enemyPtrs )
-		{
-			if ( pIt ) { pIt->Uninit(); }
-		}
-		enemyPtrs.clear();
+		ClearAllBosses();
 
 		const auto &data = loadedData.Get();
 		const size_t rowCount = data.size();
@@ -508,27 +516,7 @@ namespace Enemy
 			}
 		}
 	}
-	void Admin::AppendEnemy( Kind kind, const InitializeParam &parameter )
-	{
-		std::shared_ptr<Base> instance = nullptr;
-
-		switch ( kind )
-		{
-		case Kind::Terry:	instance = std::make_shared<Enemy::Terry>();	break;
-		default: break;
-		}
-
-		if ( !instance )
-		{
-			_ASSERT_EXPR( 0, L"Error: That enemy kind is invalid!" );
-			return;
-		}
-		// else
-
-		instance->Init( parameter );
-		enemyPtrs.emplace_back( std::move( instance ) );
-	}
-	void Admin::SaveEnemies( int stageNumber, bool fromBinary )
+	void Container::SaveBosses( int stageNumber, bool fromBinary )
 	{
 		const std::string filePath	= ( fromBinary )
 									? MakeStageParamPathBinary( ID, stageNumber )
@@ -538,18 +526,18 @@ namespace Enemy
 
 		Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
 	}
-	void Admin::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
+	void Container::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
 		if ( ImGui::TreeNode( u8"実体たち" ) )
 		{
-			const size_t enemyCount = enemyPtrs.size();
-
-			for ( size_t i = 0; i < enemyCount; ++i )
+			for ( auto &it : bossPtrs )
 			{
-				ShowInstanceNode( i );
+				if ( !it.second ) { continue; }
+				// else
+				ShowInstanceNode( it.first );
 			}
 
 			ImGui::TreePop();
@@ -559,35 +547,36 @@ namespace Enemy
 		using Op = ParameterHelper::IOOperation;
 		if ( result == Op::Save )
 		{
-			SaveEnemies( stageNo, true  );
-			SaveEnemies( stageNo, false );
+			SaveBosses( stageNo, true  );
+			SaveBosses( stageNo, false );
 		}
 		else if ( result == Op::LoadBinary )
 		{
-			LoadEnemies( stageNo, true );
+			LoadBosses( stageNo, true );
 		}
 		else if ( result == Op::LoadJson )
 		{
-			LoadEnemies( stageNo, false );
+			LoadBosses( stageNo, false );
 		}
 
 		ImGui::TreePop();
 	}
-	void Admin::ShowInstanceNode( size_t index )
+	void Container::ShowInstanceNode( int roomID )
 	{
-		if ( IsOutOfRange( index ) ) { return; }
+		auto find =  bossPtrs.find( roomID );
+		if ( find == bossPtrs.end() ) { return; }
 		// else
 
-		auto &pEnemy = enemyPtrs[index];
-		if ( !pEnemy ) { return; }
+		auto &pBoss = find->second;
+		if ( !pBoss ) { return; }
 		// else
 
-		std::string caption = Donya::MakeArraySuffix( index );
-		bool  treeIsOpen = pEnemy->ShowImGuiNode( caption );
+		std::string caption = "[RoomID:" + std::to_string( roomID ) + "]";
+		bool  treeIsOpen = pBoss->ShowImGuiNode( caption );
 		if ( !treeIsOpen )
 		{
 			caption = "[";
-			caption += GetModelName( pEnemy->GetKind() );
+			caption += GetModelName( pBoss->GetKind() );
 			caption += "]";
 			ImGui::SameLine();
 			ImGui::Text( caption.c_str() );

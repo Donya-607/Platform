@@ -133,6 +133,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Code\Boss.cpp" />
+    <ClCompile Include="Code\Bosses\Skull.cpp" />
     <ClCompile Include="Code\Bullet.cpp" />
     <ClCompile Include="Code\ClearEvent.cpp" />
     <ClCompile Include="Code\Common.cpp" />
@@ -192,7 +194,7 @@
     <ClCompile Include="Code\ScenePause.cpp" />
     <ClCompile Include="Code\SceneResult.cpp" />
     <ClCompile Include="Code\SceneTitle.cpp" />
-    <ClCompile Include="Code\Terry.cpp" />
+    <ClCompile Include="Code\Enemies\Terry.cpp" />
     <ClCompile Include="Code\UI.cpp" />
     <ClCompile Include="External\ImGui\imgui.cpp" />
     <ClCompile Include="External\ImGui\imgui_demo.cpp" />
@@ -202,6 +204,8 @@
     <ClCompile Include="External\ImGui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Code\Boss.h" />
+    <ClInclude Include="Code\Bosses\Skull.h" />
     <ClInclude Include="Code\Bullet.h" />
     <ClInclude Include="Code\BulletParam.h" />
     <ClInclude Include="Code\ClearEvent.h" />
@@ -276,7 +280,7 @@
     <ClInclude Include="Code\SceneResult.h" />
     <ClInclude Include="Code\SceneTitle.h" />
     <ClInclude Include="Code\StageFormat.h" />
-    <ClInclude Include="Code\Terry.h" />
+    <ClInclude Include="Code\Enemies\Terry.h" />
     <ClInclude Include="Code\UI.h" />
     <ClInclude Include="External\Cereal\include\cereal\access.hpp" />
     <ClInclude Include="External\Cereal\include\cereal\archives\adapters.hpp" />

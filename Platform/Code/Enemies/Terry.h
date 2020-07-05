@@ -1,9 +1,7 @@
 #pragma once
 
-#include "Donya/Quaternion.h"
-
-#include "Damage.h"
-#include "Enemy.h"
+#include "../Damage.h"
+#include "../Enemy.h"
 
 namespace Enemy
 {

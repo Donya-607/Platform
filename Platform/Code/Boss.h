@@ -2,45 +2,45 @@
 
 #include <memory>
 #include <string>
-#include <vector>
+#include <unordered_map>
 
 #include <cereal/types/memory.hpp>
 #include <cereal/types/polymorphic.hpp>
-#include <cereal/types/vector.hpp>
+#include <cereal/types/unordered_map.hpp>
 
 #include "Donya/UseImGui.h"		// Use USE_IMGUI macro
 #include "Donya/Serializer.h"
-#include "Donya/Template.h"		// Use Singleton<>
 #include "Donya/Vector.h"
 
 #include "CSVLoader.h"
 #include "Damage.h"
 #include "ObjectBase.h"
+#include "Room.h"				// Use Room::invalidID
 
-namespace Enemy
+namespace Boss
 {
 	enum class Kind
 	{
-		Terry,		// Aerial type
+		Skull,
 
 		KindCount
 	};
 
-	struct TerryParam;
+	struct SkullParam;
 	namespace Parameter
 	{
 		void Load();
 
-		const TerryParam &GetTerry();
+		const SkullParam &GetSkull();
 
 	#if USE_IMGUI
 		void Update( const std::string &nodeCaption );
 	#endif // USE_IMGUI
 		namespace Impl
 		{
-			void LoadTerry();
+			void LoadSkull();
 		#if USE_IMGUI
-			void UpdateTerry( const std::string &nodeCaption );
+			void UpdateSkull( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}
 	}
@@ -81,20 +81,18 @@ namespace Enemy
 		Donya::Collision::Box3F	hurtBox;	// VS an attack
 		Donya::Vector3			velocity;
 		Donya::Quaternion		orientation;
-		int						hp					= 1;	// Alive if this is greater than 0(if 0 < hp)
-		bool					wantRemove			= false;
-		bool					waitForRespawn		= false;
-		bool					onOutSidePrevious	= true;	// Used for judging to respawn
-		bool					onOutSideCurrent	= true;	// Used for judging to respawn
-		// shared_ptr<> make be able to copy
-		mutable std::shared_ptr<Definition::Damage> pReceivedDamage	= nullptr; // Will be made at GiveDamage()
+		int						roomID		= Room::invalidID;
+		int						hp			= 1;	// Alive if this is greater than 0(if 0 < hp)
+		bool					isDead		= false;
+		bool					wantRemove	= false;
+		mutable std::unique_ptr<Definition::Damage> pReceivedDamage	= nullptr; // Will be made at GiveDamage()
 	public:
 		Base() = default;
-		Base( const Base &  ) = default;
-		Base(       Base && ) = default;
-		Base &operator  = ( const Base &  ) = default;
-		Base &operator  = (       Base && ) = default;
 		virtual ~Base() = default;
+		Base( const Base &  ) = delete;
+		Base(       Base && ) = delete;
+		Base &operator  = ( const Base &  ) = delete;
+		Base &operator  = (       Base && ) = delete;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -107,21 +105,18 @@ namespace Enemy
 			);
 			if ( 1 <= version )
 			{
-				archive( CEREAL_NVP( hp ) );
-			}
-			if ( 2 <= version )
-			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	public:
 		virtual void Init( const InitializeParam &parameter );
 		virtual void Uninit();
-		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
+		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 		virtual void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
+		virtual bool NowDead()					const;
 		virtual bool ShouldRemove()				const;
 		using Actor::GetHitBox;
 		Donya::Collision::Box3F	GetHurtBox()	const;
@@ -130,15 +125,14 @@ namespace Enemy
 		virtual Definition::Damage GetTouchDamage() const = 0;
 		virtual void GiveDamage( const Definition::Damage &damage ) const;
 	protected:
-		void UpdateOutSideState( const Donya::Collision::Box3F &wsScreenHitBox );
-		bool OnOutSide() const;
-		bool NowWaiting() const;
-		void BeginWaitIfActive();
-		void RespawnIfSpawnable();
 		/// <summary>
 		/// After this, the "pReceivedDamage" will be reset.
 		/// </summary>
 		virtual void ApplyReceivedDamageIfHas();
+		/// <summary>
+		/// Will be called if the hp below zero at ApplyReceivedDamageIfHas().
+		/// </summary>
+		virtual void DieMoment() = 0;
 	protected:
 		virtual int GetInitialHP() const = 0;
 		virtual void AssignMyBody( const Donya::Vector3 &wsPos ) = 0;
@@ -156,53 +150,49 @@ namespace Enemy
 	/// <summary>
 	/// A container of all Enemies.
 	/// </summary>
-	class Admin : public Donya::Singleton<Admin>
+	class Container
 	{
-		friend Donya::Singleton<Admin>;
-	private: // shared_ptr<> make be able to copy
-		std::vector<std::shared_ptr<Base>> enemyPtrs;
 	private:
-		Admin() = default;
+		std::unordered_map<int, std::unique_ptr<Base>> bossPtrs; // Key is room id
 	private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
-			archive( CEREAL_NVP( enemyPtrs ) );
+			archive( CEREAL_NVP( bossPtrs ) );
 			if ( 1 <= version )
 			{
 				// archive();
 			}
 		}
-		static constexpr const char *ID = "Enemy";
+		static constexpr const char *ID = "Boss";
 	public:
+		bool Init( int stageNumber );
 		void Uninit();
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
+		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 		void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
-		void ClearInstances();
-		bool LoadEnemies( int stageNumber, bool fromBinary );
-	public:
-		size_t GetInstanceCount() const;
-		bool IsOutOfRange( size_t instanceIndex ) const;
-		std::shared_ptr<const Base> GetInstanceOrNullptr( size_t instanceIndex ) const;
+		
 	private:
-		void RemoveEnemies();
-		void AppendEnemy( Kind appendKind, const InitializeParam &parameter );
+		bool LoadBosses( int stageNumber, bool fromBinary );
+		void RemoveBosses();
+		void ClearAllBosses();
 	#if USE_IMGUI
+	private:
+		void AddBoss( Kind kind, const InitializeParam &parameter );
 	public:
 		void RemakeByCSV( const CSVLoader &loadedData );
-		void SaveEnemies( int stageNumber, bool fromBinary );
+		void SaveBosses( int stageNumber, bool fromBinary );
 	public:
 		void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
-		void ShowInstanceNode( size_t instanceIndex );
+		void ShowInstanceNode( int roomID );
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Enemy::InitializeParam,	0 )
-CEREAL_CLASS_VERSION( Enemy::Base,				1 )
-CEREAL_REGISTER_TYPE( Enemy::Base )
-CEREAL_REGISTER_POLYMORPHIC_RELATION( Actor, Enemy::Base )
-CEREAL_CLASS_VERSION( Enemy::Admin,				0 )
+CEREAL_CLASS_VERSION( Boss::InitializeParam,	0 )
+CEREAL_CLASS_VERSION( Boss::Base,				0 )
+CEREAL_REGISTER_TYPE( Boss::Base )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( Actor, Boss::Base )
+CEREAL_CLASS_VERSION( Boss::Container,			0 )
