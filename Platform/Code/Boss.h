@@ -196,9 +196,9 @@ namespace Boss
 		void ClearAllBosses();
 	#if USE_IMGUI
 	private:
-		void AddBoss( Kind kind, const InitializeParam &parameter );
+		void AddBoss( Kind kind, const InitializeParam &parameter, int roomID );
 	public:
-		void RemakeByCSV( const CSVLoader &loadedData );
+		void RemakeByCSV( const CSVLoader &loadedData, const House &house );
 		void SaveBosses( int stageNumber, bool fromBinary );
 	public:
 		void ShowImGuiNode( const std::string &nodeCaption, int stageNo );

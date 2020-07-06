@@ -949,14 +949,10 @@ void SceneGame::UseImGui()
 
 		auto ApplyToBoss	= [&]( const CSVLoader &loadedData )
 		{
-			if ( !pBossContainer ) { return; }
+			if ( !pBossContainer || !pHouse ) { return; }
 			// else
 
-			pBossContainer->RemakeByCSV( loadedData );
-			if ( pHouse )
-			{
-				// pBossContainer->ApplyRoomID( *pHouse );
-			}
+			pBossContainer->RemakeByCSV( loadedData, *pHouse );
 
 			if ( thenSave )
 			{

@@ -445,7 +445,7 @@ namespace Boss
 		}
 	}
 #if USE_IMGUI
-	void Container::AddBoss( Kind kind, const InitializeParam &parameter )
+	void Container::AddBoss( Kind kind, const InitializeParam &parameter, int roomID )
 	{
 		std::unique_ptr<Base> instance = nullptr;
 
@@ -465,10 +465,10 @@ namespace Boss
 		instance->Init( parameter );
 		bossPtrs.insert
 		(
-			std::make_pair( Room::invalidID, std::move( instance ) )
+			std::make_pair( roomID, std::move( instance ) )
 		);
 	}
-	void Container::RemakeByCSV( const CSVLoader &loadedData )
+	void Container::RemakeByCSV( const CSVLoader &loadedData, const House &house )
 	{
 		auto IsBossID	= []( int id )
 		{
@@ -501,7 +501,7 @@ namespace Boss
 
 				Donya::ShowMessageBox
 				(
-					msg, "Announce",
+					msg, "Not registered",
 					MB_ICONEXCLAMATION | MB_OK
 				);
 				return;
@@ -511,7 +511,25 @@ namespace Boss
 			InitializeParam tmp;
 			tmp.lookingRight	= false;
 			tmp.wsPos			= Map::ToWorldPos( row, column );
-			AddBoss( kind, tmp );
+
+			const int roomID	= house.CalcBelongRoomID( tmp.wsPos );
+			if ( roomID == Room::invalidID )
+			{
+				std::string msg = u8"ボスがルーム内に属していません！\n";
+				msg += u8"行:" + std::to_string( row    ) + u8", ";
+				msg += u8"列:" + std::to_string( column ) + u8", ";
+				msg += u8"ID:" + std::to_string( id     ) + u8".\n";
+
+				Donya::ShowMessageBox
+				(
+					msg, "Not registered",
+					MB_ICONEXCLAMATION | MB_OK
+				);
+				return;
+			}
+			// else
+
+			AddBoss( kind, tmp, roomID );
 		};
 
 		ClearAllBosses();
