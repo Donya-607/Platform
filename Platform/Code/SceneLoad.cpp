@@ -21,8 +21,9 @@
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
 
-#include "Common.h"
+#include "Boss.h"
 #include "Bullet.h"
+#include "Common.h"
 #include "Enemy.h"
 #include "Fader.h"
 #include "FilePath.h"
@@ -123,8 +124,9 @@ void SceneLoad::Init()
 
 		bool succeeded = true;
 
+		if ( !Boss	::LoadResource()		) { succeeded = false; }
 		if ( !Bullet::LoadResource()		) { succeeded = false; }
-		if ( !Enemy::LoadResource()			) { succeeded = false; }
+		if ( !Enemy	::LoadResource()		) { succeeded = false; }
 		if ( !Player::LoadResource()		) { succeeded = false; }
 		
 		_ASSERT_EXPR( succeeded, L"Failed: Models load is failed." );

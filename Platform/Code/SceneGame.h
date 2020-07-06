@@ -9,6 +9,7 @@
 #include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
+#include "Boss.h"
 #include "ClearEvent.h"
 #include "Map.h"
 #include "ObjectBase.h"
@@ -32,6 +33,7 @@ private:
 	std::unique_ptr<Map>				pMap;
 	std::unique_ptr<House>				pHouse;
 	std::unique_ptr<ClearEvent>			pClearEvent;
+	std::unique_ptr<Boss::Container>	pBossContainer;
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 

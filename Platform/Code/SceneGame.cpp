@@ -235,6 +235,11 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Bullet::Admin::Get().Update( elapsedTime, currentScreen );
 	Enemy::Admin::Get().Update( elapsedTime, playerPos, currentScreen );
 
+	if ( pBossContainer )
+	{
+		pBossContainer->Update( elapsedTime, playerPos );
+	}
+
 	// PhysicUpdates
 	{
 		std::vector<Donya::Collision::Box3F> hitBoxes;
@@ -251,6 +256,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
 		Enemy::Admin::Get().PhysicUpdate( elapsedTime, hitBoxes );
+
+		if ( pBossContainer ) { pBossContainer->PhysicUpdate( elapsedTime, hitBoxes ); }
 	}
 
 	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
@@ -290,7 +297,8 @@ void SceneGame::Draw( float elapsedTime )
 		// The drawing priority is determined by the priority of the information.
 
 		pRenderer->ActivateShaderNormalSkinning();
-		if ( pPlayer ) { pPlayer->Draw( pRenderer.get() ); }
+		if ( pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
+		if ( pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
 		pRenderer->DeactivateShaderNormalSkinning();
 
 		pRenderer->ActivateShaderNormalStatic();
@@ -310,6 +318,7 @@ void SceneGame::Draw( float elapsedTime )
 	if ( Common::IsShowCollision() )
 	{
 		if ( pPlayer		) { pPlayer->DrawHitBox( pRenderer.get(), VP );			}
+		if ( pBossContainer	) { pBossContainer->DrawHitBoxes( pRenderer.get(), VP );}
 		if ( pClearEvent	) { pClearEvent->DrawHitBoxes( pRenderer.get(), VP );	}
 		if ( pMap			) { pMap->DrawHitBoxes( pRenderer.get(), VP );			}
 		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
@@ -420,14 +429,26 @@ Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 
 void SceneGame::InitStage( int stageNo )
 {
+	bool result = true;
+
 	pMap = std::make_unique<Map>();
-	pMap->Init( stageNo );
+	result = pMap->Init( stageNo );
+	assert( result );
 
 	pHouse = std::make_unique<House>();
-	pHouse->Init( stageNo );
+	result = pHouse->Init( stageNo );
+	assert( result );
 
 	pClearEvent = std::make_unique<ClearEvent>();
-	pClearEvent->Init( stageNo );
+	result = pClearEvent->Init( stageNo );
+	assert( result );
+
+	pBossContainer = std::make_unique<Boss::Container>();
+	result = pBossContainer->Init( stageNo );
+	assert( result );
+#if DEBUG_MODE
+	pBossContainer->SaveBosses( stageNo, true );
+#endif // DEBUG_MODE
 
 	PlayerInit();
 
@@ -439,18 +460,21 @@ void SceneGame::InitStage( int stageNo )
 
 	auto &enemyAdmin = Enemy::Admin::Get();
 	enemyAdmin.ClearInstances();
-	enemyAdmin.LoadEnemies( stageNo, IOFromBinary );
+	result = enemyAdmin.LoadEnemies( stageNo, IOFromBinary );
+	assert( result );
 #if DEBUG_MODE
 	enemyAdmin.SaveEnemies( stageNo, true );
 #endif // DEBUG_MODE
 }
 void SceneGame::UninitStage()
 {
-	if ( pMap		) { pMap->Uninit();		}
-	if ( pHouse		) { pHouse->Uninit();	}
-	if ( pPlayer	) { pPlayer->Uninit();	}
+	if ( pMap			) { pMap->Uninit();				}
+	if ( pHouse			) { pHouse->Uninit();			}
+	if ( pBossContainer	) { pBossContainer->Uninit();	}
+	if ( pPlayer		) { pPlayer->Uninit();			}
 	pMap.reset();
 	pClearEvent.reset();
+	pBossContainer.reset();
 	pHouse.reset();
 	pPlayer.reset();
 
@@ -923,6 +947,23 @@ void SceneGame::UseImGui()
 			return ( !loadedData.Get().empty() );
 		};
 
+		auto ApplyToBoss	= [&]( const CSVLoader &loadedData )
+		{
+			if ( !pBossContainer ) { return; }
+			// else
+
+			pBossContainer->RemakeByCSV( loadedData );
+			if ( pHouse )
+			{
+				// pBossContainer->ApplyRoomID( *pHouse );
+			}
+
+			if ( thenSave )
+			{
+				pBossContainer->SaveBosses( stageNumber, /* fromBinary = */ true  );
+				pBossContainer->SaveBosses( stageNumber, /* fromBinary = */ false );
+			}
+		};
 		auto ApplyToClear	= [&]( const CSVLoader &loadedData )
 		{
 			if ( !pClearEvent ) { return; }
@@ -998,19 +1039,12 @@ void SceneGame::UseImGui()
 			// These default value are my prefer
 			static BufferType bufferDirectory	{ "./../../EdittedData/"	};
 			static BufferType bufferPrefix		{ "PlatformMap_"			};
+			static BufferType bufferBoss		{ "Boss"					};
 			static BufferType bufferClear		{ "Clear"					};
 			static BufferType bufferEnemy		{ "Enemy"					};
 			static BufferType bufferMap			{ "Map"						};
 			static BufferType bufferRoom		{ "Room"					};
 			static BufferType bufferExtension	{ ".csv"					};
-
-			ImGui::InputText( u8"ディレクトリ",			bufferDirectory.data(),	bufferSize );
-			ImGui::InputText( u8"接頭辞",				bufferPrefix.data(),	bufferSize );
-			ImGui::InputText( u8"識別子・クリアイベント",	bufferClear.data(),		bufferSize );
-			ImGui::InputText( u8"識別子・敵",			bufferEnemy.data(),		bufferSize );
-			ImGui::InputText( u8"識別子・マップ＆自機",	bufferMap.data(),		bufferSize );
-			ImGui::InputText( u8"識別子・ルーム",			bufferRoom.data(),		bufferSize );
-			ImGui::InputText( u8"拡張子",				bufferExtension.data(),	bufferSize );
 
 			if ( ImGui::Button( u8"読み込み開始" ) )
 			{
@@ -1036,23 +1070,36 @@ void SceneGame::UseImGui()
 					}
 				};
 
+				ProcessOf( bufferBoss,	ApplyToBoss		);
 				ProcessOf( bufferClear,	ApplyToClear	);
 				ProcessOf( bufferEnemy,	ApplyToEnemy	);
 				ProcessOf( bufferMap,	ApplyToMap		);
+				ProcessOf( bufferMap,	ApplyToPlayer	);
 				ProcessOf( bufferRoom,	ApplyToRoom		);
 			}
+
+			ImGui::InputText( u8"ディレクトリ",			bufferDirectory.data(),	bufferSize );
+			ImGui::InputText( u8"接頭辞",				bufferPrefix.data(),	bufferSize );
+			ImGui::InputText( u8"識別子・ボス",			bufferBoss.data(),		bufferSize );
+			ImGui::InputText( u8"識別子・クリアイベント",	bufferClear.data(),		bufferSize );
+			ImGui::InputText( u8"識別子・敵",			bufferEnemy.data(),		bufferSize );
+			ImGui::InputText( u8"識別子・マップ＆自機",	bufferMap.data(),		bufferSize );
+			ImGui::InputText( u8"識別子・ルーム",			bufferRoom.data(),		bufferSize );
+			ImGui::InputText( u8"拡張子",				bufferExtension.data(),	bufferSize );
 
 			ImGui::TreePop();
 		}
 
 		if ( ImGui::TreeNode( u8"個別ロード" ) )
 		{
+			static bool applyBoss	= false;
 			static bool applyClear	= false;
 			static bool applyEnemy	= false;
 			static bool applyMap	= true;
 			static bool applyPlayer	= true;
 			static bool applyRoom	= false;
 
+			ImGui::Checkbox( u8"ボスに適用",				&applyBoss		);
 			ImGui::Checkbox( u8"クリアイベントに適用",	&applyClear		);
 			ImGui::Checkbox( u8"敵に適用",				&applyEnemy		);
 			ImGui::Checkbox( u8"マップに適用",			&applyMap		); ImGui::SameLine();
@@ -1067,6 +1114,7 @@ void SceneGame::UseImGui()
 				{
 					Bullet::Admin::Get().ClearInstances();
 
+					if ( applyBoss		) { ApplyToBoss		( loader ); }
 					if ( applyClear		) { ApplyToClear	( loader ); }
 					if ( applyEnemy		) { ApplyToEnemy	( loader ); }
 					if ( applyMap		) { ApplyToMap		( loader );	}
@@ -1121,6 +1169,9 @@ void SceneGame::UseImGui()
 		Enemy::Parameter::Update( u8"敵のパラメータ" );
 		Enemy::Admin::Get().ShowImGuiNode( u8"敵の現在", stageNumber );
 		ImGui::Text( "" );
+
+		Boss::Parameter::Update( u8"ボスのパラメータ" );
+		if ( pBossContainer ) { pBossContainer->ShowImGuiNode( u8"ボスの現在", stageNumber ); }
 
 		ImGui::TreePop();
 	}

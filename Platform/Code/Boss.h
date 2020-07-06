@@ -8,12 +8,15 @@
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/unordered_map.hpp>
 
+#include "Donya/ModelPose.h"
+#include "Donya/ModelMotion.h"
 #include "Donya/UseImGui.h"		// Use USE_IMGUI macro
 #include "Donya/Serializer.h"
 #include "Donya/Vector.h"
 
 #include "CSVLoader.h"
 #include "Damage.h"
+#include "ModelHelper.h"
 #include "ObjectBase.h"
 #include "Room.h"				// Use Room::invalidID
 
@@ -74,9 +77,17 @@ namespace Boss
 
 	class Base : public Actor
 	{
+	protected:
+		struct ModelSet
+		{
+			std::shared_ptr<ModelHelper::SkinningSet> pResource = nullptr;
+			Donya::Model::Pose		pose;
+			Donya::Model::Animator	animator;
+		};
 	private: // Seralize values
 		InitializeParam initializer;
 	protected:
+		ModelSet				model;
 		using Actor::body;					// VS a terrain
 		Donya::Collision::Box3F	hurtBox;	// VS an attack
 		Donya::Vector3			velocity;
@@ -125,6 +136,10 @@ namespace Boss
 		virtual Definition::Damage GetTouchDamage() const = 0;
 		virtual void GiveDamage( const Definition::Damage &damage ) const;
 	protected:
+		/// <summary>
+		/// Assign the specified motion to model.pose. The animator is not change.
+		/// </summary>
+		virtual void AssignMotion( int motionIndex );
 		/// <summary>
 		/// After this, the "pReceivedDamage" will be reset.
 		/// </summary>

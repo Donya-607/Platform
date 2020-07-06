@@ -22,7 +22,7 @@ namespace Boss
 			"Skull",
 		};
 
-		static std::array<std::unique_ptr<ModelHelper::StaticSet>, kindCount> modelPtrs{ nullptr };
+		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
 
 		bool LoadModels()
 		{
@@ -45,7 +45,7 @@ namespace Boss
 				}
 				// else
 
-				modelPtrs[i] = std::make_unique<ModelHelper::StaticSet>();
+				modelPtrs[i] = std::make_shared<ModelHelper::SkinningSet>();
 				const bool result = ModelHelper::Load( filePath, modelPtrs[i].get() );
 				if ( !result )
 				{
@@ -65,7 +65,7 @@ namespace Boss
 		{
 			return ( kindCount <= scast<size_t>( kind ) );
 		}
-		const ModelHelper::StaticSet *GetModelPtrOrNullptr( Kind kind )
+		std::shared_ptr<ModelHelper::SkinningSet> GetModelPtrOrNullptr( Kind kind )
 		{
 			if ( IsOutOfRange( kind ) ) { return nullptr; }
 			// else
@@ -78,7 +78,7 @@ namespace Boss
 			}
 			// else
 
-			return ptr.get();
+			return ptr;
 		}
 		constexpr const char *GetModelName( Kind kind )
 		{
@@ -131,6 +131,9 @@ namespace Boss
 	void Base::Init( const InitializeParam &parameter )
 	{
 		initializer		= parameter;
+		model.pResource	= GetModelPtrOrNullptr( GetKind() );
+		model.animator.ResetTimer();
+		AssignMotion( 0 );
 		AssignMyBody( parameter.wsPos );
 		body.exist		= true;
 		hurtBox.exist	= true;
@@ -189,15 +192,10 @@ namespace Boss
 	}
 	void Base::Draw( RenderingHelper *pRenderer ) const
 	{
-		if ( !pRenderer	) { return; }
-		if ( NowDead()	) { return; }
+		if ( !pRenderer			) { return; }
+		if ( !model.pResource	) { return; }
+		if ( NowDead()			) { return; }
 		// else
-
-		const ModelHelper::StaticSet *pModelSet = GetModelPtrOrNullptr( GetKind() );
-		if ( !pModelSet ) { return; }
-		// else
-
-		const auto model = *pModelSet;
 
 		const Donya::Vector3 &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
 		const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
@@ -208,7 +206,7 @@ namespace Boss
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();
 
-		pRenderer->Render( model.model, model.pose );
+		pRenderer->Render( model.pResource->model, model.pose );
 
 		pRenderer->DeactivateConstantModel();
 	}
@@ -279,6 +277,19 @@ namespace Boss
 		}
 
 		pReceivedDamage->Combine( damage );
+	}
+	void Base::AssignMotion( int motionIndex )
+	{
+		const int motionCount = scast<int>( model.pResource->motionHolder.GetMotionCount() );
+		if ( motionIndex < 0 || motionCount <= motionIndex )
+		{
+			_ASSERT_EXPR( 0, L"Error: Passed motion index is out of range!" );
+			return;
+		}
+		// else
+
+		const auto &motion = model.pResource->motionHolder.GetMotion( motionIndex );
+		model.pose.AssignSkeletal( model.animator.CalcCurrentPose( motion ) );
 	}
 	void Base::ApplyReceivedDamageIfHas()
 	{
