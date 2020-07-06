@@ -2,11 +2,11 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
+#include <vector>
 
 #include <cereal/types/memory.hpp>
 #include <cereal/types/polymorphic.hpp>
-#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/vector.hpp>
 
 #include "Donya/ModelPose.h"
 #include "Donya/ModelMotion.h"
@@ -85,14 +85,14 @@ namespace Boss
 			Donya::Model::Animator	animator;
 		};
 	private: // Seralize values
-		InitializeParam initializer;
+		InitializeParam			initializer;
+		int						roomID		= Room::invalidID;
 	protected:
 		ModelSet				model;
 		using Actor::body;					// VS a terrain
 		Donya::Collision::Box3F	hurtBox;	// VS an attack
 		Donya::Vector3			velocity;
 		Donya::Quaternion		orientation;
-		int						roomID		= Room::invalidID;
 		int						hp			= 1;	// Alive if this is greater than 0(if 0 < hp)
 		bool					isDead		= false;
 		bool					wantRemove	= false;
@@ -112,7 +112,8 @@ namespace Boss
 			archive
 			(
 				cereal::base_class<Actor>( this ),
-				initializer
+				CEREAL_NVP( initializer	),
+				CEREAL_NVP( roomID		)
 			);
 			if ( 1 <= version )
 			{
@@ -120,7 +121,7 @@ namespace Boss
 			}
 		}
 	public:
-		virtual void Init( const InitializeParam &parameter );
+		virtual void Init( const InitializeParam &parameter, int roomID );
 		virtual void Uninit();
 		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 		virtual void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
@@ -129,6 +130,7 @@ namespace Boss
 	public:
 		virtual bool NowDead()					const;
 		virtual bool ShouldRemove()				const;
+		virtual int  GetRoomID()				const;
 		using Actor::GetHitBox;
 		Donya::Collision::Box3F	GetHurtBox()	const;
 		virtual Kind GetKind()					const = 0;
@@ -167,14 +169,39 @@ namespace Boss
 	/// </summary>
 	class Container
 	{
-	private:
-		std::unordered_map<int, std::unique_ptr<Base>> bossPtrs; // Key is room id
+	public:
+		struct BossSet
+		{
+			int		roomID	= Room::invalidID;
+			Kind	kind	= Kind::KindCount;
+			InitializeParam initializer;
+			std::shared_ptr<Base> pBoss = nullptr;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( roomID		),
+					CEREAL_NVP( kind		),
+					CEREAL_NVP( initializer	),
+					CEREAL_NVP( pBoss		)
+				);
+				if ( 1 <= version )
+				{
+					// archive();
+				}
+			}
+		};
+	private: // shared_ptr<> make be able to copy
+		std::vector<BossSet> bosses;
 	private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
-			archive( CEREAL_NVP( bossPtrs ) );
+			archive( CEREAL_NVP( bosses ) );
 			if ( 1 <= version )
 			{
 				// archive();
@@ -189,20 +216,37 @@ namespace Boss
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
-		
+		/// <summary>
+		/// Returns true if at least one boss exists in specified room.<para></para>
+		/// ( !IsThereIn ) &lt; A boss is not exist<para></para>
+		/// ( IsThereIn &amp; !IsAliveIn ) &lt; A boss is now die performance<para></para>
+		/// ( IsThereIn &amp; IsAliveIn ) &lt; A boss is alive<para></para>
+		/// </summary>
+		bool IsThereIn( int roomID ) const;
+		/// <summary>
+		/// Returns true if at least one boss exists, and that now alive in specified room.<para></para>
+		/// ( !IsThereIn ) &lt; A boss is not exist<para></para>
+		/// ( IsThereIn &amp; !IsAliveIn ) &lt; A boss is now die performance<para></para>
+		/// ( IsThereIn &amp; IsAliveIn ) &lt; A boss is alive<para></para>
+		/// </summary>
+		bool IsAliveIn( int roomID ) const;
+		void StartupBossIfStandby( int roomID );
+		size_t GetBossCount() const;
 	private:
 		bool LoadBosses( int stageNumber, bool fromBinary );
+		void AppearBoss( size_t appearIndex );
 		void RemoveBosses();
 		void ClearAllBosses();
 	#if USE_IMGUI
 	private:
-		void AddBoss( Kind kind, const InitializeParam &parameter, int roomID );
+		void AppendBoss( int roomID, Kind kind, const InitializeParam &parameter );
 	public:
+		BossSet GetBossOrNullptr( size_t instanceIndex );
 		void RemakeByCSV( const CSVLoader &loadedData, const House &house );
 		void SaveBosses( int stageNumber, bool fromBinary );
 	public:
 		void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
-		void ShowInstanceNode( int roomID );
+		void ShowInstanceNode( size_t instanceIndex );
 	#endif // USE_IMGUI
 	};
 }

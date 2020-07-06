@@ -21,12 +21,20 @@
 class SceneGame : public Scene
 {
 private:
+	enum class State
+	{
+		StrategyStage,
+		BattleBoss,
+		ClearStage
+	};
+private:
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 	Donya::Collision::Box3F				currentScreen;
 	int									currentRoomID	= 0;
 	
 	Scene::Type							nextScene		= Scene::Type::Null;
+	State								status			= State::StrategyStage;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 
@@ -37,15 +45,17 @@ private:
 	std::unique_ptr<Player>				pPlayer;
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 
-	int   stageNumber				= 0;
-	float elapsedSecondsAfterMiss	= 0.0f;
+	int		stageNumber				= 0;
+	float	elapsedSecondsAfterMiss	= 0.0f;
+	bool	isThereClearEvent		= false;
+	bool	isThereBoss				= false;
 
 #if DEBUG_MODE
-	bool nowDebugMode				= false;
-	bool isReverseCameraMoveX		= true;
-	bool isReverseCameraMoveY		= false;
-	bool isReverseCameraRotX		= false;
-	bool isReverseCameraRotY		= false;
+	bool	nowDebugMode			= false;
+	bool	isReverseCameraMoveX	= true;
+	bool	isReverseCameraMoveY	= false;
+	bool	isReverseCameraRotX		= false;
+	bool	isReverseCameraRotY		= false;
 #endif // DEBUG_MODE
 public:
 	SceneGame() : Scene() {}

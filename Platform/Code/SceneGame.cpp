@@ -214,12 +214,29 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	UpdateCurrentRoomID();
 	if ( oldRoomID != currentRoomID )
 	{
-		if ( pClearEvent && pClearEvent->IsThereEvent( currentRoomID ) )
+		isThereClearEvent	= ( pClearEvent		&& pClearEvent->IsThereIn( currentRoomID ) );
+		isThereBoss			= ( pBossContainer	&& pBossContainer->IsThereIn( currentRoomID ) );
+	}
+	if ( isThereBoss && pBossContainer )
+	{
+		if ( status == State::StrategyStage )
 		{
-			// TODO: Begin a clear performance here,
-			// then call it.
-			StartFade( Scene::Type::Result );
+			status = State::BattleBoss;
+			pBossContainer->StartupBossIfStandby( currentRoomID );
 		}
+		else if ( !pBossContainer->IsAliveIn( currentRoomID ) )
+		{
+			// TODO: Disallow the control of player here.
+			// then wait, then goto next state.
+			isThereBoss = false;
+			status = ( isThereClearEvent ) ? State::ClearStage : State::StrategyStage;
+		}
+	}
+	if ( isThereClearEvent && !isThereBoss && !Fader::Get().IsExist() )
+	{
+		// TODO: Begin a clear performance here,
+		// then call it.
+		StartFade( Scene::Type::Result );
 	}
 	
 	PlayerUpdate( elapsedTime );
@@ -429,23 +446,21 @@ Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 
 void SceneGame::InitStage( int stageNo )
 {
+	status = State::StrategyStage;
+
 	bool result = true;
 
 	pMap = std::make_unique<Map>();
-	result = pMap->Init( stageNo );
-	assert( result );
+	pMap->Init( stageNo );
 
 	pHouse = std::make_unique<House>();
-	result = pHouse->Init( stageNo );
-	assert( result );
+	pHouse->Init( stageNo );
 
 	pClearEvent = std::make_unique<ClearEvent>();
-	result = pClearEvent->Init( stageNo );
-	assert( result );
+	pClearEvent->Init( stageNo );
 
 	pBossContainer = std::make_unique<Boss::Container>();
-	result = pBossContainer->Init( stageNo );
-	assert( result );
+	pBossContainer->Init( stageNo );
 #if DEBUG_MODE
 	pBossContainer->SaveBosses( stageNo, true );
 #endif // DEBUG_MODE
@@ -460,8 +475,7 @@ void SceneGame::InitStage( int stageNo )
 
 	auto &enemyAdmin = Enemy::Admin::Get();
 	enemyAdmin.ClearInstances();
-	result = enemyAdmin.LoadEnemies( stageNo, IOFromBinary );
-	assert( result );
+	enemyAdmin.LoadEnemies( stageNo, IOFromBinary );
 #if DEBUG_MODE
 	enemyAdmin.SaveEnemies( stageNo, true );
 #endif // DEBUG_MODE
@@ -891,6 +905,7 @@ namespace
 	static GuiWindow adjustWindow{ { 194.0f, 510.0f }, { 364.0f, 300.0f } };
 	static GuiWindow playerWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static GuiWindow enemyWindow { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
+	static GuiWindow bossWindow  { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static bool enableFloatWindow = true;
 }
 void SceneGame::UseImGui()
@@ -1197,6 +1212,7 @@ void SceneGame::UseScreenSpaceImGui()
 		adjustWindow.ShowImGuiNode( u8"このウィンドウ"	);
 		playerWindow.ShowImGuiNode( u8"自機ウィンドウ"	);
 		enemyWindow .ShowImGuiNode( u8"敵ウィンドウ"		);
+		bossWindow  .ShowImGuiNode( u8"ボスウィンドウ"	);
 
 		ImGui::End();
 	}
@@ -1255,6 +1271,44 @@ void SceneGame::UseScreenSpaceImGui()
 				[&]()
 				{
 					enemyAdmin.ShowInstanceNode( i );
+				}
+			);
+		}
+	}
+
+	if ( pBossContainer )
+	{
+		auto Show = [&]( const Donya::Vector2 &ssPos, size_t bossIndex, auto ShowInstanceNodeMethod )
+		{
+			bossWindow.pos = ssPos;
+			bossWindow.SetNextWindow();
+
+			const std::string caption = u8"ボス" + Donya::MakeArraySuffix( bossIndex );
+			if ( ImGui::BeginIfAllowed( caption.c_str() ) )
+			{
+				ShowInstanceNodeMethod();
+				Boss::Parameter::Update( u8"ボスのパラメータ" );
+
+				ImGui::End();
+			}
+		};
+
+		Donya::Vector2 ssPos;
+		Boss::Container::BossSet bossSet{};
+		const size_t bossCount = pBossContainer->GetBossCount();
+		for ( size_t i = 0; i  < bossCount; ++i )
+		{
+			bossSet = pBossContainer->GetBossOrNullptr( i );
+			if ( !bossSet.pBoss ) { continue; }
+			// else
+
+			ssPos = WorldToScreen( bossSet.pBoss->GetPosition() ).XY();
+			Show
+			(
+				ssPos, i,
+				[&]()
+				{
+					pBossContainer->ShowInstanceNode( i );
 				}
 			);
 		}

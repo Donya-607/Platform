@@ -128,9 +128,10 @@ namespace Boss
 	}
 #endif // USE_IMGUI
 
-	void Base::Init( const InitializeParam &parameter )
+	void Base::Init( const InitializeParam &parameter, int belongRoomID )
 	{
 		initializer		= parameter;
+		roomID			= belongRoomID;
 		model.pResource	= GetModelPtrOrNullptr( GetKind() );
 		model.animator.ResetTimer();
 		AssignMotion( 0 );
@@ -261,6 +262,10 @@ namespace Boss
 	{
 		return wantRemove;
 	}
+	int  Base::GetRoomID() const
+	{
+		return roomID;
+	}
 	Donya::Collision::Box3F	Base::GetHurtBox() const
 	{
 		return hurtBox;
@@ -368,16 +373,18 @@ namespace Boss
 	}
 	void Container::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
-		for ( auto &it : bossPtrs )
+		for ( auto &it : bosses )
 		{
-			if ( it.second ) { it.second->Update( elapsedTime, wsTargetPos ); }
+			if ( it.pBoss ) { it.pBoss->Update( elapsedTime, wsTargetPos ); }
 		}
+
+		RemoveBosses();
 	}
 	void Container::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
-		for ( auto &it : bossPtrs )
+		for ( auto &it : bosses )
 		{
-			if ( it.second ) { it.second->PhysicUpdate( elapsedTime, solids ); }
+			if ( it.pBoss ) { it.pBoss->PhysicUpdate( elapsedTime, solids ); }
 		}
 	}
 	void Container::Draw( RenderingHelper *pRenderer ) const
@@ -385,9 +392,9 @@ namespace Boss
 		if ( !pRenderer ) { return; }
 		// else
 
-		for ( const auto &it : bossPtrs )
+		for ( const auto &it : bosses )
 		{
-			if ( it.second ) { it.second->Draw( pRenderer ); }
+			if ( it.pBoss ) { it.pBoss->Draw( pRenderer ); }
 		}
 	}
 	void Container::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
@@ -395,10 +402,56 @@ namespace Boss
 		if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 		// else
 
-		for ( const auto &it : bossPtrs )
+		for ( const auto &it : bosses )
 		{
-			if ( it.second ) { it.second->DrawHitBox( pRenderer, matVP ); }
+			if ( it.pBoss ) { it.pBoss->DrawHitBox( pRenderer, matVP ); }
 		}
+	}
+	bool Container::IsThereIn( int roomID ) const
+	{
+		for ( const auto &it : bosses )
+		{
+			if ( it.roomID == roomID )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+	bool Container::IsAliveIn( int roomID ) const
+	{
+		// This method requires IsThereIn() is true,
+		// but this method also contain that process.
+
+		for ( const auto &it : bosses )
+		{
+			if ( it.pBoss && it.pBoss->GetRoomID() == roomID ) // == IsThereIn()
+			{
+				if ( !it.pBoss->NowDead() )
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+	void Container::StartupBossIfStandby( int roomID )
+	{
+		const size_t count = GetBossCount();
+		for ( size_t i = 0; i < count; ++i )
+		{
+			if ( bosses[i].roomID == roomID && !bosses[i].pBoss )
+			{
+				AppearBoss( i );
+				return;
+			}
+		}
+	}
+	size_t Container::GetBossCount() const
+	{
+		return bosses.size();
 	}
 	bool Container::LoadBosses( int stageNumber, bool fromBinary )
 	{
@@ -410,63 +463,80 @@ namespace Boss
 		const bool succeeded = Donya::Serializer::Load( *this, filePath.c_str(), ID, fromBinary );
 
 		// I should call Init()
-		for ( auto &it : bossPtrs )
+		for ( auto &it : bosses )
 		{
-			if ( it.second ) { it.second->Init( it.second->GetInitializer() ); }
+			if ( it.pBoss ) { it.pBoss->Init( it.pBoss->GetInitializer(), it.pBoss->GetRoomID() ); }
 		}
 
 		return succeeded;
 	}
+	void Container::AppearBoss( size_t appearIndex )
+	{
+		if ( bosses.size() <= appearIndex ) { return; }
+		// else
+
+		auto &set = bosses[appearIndex];
+		if ( set.pBoss )
+		{
+			set.pBoss->Uninit();
+			set.pBoss.reset();
+		}
+
+		switch ( set.kind )
+		{
+		case Kind::Skull:	set.pBoss = std::make_shared<Boss::Skull>();	break;
+		default: _ASSERT_EXPR( 0, L"Error: That boss kind is invalid!" );	return;
+		}
+
+		set.pBoss->Init( set.initializer, set.roomID );
+	}
 	void Container::RemoveBosses()
 	{
-		// An erase-remove idiom is can not use for unordered_map.
-		// So I do simple loop.
-		for ( auto it = bossPtrs.begin(); it != bossPtrs.end(); )
+		// Only reset the shared_ptr.
+		for ( auto &it : bosses )
 		{
-			if ( !it->second || it->second->ShouldRemove() )
+			if ( it.pBoss && it.pBoss->ShouldRemove() )
 			{
-				it = bossPtrs.erase( it );
-			}
-			else
-			{
-				++it;
+				it.pBoss->Uninit();
+				it.pBoss.reset();
 			}
 		}
 	}
 	void Container::ClearAllBosses()
 	{
-		for ( auto &it : bossPtrs )
+		for ( auto &it : bosses )
 		{
-			if ( it.second )
+			if ( it.pBoss )
 			{
-				it.second->Uninit();
-				it.second.reset();
+				it.pBoss->Uninit();
+				it.pBoss.reset();
 			}
 		}
 	}
 #if USE_IMGUI
-	void Container::AddBoss( Kind kind, const InitializeParam &parameter, int roomID )
+	void Container::AppendBoss( int roomID, Kind kind, const InitializeParam &parameter )
 	{
-		std::unique_ptr<Base> instance = nullptr;
-
-		switch ( kind )
-		{
-		case Kind::Skull:	instance = std::make_unique<Boss::Skull>();	break;
-		default: break;
-		}
-
-		if ( !instance )
+		const int intKind = scast<int>( kind );
+		if ( intKind < 0 || scast<int>( Kind::KindCount ) <= intKind )
 		{
 			_ASSERT_EXPR( 0, L"Error: That boss kind is invalid!" );
 			return;
 		}
 		// else
 
-		instance->Init( parameter );
-		bossPtrs.insert
-		(
-			std::make_pair( roomID, std::move( instance ) )
-		);
+		BossSet tmp{};
+		tmp.roomID		= roomID;
+		tmp.kind		= kind;
+		tmp.initializer	= parameter;
+		tmp.pBoss		= nullptr;
+		bosses.emplace_back( std::move( tmp ) );
+	}
+	Container::BossSet Container::GetBossOrNullptr( size_t instanceIndex )
+	{
+		if ( GetBossCount() <= instanceIndex ) { return {}; }
+		// else
+
+		return bosses[instanceIndex];
 	}
 	void Container::RemakeByCSV( const CSVLoader &loadedData, const House &house )
 	{
@@ -529,7 +599,7 @@ namespace Boss
 			}
 			// else
 
-			AddBoss( kind, tmp, roomID );
+			AppendBoss( roomID, kind, tmp );
 		};
 
 		ClearAllBosses();
@@ -562,11 +632,10 @@ namespace Boss
 
 		if ( ImGui::TreeNode( u8"ŽÀ‘Ì‚½‚¿" ) )
 		{
-			for ( auto &it : bossPtrs )
+			const size_t count = GetBossCount();
+			for ( size_t i = 0; i < count; ++i )
 			{
-				if ( !it.second ) { continue; }
-				// else
-				ShowInstanceNode( it.first );
+				ShowInstanceNode( i );
 			}
 
 			ImGui::TreePop();
@@ -590,22 +659,24 @@ namespace Boss
 
 		ImGui::TreePop();
 	}
-	void Container::ShowInstanceNode( int roomID )
+	void Container::ShowInstanceNode( size_t instanceIndex )
 	{
-		auto find =  bossPtrs.find( roomID );
-		if ( find == bossPtrs.end() ) { return; }
+		auto boss = GetBossOrNullptr( instanceIndex );
+		std::string caption = "[RoomID:" + std::to_string( boss.roomID ) + "]";
+
+		if ( !boss.pBoss )
+		{
+			caption += " is not exist.";
+			ImGui::TextDisabled( caption.c_str() );
+			return;
+		}
 		// else
 
-		auto &pBoss = find->second;
-		if ( !pBoss ) { return; }
-		// else
-
-		std::string caption = "[RoomID:" + std::to_string( roomID ) + "]";
-		bool  treeIsOpen = pBoss->ShowImGuiNode( caption );
+		bool  treeIsOpen = boss.pBoss->ShowImGuiNode( caption );
 		if ( !treeIsOpen )
 		{
 			caption = "[";
-			caption += GetModelName( pBoss->GetKind() );
+			caption += GetModelName( boss.pBoss->GetKind() );
 			caption += "]";
 			ImGui::SameLine();
 			ImGui::Text( caption.c_str() );

@@ -103,13 +103,10 @@ namespace Enemy
 			archive
 			(
 				cereal::base_class<Actor>( this ),
-				initializer
+				CEREAL_NVP( initializer	),
+				CEREAL_NVP( hp			)
 			);
 			if ( 1 <= version )
-			{
-				archive( CEREAL_NVP( hp ) );
-			}
-			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -202,7 +199,7 @@ namespace Enemy
 	};
 }
 CEREAL_CLASS_VERSION( Enemy::InitializeParam,	0 )
-CEREAL_CLASS_VERSION( Enemy::Base,				1 )
+CEREAL_CLASS_VERSION( Enemy::Base,				0 )
 CEREAL_REGISTER_TYPE( Enemy::Base )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Actor, Enemy::Base )
 CEREAL_CLASS_VERSION( Enemy::Admin,				0 )
