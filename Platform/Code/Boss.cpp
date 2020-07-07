@@ -126,9 +126,23 @@ namespace Boss
 
 		ImGui::TreePop();
 	}
+
+	std::string Boss::Base::GetStateName( State state )
+	{
+		switch ( state )
+		{
+		case Boss::Base::State::Appear:	return u8"登場";
+		case Boss::Base::State::Normal:	return u8"通常";
+		case Boss::Base::State::Die:	return u8"死亡";
+		default: break;
+		}
+
+		_ASSERT_EXPR( 0, L"Error: Unexpected state!" );
+		return u8"ERROR_STATE";
+	}
 #endif // USE_IMGUI
 
-	void Base::Init( const InitializeParam &parameter, int belongRoomID )
+	void Base::Init( const InitializeParam &parameter, int belongRoomID, const Donya::Collision::Box3F &wsRoomArea )
 	{
 		initializer		= parameter;
 		roomID			= belongRoomID;
@@ -149,12 +163,14 @@ namespace Boss
 		);
 
 		pReceivedDamage.reset();
+
+		AppearInit( wsRoomArea );
 	}
 	void Base::Uninit()
 	{
 		pReceivedDamage.reset();
 	}
-	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		if ( NowDead() ) { return; }
 		// else
@@ -173,6 +189,11 @@ namespace Boss
 		const int collideIndex = Actor::MoveY( movement.y, solids );
 		if ( collideIndex != -1 ) // If collided to any
 		{
+			if ( status == State::Appear )
+			{
+				TransitionState( State::Normal );
+			}
+
 			// Consider as landing
 			// if ( velocity.y <= 0.0f )
 			// {
@@ -285,6 +306,9 @@ namespace Boss
 	}
 	void Base::AssignMotion( int motionIndex )
 	{
+		if ( !model.pResource ) { return; }
+		// else
+
 		const int motionCount = scast<int>( model.pResource->motionHolder.GetMotionCount() );
 		if ( motionIndex < 0 || motionCount <= motionIndex )
 		{
@@ -295,6 +319,14 @@ namespace Boss
 
 		const auto &motion = model.pResource->motionHolder.GetMotion( motionIndex );
 		model.pose.AssignSkeletal( model.animator.CalcCurrentPose( motion ) );
+	}
+	void Base::UpdateMotion( float elapsedTime, int motionIndex )
+	{
+		if ( !model.pResource ) { return; }
+		// else
+
+		model.animator.Update( elapsedTime );
+		AssignMotion( motionIndex );
 	}
 	void Base::ApplyReceivedDamageIfHas()
 	{
@@ -309,6 +341,43 @@ namespace Boss
 		}
 
 		pReceivedDamage.reset();
+	}
+	void Base::AppearInit( const Donya::Collision::Box3F &wsRoomArea )
+	{
+		// Make the foot pos places the top of room.
+		// The X, Z component is not change.
+		Donya::Vector3 topPos = body.pos;
+		topPos.y = wsRoomArea.Max().y + body.size.y;
+		AssignMyBody( topPos );
+
+		// Deactivate the collision for do not correct to outside room.
+		// This will be activated at AppearUpdate().
+		body.exist		= false;
+		hurtBox.exist	= false;
+
+		// Enter to the room by gravity
+		velocity		= 0.0f;
+	}
+	void Base::AppearUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea )
+	{
+		// Re-activate the collision
+		if ( !body.exist )
+		{
+			// For now, I regard as the body is there within the room
+			// if the top(head) position places under the one block size.
+
+			const float border	= wsRoomArea.Max().y - Tile::unitWholeSize;
+			const float topPos	= body.Max().y;
+			if ( topPos < border )
+			{
+				body.exist		= true;
+				hurtBox.exist	= true;
+			}
+		}
+
+		constexpr float lowestGravity = 1.0f;
+		const float applyGravity = std::max( lowestGravity, GetGravity() );
+		velocity.y -= applyGravity * elapsedTime;
 	}
 	Donya::Vector4x4 Base::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 	{
@@ -334,8 +403,11 @@ namespace Boss
 		}
 		
 		initializer.ShowImGuiNode( u8"初期化パラメータ" );
+		ImGui::Text( u8"現在のステート：%s", GetStateName( status ).c_str() );
+
 		ImGui::DragFloat3( u8"ワールド座標", &body.pos.x, 0.01f );
-		ImGui::Helper::ShowFrontNode( "", &orientation );
+		ImGui::Helper::ShowFrontNode( u8"前方向", &orientation );
+
 		ImGui::Checkbox( u8"死んでいるか", &isDead );
 
 		ImGui::TreePop();
@@ -375,7 +447,7 @@ namespace Boss
 	{
 		for ( auto &it : bosses )
 		{
-			if ( it.pBoss ) { it.pBoss->Update( elapsedTime, wsTargetPos ); }
+			if ( it.pBoss ) { it.pBoss->Update( elapsedTime, wsTargetPos, it.roomArea ); }
 		}
 
 		RemoveBosses();
@@ -465,7 +537,7 @@ namespace Boss
 		// I should call Init()
 		for ( auto &it : bosses )
 		{
-			if ( it.pBoss ) { it.pBoss->Init( it.pBoss->GetInitializer(), it.pBoss->GetRoomID() ); }
+			if ( it.pBoss ) { it.pBoss->Init( it.initializer, it.roomID, it.roomArea ); }
 		}
 
 		return succeeded;
@@ -488,7 +560,12 @@ namespace Boss
 		default: _ASSERT_EXPR( 0, L"Error: That boss kind is invalid!" );	return;
 		}
 
-		set.pBoss->Init( set.initializer, set.roomID );
+		set.pBoss->Init
+		(
+			set.initializer,
+			set.roomID,
+			set.roomArea
+		);
 	}
 	void Container::RemoveBosses()
 	{
@@ -514,7 +591,7 @@ namespace Boss
 		}
 	}
 #if USE_IMGUI
-	void Container::AppendBoss( int roomID, Kind kind, const InitializeParam &parameter )
+	void Container::AppendBoss( int roomID, const Donya::Collision::Box3F &wsRoomArea, Kind kind, const InitializeParam &parameter )
 	{
 		const int intKind = scast<int>( kind );
 		if ( intKind < 0 || scast<int>( Kind::KindCount ) <= intKind )
@@ -528,6 +605,7 @@ namespace Boss
 		tmp.roomID		= roomID;
 		tmp.kind		= kind;
 		tmp.initializer	= parameter;
+		tmp.roomArea	= wsRoomArea;
 		tmp.pBoss		= nullptr;
 		bosses.emplace_back( std::move( tmp ) );
 	}
@@ -599,7 +677,7 @@ namespace Boss
 			}
 			// else
 
-			AppendBoss( roomID, kind, tmp );
+			AppendBoss( roomID, house.CalcRoomArea( roomID ), kind, tmp );
 		};
 
 		ClearAllBosses();

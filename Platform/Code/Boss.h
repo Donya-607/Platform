@@ -8,6 +8,7 @@
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
 
+#include "Donya/Collision.h"
 #include "Donya/ModelPose.h"
 #include "Donya/ModelMotion.h"
 #include "Donya/UseImGui.h"		// Use USE_IMGUI macro
@@ -77,6 +78,16 @@ namespace Boss
 
 	class Base : public Actor
 	{
+	public:
+		enum class State
+		{
+			Appear,
+			Normal,
+			Die
+		};
+	#if USE_IMGUI
+		static std::string GetStateName( State state );
+	#endif // USE_IMGUI
 	protected:
 		struct ModelSet
 		{
@@ -89,6 +100,7 @@ namespace Boss
 		int						roomID		= Room::invalidID;
 	protected:
 		ModelSet				model;
+		State					status		= State::Appear;
 		using Actor::body;					// VS a terrain
 		Donya::Collision::Box3F	hurtBox;	// VS an attack
 		Donya::Vector3			velocity;
@@ -121,27 +133,35 @@ namespace Boss
 			}
 		}
 	public:
-		virtual void Init( const InitializeParam &parameter, int roomID );
+		virtual void Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea );
 		virtual void Uninit();
-		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos );
+		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea );
 		virtual void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
-		virtual bool NowDead()					const;
-		virtual bool ShouldRemove()				const;
-		virtual int  GetRoomID()				const;
-		using Actor::GetHitBox;
-		Donya::Collision::Box3F	GetHurtBox()	const;
-		virtual Kind GetKind()					const = 0;
-		InitializeParam GetInitializer()		const;
-		virtual Definition::Damage GetTouchDamage() const = 0;
+		virtual bool				NowDead()			const;
+		virtual bool				ShouldRemove()		const;
+		virtual int					GetRoomID()			const;
+		using				 Actor::GetHitBox;
+		Donya::Collision::Box3F		GetHurtBox()		const;
+		/// <summary>
+		/// Returns absolute value
+		/// </summary>
+		virtual float				GetGravity()		const = 0;
+		virtual Kind				GetKind()			const = 0;
+		InitializeParam				GetInitializer()	const;
+		virtual Definition::Damage	GetTouchDamage()	const = 0;
 		virtual void GiveDamage( const Definition::Damage &damage ) const;
 	protected:
 		/// <summary>
 		/// Assign the specified motion to model.pose. The animator is not change.
 		/// </summary>
 		virtual void AssignMotion( int motionIndex );
+		/// <summary>
+		/// Update the animator then call AssignMotion().
+		/// </summary>
+		virtual void UpdateMotion( float elapsedTime, int motionIndex );
 		/// <summary>
 		/// After this, the "pReceivedDamage" will be reset.
 		/// </summary>
@@ -150,6 +170,10 @@ namespace Boss
 		/// Will be called if the hp below zero at ApplyReceivedDamageIfHas().
 		/// </summary>
 		virtual void DieMoment() = 0;
+	protected:
+		virtual void TransitionState( State nextState ) = 0;
+		virtual void AppearInit( const Donya::Collision::Box3F &wsRoomArea );
+		virtual void AppearUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea );
 	protected:
 		virtual int GetInitialHP() const = 0;
 		virtual void AssignMyBody( const Donya::Vector3 &wsPos ) = 0;
@@ -170,12 +194,14 @@ namespace Boss
 	class Container
 	{
 	public:
+		// Note: This structure is used for delay making a instance.
 		struct BossSet
 		{
 			int		roomID	= Room::invalidID;
 			Kind	kind	= Kind::KindCount;
-			InitializeParam initializer;
-			std::shared_ptr<Base> pBoss = nullptr;
+			InitializeParam			initializer;
+			Donya::Collision::Box3F	roomArea;
+			std::shared_ptr<Base>	pBoss = nullptr;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -186,6 +212,7 @@ namespace Boss
 					CEREAL_NVP( roomID		),
 					CEREAL_NVP( kind		),
 					CEREAL_NVP( initializer	),
+					CEREAL_NVP( roomArea	),
 					CEREAL_NVP( pBoss		)
 				);
 				if ( 1 <= version )
@@ -239,7 +266,7 @@ namespace Boss
 		void ClearAllBosses();
 	#if USE_IMGUI
 	private:
-		void AppendBoss( int roomID, Kind kind, const InitializeParam &parameter );
+		void AppendBoss( int roomID, const Donya::Collision::Box3F &wsRoomArea, Kind kind, const InitializeParam &parameter );
 	public:
 		BossSet GetBossOrNullptr( size_t instanceIndex );
 		void RemakeByCSV( const CSVLoader &loadedData, const House &house );

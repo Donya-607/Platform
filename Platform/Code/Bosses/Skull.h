@@ -22,14 +22,21 @@ namespace Boss
 			}
 		}
 	public:
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
+		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea ) override;
 	public:
-		Kind GetKind() const override;
-		Definition::Damage GetTouchDamage() const override;
+		float				GetGravity()		const override;
+		Kind				GetKind()			const override;
+		Definition::Damage	GetTouchDamage()	const override;
 	private:
 		void DieMoment() override;
+		void TransitionState( State nextState ) override;
+		void UpdateState( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea );
+	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
+	private:
+		void NormalInit();
+		void NormalUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea );
 	public:
 	#if USE_IMGUI
 		/// <summary>
@@ -43,6 +50,10 @@ namespace Boss
 	{
 	public:
 		int					hp				= 28;
+		float				gravity			= 1.0f;
+		float				jumpHeight		= 1.0f;
+		float				jumpTakeSeconds	= 1.0f;
+		float				runSpeed		= 1.0f;
 		Definition::Damage	touchDamage;
 		Donya::Vector3		hitBoxOffset	{ 0.0f, 0.0f, 0.0f };
 		Donya::Vector3		hurtBoxOffset	{ 0.0f, 0.0f, 0.0f };
@@ -65,6 +76,16 @@ namespace Boss
 
 			if ( 1 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( gravity			),
+					CEREAL_NVP( jumpHeight		),
+					CEREAL_NVP( jumpTakeSeconds	),
+					CEREAL_NVP( runSpeed		)
+				);
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -77,4 +98,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 0 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 1 )
