@@ -112,7 +112,9 @@ namespace Boss
 	}
 	void Skull::NormalUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
-
+	#if DEBUG_MODE
+		velocity = ( wsTargetPos - body.WorldPosition() ).Unit();
+	#endif // DEBUG_MODE
 	}
 #if USE_IMGUI
 	bool Skull::ShowImGuiNode( const std::string &nodeCaption )

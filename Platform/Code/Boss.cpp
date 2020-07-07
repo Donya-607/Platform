@@ -126,21 +126,148 @@ namespace Boss
 
 		ImGui::TreePop();
 	}
+#endif // USE_IMGUI
 
-	std::string Boss::Base::GetStateName( State state )
+
+#pragma region Mover
+	void Base::MoverBase::Init( Base &inst ) {}
+	void Base::MoverBase::Uninit( Base &inst ) {}
+	void Base::MoverBase::Update( Base &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos ) {}
+	void Base::MoverBase::PhysicUpdate( Base &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
-		switch ( state )
+		if ( inst.NowDead() ) { return; }
+		// else
+
+		MoveOnlyX( inst, elapsedTime, solids );
+		MoveOnlyZ( inst, elapsedTime, solids );
+
+		MoveOnlyY( inst, elapsedTime, solids );
+	}
+	int  Base::MoverBase::MoveOnlyX( Base &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	{
+		const int collideIndex = inst.Actor::MoveX( inst.velocity.x * elapsedTime, solids );
+		inst.hurtBox.pos = inst.body.pos; // We must apply world position to hurt box also.
+		return collideIndex;
+	}
+	int  Base::MoverBase::MoveOnlyY( Base &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	{
+		const int collideIndex = inst.Actor::MoveY( inst.velocity.y * elapsedTime, solids );
+		if ( collideIndex != -1 ) // If collided to any
 		{
-		case Boss::Base::State::Appear:	return u8"登場";
-		case Boss::Base::State::Normal:	return u8"通常";
-		case Boss::Base::State::Die:	return u8"死亡";
-		default: break;
+			// Consider as landing
+			// if ( inst.velocity.y <= 0.0f )
+			// {
+			// 	if ( !inst.onGround )
+			// 	{
+			// 		inst.onGround = true;
+			// 	}
+			// }
+
+			inst.velocity.y = 0.0f;
+		}
+		// else
+		// {
+		// 	inst.onGround = false;
+		// }
+
+		inst.hurtBox.pos = inst.body.pos; // We must apply world position to hurt box also.
+		return collideIndex;
+	}
+	int  Base::MoverBase::MoveOnlyZ( Base & inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> & solids )
+	{
+		const int collideIndex = inst.Actor::MoveZ( inst.velocity.z * elapsedTime, solids );
+		inst.hurtBox.pos = inst.body.pos; // We must apply world position to hurt box also.
+		return collideIndex;
+	}
+	void Base::AppearPerformanceBase::Init( Base &inst )
+	{
+		wasLanded = false;
+
+		// Make the foot pos places the top of room.
+		// The X, Z component is not change.
+		Donya::Vector3 topPos = inst.body.pos;
+		topPos.y = inst.roomArea.Max().y + inst.body.size.y;
+		inst.AssignMyBody( topPos );
+
+		// Deactivate the collision for do not correct to outside room.
+		// This will be activated at AppearUpdate().
+		inst.body.exist		= false;
+		inst.hurtBox.exist	= false;
+
+		// Enter to the room by gravity
+		inst.velocity		= 0.0f;
+	}
+	void Base::AppearPerformanceBase::Update( Base &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	{
+		// Re-activate the collision
+		if ( !inst.body.exist )
+		{
+			// For now, I regard as the body is there within the room
+			// if the top(head) position places under the one block size.
+
+			const float border	= inst.roomArea.Max().y - Tile::unitWholeSize;
+			const float topPos	= inst.body.Max().y;
+			if ( topPos < border )
+			{
+				inst.body.exist		= true;
+				inst.hurtBox.exist	= true;
+			}
 		}
 
-		_ASSERT_EXPR( 0, L"Error: Unexpected state!" );
-		return u8"ERROR_STATE";
+		constexpr float lowestGravity = 1.0f;
+		const float applyGravity = std::max( lowestGravity, inst.GetGravity() );
+		inst.velocity.y -= applyGravity * elapsedTime;
+	}
+	void Base::AppearPerformanceBase::PhysicUpdate( Base &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	{
+		if ( inst.NowDead() ) { return; }
+		// else
+
+		MoveOnlyX( inst, elapsedTime, solids );
+		MoveOnlyZ( inst, elapsedTime, solids );
+
+		const int collideIndex = MoveOnlyY( inst, elapsedTime, solids );
+		if ( collideIndex != -1 ) // If collide to any
+		{
+			wasLanded = true;
+		}
+	}
+	bool Base::AppearPerformanceBase::ShouldChangeMover( const Base &inst ) const
+	{
+		return ( wasLanded ) ? true : false;
+	}
+#if USE_IMGUI
+	std::string Base::AppearPerformanceBase::GetMoverName() const
+	{
+		return u8"登場";
 	}
 #endif // USE_IMGUI
+	void Base::DiePerformance::Init( Base &inst )
+	{
+		inst.body.exist		= false;
+		inst.hurtBox.exist	= false;
+		inst.velocity		= 0.0f;
+	}
+	void Base::DiePerformance::Update( Base &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	{
+		// No op
+	}
+	void Base::DiePerformance::PhysicUpdate( Base &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	{
+		// No op
+	}
+	bool Base::DiePerformance::ShouldChangeMover( const Base &inst ) const
+	{
+		return false;
+	}
+#if USE_IMGUI
+	std::string Base::DiePerformance::GetMoverName() const
+	{
+		return u8"死亡";
+	}
+#endif // USE_IMGUI
+// region Mover
+#pragma endregion
 
 	void Base::Init( const InitializeParam &parameter, int belongRoomID, const Donya::Collision::Box3F &wsRoomArea )
 	{
@@ -164,8 +291,6 @@ namespace Boss
 		);
 
 		pReceivedDamage.reset();
-
-		AppearInit();
 	}
 	void Base::Uninit()
 	{
@@ -180,38 +305,10 @@ namespace Boss
 	void Base::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
 		if ( NowDead() ) { return; }
+		if ( !pMover   ) { return; }
 		// else
 
-		const auto movement = velocity * elapsedTime;
-	
-		Actor::MoveX( movement.x, solids );
-		Actor::MoveZ( movement.z, solids );
-
-		const int collideIndex = Actor::MoveY( movement.y, solids );
-		if ( collideIndex != -1 ) // If collided to any
-		{
-			if ( status == State::Appear )
-			{
-				TransitionState( State::Normal );
-			}
-
-			// Consider as landing
-			// if ( velocity.y <= 0.0f )
-			// {
-			// 	if ( !onGround )
-			// 	{
-			// 		onGround = true;
-			// 	}
-			// }
-
-			velocity.y = 0.0f;
-		}
-		// else
-		// {
-		// 	onGround = false;
-		// }
-
-		hurtBox.pos = body.pos; // We must apply world position to hurt box also.
+		pMover->PhysicUpdate( *this, elapsedTime, solids );
 	}
 	void Base::Draw( RenderingHelper *pRenderer ) const
 	{
@@ -343,43 +440,6 @@ namespace Boss
 
 		pReceivedDamage.reset();
 	}
-	void Base::AppearInit()
-	{
-		// Make the foot pos places the top of room.
-		// The X, Z component is not change.
-		Donya::Vector3 topPos = body.pos;
-		topPos.y = roomArea.Max().y + body.size.y;
-		AssignMyBody( topPos );
-
-		// Deactivate the collision for do not correct to outside room.
-		// This will be activated at AppearUpdate().
-		body.exist		= false;
-		hurtBox.exist	= false;
-
-		// Enter to the room by gravity
-		velocity		= 0.0f;
-	}
-	void Base::AppearUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
-	{
-		// Re-activate the collision
-		if ( !body.exist )
-		{
-			// For now, I regard as the body is there within the room
-			// if the top(head) position places under the one block size.
-
-			const float border	= roomArea.Max().y - Tile::unitWholeSize;
-			const float topPos	= body.Max().y;
-			if ( topPos < border )
-			{
-				body.exist		= true;
-				hurtBox.exist	= true;
-			}
-		}
-
-		constexpr float lowestGravity = 1.0f;
-		const float applyGravity = std::max( lowestGravity, GetGravity() );
-		velocity.y -= applyGravity * elapsedTime;
-	}
 	Donya::Vector4x4 Base::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 	{
 		Donya::Vector4x4 W{};
@@ -404,7 +464,7 @@ namespace Boss
 		}
 		
 		initializer.ShowImGuiNode( u8"初期化パラメータ" );
-		ImGui::Text( u8"現在のステート：%s", GetStateName( status ).c_str() );
+		ImGui::Text( u8"現在のステート：%s", ( pMover ) ? pMover->GetMoverName().c_str() : u8"ERROR_STATE" );
 
 		ImGui::DragFloat3( u8"ワールド座標", &body.pos.x, 0.01f );
 		ImGui::Helper::ShowFrontNode( u8"前方向", &orientation );

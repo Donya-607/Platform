@@ -78,16 +78,6 @@ namespace Boss
 
 	class Base : public Actor
 	{
-	public:
-		enum class State
-		{
-			Appear,
-			Normal,
-			Die
-		};
-	#if USE_IMGUI
-		static std::string GetStateName( State state );
-	#endif // USE_IMGUI
 	protected:
 		struct ModelSet
 		{
@@ -98,7 +88,49 @@ namespace Boss
 		class MoverBase
 		{
 		public:
+			virtual ~MoverBase() = default;
+		public:
 			virtual void Init( Base &instance );
+			virtual void Uninit( Base &instance );
+			virtual void Update( Base &instance, float elapsedTime, const Donya::Vector3 &wsTargetPos );
+			virtual void PhysicUpdate( Base &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+			virtual bool ShouldChangeMover( const Base &instance ) const = 0;
+			virtual std::function<void()> GetChangeStateMethod( Base &instance ) const = 0;
+		#if USE_IMGUI
+			virtual std::string GetMoverName() const = 0;
+		#endif // USE_IMGUI
+		protected:
+			int MoveOnlyX( Base &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+			int MoveOnlyY( Base &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+			int MoveOnlyZ( Base &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+		};
+		class AppearPerformanceBase : public MoverBase
+		{
+		private:
+			bool wasLanded = false;
+		public:
+			virtual ~AppearPerformanceBase() = default;
+		public:
+			void Init( Base &instance ) override;
+			void Update( Base &instance, float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
+			void PhysicUpdate( Base &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+			bool ShouldChangeMover( const Base &instance ) const override;
+			virtual std::function<void()> GetChangeStateMethod( Base &instance ) const = 0;
+		#if USE_IMGUI
+			std::string GetMoverName() const override;
+		#endif // USE_IMGUI
+		};
+		class DiePerformance : public MoverBase
+		{
+		public:
+			void Init( Base &instance ) override;
+			void Update( Base &instance, float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
+			void PhysicUpdate( Base &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+			bool ShouldChangeMover( const Base &instance ) const override;
+			virtual std::function<void()> GetChangeStateMethod( Base &instance ) const = 0;
+		#if USE_IMGUI
+			std::string GetMoverName() const override;
+		#endif // USE_IMGUI
 		};
 	private: // Seralize values
 		InitializeParam			initializer;
@@ -106,7 +138,6 @@ namespace Boss
 		Donya::Collision::Box3F roomArea;	// World space
 	protected:
 		ModelSet				model;
-		State					status		= State::Appear;
 		using Actor::body;					// VS a terrain
 		Donya::Collision::Box3F	hurtBox;	// VS an attack
 		Donya::Vector3			velocity;
@@ -114,6 +145,7 @@ namespace Boss
 		int						hp			= 1;	// Alive if this is greater than 0(if 0 < hp)
 		bool					isDead		= false;
 		bool					wantRemove	= false;
+		std::unique_ptr<MoverBase> pMover	= nullptr;
 		mutable std::unique_ptr<Definition::Damage> pReceivedDamage	= nullptr; // Will be made at GiveDamage()
 	public:
 		Base() = default;
@@ -177,9 +209,18 @@ namespace Boss
 		/// </summary>
 		virtual void DieMoment() = 0;
 	protected:
-		virtual void TransitionState( State nextState ) = 0;
-		virtual void AppearInit();
-		virtual void AppearUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
+		template<class Mover>
+		void AssignMover()
+		{
+			if ( pMover )
+			{
+				pMover->Uninit( *this );
+				pMover.reset();
+			}
+
+			pMover = std::make_unique<Mover>();
+			pMover->Init( *this );
+		}
 	protected:
 		virtual int GetInitialHP() const = 0;
 		virtual void AssignMyBody( const Donya::Vector3 &wsPos ) = 0;
