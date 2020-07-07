@@ -1299,10 +1299,9 @@ void SceneGame::UseScreenSpaceImGui()
 		for ( size_t i = 0; i  < bossCount; ++i )
 		{
 			bossSet = pBossContainer->GetBossOrNullptr( i );
-			if ( !bossSet.pBoss ) { continue; }
-			// else
-
-			ssPos = WorldToScreen( bossSet.pBoss->GetPosition() ).XY();
+			
+			const Donya::Vector3 wsPos = ( bossSet.pBoss ) ? bossSet.pBoss->GetPosition() : bossSet.initializer.wsPos;
+			ssPos = WorldToScreen( wsPos ).XY();
 			Show
 			(
 				ssPos, i,
