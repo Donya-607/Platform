@@ -95,9 +95,15 @@ namespace Boss
 			Donya::Model::Pose		pose;
 			Donya::Model::Animator	animator;
 		};
+		class MoverBase
+		{
+		public:
+			virtual void Init( Base &instance );
+		};
 	private: // Seralize values
 		InitializeParam			initializer;
 		int						roomID		= Room::invalidID;
+		Donya::Collision::Box3F roomArea;	// World space
 	protected:
 		ModelSet				model;
 		State					status		= State::Appear;
@@ -135,7 +141,7 @@ namespace Boss
 	public:
 		virtual void Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea );
 		virtual void Uninit();
-		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea );
+		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 		virtual void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
@@ -172,8 +178,8 @@ namespace Boss
 		virtual void DieMoment() = 0;
 	protected:
 		virtual void TransitionState( State nextState ) = 0;
-		virtual void AppearInit( const Donya::Collision::Box3F &wsRoomArea );
-		virtual void AppearUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea );
+		virtual void AppearInit();
+		virtual void AppearUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 	protected:
 		virtual int GetInitialHP() const = 0;
 		virtual void AssignMyBody( const Donya::Vector3 &wsPos ) = 0;

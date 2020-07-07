@@ -22,7 +22,7 @@ namespace Boss
 			}
 		}
 	public:
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea ) override;
+		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
 	public:
 		float				GetGravity()		const override;
 		Kind				GetKind()			const override;
@@ -30,13 +30,13 @@ namespace Boss
 	private:
 		void DieMoment() override;
 		void TransitionState( State nextState ) override;
-		void UpdateState( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea );
+		void UpdateState( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
 	private:
 		void NormalInit();
-		void NormalUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea );
+		void NormalUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 	public:
 	#if USE_IMGUI
 		/// <summary>

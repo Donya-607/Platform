@@ -146,6 +146,7 @@ namespace Boss
 	{
 		initializer		= parameter;
 		roomID			= belongRoomID;
+		roomArea		= wsRoomArea;
 		model.pResource	= GetModelPtrOrNullptr( GetKind() );
 		model.animator.ResetTimer();
 		AssignMotion( 0 );
@@ -164,13 +165,13 @@ namespace Boss
 
 		pReceivedDamage.reset();
 
-		AppearInit( wsRoomArea );
+		AppearInit();
 	}
 	void Base::Uninit()
 	{
 		pReceivedDamage.reset();
 	}
-	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
 		if ( NowDead() ) { return; }
 		// else
@@ -342,12 +343,12 @@ namespace Boss
 
 		pReceivedDamage.reset();
 	}
-	void Base::AppearInit( const Donya::Collision::Box3F &wsRoomArea )
+	void Base::AppearInit()
 	{
 		// Make the foot pos places the top of room.
 		// The X, Z component is not change.
 		Donya::Vector3 topPos = body.pos;
-		topPos.y = wsRoomArea.Max().y + body.size.y;
+		topPos.y = roomArea.Max().y + body.size.y;
 		AssignMyBody( topPos );
 
 		// Deactivate the collision for do not correct to outside room.
@@ -358,7 +359,7 @@ namespace Boss
 		// Enter to the room by gravity
 		velocity		= 0.0f;
 	}
-	void Base::AppearUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea )
+	void Base::AppearUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
 		// Re-activate the collision
 		if ( !body.exist )
@@ -366,7 +367,7 @@ namespace Boss
 			// For now, I regard as the body is there within the room
 			// if the top(head) position places under the one block size.
 
-			const float border	= wsRoomArea.Max().y - Tile::unitWholeSize;
+			const float border	= roomArea.Max().y - Tile::unitWholeSize;
 			const float topPos	= body.Max().y;
 			if ( topPos < border )
 			{
@@ -447,7 +448,7 @@ namespace Boss
 	{
 		for ( auto &it : bosses )
 		{
-			if ( it.pBoss ) { it.pBoss->Update( elapsedTime, wsTargetPos, it.roomArea ); }
+			if ( it.pBoss ) { it.pBoss->Update( elapsedTime, wsTargetPos ); }
 		}
 
 		RemoveBosses();

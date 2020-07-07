@@ -27,9 +27,9 @@ namespace Boss
 		}
 	}
 
-	void Skull::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea )
+	void Skull::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
-		Base::Update( elapsedTime, wsTargetPos, wsRoomArea );
+		Base::Update( elapsedTime, wsTargetPos );
 
 		if ( NowDead() ) { return; }
 		// else
@@ -45,7 +45,7 @@ namespace Boss
 		}
 	#endif // USE_IMGUI
 
-		UpdateState( elapsedTime, wsTargetPos, wsRoomArea );
+		UpdateState( elapsedTime, wsTargetPos );
 		UpdateMotion( elapsedTime, 0 );
 	}
 	float Skull::GetGravity() const
@@ -81,12 +81,12 @@ namespace Boss
 		default: _ASSERT_EXPR( 0, L"Error: Unexpected state!" ); break;
 		}
 	}
-	void Skull::UpdateState( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea )
+	void Skull::UpdateState( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
 		switch ( status )
 		{
-		case Boss::Base::State::Appear:	AppearUpdate( elapsedTime, wsTargetPos, wsRoomArea );	return;
-		case Boss::Base::State::Normal:	NormalUpdate( elapsedTime, wsTargetPos, wsRoomArea );	return;
+		case Boss::Base::State::Appear:	AppearUpdate( elapsedTime, wsTargetPos );	return;
+		case Boss::Base::State::Normal:	NormalUpdate( elapsedTime, wsTargetPos );	return;
 		case Boss::Base::State::Die:		return;
 		default: _ASSERT_EXPR( 0, L"Error: Unexpected state!" ); return;
 		}
@@ -110,7 +110,7 @@ namespace Boss
 	{
 		velocity = 0.0f;
 	}
-	void Skull::NormalUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsRoomArea )
+	void Skull::NormalUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
 
 	}
