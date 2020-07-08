@@ -1165,24 +1165,24 @@ void SceneGame::UseImGui()
 		}
 		ImGui::Text( "" );
 
-		Player::UpdateParameter( u8"自機のパラメータ" );
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
+		Player::UpdateParameter( u8"自機のパラメータ" );
 		ImGui::Text( "" );
 
 		if ( pMap    ) { pMap->ShowImGuiNode( u8"マップの現在", stageNumber ); }
 		if ( pHouse  ) { pHouse->ShowImGuiNode( u8"部屋の現在", stageNumber ); }
 		ImGui::Text( "" );
 
-		Bullet::Parameter::Update( u8"弾のパラメータ" );
 		Bullet::Admin::Get().ShowImGuiNode( u8"弾の現在" );
+		Bullet::Parameter::Update( u8"弾のパラメータ" );
 		ImGui::Text( "" );
 
-		Enemy::Parameter::Update( u8"敵のパラメータ" );
 		Enemy::Admin::Get().ShowImGuiNode( u8"敵の現在", stageNumber );
+		Enemy::Parameter::Update( u8"敵のパラメータ" );
 		ImGui::Text( "" );
 
-		Boss::Parameter::Update( u8"ボスのパラメータ" );
 		if ( pBossContainer ) { pBossContainer->ShowImGuiNode( u8"ボスの現在", stageNumber ); }
+		Boss::Parameter::Update( u8"ボスのパラメータ" );
 
 		ImGui::TreePop();
 	}
