@@ -27,12 +27,93 @@ namespace Boss
 		}
 	}
 
+	void Skull::MoverBase::Init( Skull &inst ) {}
+	void Skull::MoverBase::Uninit( Skull &inst ) {}
+	void Skull::MoverBase::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos ) {}
+	void Skull::MoverBase::PhysicUpdate( Skull &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	{
+		inst.Base::PhysicUpdate( elapsedTime, solids );
+	}
+	
+	void Skull::AppearPerformance::Init( Skull &inst )
+	{
+		inst.AppearInit();
+	}
+	void Skull::AppearPerformance::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	{
+		inst.AppearUpdate( elapsedTime, wsTargetPos );
+	}
+	void Skull::AppearPerformance::PhysicUpdate( Skull &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	{
+		wasLanding = inst.AppearPhysicUpdate( elapsedTime, solids );
+	}
+	bool Skull::AppearPerformance::ShouldChangeMover( const Skull &inst ) const
+	{
+		return wasLanding; // For now, transition as immediately if the falling is finished
+	}
+	std::function<void()> Skull::AppearPerformance::GetChangeStateMethod( Skull &inst ) const
+	{
+		return [&]() { inst.AssignMover<Normal>(); };
+	}
+#if USE_IMGUI
+	std::string Skull::AppearPerformance::GetMoverName() const
+	{
+		return u8"ìoèÍ";
+	}
+#endif // USE_IMGUI
+	
+	void Skull::Normal::Init( Skull &inst )
+	{
+		inst.velocity = 0.0f;
+	}
+	void Skull::Normal::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	{
+	#if DEBUG_MODE
+		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+	#endif // DEBUG_MODE
+	}
+	bool Skull::Normal::ShouldChangeMover( const Skull &inst ) const
+	{
+		return false; // For now, do not transition to anything.
+	}
+	std::function<void()> Skull::Normal::GetChangeStateMethod( Skull &inst ) const
+	{
+		return []() {}; // No op
+	}
+#if USE_IMGUI
+	std::string Skull::Normal::GetMoverName() const
+	{
+		return u8"í èÌ";
+	}
+#endif // USE_IMGUI
+
+
+	void Skull::Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea )
+	{
+		Base::Init( parameter, roomID, wsRoomArea );
+
+		AssignMover<AppearPerformance>();
+	}
 	void Skull::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
 		Base::Update( elapsedTime, wsTargetPos );
 
 		if ( NowDead() ) { return; }
 		// else
+
+		if ( !pMover )
+		{
+			_ASSERT_EXPR( 0, L"Error: Mover does not exist!" );
+			return;
+		}
+		// else
+
+		pMover->Update( *this, elapsedTime, wsTargetPos );
+		if ( pMover->ShouldChangeMover( *this ) )
+		{
+			auto ChangeState = pMover->GetChangeStateMethod( *this );
+			ChangeState();
+		}
 
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
@@ -44,9 +125,20 @@ namespace Boss
 			hurtBox.size	= data.hurtBoxSize;
 		}
 	#endif // USE_IMGUI
+		
+		// TODO: Set a current motion index
+		UpdateMotion( elapsedTime, NULL );
+	}
+	void Skull::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	{
+		if ( !pMover )
+		{
+			_ASSERT_EXPR( 0, L"Error: Mover does not exist!" );
+			return;
+		}
+		// else
 
-		UpdateState( elapsedTime, wsTargetPos );
-		UpdateMotion( elapsedTime, 0 );
+		pMover->PhysicUpdate( *this, elapsedTime, solids );
 	}
 	float Skull::GetGravity() const
 	{
@@ -56,40 +148,6 @@ namespace Boss
 	Definition::Damage Skull::GetTouchDamage() const
 	{
 		return Parameter::GetSkull().touchDamage;
-	}
-	void Skull::DieMoment()
-	{
-
-	}
-	void Skull::TransitionState( State nextState )
-	{
-		// Call XXXUninit() if needed
-		switch ( nextState )
-		{
-		case Boss::Base::State::Appear:		break;
-		case Boss::Base::State::Normal:		break;
-		case Boss::Base::State::Die:		break;
-		default: _ASSERT_EXPR( 0, L"Error: Unexpected state!" ); break;
-		}
-
-		status = nextState;
-		switch ( nextState )
-		{
-		case Boss::Base::State::Appear:	/*AppearInit();*/	break;
-		case Boss::Base::State::Normal:	NormalInit();	break;
-		case Boss::Base::State::Die:		break;
-		default: _ASSERT_EXPR( 0, L"Error: Unexpected state!" ); break;
-		}
-	}
-	void Skull::UpdateState( float elapsedTime, const Donya::Vector3 &wsTargetPos )
-	{
-		switch ( status )
-		{
-		case Boss::Base::State::Appear:	AppearUpdate( elapsedTime, wsTargetPos );	return;
-		case Boss::Base::State::Normal:	NormalUpdate( elapsedTime, wsTargetPos );	return;
-		case Boss::Base::State::Die:		return;
-		default: _ASSERT_EXPR( 0, L"Error: Unexpected state!" ); return;
-		}
 	}
 	int  Skull::GetInitialHP() const
 	{
@@ -106,16 +164,6 @@ namespace Boss
 		hurtBox.size	= data.hurtBoxSize;
 	}
 
-	void Skull::NormalInit()
-	{
-		velocity = 0.0f;
-	}
-	void Skull::NormalUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
-	{
-	#if DEBUG_MODE
-		velocity = ( wsTargetPos - body.WorldPosition() ).Unit();
-	#endif // DEBUG_MODE
-	}
 #if USE_IMGUI
 	bool Skull::ShowImGuiNode( const std::string &nodeCaption )
 	{
@@ -124,12 +172,12 @@ namespace Boss
 
 		Base::ShowImGuiNode( u8"äÓíÍïîï™" );
 
-		ImGui::TextDisabled( u8"îhê∂ïîï™" );
-		// if ( ImGui::TreeNode( u8"îhê∂ïîï™" ) )
-		// {
-		// 
-		// 	ImGui::TreePop();
-		// }
+		if ( ImGui::TreeNode( u8"îhê∂ïîï™" ) )
+		{
+			ImGui::Text( u8"åªç›ÇÃÉXÉeÅ[ÉgÅF%s", ( pMover ) ? pMover->GetMoverName().c_str() : u8"ERROR_STATE" );
+
+			ImGui::TreePop();
+		}
 
 		ImGui::TreePop();
 		return true;

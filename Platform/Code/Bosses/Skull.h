@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "../Boss.h"
 #include "../Damage.h"
 
@@ -7,6 +9,49 @@ namespace Boss
 {
 	class Skull : public Base
 	{
+	private:
+		class MoverBase
+		{
+		public:
+			virtual ~MoverBase() = default;
+		public:
+			virtual void Init( Skull &instance );
+			virtual void Uninit( Skull &instance );
+			virtual void Update( Skull &instance, float elapsedTime, const Donya::Vector3 &wsTargetPos );
+			virtual void PhysicUpdate( Skull &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+			virtual bool ShouldChangeMover( const Skull &instance ) const = 0;
+			virtual std::function<void()> GetChangeStateMethod( Skull &instance ) const = 0;
+		#if USE_IMGUI
+			virtual std::string GetMoverName() const = 0;
+		#endif // USE_IMGUI
+		};
+		class AppearPerformance : public MoverBase
+		{
+		private:
+			bool wasLanding = false;
+		public:
+			void Init( Skull &instance ) override;
+			void Update( Skull &instance, float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
+			void PhysicUpdate( Skull &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+			bool ShouldChangeMover( const Skull &instance ) const override;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
+		#if USE_IMGUI
+			std::string GetMoverName() const override;
+		#endif // USE_IMGUI
+		};
+		class Normal : public MoverBase
+		{
+		public:
+			void Init( Skull &instance );
+			void Update( Skull &instance, float elapsedTime, const Donya::Vector3 &wsTargetPos );
+			bool ShouldChangeMover( const Skull &instance ) const;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
+		#if USE_IMGUI
+			std::string GetMoverName() const override;
+		#endif // USE_IMGUI
+		};
+	private:
+		std::unique_ptr<MoverBase> pMover = nullptr;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -22,21 +67,29 @@ namespace Boss
 			}
 		}
 	public:
+		void Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea ) override;
 		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos ) override;
+		void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
 	public:
 		float				GetGravity()		const override;
 		Kind				GetKind()			const override;
 		Definition::Damage	GetTouchDamage()	const override;
 	private:
-		void DieMoment() override;
-		void TransitionState( State nextState ) override;
-		void UpdateState( float elapsedTime, const Donya::Vector3 &wsTargetPos );
-	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
 	private:
-		void NormalInit();
-		void NormalUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
+		template<class Mover>
+		void AssignMover()
+		{
+			if ( pMover )
+			{
+				pMover->Uninit( *this );
+				pMover.reset();
+			}
+
+			pMover = std::make_unique<Mover>();
+			pMover->Init( *this );
+		}
 	public:
 	#if USE_IMGUI
 		/// <summary>
