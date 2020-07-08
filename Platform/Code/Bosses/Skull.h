@@ -39,7 +39,51 @@ namespace Boss
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
 		};
-		class Normal : public MoverBase
+		class DetectTargetAction : public MoverBase
+		{
+		public:
+			void Init( Skull &instance );
+			void Update( Skull &instance, float elapsedTime, const Donya::Vector3 &wsTargetPos );
+			bool ShouldChangeMover( const Skull &instance ) const;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
+		#if USE_IMGUI
+			std::string GetMoverName() const override;
+		#endif // USE_IMGUI
+		};
+		class Shot : public MoverBase
+		{
+		public:
+			void Init( Skull &instance );
+			void Update( Skull &instance, float elapsedTime, const Donya::Vector3 &wsTargetPos );
+			bool ShouldChangeMover( const Skull &instance ) const;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
+		#if USE_IMGUI
+			std::string GetMoverName() const override;
+		#endif // USE_IMGUI
+		};
+		class Jump : public MoverBase
+		{
+		public:
+			void Init( Skull &instance );
+			void Update( Skull &instance, float elapsedTime, const Donya::Vector3 &wsTargetPos );
+			bool ShouldChangeMover( const Skull &instance ) const;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
+		#if USE_IMGUI
+			std::string GetMoverName() const override;
+		#endif // USE_IMGUI
+		};
+		class Shield : public MoverBase
+		{
+		public:
+			void Init( Skull &instance );
+			void Update( Skull &instance, float elapsedTime, const Donya::Vector3 &wsTargetPos );
+			bool ShouldChangeMover( const Skull &instance ) const;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
+		#if USE_IMGUI
+			std::string GetMoverName() const override;
+		#endif // USE_IMGUI
+		};
+		class Run : public MoverBase
 		{
 		public:
 			void Init( Skull &instance );

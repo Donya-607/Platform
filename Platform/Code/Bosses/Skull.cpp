@@ -53,7 +53,7 @@ namespace Boss
 	}
 	std::function<void()> Skull::AppearPerformance::GetChangeStateMethod( Skull &inst ) const
 	{
-		return [&]() { inst.AssignMover<Normal>(); };
+		return [&]() { inst.AssignMover<DetectTargetAction>(); };
 	}
 #if USE_IMGUI
 	std::string Skull::AppearPerformance::GetMoverName() const
@@ -62,28 +62,128 @@ namespace Boss
 	}
 #endif // USE_IMGUI
 	
-	void Skull::Normal::Init( Skull &inst )
+	void Skull::DetectTargetAction::Init( Skull &inst )
 	{
 		inst.velocity = 0.0f;
 	}
-	void Skull::Normal::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
 	#if DEBUG_MODE
 		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
 	#endif // DEBUG_MODE
 	}
-	bool Skull::Normal::ShouldChangeMover( const Skull &inst ) const
+	bool Skull::DetectTargetAction::ShouldChangeMover( const Skull &inst ) const
 	{
 		return false; // For now, do not transition to anything.
 	}
-	std::function<void()> Skull::Normal::GetChangeStateMethod( Skull &inst ) const
+	std::function<void()> Skull::DetectTargetAction::GetChangeStateMethod( Skull &inst ) const
 	{
 		return []() {}; // No op
 	}
 #if USE_IMGUI
-	std::string Skull::Normal::GetMoverName() const
+	std::string Skull::DetectTargetAction::GetMoverName() const
 	{
-		return u8"通常";
+		return u8"行動検知";
+	}
+#endif // USE_IMGUI
+
+	void Skull::Shot::Init( Skull &inst )
+	{
+		inst.velocity = 0.0f;
+	}
+	void Skull::Shot::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	{
+	#if DEBUG_MODE
+		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+	#endif // DEBUG_MODE
+	}
+	bool Skull::Shot::ShouldChangeMover( const Skull &inst ) const
+	{
+		return false; // For now, do not transition to anything.
+	}
+	std::function<void()> Skull::Shot::GetChangeStateMethod( Skull &inst ) const
+	{
+		return []() {}; // No op
+	}
+#if USE_IMGUI
+	std::string Skull::Shot::GetMoverName() const
+	{
+		return u8"ショット";
+	}
+#endif // USE_IMGUI
+
+	void Skull::Jump::Init( Skull &inst )
+	{
+		inst.velocity = 0.0f;
+	}
+	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	{
+	#if DEBUG_MODE
+		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+	#endif // DEBUG_MODE
+	}
+	bool Skull::Jump::ShouldChangeMover( const Skull &inst ) const
+	{
+		return false; // For now, do not transition to anything.
+	}
+	std::function<void()> Skull::Jump::GetChangeStateMethod( Skull &inst ) const
+	{
+		return []() {}; // No op
+	}
+#if USE_IMGUI
+	std::string Skull::Jump::GetMoverName() const
+	{
+		return u8"ジャンプ";
+	}
+#endif // USE_IMGUI
+
+	void Skull::Shield::Init( Skull &inst )
+	{
+		inst.velocity = 0.0f;
+	}
+	void Skull::Shield::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	{
+	#if DEBUG_MODE
+		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+	#endif // DEBUG_MODE
+	}
+	bool Skull::Shield::ShouldChangeMover( const Skull &inst ) const
+	{
+		return false; // For now, do not transition to anything.
+	}
+	std::function<void()> Skull::Shield::GetChangeStateMethod( Skull &inst ) const
+	{
+		return []() {}; // No op
+	}
+#if USE_IMGUI
+	std::string Skull::Shield::GetMoverName() const
+	{
+		return u8"シールド";
+	}
+#endif // USE_IMGUI
+
+	void Skull::Run::Init( Skull &inst )
+	{
+		inst.velocity = 0.0f;
+	}
+	void Skull::Run::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	{
+	#if DEBUG_MODE
+		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+	#endif // DEBUG_MODE
+	}
+	bool Skull::Run::ShouldChangeMover( const Skull &inst ) const
+	{
+		return false; // For now, do not transition to anything.
+	}
+	std::function<void()> Skull::Run::GetChangeStateMethod( Skull &inst ) const
+	{
+		return []() {}; // No op
+	}
+#if USE_IMGUI
+	std::string Skull::Run::GetMoverName() const
+	{
+		return u8"走行";
 	}
 #endif // USE_IMGUI
 
