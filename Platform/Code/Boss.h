@@ -173,6 +173,7 @@ namespace Boss
 		/// </summary>
 		virtual void DieMoment();
 	protected:
+		void UpdateOrientation( bool lookingRight );
 		/// <summary>
 		/// Returns the return value of Actor::MoveX().
 		/// </summary>

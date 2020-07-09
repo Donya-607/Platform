@@ -112,21 +112,48 @@ namespace Boss
 
 	void Skull::Shot::Init( Skull &inst )
 	{
-		inst.velocity = 0.0f;
+		inst.velocity	= 0.0f;
+
+		timer			= 0.0f;
+		interval		= Parameter::GetSkull().shotFireIntervalSecond; // Make to fire immediately when begin-lag is finished.
+		fireCount		= 0;
+		wasFinished		= false;
 	}
 	void Skull::Shot::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
-	#if DEBUG_MODE
-		constexpr float tmpSpeed = 2.0f;
-		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit() * tmpSpeed;
-	#endif // DEBUG_MODE
+		timer += elapsedTime;
+
+		const auto &data = Parameter::GetSkull();
+
+		if ( data.shotFireCount <= fireCount )
+		{
+			if ( data.shotEndLagSecond <= timer )
+			{
+				wasFinished = true;
+			}
+			return;
+		}
+		// else
+
+		if ( timer < data.shotBeginLagSecond ) { return; }
+		// else
+
+		interval += elapsedTime;
+		if ( data.shotFireIntervalSecond <= interval )
+		{
+			Fire( inst, elapsedTime, input );
+			fireCount++;
+			interval -= data.shotFireIntervalSecond;
+		}
+
+		if ( data.shotFireCount <= fireCount )
+		{
+			timer = 0; // Re count from the beginning
+		}
 	}
 	bool Skull::Shot::ShouldChangeMover( const Skull &inst ) const
 	{
-	#if DEBUG_MODE
-		return true;
-	#endif // DEBUG_MODE
-		return true;
+		return wasFinished;
 	}
 	std::function<void()> Skull::Shot::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -138,6 +165,18 @@ namespace Boss
 		return u8"ショット";
 	}
 #endif // USE_IMGUI
+	void Skull::Shot::Fire( Skull &inst, float elapsedTime, const Input &input ) const
+	{
+		const auto &data = Parameter::GetSkull();
+
+		Bullet::FireDesc desc;
+		desc.initialSpeed	=  data.shotDesc.initialSpeed;
+		desc.position		=  inst.orientation.RotateVector( data.shotDesc.position );
+		desc.position		+= inst.body.WorldPosition(); // Local space to World space
+		desc.direction		=  ( input.wsTargetPos - desc.position ).Unit();
+
+		Bullet::Admin::Get().RequestFire( desc );
+	}
 
 	void Skull::Jump::Init( Skull &inst )
 	{
@@ -226,7 +265,7 @@ namespace Boss
 		const int collideIndex = inst.MoveOnlyY( elapsedTime, solids );
 		if ( collideIndex != -1 ) // If collide to any
 		{
-			if ( inst.velocity.y < 0.0f )
+			if ( inst.velocity.y <= 0.0f )
 			{
 				wasLanding = true;
 			}
@@ -310,6 +349,17 @@ namespace Boss
 	}
 	void Skull::Update( float elapsedTime, const Input &input )
 	{
+	#if USE_IMGUI
+		// Apply for be able to see an adjustment immediately
+		{
+			const auto &data = Parameter::GetSkull();
+			body.offset		= data.hitBoxOffset;
+			body.size		= data.hitBoxSize;
+			hurtBox.offset	= data.hurtBoxOffset;
+			hurtBox.size	= data.hurtBoxSize;
+		}
+	#endif // USE_IMGUI
+
 		Base::Update( elapsedTime, input );
 
 		if ( NowDead() ) { return; }
@@ -329,16 +379,8 @@ namespace Boss
 			ChangeState();
 		}
 
-	#if USE_IMGUI
-		// Apply for be able to see an adjustment immediately
-		{
-			const auto &data = Parameter::GetSkull();
-			body.offset		= data.hitBoxOffset;
-			body.size		= data.hitBoxSize;
-			hurtBox.offset	= data.hurtBoxOffset;
-			hurtBox.size	= data.hurtBoxSize;
-		}
-	#endif // USE_IMGUI
+		const bool lookingRight = ( 0.0f <= ( input.wsTargetPos - body.WorldPosition() ).x ) ? true : false;
+		UpdateOrientation( lookingRight );
 		
 		// TODO: Set a current motion index
 		UpdateMotion( elapsedTime, NULL );
@@ -412,12 +454,14 @@ namespace Boss
 
 		if ( ImGui::TreeNode( u8"ショット関連" ) )
 		{
+			ImGui::DragInt  ( u8"発射回数",			&shotFireCount						);
 			ImGui::DragFloat( u8"前隙（秒）",		&shotBeginLagSecond,		0.01f );
 			ImGui::DragFloat( u8"発射間隔（秒）",		&shotFireIntervalSecond,	0.01f );
 			ImGui::DragFloat( u8"後隙（秒）",		&shotEndLagSecond,			0.01f );
-			shotBeginLagSecond		= std::max( 0.0f, shotBeginLagSecond		);
-			shotFireIntervalSecond	= std::max( 0.0f, shotFireIntervalSecond	);
-			shotEndLagSecond		= std::max( 0.0f, shotEndLagSecond			);
+			shotFireCount			= std::max( 1,		shotFireCount			);
+			shotBeginLagSecond		= std::max( 0.0f,	shotBeginLagSecond		);
+			shotFireIntervalSecond	= std::max( 0.0f,	shotFireIntervalSecond	);
+			shotEndLagSecond		= std::max( 0.0f,	shotEndLagSecond		);
 
 			shotDesc.ShowImGuiNode( u8"発射設定" );
 

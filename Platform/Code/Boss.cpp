@@ -310,6 +310,14 @@ namespace Boss
 	{
 		// No op
 	}
+	void Base::UpdateOrientation( bool lookingRight )
+	{
+		const float rotateSign = ( lookingRight ) ? 1.0f : -1.0f;
+		orientation = Donya::Quaternion::Make
+		(
+			Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
+		);
+	}
 	int  Base::MoveOnlyX( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
 		const int collideIndex = Actor::MoveX( velocity.x * elapsedTime, solids );

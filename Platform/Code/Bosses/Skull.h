@@ -61,6 +61,11 @@ namespace Boss
 		};
 		class Shot : public MoverBase
 		{
+		private:
+			float	timer		= 0.0f;
+			float	interval	= 0.0f;
+			int		fireCount	= 0;
+			bool	wasFinished	= false;
 		public:
 			void Init( Skull &instance );
 			void Update( Skull &instance, float elapsedTime, const Input &input );
@@ -69,6 +74,8 @@ namespace Boss
 		#if USE_IMGUI
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
+		private:
+			void Fire( Skull &instance, float elapsedTime, const Input &input ) const;
 		};
 		class Jump : public MoverBase
 		{
@@ -86,6 +93,8 @@ namespace Boss
 		};
 		class Shield : public MoverBase
 		{
+		private:
+			float timer = 0.0f;
 		public:
 			void Init( Skull &instance );
 			void Update( Skull &instance, float elapsedTime, const Input &input );
@@ -166,6 +175,7 @@ namespace Boss
 		float				shotBeginLagSecond		= 1.0f;
 		float				shotFireIntervalSecond	= 1.0f;
 		float				shotEndLagSecond		= 1.0f;
+		int					shotFireCount			= 3;
 		Bullet::FireDesc	shotDesc;
 
 		float				jumpDegree				= 60.0f; // 0.0f <= degree <= 90.0f
@@ -248,6 +258,7 @@ namespace Boss
 					CEREAL_NVP( shotBeginLagSecond		),
 					CEREAL_NVP( shotFireIntervalSecond	),
 					CEREAL_NVP( shotEndLagSecond		),
+					CEREAL_NVP( shotFireCount			),
 					CEREAL_NVP( shotDesc				),
 					CEREAL_NVP( shieldProtectSeconds	),
 					CEREAL_NVP( shieldBeginLagSecond	),
@@ -270,4 +281,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 3 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 4 )
