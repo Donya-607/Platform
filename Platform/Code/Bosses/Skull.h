@@ -41,6 +41,14 @@ namespace Boss
 		};
 		class DetectTargetAction : public MoverBase
 		{
+		private:
+			enum class Destination
+			{
+				None,
+				Shot,
+				Jump
+			};
+			Destination nextState = Destination::None;
 		public:
 			void Init( Skull &instance );
 			void Update( Skull &instance, float elapsedTime, const Input &input );
@@ -95,7 +103,9 @@ namespace Boss
 		#endif // USE_IMGUI
 		};
 	private:
-		std::unique_ptr<MoverBase> pMover = nullptr;
+		Input						previousInput;
+		Donya::Vector3				aimingPos;		// Used for store the target pos of some timing
+		std::unique_ptr<MoverBase>	pMover = nullptr;
 	private:
 		friend class cereal::access;
 		template<class Archive>

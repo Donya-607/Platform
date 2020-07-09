@@ -68,17 +68,40 @@ namespace Boss
 	}
 	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
-	#if DEBUG_MODE
-		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
-	#endif // DEBUG_MODE
+		if ( nextState != Destination::None ) { return; }
+		// else
+
+		if ( !IsZero( input.controllerInputDirection.x ) )
+		{
+			nextState		= Destination::Shot;
+			return;
+		}
+		// else
+
+		// Detect trigger timing only
+		if ( input.pressShot && !inst.previousInput.pressShot )
+		{
+			nextState		= Destination::Jump;
+			inst.aimingPos	= input.wsTargetPos;
+			return;
+		}
+		// else
 	}
 	bool Skull::DetectTargetAction::ShouldChangeMover( const Skull &inst ) const
 	{
-		return false; // For now, do not transition to anything.
+		return ( nextState != Destination::None ) ? true : false;
 	}
 	std::function<void()> Skull::DetectTargetAction::GetChangeStateMethod( Skull &inst ) const
 	{
-		return []() {}; // No op
+		switch ( nextState )
+		{
+		case Destination::Shot: return [&]() { inst.AssignMover<Shot>(); };
+		case Destination::Jump: return [&]() { inst.AssignMover<Jump>(); };
+		default: break;
+		}
+
+		_ASSERT_EXPR( 0, L"Error: ChangeStateMethod() requested when invalid timing!" );
+		return [&]() { inst.AssignMover<DetectTargetAction>(); }; // Fail safe
 	}
 #if USE_IMGUI
 	std::string Skull::DetectTargetAction::GetMoverName() const
@@ -94,16 +117,19 @@ namespace Boss
 	void Skull::Shot::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 	#if DEBUG_MODE
-		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+		constexpr float tmpSpeed = 2.0f;
+		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit() * tmpSpeed;
 	#endif // DEBUG_MODE
 	}
 	bool Skull::Shot::ShouldChangeMover( const Skull &inst ) const
 	{
-		return false; // For now, do not transition to anything.
+	#if DEBUG_MODE
+		return true;
+	#endif // DEBUG_MODE
 	}
 	std::function<void()> Skull::Shot::GetChangeStateMethod( Skull &inst ) const
 	{
-		return []() {}; // No op
+		return [&]() { inst.AssignMover<DetectTargetAction>(); };
 	}
 #if USE_IMGUI
 	std::string Skull::Shot::GetMoverName() const
@@ -114,21 +140,25 @@ namespace Boss
 
 	void Skull::Jump::Init( Skull &inst )
 	{
-		inst.velocity = 0.0f;
+	#if DEBUG_MODE
+		inst.velocity.y = 10.0f;
+	#endif // DEBUG_MODE
 	}
 	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 	#if DEBUG_MODE
-		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+		inst.velocity.y -= inst.GetGravity();
 	#endif // DEBUG_MODE
 	}
 	bool Skull::Jump::ShouldChangeMover( const Skull &inst ) const
 	{
-		return false; // For now, do not transition to anything.
+	#if DEBUG_MODE
+		return inst.body.WorldPosition().y < inst.roomArea.Min().y + 2.0f;
+	#endif // DEBUG_MODE
 	}
 	std::function<void()> Skull::Jump::GetChangeStateMethod( Skull &inst ) const
 	{
-		return []() {}; // No op
+		return [&]() { inst.AssignMover<Shield>(); };
 	}
 #if USE_IMGUI
 	std::string Skull::Jump::GetMoverName() const
@@ -143,17 +173,17 @@ namespace Boss
 	}
 	void Skull::Shield::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
-	#if DEBUG_MODE
-		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
-	#endif // DEBUG_MODE
+
 	}
 	bool Skull::Shield::ShouldChangeMover( const Skull &inst ) const
 	{
-		return false; // For now, do not transition to anything.
+	#if DEBUG_MODE
+		return true;
+	#endif // DEBUG_MODE
 	}
 	std::function<void()> Skull::Shield::GetChangeStateMethod( Skull &inst ) const
 	{
-		return []() {}; // No op
+		return [&]() { inst.AssignMover<Run>(); };
 	}
 #if USE_IMGUI
 	std::string Skull::Shield::GetMoverName() const
@@ -174,11 +204,13 @@ namespace Boss
 	}
 	bool Skull::Run::ShouldChangeMover( const Skull &inst ) const
 	{
-		return false; // For now, do not transition to anything.
+	#if DEBUG_MODE
+		return true;
+	#endif // DEBUG_MODE
 	}
 	std::function<void()> Skull::Run::GetChangeStateMethod( Skull &inst ) const
 	{
-		return []() {}; // No op
+		return [&]() { inst.AssignMover<DetectTargetAction>(); };
 	}
 #if USE_IMGUI
 	std::string Skull::Run::GetMoverName() const
@@ -228,6 +260,8 @@ namespace Boss
 		
 		// TODO: Set a current motion index
 		UpdateMotion( elapsedTime, NULL );
+
+		previousInput = input;
 	}
 	void Skull::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
