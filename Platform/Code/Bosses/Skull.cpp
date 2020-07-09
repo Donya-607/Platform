@@ -419,6 +419,8 @@ namespace Boss
 			shotFireIntervalSecond	= std::max( 0.0f, shotFireIntervalSecond	);
 			shotEndLagSecond		= std::max( 0.0f, shotEndLagSecond			);
 
+			shotDesc.ShowImGuiNode( u8"î≠éÀê›íË" );
+
 			ImGui::TreePop();
 		}
 
