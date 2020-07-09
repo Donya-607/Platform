@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "../Boss.h"
+#include "../Bullet.h"	// Use Bullet::FireDesc
 #include "../Damage.h"
 
 namespace Boss
@@ -159,17 +160,52 @@ namespace Boss
 	struct SkullParam
 	{
 	public:
-		int					hp					= 28;
-		float				gravity				= 1.0f;
-		float				jumpDegree			= 60.0f; // 0.0f <= degree <= 90.0f
-		float				jumpVerticalHeight	= 1.0f;
+		int					hp						= 28;
+		float				gravity					= 1.0f;
+		
+		float				shotBeginLagSecond		= 1.0f;
+		float				shotFireIntervalSecond	= 1.0f;
+		float				shotEndLagSecond		= 1.0f;
+		Bullet::FireDesc	shotDesc;
+
+		float				jumpDegree				= 60.0f; // 0.0f <= degree <= 90.0f
+		float				jumpVerticalHeight		= 1.0f;
 		std::vector<float>	jumpDestLengths;
-		float				runSpeed			= 1.0f;
+
+		struct RandomElement
+		{
+			int		bias	= 1;	// greater than zero
+			float	second	= 1.0f;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( bias	),
+					CEREAL_NVP( second	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		std::vector<RandomElement> shieldProtectSeconds;
+		float				shieldBeginLagSecond	= 1.0f;
+		float				shieldEndLagSecond		= 1.0f;
+		
+		float				runSpeed				= 1.0f;
+		float				runDestTakeDist			= 1.0f; // Destination = target-pos - runDestTakeDist
+		float				runEndLagSecond			= 1.0f;
+		
 		Definition::Damage	touchDamage;
-		Donya::Vector3		hitBoxOffset		{ 0.0f, 0.0f, 0.0f };
-		Donya::Vector3		hurtBoxOffset		{ 0.0f, 0.0f, 0.0f };
-		Donya::Vector3		hitBoxSize			{ 1.0f, 1.0f, 1.0f };
-		Donya::Vector3		hurtBoxSize			{ 1.0f, 1.0f, 1.0f };
+		Donya::Vector3		hitBoxOffset			{ 0.0f, 0.0f, 0.0f };
+		Donya::Vector3		hurtBoxOffset			{ 0.0f, 0.0f, 0.0f };
+		Donya::Vector3		hitBoxSize				{ 1.0f, 1.0f, 1.0f };
+		Donya::Vector3		hurtBoxSize				{ 1.0f, 1.0f, 1.0f };
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -206,6 +242,21 @@ namespace Boss
 				archive( CEREAL_NVP( jumpVerticalHeight ) );
 			}
 			if ( 4 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( shotBeginLagSecond		),
+					CEREAL_NVP( shotFireIntervalSecond	),
+					CEREAL_NVP( shotEndLagSecond		),
+					CEREAL_NVP( shotDesc				),
+					CEREAL_NVP( shieldProtectSeconds	),
+					CEREAL_NVP( shieldBeginLagSecond	),
+					CEREAL_NVP( shieldEndLagSecond		),
+					CEREAL_NVP( runDestTakeDist			),
+					CEREAL_NVP( runEndLagSecond			)
+				);
+			}
+			if ( 5 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}

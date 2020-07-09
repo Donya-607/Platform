@@ -226,7 +226,10 @@ namespace Boss
 		const int collideIndex = inst.MoveOnlyY( elapsedTime, solids );
 		if ( collideIndex != -1 ) // If collide to any
 		{
-			wasLanding = true;
+			if ( inst.velocity.y < 0.0f )
+			{
+				wasLanding = true;
+			}
 		}
 	}
 	bool Skull::Jump::ShouldChangeMover( const Skull &inst ) const
@@ -250,7 +253,7 @@ namespace Boss
 	}
 	void Skull::Shield::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
-
+		inst.aimingPos = input.wsTargetPos;
 	}
 	bool Skull::Shield::ShouldChangeMover( const Skull &inst ) const
 	{
@@ -397,10 +400,29 @@ namespace Boss
 	}
 	void SkullParam::ShowImGuiNode()
 	{
-		ImGui::DragInt   ( u8"初期ＨＰ",							&hp							);
-		ImGui::DragFloat ( u8"重力",								&gravity,			0.01f	);
+		if ( ImGui::TreeNode( u8"共通パラメータ" ) )
+		{
+			ImGui::DragInt   ( u8"初期ＨＰ",	&hp					);
+			ImGui::DragFloat ( u8"重力",		&gravity,	0.01f	);
+			hp		= std::max( 1,		hp		);
+			gravity	= std::max( 0.001f, gravity	);
 
-		if ( ImGui::TreeNode( u8"ジャンプ" ) )
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"ショット関連" ) )
+		{
+			ImGui::DragFloat( u8"前隙（秒）",		&shotBeginLagSecond,		0.01f );
+			ImGui::DragFloat( u8"発射間隔（秒）",		&shotFireIntervalSecond,	0.01f );
+			ImGui::DragFloat( u8"後隙（秒）",		&shotEndLagSecond,			0.01f );
+			shotBeginLagSecond		= std::max( 0.0f, shotBeginLagSecond		);
+			shotFireIntervalSecond	= std::max( 0.0f, shotFireIntervalSecond	);
+			shotEndLagSecond		= std::max( 0.0f, shotEndLagSecond			);
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"ジャンプ関連" ) )
 		{
 			ImGui::Text( u8"角度は右向きで真横を０度，真上を９０度とした場合" );
 			ImGui::SliderFloat( u8"射出角度(degree)", &jumpDegree, 0.1f, 90.0f );
@@ -431,21 +453,81 @@ namespace Boss
 			ImGui::TreePop();
 		}
 
-		ImGui::DragFloat ( u8"走行速度",							&runSpeed,			0.01f	);
-		ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f	);
-		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f	);
-		ImGui::DragFloat3( u8"喰らい判定・オフセット",			&hurtBoxOffset.x,	0.01f	);
-		ImGui::DragFloat3( u8"喰らい判定・サイズ（半分を指定）",	&hurtBoxSize.x,		0.01f	);
-		touchDamage.ShowImGuiNode( u8"接触ダメージ設定" );
-		gravity			= std::max( 0.001f,	gravity			);
-		runSpeed		= std::max( 0.001f,	runSpeed		);
-		hitBoxSize.x	= std::max( 0.0f,	hitBoxSize.x	);
-		hitBoxSize.y	= std::max( 0.0f,	hitBoxSize.y	);
-		hitBoxSize.z	= std::max( 0.0f,	hitBoxSize.z	);
-		hurtBoxSize.x	= std::max( 0.0f,	hurtBoxSize.x	);
-		hurtBoxSize.y	= std::max( 0.0f,	hurtBoxSize.y	);
-		hurtBoxSize.z	= std::max( 0.0f,	hurtBoxSize.z	);
-		hp				= std::max( 1,		hp				);
+		if ( ImGui::TreeNode( u8"シールド関連" ) )
+		{
+			ImGui::DragFloat( u8"展開までの秒数", &shieldBeginLagSecond,	0.01f );
+			ImGui::DragFloat( u8"展開後隙の秒数", &shieldEndLagSecond,	0.01f );
+			shieldBeginLagSecond	= std::max( 0.0f, shieldBeginLagSecond	);
+			shieldEndLagSecond		= std::max( 0.0f, shieldEndLagSecond	);
+
+			if ( ImGui::TreeNode( u8"展開時間の設定" ) )
+			{
+				RandomElement argument;
+				argument.bias	= 1;
+				argument.second	= 1.0f;
+				ImGui::Helper::ResizeByButton( &shieldProtectSeconds, argument );
+				if ( shieldProtectSeconds.empty() )
+				{
+					shieldProtectSeconds.emplace_back( argument );
+				}
+
+				auto ShowElement = []( const std::string &caption, RandomElement *p )
+				{
+					if ( !ImGui::TreeNode( caption.c_str() ) ) { return; }
+					// else
+
+					ImGui::DragInt  ( u8"選ばれやすさ",	&p->bias );
+					ImGui::DragFloat( u8"待機秒数",		&p->second, 0.01f );
+					p->bias		= std::max( 0,		p->bias		);
+					p->second	= std::max( 0.0f,	p->second	);
+
+					ImGui::TreePop();
+				};
+
+				std::string caption{};
+				const size_t count = shieldProtectSeconds.size();
+				for ( size_t i = 0; i < count; ++i )
+				{
+					caption = Donya::MakeArraySuffix( i );
+					ShowElement( caption, &shieldProtectSeconds[i] );
+				}
+
+				ImGui::TreePop();
+			}
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"走行関連" ) )
+		{
+			ImGui::DragFloat( u8"速度",					&runSpeed,			0.01f );
+			ImGui::DragFloat( u8"終点から離れる距離",		&runDestTakeDist,	0.01f );
+			ImGui::DragFloat( u8"着いてからの待機秒数",	&runEndLagSecond,	0.01f );
+			runSpeed		= std::max( 0.001f,		runSpeed		);
+			runDestTakeDist	= std::max( 0.0f,		runDestTakeDist	);
+			runEndLagSecond	= std::max( 0.0f,		runEndLagSecond	);
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"当たり判定関連" ) )
+		{
+			ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f	);
+			ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f	);
+			ImGui::DragFloat3( u8"喰らい判定・オフセット",			&hurtBoxOffset.x,	0.01f	);
+			ImGui::DragFloat3( u8"喰らい判定・サイズ（半分を指定）",	&hurtBoxSize.x,		0.01f	);
+			touchDamage.ShowImGuiNode( u8"接触ダメージ設定" );
+
+			hitBoxSize.x	= std::max( 0.0f,	hitBoxSize.x	);
+			hitBoxSize.y	= std::max( 0.0f,	hitBoxSize.y	);
+			hitBoxSize.z	= std::max( 0.0f,	hitBoxSize.z	);
+			hurtBoxSize.x	= std::max( 0.0f,	hurtBoxSize.x	);
+			hurtBoxSize.y	= std::max( 0.0f,	hurtBoxSize.y	);
+			hurtBoxSize.z	= std::max( 0.0f,	hurtBoxSize.z	);
+
+			ImGui::TreePop();
+		}
+
 	}
 #endif // USE_IMGUI
 }
