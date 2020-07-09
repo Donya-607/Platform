@@ -175,6 +175,7 @@ namespace Boss
 		float				shotBeginLagSecond		= 1.0f;
 		float				shotFireIntervalSecond	= 1.0f;
 		float				shotEndLagSecond		= 1.0f;
+		float				shotDegreeIncrement		= 10.0f;
 		int					shotFireCount			= 3;
 		Bullet::FireDesc	shotDesc;
 
@@ -269,6 +270,10 @@ namespace Boss
 			}
 			if ( 5 <= version )
 			{
+				archive ( CEREAL_NVP( shotDegreeIncrement ) );
+			}
+			if ( 6 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -281,4 +286,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 4 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 5 )

@@ -173,7 +173,28 @@ namespace Boss
 		desc.initialSpeed	=  data.shotDesc.initialSpeed;
 		desc.position		=  inst.orientation.RotateVector( data.shotDesc.position );
 		desc.position		+= inst.body.WorldPosition(); // Local space to World space
-		desc.direction		=  ( input.wsTargetPos - desc.position ).Unit();
+		
+		desc.direction				= ( input.wsTargetPos - desc.position ).Unit();
+		const float &increment		= data.shotDegreeIncrement;
+		const float actualDegree	= desc.direction.XY().Degree();
+		const float roundDegree		= std::roundf( actualDegree );
+		const float remain			= fmodf( roundDegree, increment );
+
+		float resultDegree = roundDegree - remain;
+
+		/*
+		The angles interval set from:
+		|---|---|---|---|
+		to:
+		--|---|---|---|--
+		*/
+		if ( increment * 0.5f < fabsf( remain ) )
+		{
+			resultDegree += increment;
+		}
+
+		desc.direction.x = cosf( ToRadian( resultDegree ) );
+		desc.direction.y = sinf( ToRadian( resultDegree ) );
 
 		Bullet::Admin::Get().RequestFire( desc );
 	}
@@ -454,14 +475,16 @@ namespace Boss
 
 		if ( ImGui::TreeNode( u8"ƒVƒ‡ƒbƒgŠÖ˜A" ) )
 		{
-			ImGui::DragInt  ( u8"”­ŽË‰ñ”",			&shotFireCount						);
-			ImGui::DragFloat( u8"‘OŒ„i•bj",		&shotBeginLagSecond,		0.01f );
-			ImGui::DragFloat( u8"”­ŽËŠÔŠui•bj",		&shotFireIntervalSecond,	0.01f );
-			ImGui::DragFloat( u8"ŒãŒ„i•bj",		&shotEndLagSecond,			0.01f );
+			ImGui::DragInt  ( u8"”­ŽË‰ñ”",					&shotFireCount						);
+			ImGui::DragFloat( u8"‘OŒ„i•bj",				&shotBeginLagSecond,		0.01f	);
+			ImGui::DragFloat( u8"”­ŽËŠÔŠui•bj",				&shotFireIntervalSecond,	0.01f	);
+			ImGui::DragFloat( u8"ŒãŒ„i•bj",				&shotEndLagSecond,			0.01f	);
+			ImGui::DragFloat( u8"”­ŽËŠp“x‚Ì‚Ý(degree)",		&shotDegreeIncrement,		1.0f	);
 			shotFireCount			= std::max( 1,		shotFireCount			);
 			shotBeginLagSecond		= std::max( 0.0f,	shotBeginLagSecond		);
 			shotFireIntervalSecond	= std::max( 0.0f,	shotFireIntervalSecond	);
 			shotEndLagSecond		= std::max( 0.0f,	shotEndLagSecond		);
+			shotDegreeIncrement		= std::max( 0.0f,	shotDegreeIncrement		);
 
 			shotDesc.ShowImGuiNode( u8"”­ŽËÝ’è" );
 
