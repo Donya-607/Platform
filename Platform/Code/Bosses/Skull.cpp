@@ -1,6 +1,6 @@
 #include "Skull.h"
 
-#include <numeric>			// Use std::accumlate
+#include <numeric>			// Use std::accumulate
 
 #include "../Donya/Random.h"
 
@@ -322,18 +322,20 @@ namespace Boss
 		if ( protectSeconds.empty() ) { protectSecond = 1.0f; }
 		else
 		{
-			auto Addition = []( SkullParam::RandomElement &lhs, SkullParam::RandomElement &rhs )
+			auto AddBias = []( int sum, const SkullParam::RandomElement &element )
 			{
-				return lhs.bias + rhs.bias;
+				return sum + element.bias;
 			};
-			const int randomLimit = std::accumulate( protectSeconds.begin(), protectSeconds.end(), 0, Addition );
+			const int randomLimit = std::accumulate( protectSeconds.cbegin(), protectSeconds.cend(), 0, AddBias );
 			if ( randomLimit <= 0 ) { protectSecond = 1.0f; }
 			else
 			{
-				const int random = Donya::Random::GenerateInt( randomLimit ) + 1;
+				const int random = Donya::Random::GenerateInt( randomLimit );
+				int border = 0;
 				for ( const auto &it : protectSeconds )
 				{
-					if ( it.bias <= random )
+					border += it.bias;
+					if ( random < border )
 					{
 						protectSecond = it.second;
 						break;
@@ -386,7 +388,8 @@ namespace Boss
 
 	void Skull::Run::Init( Skull &inst )
 	{
-		inst.velocity = Parameter::GetSkull().runSpeed * GetCurrentDirectionSign( inst );
+		inst.velocity.x = Parameter::GetSkull().runSpeed * GetCurrentDirectionSign( inst );
+		inst.velocity.y = 0.0f;
 
 		timer		= 0.0f;
 		wasArrived	= false;
@@ -408,7 +411,8 @@ namespace Boss
 		if ( nowSign != prevSign )
 		{
 			wasArrived = true;
-			inst.body.pos.x = inst.aimingPos.x;
+			inst.body.pos.x  = inst.aimingPos.x;
+			inst.hurtBox.pos = inst.body.pos;
 		}
 	}
 	bool Skull::Run::ShouldChangeMover( const Skull &inst ) const
