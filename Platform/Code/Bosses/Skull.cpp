@@ -1,5 +1,9 @@
 #include "Skull.h"
 
+#include <numeric>			// Use std::accumlate
+
+#include "../Donya/Random.h"
+
 #include "../Parameter.h"
 
 namespace Boss
@@ -309,18 +313,65 @@ namespace Boss
 
 	void Skull::Shield::Init( Skull &inst )
 	{
-		inst.velocity = 0.0f;
+		inst.velocity	= 0.0f;
+
+		nowProtected	= false;
+		timer			= 0.0f;
+
+		const auto &protectSeconds = Parameter::GetSkull().shieldProtectSeconds;
+		if ( protectSeconds.empty() ) { protectSecond = 1.0f; }
+		else
+		{
+			auto Addition = []( SkullParam::RandomElement &lhs, SkullParam::RandomElement &rhs )
+			{
+				return lhs.bias + rhs.bias;
+			};
+			const int randomLimit = std::accumulate( protectSeconds.begin(), protectSeconds.end(), 0, Addition );
+			if ( randomLimit <= 0 ) { protectSecond = 1.0f; }
+			else
+			{
+				const int random = Donya::Random::GenerateInt( randomLimit ) + 1;
+				for ( const auto &it : protectSeconds )
+				{
+					if ( it.bias <= random )
+					{
+						protectSecond = it.second;
+						break;
+					}
+				}
+			}
+		}
 	}
 	void Skull::Shield::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
-		inst.aimingPos = input.wsTargetPos;
+		const auto &data = Parameter::GetSkull();
+
+		timer += elapsedTime;
+
+		if ( data.shieldBeginLagSecond <= timer && timer < protectSecond )
+		{
+			nowProtected = true;
+
+		#if DEBUG_MODE
+			inst.body.pos.z = sinf( timer * PI * 2.0f ) * 2.0f;
+		#endif // DEBUG_MODE
+		}
+		else
+		{
+			nowProtected = false;
+
+		#if DEBUG_MODE
+			inst.body.pos.z = 0.0f;
+		#endif // DEBUG_MODE
+		}
+
+		const float horizontalSign = Donya::SignBitF( input.wsTargetPos.x - inst.body.WorldPosition().x );
+		inst.aimingPos		=  input.wsTargetPos;
+		inst.aimingPos.x	-= data.runDestTakeDist * horizontalSign;
 	}
 	bool Skull::Shield::ShouldChangeMover( const Skull &inst ) const
 	{
-	#if DEBUG_MODE
-		return true;
-	#endif // DEBUG_MODE
-		return true;
+		return ( protectSecond + Parameter::GetSkull().shieldEndLagSecond <= timer ) ? true : false;
 	}
 	std::function<void()> Skull::Shield::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -335,20 +386,34 @@ namespace Boss
 
 	void Skull::Run::Init( Skull &inst )
 	{
-		inst.velocity = 0.0f;
+		inst.velocity = Parameter::GetSkull().runSpeed * GetCurrentDirectionSign( inst );
+
+		timer		= 0.0f;
+		wasArrived	= false;
+		initialPos	= inst.body.WorldPosition();
 	}
-	void Skull::Run::Update( Skull &inst, float elapsedTime, const Input &input )
+	void Skull::Run::Update( Skull &instance, float elapsedTime, const Input &input )
 	{
-	#if DEBUG_MODE
-		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
-	#endif // DEBUG_MODE
+		if ( wasArrived )
+		{
+			timer += elapsedTime;
+		}
+	}
+	void Skull::Run::PhysicUpdate( Skull &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	{
+		const int prevSign = GetCurrentDirectionSign( inst );
+		MoverBase::PhysicUpdate( inst, elapsedTime, solids );
+		const int nowSign  = GetCurrentDirectionSign( inst );
+
+		if ( nowSign != prevSign )
+		{
+			wasArrived = true;
+			inst.body.pos.x = inst.aimingPos.x;
+		}
 	}
 	bool Skull::Run::ShouldChangeMover( const Skull &inst ) const
 	{
-	#if DEBUG_MODE
-		return true;
-	#endif // DEBUG_MODE
-		return true;
+		return ( Parameter::GetSkull().runEndLagSecond <= timer );
 	}
 	std::function<void()> Skull::Run::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -360,6 +425,10 @@ namespace Boss
 		return u8"ëñçs";
 	}
 #endif // USE_IMGUI
+	int  Skull::Run::GetCurrentDirectionSign( const Skull &inst ) const
+	{
+		return Donya::SignBit( inst.aimingPos.x - inst.body.WorldPosition().x );
+	}
 
 
 	void Skull::Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea )

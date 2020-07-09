@@ -51,10 +51,10 @@ namespace Boss
 			};
 			Destination nextState = Destination::None;
 		public:
-			void Init( Skull &instance );
-			void Update( Skull &instance, float elapsedTime, const Input &input );
-			bool ShouldChangeMover( const Skull &instance ) const;
-			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
+			void Init( Skull &instance ) override;
+			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
+			bool ShouldChangeMover( const Skull &instance ) const override;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
@@ -67,10 +67,10 @@ namespace Boss
 			int		fireCount	= 0;
 			bool	wasFinished	= false;
 		public:
-			void Init( Skull &instance );
-			void Update( Skull &instance, float elapsedTime, const Input &input );
-			bool ShouldChangeMover( const Skull &instance ) const;
-			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
+			void Init( Skull &instance ) override;
+			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
+			bool ShouldChangeMover( const Skull &instance ) const override;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
@@ -82,11 +82,11 @@ namespace Boss
 		private:
 			bool wasLanding = false;
 		public:
-			void Init( Skull &instance );
-			void Update( Skull &instance, float elapsedTime, const Input &input );
+			void Init( Skull &instance ) override;
+			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
 			void PhysicUpdate( Skull &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
-			bool ShouldChangeMover( const Skull &instance ) const;
-			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
+			bool ShouldChangeMover( const Skull &instance ) const override;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
@@ -94,26 +94,35 @@ namespace Boss
 		class Shield : public MoverBase
 		{
 		private:
-			float timer = 0.0f;
+			float	timer			= 0.0f;
+			float	protectSecond	= 1.0f;
+			bool	nowProtected	= false;
 		public:
-			void Init( Skull &instance );
-			void Update( Skull &instance, float elapsedTime, const Input &input );
-			bool ShouldChangeMover( const Skull &instance ) const;
-			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
+			void Init( Skull &instance ) override;
+			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
+			bool ShouldChangeMover( const Skull &instance ) const override;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
 		};
 		class Run : public MoverBase
 		{
+		private:
+			float	timer		= 0.0f;
+			bool	wasArrived	= false;
+			Donya::Vector3 initialPos;
 		public:
-			void Init( Skull &instance );
-			void Update( Skull &instance, float elapsedTime, const Input &input );
-			bool ShouldChangeMover( const Skull &instance ) const;
-			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
+			void Init( Skull &instance ) override;
+			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
+			void PhysicUpdate( Skull &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+			bool ShouldChangeMover( const Skull &instance ) const override;
+			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
+		private:
+			int GetCurrentDirectionSign( const Skull &instance ) const;
 		};
 	private:
 		Input						previousInput;
