@@ -3,10 +3,10 @@
 #include "Common.h"
 #include "Bosses/Skull.h"
 #include "FilePath.h"
+#include "Map.h"			// Use Map::ToWorldPos()
 #include "ModelHelper.h"
 
 #if USE_IMGUI
-#include "Map.h"			// Use Map::ToWorldPos()
 #include "Parameter.h"
 #include "StageFormat.h"
 #endif // USE_IMGUI

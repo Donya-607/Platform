@@ -308,7 +308,9 @@ Scene::Result SceneResult::ReturnResult()
 	bool allowPause		= !Fader::Get().IsExist();
 	if ( 0 && requestPause && allowPause )
 	{
+	#if DEBUG_MODE
 		Donya::Sound::Play( Music::DEBUG_Weak );
+	#endif // DEBUG_MODE
 
 		Scene::Result pause{};
 		pause.AddRequest( Scene::Request::ADD_SCENE );

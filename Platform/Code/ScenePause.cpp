@@ -63,7 +63,9 @@ void ScenePause::UpdateChooseItem()
 
 	if ( index != oldIndex )
 	{
+	#if DEBUG_MODE
 		Donya::Sound::Play( Music::DEBUG_Weak );
+	#endif // DEBUG_MODE
 	}
 
 	choice = scast<Choice>( index );
@@ -73,7 +75,9 @@ Scene::Result ScenePause::ReturnResult()
 {
 	if ( Donya::Keyboard::Trigger( 'P' ) || controller.Trigger( Donya::Gamepad::Button::START ) )
 	{
+	#if DEBUG_MODE
 		Donya::Sound::Play( Music::DEBUG_Weak );
+	#endif // DEBUG_MODE
 
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::REMOVE_ME );

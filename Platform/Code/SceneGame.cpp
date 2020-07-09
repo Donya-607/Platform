@@ -83,6 +83,7 @@ namespace
 			}
 		}
 	public:
+	#if USE_IMGUI
 		void ShowImGuiNode()
 		{
 			if ( ImGui::TreeNode( u8"ÉJÉÅÉâ" ) )
@@ -110,6 +111,7 @@ namespace
 				ImGui::TreePop();
 			}
 		}
+	#endif // USE_IMGUI
 	};
 
 	static ParamOperator<SceneParam> sceneParam{ "SceneGame" };
@@ -876,7 +878,9 @@ Scene::Result SceneGame::ReturnResult()
 	bool allowPause		= !Fader::Get().IsExist();
 	if ( 0 && requestPause && allowPause )
 	{
+	#if DEBUG_MODE
 		Donya::Sound::Play( Music::DEBUG_Weak );
+	#endif // DEBUG_MODE
 
 		Scene::Result pause{};
 		pause.AddRequest( Scene::Request::ADD_SCENE );

@@ -71,9 +71,12 @@ namespace Boss
 		};
 		class Jump : public MoverBase
 		{
+		private:
+			bool wasLanding = false;
 		public:
 			void Init( Skull &instance );
 			void Update( Skull &instance, float elapsedTime, const Input &input );
+			void PhysicUpdate( Skull &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
 			bool ShouldChangeMover( const Skull &instance ) const;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const;
 		#if USE_IMGUI
@@ -156,16 +159,17 @@ namespace Boss
 	struct SkullParam
 	{
 	public:
-		int					hp				= 28;
-		float				gravity			= 1.0f;
-		float				jumpHeight		= 1.0f;
-		float				jumpTakeSeconds	= 1.0f;
-		float				runSpeed		= 1.0f;
+		int					hp					= 28;
+		float				gravity				= 1.0f;
+		float				jumpDegree			= 60.0f; // 0.0f <= degree <= 90.0f
+		float				jumpVerticalHeight	= 1.0f;
+		std::vector<float>	jumpDestLengths;
+		float				runSpeed			= 1.0f;
 		Definition::Damage	touchDamage;
-		Donya::Vector3		hitBoxOffset	{ 0.0f, 0.0f, 0.0f };
-		Donya::Vector3		hurtBoxOffset	{ 0.0f, 0.0f, 0.0f };
-		Donya::Vector3		hitBoxSize		{ 1.0f, 1.0f, 1.0f };
-		Donya::Vector3		hurtBoxSize		{ 1.0f, 1.0f, 1.0f };
+		Donya::Vector3		hitBoxOffset		{ 0.0f, 0.0f, 0.0f };
+		Donya::Vector3		hurtBoxOffset		{ 0.0f, 0.0f, 0.0f };
+		Donya::Vector3		hitBoxSize			{ 1.0f, 1.0f, 1.0f };
+		Donya::Vector3		hurtBoxSize			{ 1.0f, 1.0f, 1.0f };
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -185,13 +189,23 @@ namespace Boss
 			{
 				archive
 				(
-					CEREAL_NVP( gravity			),
-					CEREAL_NVP( jumpHeight		),
-					CEREAL_NVP( jumpTakeSeconds	),
-					CEREAL_NVP( runSpeed		)
+					CEREAL_NVP( gravity		),
+					CEREAL_NVP( runSpeed	)
 				);
 			}
 			if ( 2 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( jumpDegree		),
+					CEREAL_NVP( jumpDestLengths	)
+				);
+			}
+			if ( 3 <= version )
+			{
+				archive( CEREAL_NVP( jumpVerticalHeight ) );
+			}
+			if ( 4 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -205,4 +219,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 1 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 3 )

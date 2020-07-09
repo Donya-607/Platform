@@ -126,6 +126,7 @@ namespace Boss
 	#if DEBUG_MODE
 		return true;
 	#endif // DEBUG_MODE
+		return true;
 	}
 	std::function<void()> Skull::Shot::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -140,21 +141,97 @@ namespace Boss
 
 	void Skull::Jump::Init( Skull &inst )
 	{
-	#if DEBUG_MODE
-		inst.velocity.y = 10.0f;
-	#endif // DEBUG_MODE
+		const auto &data = Parameter::GetSkull();
+
+		const Donya::Vector2 horizontalDiff	= ( inst.aimingPos - inst.body.WorldPosition() ).XZ();
+		const float actualLength			= horizontalDiff.Length();
+		const auto &locations				= data.jumpDestLengths;
+		
+		float length = actualLength;
+		bool  jumpAsVertically = false;
+		if ( !locations.empty() )
+		{
+			const size_t locationCount = locations.size();
+			for ( size_t i = 0; i < locationCount; ++i )
+			{
+				if ( actualLength <= locations[i] )
+				{
+					if ( i == 0 )
+					{
+						jumpAsVertically = true;
+						length = 0.0f;
+					}
+					else
+					{
+						jumpAsVertically = false;
+						length = locations[i - 1];
+					}
+
+					break;
+				}
+				else if ( locationCount <= i + 1 )
+				{
+					length = locations.back();
+				}
+			}
+		}
+
+		length = std::min( length, actualLength );
+
+		const float theta	= ToRadian( ( jumpAsVertically ) ? 90.0f : Donya::Clamp( data.jumpDegree, 0.1f, 90.0f ) );
+		const float sin		= sinf( theta );
+		const float cos		= cosf( theta );
+
+		float speed = 0.0f;
+		if ( jumpAsVertically )
+		{
+			// v = sqrt( 2*g*h ) / sinT
+			// See: https://keisan.casio.jp/exec/system/1204505822
+
+			// But it will jump as vertically here, the sin(theta) will be 1.0f.
+
+			const float numerator = sqrtf( 2.0f * inst.GetGravity() * data.jumpVerticalHeight );
+			speed = numerator;
+		}
+		else
+		{
+			// v = sqrt( g*l / 2*sinT*cosT )
+			// See: https://keisan.casio.jp/exec/system/1204505832
+
+			const float numerator	= inst.GetGravity() * length;
+			const float denominator	= 2.0f * sin * cos;
+
+			// The sin and cos are made by 0 ~ 90 degrees, so these has guaranteed to be a positive value.
+			// So it will not pass a negative value to sqrtf().
+			speed = sqrtf( numerator / ( denominator + EPSILON ) );
+		}
+
+		inst.velocity.x = cos * speed * Donya::SignBitF( horizontalDiff.x );
+		inst.velocity.y = sin * speed;
+		inst.velocity.z = 0.0f;
+		wasLanding = false;
 	}
 	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
-	#if DEBUG_MODE
-		inst.velocity.y -= inst.GetGravity();
-	#endif // DEBUG_MODE
+		inst.velocity.y -= inst.GetGravity() * elapsedTime;
+	}
+	void Skull::Jump::PhysicUpdate( Skull &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	{
+		if ( inst.NowDead() ) { return; }
+		// else
+
+		inst.MoveOnlyX( elapsedTime, solids );
+		inst.MoveOnlyZ( elapsedTime, solids );
+
+		const int collideIndex = inst.MoveOnlyY( elapsedTime, solids );
+		if ( collideIndex != -1 ) // If collide to any
+		{
+			wasLanding = true;
+		}
 	}
 	bool Skull::Jump::ShouldChangeMover( const Skull &inst ) const
 	{
-	#if DEBUG_MODE
-		return inst.body.WorldPosition().y < inst.roomArea.Min().y + 2.0f;
-	#endif // DEBUG_MODE
+		return wasLanding;
 	}
 	std::function<void()> Skull::Jump::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -180,6 +257,7 @@ namespace Boss
 	#if DEBUG_MODE
 		return true;
 	#endif // DEBUG_MODE
+		return true;
 	}
 	std::function<void()> Skull::Shield::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -207,6 +285,7 @@ namespace Boss
 	#if DEBUG_MODE
 		return true;
 	#endif // DEBUG_MODE
+		return true;
 	}
 	std::function<void()> Skull::Run::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -320,8 +399,38 @@ namespace Boss
 	{
 		ImGui::DragInt   ( u8"初期ＨＰ",							&hp							);
 		ImGui::DragFloat ( u8"重力",								&gravity,			0.01f	);
-		ImGui::DragFloat ( u8"ジャンプする高さ",					&jumpHeight,		0.01f	);
-		ImGui::DragFloat ( u8"ジャンプにかける秒数",				&jumpTakeSeconds,	0.01f	);
+
+		if ( ImGui::TreeNode( u8"ジャンプ" ) )
+		{
+			ImGui::Text( u8"角度は右向きで真横を０度，真上を９０度とした場合" );
+			ImGui::SliderFloat( u8"射出角度(degree)", &jumpDegree, 0.1f, 90.0f );
+
+			ImGui::DragFloat( u8"垂直ジャンプ時の高さ", &jumpVerticalHeight, 0.1f );
+			jumpVerticalHeight = std::max( 0.1f, jumpVerticalHeight );
+
+			if ( ImGui::TreeNode( u8"終点の距離たち" ) )
+			{
+				const float lastLength = ( jumpDestLengths.empty() ) ? 0.0f : jumpDestLengths.back();
+				ImGui::Helper::ResizeByButton( &jumpDestLengths, lastLength + 0.01f );
+
+				std::string caption;
+
+				const size_t count = jumpDestLengths.size();
+				for ( size_t i = 0; i < count; ++i )
+				{
+					caption = Donya::MakeArraySuffix( i );
+					ImGui::DragFloat( caption.c_str(), &jumpDestLengths[i], 0.1f );
+
+					const float lowestLength = ( i == 0 ) ? 0.0f : jumpDestLengths[i - 1];
+					jumpDestLengths[i] = Donya::Clamp( jumpDestLengths[i], lowestLength, jumpDestLengths[i] );
+				}
+
+				ImGui::TreePop();
+			}
+
+			ImGui::TreePop();
+		}
+
 		ImGui::DragFloat ( u8"走行速度",							&runSpeed,			0.01f	);
 		ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f	);
 		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f	);
@@ -329,8 +438,6 @@ namespace Boss
 		ImGui::DragFloat3( u8"喰らい判定・サイズ（半分を指定）",	&hurtBoxSize.x,		0.01f	);
 		touchDamage.ShowImGuiNode( u8"接触ダメージ設定" );
 		gravity			= std::max( 0.001f,	gravity			);
-		jumpHeight		= std::max( 0.001f,	jumpHeight		);
-		jumpTakeSeconds	= std::max( 0.001f,	jumpTakeSeconds	);
 		runSpeed		= std::max( 0.001f,	runSpeed		);
 		hitBoxSize.x	= std::max( 0.0f,	hitBoxSize.x	);
 		hitBoxSize.y	= std::max( 0.0f,	hitBoxSize.y	);

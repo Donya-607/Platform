@@ -81,6 +81,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)Code\Donya\;$(ProjectDir)External\Cereal\include\;$(ProjectDir)External\DirectXTK\Inc\;$(ProjectDir)External\FMOD\LowLevel\inc\;$(ProjectDir)External\FMOD\Studio\inc\;$(ProjectDir)External\ImGui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -108,6 +109,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)Code\Donya\;$(ProjectDir)External\Cereal\include\;$(ProjectDir)External\DirectXTK\Inc\;$(ProjectDir)External\FMOD\LowLevel\inc\;$(ProjectDir)External\FMOD\Studio\inc\;$(ProjectDir)External\ImGui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

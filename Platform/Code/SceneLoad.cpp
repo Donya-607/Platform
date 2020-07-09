@@ -32,9 +32,6 @@
 #include "Player.h"
 
 
-#undef max
-#undef min
-
 namespace
 {
 	struct Member

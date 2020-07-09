@@ -8,6 +8,7 @@
 
 #include "Common.h"
 #include "Enemies/Terry.h"
+#include "FilePath.h"
 #include "ModelHelper.h"
 #if USE_IMGUI
 #include "Map.h"			// Use ToWorldPos()
