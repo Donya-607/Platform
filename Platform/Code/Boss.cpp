@@ -156,7 +156,7 @@ namespace Boss
 	{
 		pReceivedDamage.reset();
 	}
-	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Base::Update( float elapsedTime, const Input &input )
 	{
 		if ( NowDead() ) { return; }
 		// else
@@ -362,7 +362,7 @@ namespace Boss
 		// Enter to the room by gravity
 		velocity		= 0.0f;
 	}
-	void Base::AppearUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Base::AppearUpdate( float elapsedTime, const Input &input )
 	{
 		// Re-activate the collision
 		if ( !body.exist )
@@ -457,11 +457,11 @@ namespace Boss
 	{
 		ClearAllBosses();
 	}
-	void Container::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Container::Update( float elapsedTime, const Input &input )
 	{
 		for ( auto &it : bosses )
 		{
-			if ( it.pBoss ) { it.pBoss->Update( elapsedTime, wsTargetPos ); }
+			if ( it.pBoss ) { it.pBoss->Update( elapsedTime, input ); }
 		}
 
 		RemoveBosses();

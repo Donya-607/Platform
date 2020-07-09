@@ -51,6 +51,14 @@ namespace Boss
 
 	bool LoadResource();
 
+	struct Input
+	{
+		Donya::Vector3 wsTargetPos;
+		Donya::Vector2 controllerInputDirection;
+		bool pressJump = false;
+		bool pressShot = false;
+	};
+
 	struct InitializeParam
 	{
 		Donya::Vector3	wsPos;
@@ -125,7 +133,7 @@ namespace Boss
 	public:
 		virtual void Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea );
 		virtual void Uninit();
-		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos );
+		virtual void Update( float elapsedTime, const Input &input );
 		virtual void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
@@ -175,7 +183,7 @@ namespace Boss
 		/// </summary>
 		virtual int MoveOnlyZ( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
 		virtual void AppearInit();
-		virtual void AppearUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
+		virtual void AppearUpdate( float elapsedTime, const Input &input );
 		/// <summary>
 		/// Returns true when landing to ground.
 		/// </summary>
@@ -244,7 +252,7 @@ namespace Boss
 	public:
 		bool Init( int stageNumber );
 		void Uninit();
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos );
+		void Update( float elapsedTime, const Input &input );
 		void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;

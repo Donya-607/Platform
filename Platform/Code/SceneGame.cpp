@@ -207,6 +207,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 
 	controller.Update();
+	AssignCurrentInput();
 
 	if ( pMap ) { pMap->Update( elapsedTime ); }
 
@@ -252,10 +253,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Bullet::Admin::Get().Update( elapsedTime, currentScreen );
 	Enemy::Admin::Get().Update( elapsedTime, playerPos, currentScreen );
 
-	if ( pBossContainer )
-	{
-		pBossContainer->Update( elapsedTime, playerPos );
-	}
+	BossUpdate( elapsedTime, playerPos );
 
 	// PhysicUpdates
 	{
@@ -496,6 +494,40 @@ void SceneGame::UninitStage()
 	Enemy::Admin::Get().ClearInstances();
 }
 
+void SceneGame::AssignCurrentInput()
+{
+	bool pressLeft	= false;
+	bool pressRight	= false;
+	bool pressJump	= false;
+	bool pressShot	= false;
+
+	// TODO: To be changeable the input key or button
+
+	if ( controller.IsConnected() )
+	{
+		using Button	= Donya::Gamepad::Button;
+		using Direction	= Donya::Gamepad::StickDirection;
+		
+		pressLeft  = controller.Press( Button::LEFT  ) || controller.PressStick( Direction::LEFT  );
+		pressRight = controller.Press( Button::RIGHT ) || controller.PressStick( Direction::RIGHT );
+		pressJump  = controller.Press( Button::A );
+		pressShot  = controller.Press( Button::B );
+	}
+	else
+	{
+		pressLeft  = Donya::Keyboard::Press( VK_LEFT  );
+		pressRight = Donya::Keyboard::Press( VK_RIGHT );
+		pressJump  = Donya::Keyboard::Press( VK_SHIFT );
+		pressShot  = Donya::Keyboard::Press( 'Z' );
+	}
+
+	currentInput.Clear();
+	if ( pressLeft  ) { currentInput.inputDirection.x -= 1.0f; }
+	if ( pressRight ) { currentInput.inputDirection.x += 1.0f; }
+	currentInput.pressJump = pressJump;
+	currentInput.pressShot = pressShot;
+}
+
 void SceneGame::CameraInit()
 {
 	const auto &data = FetchParameter();
@@ -656,17 +688,11 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 {
 	if ( !pPlayer ) { return; }
 	// else
-		
-	const bool pressRight = Donya::Keyboard::Press( VK_RIGHT );
-	const bool pressLeft  = Donya::Keyboard::Press( VK_LEFT  );
-	const bool pressJump  = Donya::Keyboard::Press( VK_SHIFT );
-	const bool pressShot  = Donya::Keyboard::Press( 'Z' );
 
-	Player::Input input;
-	if ( pressRight ) { input.moveVelocity.x += 1.0f; }
-	if ( pressLeft  ) { input.moveVelocity.x -= 1.0f; }
-	input.useJump = pressJump;
-	input.useShot = pressShot;
+	Player::Input input{};
+	input.moveVelocity	= currentInput.inputDirection;
+	input.useJump		= currentInput.pressJump;
+	input.useShot		= currentInput.pressShot;
 
 	pPlayer->Update( elapsedTime, input );
 
@@ -678,6 +704,20 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	{
 		elapsedSecondsAfterMiss = 0.0f;
 	}
+}
+
+void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+{
+	if ( !pBossContainer ) { return; }
+	// else
+
+	Boss::Input input{};
+	input.wsTargetPos				= wsTargetPos;
+	input.controllerInputDirection	= currentInput.inputDirection;
+	input.pressJump					= currentInput.pressJump;
+	input.pressShot					= currentInput.pressShot;
+
+	pBossContainer->Update( elapsedTime, input );
 }
 
 void SceneGame::UpdateCurrentRoomID()

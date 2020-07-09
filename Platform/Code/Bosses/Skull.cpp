@@ -29,7 +29,7 @@ namespace Boss
 
 	void Skull::MoverBase::Init( Skull &inst ) {}
 	void Skull::MoverBase::Uninit( Skull &inst ) {}
-	void Skull::MoverBase::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos ) {}
+	void Skull::MoverBase::Update( Skull &inst, float elapsedTime, const Input &input ) {}
 	void Skull::MoverBase::PhysicUpdate( Skull &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
 		inst.Base::PhysicUpdate( elapsedTime, solids );
@@ -39,9 +39,9 @@ namespace Boss
 	{
 		inst.AppearInit();
 	}
-	void Skull::AppearPerformance::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Skull::AppearPerformance::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
-		inst.AppearUpdate( elapsedTime, wsTargetPos );
+		inst.AppearUpdate( elapsedTime, input );
 	}
 	void Skull::AppearPerformance::PhysicUpdate( Skull &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
@@ -66,10 +66,10 @@ namespace Boss
 	{
 		inst.velocity = 0.0f;
 	}
-	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 	#if DEBUG_MODE
-		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
 	#endif // DEBUG_MODE
 	}
 	bool Skull::DetectTargetAction::ShouldChangeMover( const Skull &inst ) const
@@ -91,10 +91,10 @@ namespace Boss
 	{
 		inst.velocity = 0.0f;
 	}
-	void Skull::Shot::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Skull::Shot::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 	#if DEBUG_MODE
-		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
 	#endif // DEBUG_MODE
 	}
 	bool Skull::Shot::ShouldChangeMover( const Skull &inst ) const
@@ -116,10 +116,10 @@ namespace Boss
 	{
 		inst.velocity = 0.0f;
 	}
-	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 	#if DEBUG_MODE
-		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
 	#endif // DEBUG_MODE
 	}
 	bool Skull::Jump::ShouldChangeMover( const Skull &inst ) const
@@ -141,10 +141,10 @@ namespace Boss
 	{
 		inst.velocity = 0.0f;
 	}
-	void Skull::Shield::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Skull::Shield::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 	#if DEBUG_MODE
-		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
 	#endif // DEBUG_MODE
 	}
 	bool Skull::Shield::ShouldChangeMover( const Skull &inst ) const
@@ -166,10 +166,10 @@ namespace Boss
 	{
 		inst.velocity = 0.0f;
 	}
-	void Skull::Run::Update( Skull &inst, float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Skull::Run::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 	#if DEBUG_MODE
-		inst.velocity = ( wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
+		inst.velocity = ( input.wsTargetPos - inst.GetHitBox().WorldPosition() ).Unit();
 	#endif // DEBUG_MODE
 	}
 	bool Skull::Run::ShouldChangeMover( const Skull &inst ) const
@@ -194,9 +194,9 @@ namespace Boss
 
 		AssignMover<AppearPerformance>();
 	}
-	void Skull::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void Skull::Update( float elapsedTime, const Input &input )
 	{
-		Base::Update( elapsedTime, wsTargetPos );
+		Base::Update( elapsedTime, input );
 
 		if ( NowDead() ) { return; }
 		// else
@@ -208,7 +208,7 @@ namespace Boss
 		}
 		// else
 
-		pMover->Update( *this, elapsedTime, wsTargetPos );
+		pMover->Update( *this, elapsedTime, input );
 		if ( pMover->ShouldChangeMover( *this ) )
 		{
 			auto ChangeState = pMover->GetChangeStateMethod( *this );

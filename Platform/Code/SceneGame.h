@@ -27,9 +27,23 @@ private:
 		BattleBoss,
 		ClearStage
 	};
+	struct Input
+	{
+		Donya::Vector2 inputDirection; // Controller's stick or directional-pad, or keyboard's arrow key.
+		bool pressJump = false; // Current frame.
+		bool pressShot = false; // Current frame.
+	public:
+		void Clear()
+		{
+			inputDirection = 0.0f;
+			pressJump = false;
+			pressShot = false;
+		}
+	};
 private:
 	Donya::ICamera						iCamera;
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
+	Input								currentInput;
 	Donya::Collision::Box3F				currentScreen;
 	int									currentRoomID	= 0;
 	
@@ -73,12 +87,16 @@ private:
 	void	InitStage( int stageNo );
 	void	UninitStage();
 
+	void	AssignCurrentInput();
+
 	void	CameraInit();
 	void	AssignCameraPos();
 	void	CameraUpdate();
 
 	void	PlayerInit();
 	void	PlayerUpdate( float elapsedTime );
+	
+	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 
 	void	UpdateCurrentRoomID();
 
