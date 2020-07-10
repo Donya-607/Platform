@@ -75,18 +75,50 @@ namespace Boss
 		if ( nextState != Destination::None ) { return; }
 		// else
 
+		auto AssignShot = [&]()
+		{
+			nextState = Destination::Shot;
+			inst.RegisterPreviousBehavior( Behavior::Shot );
+		};
+		auto AssignJump = [&]()
+		{
+			nextState		= Destination::Jump;
+			inst.aimingPos	= input.wsTargetPos;
+			inst.RegisterPreviousBehavior( Behavior::Jump );
+		};
+		auto PrevActionIs = [&]( Behavior comparison )
+		{
+			return ( inst.previousBehaviors.front() == comparison );
+		};
+
+		// Shot detection
 		if ( !IsZero( input.controllerInputDirection.x ) )
 		{
-			nextState		= Destination::Shot;
+			if ( IsContinuingSameAction( inst ) && PrevActionIs( Behavior::Shot ) )
+			{
+				AssignJump();
+			}
+			else
+			{
+				AssignShot();
+			}
+
 			return;
 		}
 		// else
 
-		// Detect trigger timing only
+		// Jump detection(trigger timing only)
 		if ( input.pressShot && !inst.previousInput.pressShot )
 		{
-			nextState		= Destination::Jump;
-			inst.aimingPos	= input.wsTargetPos;
+			if ( IsContinuingSameAction( inst ) && PrevActionIs( Behavior::Jump ) )
+			{
+				AssignShot();
+			}
+			else
+			{
+				AssignJump();
+			}
+
 			return;
 		}
 		// else
@@ -113,6 +145,10 @@ namespace Boss
 		return u8"çsìÆåüím";
 	}
 #endif // USE_IMGUI
+	bool Skull::DetectTargetAction::IsContinuingSameAction( const Skull &inst ) const
+	{
+		return ( inst.previousBehaviors.front() == inst.previousBehaviors.back() );
+	}
 
 	void Skull::Shot::Init( Skull &inst )
 	{
@@ -439,6 +475,8 @@ namespace Boss
 	{
 		Base::Init( parameter, roomID, wsRoomArea );
 
+		previousBehaviors.fill( Behavior::None );
+
 		AssignMover<AppearPerformance>();
 	}
 	void Skull::Update( float elapsedTime, const Input &input )
@@ -514,6 +552,11 @@ namespace Boss
 		hurtBox.pos		= wsPos;
 		hurtBox.offset	= data.hurtBoxOffset;
 		hurtBox.size	= data.hurtBoxSize;
+	}
+	void Skull::RegisterPreviousBehavior( Behavior behavior )
+	{
+		previousBehaviors.back()  = previousBehaviors.front();
+		previousBehaviors.front() = behavior;
 	}
 
 #if USE_IMGUI

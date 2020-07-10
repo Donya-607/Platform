@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <memory>
 
 #include "../Boss.h"
@@ -58,6 +59,8 @@ namespace Boss
 		#if USE_IMGUI
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
+		private:
+			bool IsContinuingSameAction( const Skull &inst ) const;
 		};
 		class Shot : public MoverBase
 		{
@@ -125,7 +128,15 @@ namespace Boss
 			int GetCurrentDirectionSign( const Skull &instance ) const;
 		};
 	private:
+		enum class Behavior
+		{
+			None,
+			Shot,
+			Jump
+		};
+	private:
 		Input						previousInput;
+		std::array<Behavior, 2>		previousBehaviors{ Behavior::None }; // Contains: [0:One previous], [1:Two previous]
 		Donya::Vector3				aimingPos;		// Used for store the target pos of some timing
 		std::unique_ptr<MoverBase>	pMover = nullptr;
 	private:
@@ -153,6 +164,7 @@ namespace Boss
 	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
+		void RegisterPreviousBehavior( Behavior behavior );
 	private:
 		template<class Mover>
 		void AssignMover()
