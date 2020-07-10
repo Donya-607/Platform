@@ -43,7 +43,7 @@ namespace Boss
 		};
 		class DetectTargetAction : public MoverBase
 		{
-		private:
+		private: // HACK: This enumeration can be removed and replace to Skull::Behavior(but that definition must be move to top)
 			enum class Destination
 			{
 				None,
