@@ -761,15 +761,11 @@ void SceneGame::Collision_BulletVSBoss()
 		if ( !pBullet ) { continue; }
 		// else
 
-		if ( Donya::Collision::IsHit( bossBody, pBullet->GetHitBox() )
+		if ( Donya::Collision::IsHit( bossBody, pBullet->GetHitBox() ) )
 		{
-
+			pBoss->GiveDamage( pBullet->GetDamage() );
+			pBullet->CollidedToObject();
 		}
-
-		// if ( collided )
-		// {
-		// 	pBullet->CollidedToObject();
-		// }
 	}
 }
 void SceneGame::Collision_BulletVSEnemy()

@@ -783,7 +783,7 @@ namespace Boss
 	}
 	void Container::ShowInstanceNode( size_t instanceIndex )
 	{
-		auto boss = GetBossOrNullptr( instanceIndex );
+		auto boss = GetBossSet( instanceIndex );
 		std::string caption = "[RoomID:" + std::to_string( boss.roomID ) + "]";
 
 		if ( !boss.pBoss )
