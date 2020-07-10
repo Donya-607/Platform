@@ -571,14 +571,17 @@ std::function<void()> Player::Miss::GetChangeStateMethod( Player &inst ) const
 
 void Player::Init( const PlayerInitializer &initializer )
 {
-	const auto &data = Parameter().Get();
-	body		= data.hitBox;
-	hurtBox		= data.hurtBox;
-	body.pos	= initializer.GetWorldInitialPos();
-	velocity	= 0.0f;
+	const auto &data	= Parameter().Get();
+	body				= data.hitBox;
+	hurtBox				= data.hurtBox;
+	body.id				= Donya::Collision::GetUniqueID();
+	body.ownerID		= Donya::Collision::invalidID;
+	body.ignoreList.clear();
+	body.pos			= initializer.GetWorldInitialPos();
+	velocity			= 0.0f;
 	motionManager.Init();
-	currentHP	= data.maxHP;
-	onGround	= false;
+	currentHP			= data.maxHP;
+	onGround			= false;
 	
 	UpdateOrientation( initializer.ShouldLookingRight() );
 
@@ -605,6 +608,8 @@ void Player::Update( float elapsedTime, Input input )
 		ApplyExceptPosition( &hurtBox,	data.hurtBox );
 	}
 #endif // USE_IMGUI
+
+	hurtBox.UpdateIgnoreList( elapsedTime );
 
 	if ( !pMover )
 	{

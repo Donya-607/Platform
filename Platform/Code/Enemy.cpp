@@ -139,6 +139,9 @@ namespace Enemy
 		AssignMyBody( parameter.wsPos );
 		body.exist		= true;
 		hurtBox.exist	= true;
+		hurtBox.id		= Donya::Collision::GetUniqueID();
+		hurtBox.ownerID	= Donya::Collision::invalidID;
+		hurtBox.ignoreList.clear();
 		velocity		= 0.0f;
 		hp				= GetInitialHP();
 		wantRemove		= false;
@@ -160,6 +163,8 @@ namespace Enemy
 	}
 	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
+		hurtBox.UpdateIgnoreList( elapsedTime );
+
 		ApplyReceivedDamageIfHas();
 	}
 	void Base::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )

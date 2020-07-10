@@ -67,6 +67,25 @@ namespace ImGui
 	
 	namespace Helper
 	{
+		void ShowIgnoreList( const std::string &nodeCaption, const std::vector<Donya::Collision::IgnoreElement> &ignoreList )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			const size_t count = ignoreList.size();
+			ImGui::Text( u8"%d個", count );
+			std::string caption;
+			for ( size_t i = 0; i < count; ++i )
+			{
+				const auto &element = ignoreList[i];
+				caption = Donya::MakeArraySuffix( element.ignoreID );
+				caption += "[Remain:" + std::to_string( element.ignoreSecond ) + "]";
+				ImGui::Text( caption.c_str() );
+			}
+
+			ImGui::TreePop();
+		}
+
 		void ShowEaseParam	( const std::string &nodeCaption, Donya::Easing::Kind *pKind, Donya::Easing::Type *pType )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
@@ -103,6 +122,16 @@ namespace ImGui
 			ImGui::DragFloat3( u8"オフセット",			&p->offset.x,	0.01f	);
 			ImGui::DragFloat3( u8"サイズ（半分を指定）",	&p->size.x,		0.01f	);
 			ImGui::Checkbox  ( u8"判定を有効にする",		&p->exist				);
+			
+			if ( ImGui::TreeNode( ( u8"ＩＤ：" + std::to_string( p->id ) ).c_str() ) )
+			{
+				ImGui::Text( u8"自身＿：%d", p->id );
+				ImGui::Text( u8"所有者：%d", p->ownerID );
+				
+				ShowIgnoreList( u8"無視リスト", p->ignoreList );
+
+				ImGui::TreePop();
+			}
 
 			ImGui::TreePop();
 		}
@@ -115,6 +144,16 @@ namespace ImGui
 			ImGui::DragFloat3( u8"オフセット",			&p->offset.x,	0.01f	);
 			ImGui::DragFloat3( u8"半径",					&p->radius,		0.01f	);
 			ImGui::Checkbox  ( u8"判定を有効にする",		&p->exist				);
+
+			if ( ImGui::TreeNode( ( u8"ＩＤ：" + std::to_string( p->id ) ).c_str() ) )
+			{
+				ImGui::Text( u8"自身＿：%d", p->id );
+				ImGui::Text( u8"所有者：%d", p->ownerID );
+				
+				ShowIgnoreList( u8"無視リスト", p->ignoreList );
+
+				ImGui::TreePop();
+			}
 
 			ImGui::TreePop();
 		}

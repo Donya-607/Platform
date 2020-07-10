@@ -141,6 +141,7 @@ namespace Boss
 		body.exist		= true;
 		hurtBox.exist	= true;
 		hurtBox.id		= Donya::Collision::GetUniqueID();
+		hurtBox.ownerID	= Donya::Collision::invalidID;
 		hurtBox.ignoreList.clear();
 		velocity		= 0.0f;
 		hp				= GetInitialHP();
@@ -160,8 +161,11 @@ namespace Boss
 	}
 	void Base::Update( float elapsedTime, const Input &input )
 	{
+		hurtBox.UpdateIgnoreList( elapsedTime );
+
 		if ( NowDead() ) { return; }
 		// else
+
 		ApplyReceivedDamageIfHas();
 	}
 	void Base::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
@@ -533,6 +537,21 @@ namespace Boss
 
 		return false;
 	}
+	std::shared_ptr<const Base> Container::GetBossOrNullptr( int roomID ) const
+	{
+		for ( const auto &it : bosses )
+		{
+			if ( it.roomID == roomID )
+			{
+				if ( it.pBoss && !it.pBoss->NowDead() )
+				{
+					return it.pBoss;
+				}
+			}
+		}
+
+		return nullptr;
+	}
 	void Container::StartupBossIfStandby( int roomID )
 	{
 		const size_t count = GetBossCount();
@@ -633,7 +652,7 @@ namespace Boss
 		tmp.pBoss		= nullptr;
 		bosses.emplace_back( std::move( tmp ) );
 	}
-	Container::BossSet Container::GetBossOrNullptr( size_t instanceIndex )
+	Container::BossSet Container::GetBossSet( size_t instanceIndex )
 	{
 		if ( GetBossCount() <= instanceIndex ) { return {}; }
 		// else

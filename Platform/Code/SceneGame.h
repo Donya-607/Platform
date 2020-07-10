@@ -100,7 +100,9 @@ private:
 
 	void	UpdateCurrentRoomID();
 
+	void	Collision_BulletVSBoss();
 	void	Collision_BulletVSEnemy();
+	void	Collision_BossVSPlayer();
 	void	Collision_EnemyVSPlayer();
 
 	void	ClearBackGround() const;

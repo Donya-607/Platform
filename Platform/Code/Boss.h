@@ -275,6 +275,10 @@ namespace Boss
 		/// ( IsThereIn &amp; IsAliveIn ) &lt; A boss is alive<para></para>
 		/// </summary>
 		bool IsAliveIn( int roomID ) const;
+		/// <summary>
+		/// Returns the first living boss found in the specified room. Or nullptr if not found.
+		/// </summary>
+		std::shared_ptr<const Base> GetBossOrNullptr( int roomID ) const;
 		void StartupBossIfStandby( int roomID );
 		size_t GetBossCount() const;
 	private:
@@ -286,7 +290,7 @@ namespace Boss
 	private:
 		void AppendBoss( int roomID, const Donya::Collision::Box3F &wsRoomArea, Kind kind, const InitializeParam &parameter );
 	public:
-		BossSet GetBossOrNullptr( size_t instanceIndex );
+		BossSet GetBossSet( size_t instanceIndex );
 		void RemakeByCSV( const CSVLoader &loadedData, const House &house );
 		void SaveBosses( int stageNumber, bool fromBinary );
 	public:

@@ -133,6 +133,8 @@ namespace Bullet
 	}
 	void Buster::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
 	{
+		body.UpdateIgnoreList( elapsedTime );
+
 		if ( wasCollided )
 		{
 			wasCollided	= false;

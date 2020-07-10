@@ -281,7 +281,9 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate();
 
+	Collision_BulletVSBoss();
 	Collision_BulletVSEnemy();
+	Collision_BossVSPlayer();
 	Collision_EnemyVSPlayer();
 
 	return ReturnResult();
@@ -738,6 +740,38 @@ void SceneGame::UpdateCurrentRoomID()
 	}
 }
 
+void SceneGame::Collision_BulletVSBoss()
+{
+	if ( !pBossContainer || !isThereBoss ) { return; }
+	// else
+
+	auto  pBoss = pBossContainer->GetBossOrNullptr( currentRoomID );
+	if ( !pBoss ) { return; }
+	// else
+
+	const auto bossBody = pBoss->GetHurtBox();
+
+	auto &bulletAdmin = Bullet::Admin::Get();
+	const size_t bulletCount = bulletAdmin.GetInstanceCount();
+
+	const Bullet::Buster *pBullet = nullptr;
+	for ( size_t i = 0; i < bulletCount; ++i )
+	{
+		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
+		if ( !pBullet ) { continue; }
+		// else
+
+		if ( Donya::Collision::IsHit( bossBody, pBullet->GetHitBox() )
+		{
+
+		}
+
+		// if ( collided )
+		// {
+		// 	pBullet->CollidedToObject();
+		// }
+	}
+}
 void SceneGame::Collision_BulletVSEnemy()
 {
 	auto &enemyAdmin	= Enemy::Admin::Get();
@@ -801,6 +835,10 @@ void SceneGame::Collision_BulletVSEnemy()
 
 		collidedEnemyIndices.clear();
 	}
+}
+void SceneGame::Collision_BossVSPlayer()
+{
+
 }
 void SceneGame::Collision_EnemyVSPlayer()
 {
@@ -1342,7 +1380,7 @@ void SceneGame::UseScreenSpaceImGui()
 		const size_t bossCount = pBossContainer->GetBossCount();
 		for ( size_t i = 0; i  < bossCount; ++i )
 		{
-			bossSet = pBossContainer->GetBossOrNullptr( i );
+			bossSet = pBossContainer->GetBossSet( i );
 			
 			const Donya::Vector3 wsPos = ( bossSet.pBoss ) ? bossSet.pBoss->GetPosition() : bossSet.initializer.wsPos;
 			ssPos = WorldToScreen( wsPos ).XY();

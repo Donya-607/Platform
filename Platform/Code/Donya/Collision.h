@@ -1,7 +1,8 @@
 #ifndef INCLUDED_DONYA_COLLISION_H_
 #define INCLUDED_DONYA_COLLISION_H_
 
-#include <cstdint>	// Use for std::uint32_t
+#include <algorithm>	// Use std::remove_if
+#include <cstdint>		// Use for std::uint32_t
 #include <vector>
 
 #undef max
@@ -28,6 +29,9 @@ namespace Donya
 		/// </summary>
 		IDType GetUniqueID();
 
+		/// <summary>
+		/// Contains: ignoring identifier and ignoring the second. Please update it every frame.
+		/// </summary>
 		class  IgnoreElement
 		{
 		public:
@@ -83,6 +87,24 @@ namespace Donya
 				T Min() const { return WorldPosition() - size; }
 				T Max() const { return WorldPosition() + size; }
 			public:
+				void UpdateIgnoreList( float elapsedTime )
+				{
+					for ( auto &it : ignoreList )
+					{
+						it.Update( elapsedTime );
+					}
+
+					auto result = std::remove_if
+					(
+						ignoreList.begin(), ignoreList.end(),
+						[]( IgnoreElement &element )
+						{
+							return element.ShouldRemove();
+						}
+					);
+					ignoreList.erase( result, ignoreList.end() );
+				}
+			public:
 				static Box Nil() { return Box{ T{}, T{}, T{}, false }; }
 			private:
 				friend class cereal::access;
@@ -133,6 +155,24 @@ namespace Donya
 				{}
 			public:
 				CoordT WorldPosition() const { return pos + offset; }
+			public:
+				void UpdateIgnoreList( float elapsedTime )
+				{
+					for ( auto &it : ignoreList )
+					{
+						it.Update( elapsedTime );
+					}
+
+					auto result = std::remove_if
+					(
+						ignoreList.begin(), ignoreList.end(),
+						[]( IgnoreElement &element )
+						{
+							return element.ShouldRemove();
+						}
+					);
+					ignoreList.erase( result, ignoreList.end() );
+				}
 			public:
 				static Sphere Nil() { return Sphere{ CoordT{}, CoordT{}, RadiusT{}, false }; }
 			private:
