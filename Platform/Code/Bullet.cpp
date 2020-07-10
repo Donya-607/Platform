@@ -114,15 +114,18 @@ namespace Bullet
 	{
 		livingCount++;
 
-		const auto &data = Parameter::GetBuster();
+		const auto &data	= Parameter::GetBuster();
 
-		body.pos	= parameter.position;
-		body.offset	= data.hitBoxOffset;
-		body.size	= data.hitBoxSize;
+		body.pos			= parameter.position;
+		body.offset			= data.hitBoxOffset;
+		body.size			= data.hitBoxSize;
+		body.id				= Donya::Collision::GetUniqueID();
+		body.ownerID		= parameter.owner;
+		body.ignoreList.clear();
 
-		velocity	= parameter.direction * parameter.initialSpeed;
-		orientation	= Donya::Quaternion::LookAt( Donya::Vector3::Front(), parameter.direction );
-		wantRemove	= false;
+		velocity			= parameter.direction * parameter.initialSpeed;
+		orientation			= Donya::Quaternion::LookAt( Donya::Vector3::Front(), parameter.direction );
+		wantRemove			= false;
 	}
 	void Buster::Uninit()
 	{

@@ -1,9 +1,11 @@
 #include "Collision.h"
 
 #include <array>
+#include <algorithm>	// Use std::find()
+#include <limits>		// Use std::numeric_limits<int>::max()
 
 #include "Constant.h"
-#include "Useful.h"	// Use IsZero().
+#include "Useful.h"		// Use IsZero()
 
 #undef max
 #undef min
@@ -12,6 +14,37 @@ namespace Donya
 {
 	namespace Collision
 	{
+		IDType GetUniqueID()
+		{
+			static IDType source = 0;
+			constexpr int secondLargestValue = std::numeric_limits<int>::max() - 1;
+			if ( secondLargestValue <= source ) { source = 0; }
+			return source++;
+		}
+
+		bool IsInIgnoreList( const std::vector<IgnoreElement> &list, IDType id )
+		{
+			const auto result = std::find_if
+			(
+				list.begin(), list.end(),
+				[&]( const IgnoreElement &element )
+				{
+					return element.ignoreID == id;
+				}
+			);
+			return ( result != list.end() );
+		}
+		template<typename ColliderT, typename ColliderU>
+		bool ShouldIgnore( const ColliderT &a, const ColliderU &b )
+		{
+			if ( a.ownerID != invalidID && a.ownerID == b.id ) { return true; }
+			if ( a.ownerID != invalidID && b.ownerID == a.id ) { return true; }
+			if ( IsInIgnoreList( a.ignoreList, b.id ) ) { return true; }
+			if ( IsInIgnoreList( b.ignoreList, a.id ) ) { return true; }
+			// else
+			return false;
+		}
+
 		constexpr bool Within( int v, int min, int max )
 		{
 			return ( min <= v && v <= max );
@@ -38,6 +71,9 @@ namespace Donya
 		template<typename Box>
 		bool IsHitBox( const Box &a, const Box &b, unsigned int dimension )
 		{
+			if ( ShouldIgnore( a, b ) ) { return false; }
+			// else
+
 			// Judge by "AABB of extended by other size" vs "position of other".
 			Box ext = a;
 			ext.size += b.size;
@@ -53,6 +89,9 @@ namespace Donya
 		template<typename Sphere>
 		bool IsHitSphere( const Sphere &a, const Sphere &b )
 		{
+			if ( ShouldIgnore( a, b ) ) { return false; }
+			// else
+
 			Sphere ext =  a;
 			ext.radius += b.radius;
 			return IsHitSphere( ext, b.WorldPosition() );
@@ -206,6 +245,9 @@ namespace Donya
 		template<typename Box, typename Sphere>
 		bool IsHitBoxSphere( const Box &a, const Sphere &b )
 		{
+			if ( ShouldIgnore( a, b ) ) { return false; }
+			// else
+
 			const auto wsPosB = b.WorldPosition();
 			const auto closestPoint = FindClosestPoint( a, wsPosB );
 			const auto diff  = wsPosB - closestPoint;

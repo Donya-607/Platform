@@ -213,7 +213,8 @@ namespace Boss
 		desc.initialSpeed	=  data.shotDesc.initialSpeed;
 		desc.position		=  inst.orientation.RotateVector( data.shotDesc.position );
 		desc.position		+= inst.body.WorldPosition(); // Local space to World space
-		
+		desc.owner			=  inst.hurtBox.id;
+
 		desc.direction				= ( input.wsTargetPos - desc.position ).Unit();
 		const float &increment		= data.shotDegreeIncrement;
 		const float actualDegree	= desc.direction.XY().Degree();

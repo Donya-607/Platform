@@ -1,8 +1,11 @@
 #ifndef INCLUDED_DONYA_COLLISION_H_
 #define INCLUDED_DONYA_COLLISION_H_
 
-#include <cstdint> // use for std::uint32_t
+#include <cstdint>	// Use for std::uint32_t
+#include <vector>
 
+#undef max
+#undef min
 #include <cereal/cereal.hpp>
 
 #include "Vector.h"
@@ -12,6 +15,39 @@ namespace Donya
 {
 	namespace Collision
 	{
+		/// <summary>
+		/// You can assign the int type to it
+		/// </summary>
+		using  IDType = int;
+		/// <summary>
+		/// It will be used to recognize a ownerID is invalid.
+		/// </summary>
+		static constexpr IDType invalidID = -1;
+		/// <summary>
+		/// Returns only positive value.
+		/// </summary>
+		IDType GetUniqueID();
+
+		class  IgnoreElement
+		{
+		public:
+			IDType	ignoreID		= 0;
+			float	ignoreSecond	= FLT_MAX;
+		public:
+			void Update( float elapsedTime )
+			{
+				ignoreSecond -= elapsedTime;
+			}
+			bool ShouldRemove() const
+			{
+				return ( ignoreSecond <= 0.0f );
+			}
+		};
+		/// <summary>
+		/// Returns true if the "verifyID" is there in the "ignoreList".
+		/// </summary>
+		bool IsInIgnoreList( const std::vector<IgnoreElement> &ignoreList, IDType verifyID );
+
 		namespace Base
 		{
 			/// <summary>
@@ -21,21 +57,26 @@ namespace Donya
 			template<typename T>
 			class Box
 			{
-			public:
+			public: // Serialize members
 				T		pos;	// Center position. World position is pos + offset.
 				T		offset;	// World position is pos + offset.
 				T		size;	// Half size.
 				bool	exist;	// Used for ignore a collision.
 			public:
-				Box() : pos(), offset(), size(), exist( true ) {}
+				IDType id;
+				IDType ownerID;	// It will be the invalidID if do not has an owner
+				std::vector<IgnoreElement> ignoreList;
+			public:
+				Box() : pos(), offset(), size(), exist( true ), id( 0 ), ownerID( invalidID ), ignoreList()
+				{}
 				/// <summary>
 				/// The offset will be default.
 				/// </summary>
 				Box( const T &pos, const T &size, bool exist = true )
-					: pos( pos ), offset(), size( size ), exist( exist )
+					: pos( pos ), offset(), size( size ), exist( exist ), id( 0 ), ownerID( invalidID ), ignoreList()
 				{}
 				Box( const T &pos, const T &offset, const T &size, bool exist = true )
-					: pos( pos ), offset( offset ), size( size ), exist( exist )
+					: pos( pos ), offset( offset ), size( size ), exist( exist ), id( 0 ), ownerID( invalidID ), ignoreList()
 				{}
 			public:
 				T WorldPosition() const { return pos + offset; }
@@ -69,21 +110,26 @@ namespace Donya
 			template<typename CoordT, typename RadiusT>
 			class Sphere
 			{
-			public:
+			public: // Serializer members
 				CoordT	pos;	// Center position. World position is pos + offset.
 				CoordT	offset;	// World position is pos + offset.
 				RadiusT	radius;	// Half size.
 				bool	exist;	// Used for ignore a collision.
 			public:
-				Sphere() : pos(), offset(), radius(), exist( true ) {}
+				IDType id;
+				IDType ownerID;
+				std::vector<IgnoreElement> ignoreList;
+			public:
+				Sphere() : pos(), offset(), radius(), exist( true ), id( 0 ), ownerID( invalidID ), ignoreList()
+				{}
 				/// <summary>
 				/// The offset will be zero.
 				/// </summary>
 				Sphere( const CoordT &pos, const RadiusT &radius, bool exist = true )
-					: pos( pos ), offset(), radius( radius ), exist( exist )
+					: pos( pos ), offset(), radius( radius ), exist( exist ), id( 0 ), ownerID( invalidID ), ignoreList()
 				{}
 				Sphere( const CoordT &pos, const CoordT &offset, const RadiusT &radius, bool exist = true )
-					: pos( pos ), offset(), radius( radius ), exist( exist )
+					: pos( pos ), offset(), radius( radius ), exist( exist ), id( 0 ), ownerID( invalidID ), ignoreList()
 				{}
 			public:
 				CoordT WorldPosition() const { return pos + offset; }

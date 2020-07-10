@@ -12,7 +12,7 @@
 // I'm referring to this: https://medium.com/@MattThorson/celeste-and-towerfall-physics-d24bd2ae0fc5
 
 
-/// /// <summary>
+/// <summary>
 /// This class is a Solids that interactable with other Solids.
 /// </summary>
 class Actor2D
@@ -75,7 +75,7 @@ public:
 };
 CEREAL_CLASS_VERSION( Actor2D, 0 );
 
-/// /// <summary>
+/// <summary>
 /// This class is a Solids that interactable with other Solids.
 /// </summary>
 class Actor

@@ -31,10 +31,12 @@ namespace Bullet
 	/// </summary>
 	struct FireDesc
 	{
-	public:
+	public: // Serialize members
 		float			initialSpeed = 1.0f;			// [m/s]
 		Donya::Vector3	direction{ 1.0f, 0.0f, 0.0f };	// Unit vector
 		Donya::Vector3	position;
+	public:
+		Donya::Collision::IDType owner = Donya::Collision::invalidID;
 	private:
 		friend class cereal::access;
 		template<class Archive>

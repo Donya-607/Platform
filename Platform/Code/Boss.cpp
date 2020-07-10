@@ -140,6 +140,8 @@ namespace Boss
 		AssignMyBody( parameter.wsPos );
 		body.exist		= true;
 		hurtBox.exist	= true;
+		hurtBox.id		= Donya::Collision::GetUniqueID();
+		hurtBox.ignoreList.clear();
 		velocity		= 0.0f;
 		hp				= GetInitialHP();
 		isDead			= false;
