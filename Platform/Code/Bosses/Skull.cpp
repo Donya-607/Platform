@@ -404,9 +404,26 @@ namespace Boss
 		#endif // DEBUG_MODE
 		}
 
-		const float horizontalSign = Donya::SignBitF( input.wsTargetPos.x - inst.body.WorldPosition().x );
-		inst.aimingPos		=  input.wsTargetPos;
-		inst.aimingPos.x	-= data.runDestTakeDist * horizontalSign;
+		// Calculate the destination of Run state
+		{
+			const Donya::Vector3 myselfPos = inst.body.WorldPosition();
+			const int toTargetSign = Donya::SignBit( input.wsTargetPos.x - myselfPos.x );
+		
+			Donya::Vector3 destination = input.wsTargetPos;
+			destination.x -= data.runDestTakeDist * toTargetSign;
+
+			// Aim to the front of "targetPos".
+			// But if that aiming pos places backward of myself, it do not move.
+			const int toDestinationSign = Donya::SignBit( destination.x - myselfPos.x );
+			if ( toDestinationSign != toTargetSign ) // It means you should move to backward
+			{
+				inst.aimingPos = myselfPos;
+			}
+			else
+			{
+				inst.aimingPos = destination;
+			}
+		}
 	}
 	bool Skull::Shield::ShouldChangeMover( const Skull &inst ) const
 	{
@@ -445,7 +462,7 @@ namespace Boss
 		MoverBase::PhysicUpdate( inst, elapsedTime, solids );
 		const int nowSign  = GetCurrentDirectionSign( inst );
 
-		if ( nowSign != prevSign )
+		if ( nowSign != prevSign || nowSign == 0 )
 		{
 			wasArrived = true;
 			inst.body.pos.x  = inst.aimingPos.x;
