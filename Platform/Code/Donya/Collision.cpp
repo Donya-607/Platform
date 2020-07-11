@@ -38,7 +38,7 @@ namespace Donya
 		bool ShouldIgnore( const ColliderT &a, const ColliderU &b )
 		{
 			if ( a.ownerID != invalidID && a.ownerID == b.id ) { return true; }
-			if ( a.ownerID != invalidID && b.ownerID == a.id ) { return true; }
+			if ( b.ownerID != invalidID && b.ownerID == a.id ) { return true; }
 			if ( IsInIgnoreList( a.ignoreList, b.id ) ) { return true; }
 			if ( IsInIgnoreList( b.ignoreList, a.id ) ) { return true; }
 			// else
