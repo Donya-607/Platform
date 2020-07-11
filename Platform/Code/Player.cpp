@@ -821,6 +821,7 @@ void Player::Shot( float elapsedTime, Input input )
 			desc.direction	=  Donya::Vector3::Right() * lookingSign;
 			desc.position.x	*= lookingSign;
 			desc.position	+= GetPosition();
+			desc.owner		=  hurtBox.id;
 		
 			Bullet::Admin::Get().RequestFire( desc );
 			Donya::Sound::Play( Music::Player_Shot );

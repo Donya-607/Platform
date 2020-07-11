@@ -102,6 +102,7 @@ private:
 
 	void	Collision_BulletVSBoss();
 	void	Collision_BulletVSEnemy();
+	void	Collision_BulletVSPlayer();
 	void	Collision_BossVSPlayer();
 	void	Collision_EnemyVSPlayer();
 

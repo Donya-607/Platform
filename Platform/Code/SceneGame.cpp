@@ -283,6 +283,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	Collision_BulletVSBoss();
 	Collision_BulletVSEnemy();
+	Collision_BulletVSPlayer();
 	Collision_BossVSPlayer();
 	Collision_EnemyVSPlayer();
 
@@ -832,9 +833,49 @@ void SceneGame::Collision_BulletVSEnemy()
 		collidedEnemyIndices.clear();
 	}
 }
+void SceneGame::Collision_BulletVSPlayer()
+{
+	if ( !pPlayer || pPlayer->NowMiss() ) { return; }
+	// else
+
+	const auto playerBody = pPlayer->GetHurtBox();
+
+	auto &bulletAdmin = Bullet::Admin::Get();
+	const size_t bulletCount = bulletAdmin.GetInstanceCount();
+
+	Donya::Collision::Box3F bulletBody;
+	const Bullet::Buster *pBullet = nullptr;
+	for ( size_t i = 0; i < bulletCount; ++i )
+	{
+		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
+		if ( !pBullet ) { continue; }
+		// else
+
+		bulletBody = pBullet->GetHitBox();
+		if ( Donya::Collision::IsHit( playerBody, bulletBody ) )
+		{
+			pPlayer->GiveDamage( pBullet->GetDamage(), bulletBody );
+			pBullet->CollidedToObject();
+		}
+	}
+}
 void SceneGame::Collision_BossVSPlayer()
 {
+	if ( !pPlayer || pPlayer->NowMiss() )  { return; }
+	if ( !pBossContainer || !isThereBoss ) { return; }
+	// else
 
+	auto  pBoss = pBossContainer->GetBossOrNullptr( currentRoomID );
+	if ( !pBoss ) { return; }
+	// else
+
+	const auto playerBody	= pPlayer->GetHurtBox();
+	const auto bossBody		= pBoss->GetHitBox();
+
+	if ( Donya::Collision::IsHit( playerBody, bossBody ) )
+	{
+		pPlayer->GiveDamage( pBoss->GetTouchDamage(), bossBody );
+	}
 }
 void SceneGame::Collision_EnemyVSPlayer()
 {
