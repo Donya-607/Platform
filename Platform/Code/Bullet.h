@@ -10,18 +10,36 @@
 #include "Donya/Vector.h"
 
 #include "Damage.h"
+#include "ModelHelper.h"
 #include "ObjectBase.h"
 #include "Renderer.h"
 
 namespace Bullet
 {
+	enum class Kind
+	{
+		Buster,
+
+		KindCount
+	};
+
 	struct BusterParam;
 	namespace Parameter
 	{
+		void Load();
+
 		const BusterParam &GetBuster();
+
 	#if USE_IMGUI
 		void Update( const std::string &nodeCaption );
 	#endif // USE_IMGUI
+		namespace Impl
+		{
+			void LoadBuster();
+		#if USE_IMGUI
+			void UpdateBuster( const std::string &nodeCaption );
+		#endif // USE_IMGUI
+		}
 	}
 
 	bool LoadResource();
@@ -32,7 +50,8 @@ namespace Bullet
 	struct FireDesc
 	{
 	public: // Serialize members
-		float			initialSpeed = 1.0f;			// [m/s]
+		Kind			kind			= Kind::Buster;
+		float			initialSpeed	= 1.0f;			// [m/s]
 		Donya::Vector3	direction{ 1.0f, 0.0f, 0.0f };	// Unit vector
 		Donya::Vector3	position;
 	public:
@@ -50,7 +69,11 @@ namespace Bullet
 			);
 			if ( 1 <= version )
 			{
-				// archive();
+				archive( CEREAL_NVP( kind ) );
+			}
+			if ( 2 <= version )
+			{
+				// archive( CEREAL_NVP() );
 			}
 		}
 	public:
@@ -61,40 +84,50 @@ namespace Bullet
 
 
 	/// <summary>
-	/// Kind of the player fires.
 	/// You must call Init() when generate and Uninit() before remove. Because these method manages instance count.
 	/// </summary>
-	class Buster : public Solid
+	class Base : public Solid
 	{
-	private:
-		static int livingCount;
-	public:
-		static int GetLivingCount();
-	private:
+	protected:
+		ModelHelper::SkinningOperator model;
 		using Solid::body;
 		Donya::Vector3		velocity; // [m/s]
 		Donya::Quaternion	orientation;
 		bool				wantRemove	= false;
 		mutable bool		wasCollided	= false;
 	public:
-		virtual ~Buster() = default;
+		Base( const Base &  ) = default;
+		Base(       Base && ) = default;
+		Base &operator = ( const Base &  ) = default;
+		Base &operator = (       Base && ) = default;
+		virtual ~Base() = default;
 	public:
-		void Init( const FireDesc &parameter );
-		void Uninit();
-		void Update( float elasedTime, const Donya::Collision::Box3F &wsScreenHitBox );
-		void PhysicUpdate( float elasedTime );
-		void Draw( RenderingHelper *pRenderer ) const;
-		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
+		virtual void Init( const FireDesc &parameter );
+		virtual void Uninit() = 0;
+		virtual void Update( float elasedTime, const Donya::Collision::Box3F &wsScreenHitBox );
+		virtual void PhysicUpdate( float elasedTime );
+		virtual void Draw( RenderingHelper *pRenderer ) const;
+		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
-		bool ShouldRemove() const;
-		bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
-		Definition::Damage GetDamage() const;
-		void CollidedToObject() const;
+		virtual bool ShouldRemove() const;
+		virtual bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
+		virtual void CollidedToObject() const;
+	public:
+		virtual Kind				GetKind()	const = 0;
+		virtual Definition::Damage	GetDamage()	const = 0;
 	protected:
+		/// <summary>
+		/// It will be called when update if it was collided to some object.
+		/// </summary>
+		virtual void CollidedProcess();
+		virtual void AssignBodyParameter( const Donya::Vector3 &wsPos ) = 0;
+		virtual void InitBody( const FireDesc &parameter );
+		virtual void UpdateOrientation( const Donya::Vector3 &direction );
+		void UpdateMotionIfCan( float elapsedTime, int motionIndex );
 		Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:
 	#if USE_IMGUI
-		void ShowImGuiNode( const std::string &nodeCaption );
+		virtual void ShowImGuiNode( const std::string &nodeCaption );
 	#endif // USE_IMGUI
 	};
 
@@ -105,9 +138,9 @@ namespace Bullet
 	class Admin : public Donya::Singleton<Admin>
 	{
 		friend Donya::Singleton<Admin>;
-	private:
-		std::vector<Buster>		bullets;
-		std::vector<FireDesc>	generateRequests;
+	private: // shared_ptr<> make be able to copy
+		std::vector<std::shared_ptr<Base>>	bulletPtrs;
+		std::vector<FireDesc>				generateRequests;
 	private:
 		Admin() = default;
 	public:
@@ -121,7 +154,7 @@ namespace Bullet
 	public:
 		size_t GetInstanceCount() const;
 		bool IsOutOfRange( size_t instanceIndex ) const;
-		const Buster *GetInstanceOrNullptr( size_t instanceIndex ) const;
+		const std::shared_ptr<Base> GetInstanceOrNullptr( size_t instanceIndex ) const;
 	private:
 		void GenerateRequestedFires();
 		void RemoveInstancesIfNeeds();
