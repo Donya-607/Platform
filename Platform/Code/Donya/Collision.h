@@ -62,25 +62,25 @@ namespace Donya
 			class Box
 			{
 			public: // Serialize members
-				T		pos;	// Center position. World position is pos + offset.
-				T		offset;	// World position is pos + offset.
-				T		size;	// Half size.
-				bool	exist;	// Used for ignore a collision.
+				T		pos;	// Center position. World position is pos + offset
+				T		offset;	// World position is pos + offset
+				T		size;	// Half size
+				bool	exist;	// Used for ignore a collision
 			public:
-				IDType id;
+				IDType id;		// Default value is invalidID
 				IDType ownerID;	// It will be the invalidID if do not has an owner
 				std::vector<IgnoreElement> ignoreList;
 			public:
-				Box() : pos(), offset(), size(), exist( true ), id( 0 ), ownerID( invalidID ), ignoreList()
+				Box() : pos(), offset(), size(), exist( true ), id( invalidID ), ownerID( invalidID ), ignoreList()
 				{}
 				/// <summary>
 				/// The offset will be default.
 				/// </summary>
 				Box( const T &pos, const T &size, bool exist = true )
-					: pos( pos ), offset(), size( size ), exist( exist ), id( 0 ), ownerID( invalidID ), ignoreList()
+					: pos( pos ), offset(), size( size ), exist( exist ), id( invalidID ), ownerID( invalidID ), ignoreList()
 				{}
 				Box( const T &pos, const T &offset, const T &size, bool exist = true )
-					: pos( pos ), offset( offset ), size( size ), exist( exist ), id( 0 ), ownerID( invalidID ), ignoreList()
+					: pos( pos ), offset( offset ), size( size ), exist( exist ), id( invalidID ), ownerID( invalidID ), ignoreList()
 				{}
 			public:
 				T WorldPosition() const { return pos + offset; }
@@ -133,25 +133,25 @@ namespace Donya
 			class Sphere
 			{
 			public: // Serializer members
-				CoordT	pos;	// Center position. World position is pos + offset.
-				CoordT	offset;	// World position is pos + offset.
-				RadiusT	radius;	// Half size.
-				bool	exist;	// Used for ignore a collision.
+				CoordT	pos;	// Center position. World position is pos + offset
+				CoordT	offset;	// World position is pos + offset
+				RadiusT	radius;	// Half size
+				bool	exist;	// Used for ignore a collision
 			public:
-				IDType id;
-				IDType ownerID;
+				IDType id;		// Default value is invalidID
+				IDType ownerID;	// It will be the invalidID if do not has an owner
 				std::vector<IgnoreElement> ignoreList;
 			public:
-				Sphere() : pos(), offset(), radius(), exist( true ), id( 0 ), ownerID( invalidID ), ignoreList()
+				Sphere() : pos(), offset(), radius(), exist( true ), id( invalidID ), ownerID( invalidID ), ignoreList()
 				{}
 				/// <summary>
 				/// The offset will be zero.
 				/// </summary>
 				Sphere( const CoordT &pos, const RadiusT &radius, bool exist = true )
-					: pos( pos ), offset(), radius( radius ), exist( exist ), id( 0 ), ownerID( invalidID ), ignoreList()
+					: pos( pos ), offset(), radius( radius ), exist( exist ), id( invalidID ), ownerID( invalidID ), ignoreList()
 				{}
 				Sphere( const CoordT &pos, const CoordT &offset, const RadiusT &radius, bool exist = true )
-					: pos( pos ), offset(), radius( radius ), exist( exist ), id( 0 ), ownerID( invalidID ), ignoreList()
+					: pos( pos ), offset(), radius( radius ), exist( exist ), id( invalidID ), ownerID( invalidID ), ignoreList()
 				{}
 			public:
 				CoordT WorldPosition() const { return pos + offset; }

@@ -574,10 +574,11 @@ void Player::Init( const PlayerInitializer &initializer )
 	const auto &data	= Parameter().Get();
 	body				= data.hitBox;
 	hurtBox				= data.hurtBox;
-	body.id				= Donya::Collision::GetUniqueID();
-	body.ownerID		= Donya::Collision::invalidID;
-	body.ignoreList.clear();
+	hurtBox.id			= Donya::Collision::GetUniqueID();
+	hurtBox.ownerID		= Donya::Collision::invalidID;
+	hurtBox.ignoreList.clear();
 	body.pos			= initializer.GetWorldInitialPos();
+	hurtBox.pos			= body.pos;
 	velocity			= 0.0f;
 	motionManager.Init();
 	currentHP			= data.maxHP;
