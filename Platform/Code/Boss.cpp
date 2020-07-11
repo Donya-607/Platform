@@ -306,7 +306,6 @@ namespace Boss
 		hp -= pReceivedDamage->amount;
 		if ( hp <= 0 )
 		{
-			isDead = true;
 			DieMoment();
 		}
 
@@ -314,7 +313,7 @@ namespace Boss
 	}
 	void Base::DieMoment()
 	{
-		// No op
+		isDead = true;
 	}
 	void Base::UpdateOrientation( bool lookingRight )
 	{
@@ -436,7 +435,15 @@ namespace Boss
 		ImGui::DragFloat3( u8"ƒ[ƒ‹ƒhÀ•W", &body.pos.x, 0.01f );
 		ImGui::Helper::ShowFrontNode( u8"‘O•ûŒü", &orientation );
 
+		ImGui::DragInt( u8"Œ»Ý‚g‚o", &hp );
+
 		ImGui::Checkbox( u8"Ž€‚ñ‚Å‚¢‚é‚©", &isDead );
+		if ( ImGui::Button( u8"“|‚·" ) )
+		{
+			DieMoment();
+		}
+
+		hp = std::max( 0, hp );
 
 		ImGui::TreePop();
 		return true;
