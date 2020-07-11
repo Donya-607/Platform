@@ -312,22 +312,20 @@ void SceneGame::Draw( float elapsedTime )
 	pRenderer->ActivateRasterizerModel();
 	pRenderer->ActivateSamplerModel();
 	pRenderer->ActivateConstantScene();
-	// pRenderer->ActivateConstantTrans();
 	{
 		// The drawing priority is determined by the priority of the information.
 
 		pRenderer->ActivateShaderNormalSkinning();
+		Bullet::Admin::Get().Draw( pRenderer.get() );
 		if ( pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
 		if ( pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
 		pRenderer->DeactivateShaderNormalSkinning();
 
 		pRenderer->ActivateShaderNormalStatic();
-		Bullet::Admin::Get().Draw( pRenderer.get() );
 		Enemy::Admin::Get().Draw( pRenderer.get() );
 		if ( pMap ) { pMap->Draw( pRenderer.get() ); }
 		pRenderer->DeactivateShaderNormalStatic();
 	}
-	// pRenderer->DeactivateConstantTrans();
 	pRenderer->DeactivateConstantScene();
 	pRenderer->DeactivateDepthStencilModel();
 	pRenderer->DeactivateRasterizerModel();
