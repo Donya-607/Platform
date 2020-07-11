@@ -6,6 +6,7 @@
 #include "Donya/Useful.h"	// Use ShowMessageBox
 #endif // DEBUG_MODE
 
+#include "Bullets/Buster.h"	// use Buster::GetLivingCount()
 #include "Common.h"
 #include "FilePath.h"
 #include "Map.h"			// Use Map::ToWorldPos()

@@ -755,7 +755,7 @@ void SceneGame::Collision_BulletVSBoss()
 	auto &bulletAdmin = Bullet::Admin::Get();
 	const size_t bulletCount = bulletAdmin.GetInstanceCount();
 
-	const Bullet::Buster *pBullet = nullptr;
+	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
 	for ( size_t i = 0; i < bulletCount; ++i )
 	{
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
@@ -806,8 +806,8 @@ void SceneGame::Collision_BulletVSEnemy()
 		return pEnemy;
 	};
 
-	const Bullet::Buster *pBullet = nullptr;
-	std::shared_ptr<const Enemy::Base> pOther = nullptr;
+	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
+	std::shared_ptr<const Enemy::Base>  pOther  = nullptr;
 	for ( size_t i = 0; i < bulletCount; ++i )
 	{
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
@@ -844,7 +844,7 @@ void SceneGame::Collision_BulletVSPlayer()
 	const size_t bulletCount = bulletAdmin.GetInstanceCount();
 
 	Donya::Collision::Box3F bulletBody;
-	const Bullet::Buster *pBullet = nullptr;
+	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
 	for ( size_t i = 0; i < bulletCount; ++i )
 	{
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );

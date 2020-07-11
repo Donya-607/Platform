@@ -14,8 +14,8 @@ namespace Bullet
 		static int livingCount;
 	public:
 		static int GetLivingCount();
-	private:
 	public:
+		Buster() = default;
 		Buster( const Buster &  ) = default;
 		Buster(       Buster && ) = default;
 		Buster &operator = ( const Buster &  ) = default;

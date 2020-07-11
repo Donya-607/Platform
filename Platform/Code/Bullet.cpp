@@ -16,7 +16,7 @@ namespace Bullet
 	namespace
 	{
 		constexpr size_t kindCount = scast<size_t>( Kind::KindCount );
-		constexpr const char *modelFolderName = "Boss/";
+		constexpr const char *modelFolderName = "Bullet/";
 		constexpr std::array<const char *, kindCount> modelNames
 		{
 			"Buster",
@@ -357,7 +357,7 @@ namespace Bullet
 	{
 		return ( GetInstanceCount() <= instanceIndex ) ? true : false;
 	}
-	const std::shared_ptr<Base> Admin::GetInstanceOrNullptr( size_t instanceIndex ) const
+	std::shared_ptr<const Base> Admin::GetInstanceOrNullptr( size_t instanceIndex ) const
 	{
 		if ( IsOutOfRange( instanceIndex ) ) { return nullptr; }
 		// else

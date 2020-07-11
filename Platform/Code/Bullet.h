@@ -96,6 +96,7 @@ namespace Bullet
 		bool				wantRemove	= false;
 		mutable bool		wasCollided	= false;
 	public:
+		Base() = default;
 		Base( const Base &  ) = default;
 		Base(       Base && ) = default;
 		Base &operator = ( const Base &  ) = default;
@@ -154,7 +155,7 @@ namespace Bullet
 	public:
 		size_t GetInstanceCount() const;
 		bool IsOutOfRange( size_t instanceIndex ) const;
-		const std::shared_ptr<Base> GetInstanceOrNullptr( size_t instanceIndex ) const;
+		std::shared_ptr<const Base> GetInstanceOrNullptr( size_t instanceIndex ) const;
 	private:
 		void GenerateRequestedFires();
 		void RemoveInstancesIfNeeds();
