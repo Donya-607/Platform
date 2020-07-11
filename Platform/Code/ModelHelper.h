@@ -30,13 +30,15 @@ namespace ModelHelper
 		Donya::Model::Pose			pose;
 		Donya::Model::Animator		animator;
 	public:
+		void Initialize( const std::shared_ptr<ModelHelper::SkinningSet> &pAssignResource );
+	public:
 		int  GetMotionCount() const;
 		/// <summary>
 		/// pResource != nullptr &amp;&amp; 0 &lt;= motionIndex &lt; GetMotionCount()
 		/// </summary>
 		bool IsAssignableIndex( int motionIndex ) const;
 		/// <summary>
-		/// Assign the specified motion to model.pose. The animator is not change.
+		/// Assign the specified motion to model.pose.
 		/// </summary>
 		void AssignMotion( int motionIndex );
 		/// <summary>

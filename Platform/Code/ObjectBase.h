@@ -131,7 +131,7 @@ public:
 	/// <summary>
 	/// A drawing origin will be regarded as a center. Returns drawing result.
 	/// </summary>
-	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const;
 };
 CEREAL_CLASS_VERSION( Actor, 0 );
 
@@ -225,6 +225,6 @@ public:
 	/// <summary>
 	/// A drawing origin will be regarded as a center. Returns drawing result.
 	/// </summary>
-	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const;
 };
 CEREAL_CLASS_VERSION( Solid, 0 );

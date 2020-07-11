@@ -134,9 +134,8 @@ namespace Boss
 		initializer		= parameter;
 		roomID			= belongRoomID;
 		roomArea		= wsRoomArea;
-		model.pResource	= GetModelPtrOrNullptr( GetKind() );
-		model.animator.ResetTimer();
-		AssignMotion( 0 );
+		model.Initialize( GetModelPtrOrNullptr( GetKind() ) );
+		model.AssignMotion( 0 );
 		AssignMyBody( parameter.wsPos );
 		body.exist		= true;
 		hurtBox.exist	= true;
@@ -274,30 +273,6 @@ namespace Boss
 
 		pReceivedDamage->Combine( damage );
 	}
-	void Base::AssignMotion( int motionIndex )
-	{
-		if ( !model.pResource ) { return; }
-		// else
-
-		const int motionCount = scast<int>( model.pResource->motionHolder.GetMotionCount() );
-		if ( motionIndex < 0 || motionCount <= motionIndex )
-		{
-			_ASSERT_EXPR( 0, L"Error: Passed motion index is out of range!" );
-			return;
-		}
-		// else
-
-		const auto &motion = model.pResource->motionHolder.GetMotion( motionIndex );
-		model.pose.AssignSkeletal( model.animator.CalcCurrentPose( motion ) );
-	}
-	void Base::UpdateMotion( float elapsedTime, int motionIndex )
-	{
-		if ( !model.pResource ) { return; }
-		// else
-
-		model.animator.Update( elapsedTime );
-		AssignMotion( motionIndex );
-	}
 	void Base::ApplyReceivedDamageIfHas()
 	{
 		if ( !pReceivedDamage ) { return; }
@@ -322,6 +297,13 @@ namespace Boss
 		(
 			Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
 		);
+	}
+	void Base::UpdateMotionIfCan( float elapsedTime, int motionIndex )
+	{
+		if ( !model.IsAssignableIndex( motionIndex ) ) { return; }
+		// else
+
+		model.UpdateMotion( elapsedTime, motionIndex );
 	}
 	int  Base::MoveOnlyX( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{

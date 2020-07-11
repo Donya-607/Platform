@@ -26,12 +26,7 @@ namespace
 		"Jump",
 	};
 
-	struct SourceInstance
-	{
-		Donya::Model::SkinningModel	model;
-		Donya::Model::MotionHolder	motionHolder;
-	};
-	static std::unique_ptr<SourceInstance> pModel{};
+	static std::shared_ptr<ModelHelper::SkinningSet> pModel{};
 
 	bool LoadModel()
 	{
@@ -48,40 +43,28 @@ namespace
 		}
 		// else
 
-		Donya::Loader loader{};
-		if ( !loader.Load( filePath ) ) { return false; }
-		// else
-
-		const Donya::Model::Source source = loader.GetModelSource();
-
-		pModel = std::make_unique<SourceInstance>();
-		pModel->model = Donya::Model::SkinningModel::Create( source, loader.GetFileDirectory() );
-		pModel->motionHolder.AppendSource( source );
-
-		if ( !pModel->model.WasInitializeSucceeded() )
+		pModel = std::make_shared<ModelHelper::SkinningSet>();
+		const bool result = ModelHelper::Load( filePath, pModel.get() );
+		if ( !result )
 		{
-			pModel.reset();
+			pModel.reset(); // Make not loaded state
+
+			const std::string msg = "Failed: Loading failed: " + filePath;
+			Donya::OutputDebugStr( msg.c_str() );
 			return false;
 		}
 		// else
 
 		return true;
 	}
-
 	bool IsOutOfRange( Player::MotionKind kind )
 	{
 		const size_t uintKind = scast<size_t>( kind );
 		return ( MOTION_COUNT <= uintKind ) ? true : false;
 	}
-	const Donya::Model::SkinningModel &GetModel()
+	std::shared_ptr<ModelHelper::SkinningSet> GetModelOrNullptr()
 	{
-		_ASSERT_EXPR( pModel, L"Error : The Player's model does not initialized!" );
-		return pModel->model;
-	}
-	const Donya::Model::MotionHolder  &GetMotions()
-	{
-		_ASSERT_EXPR( pModel, L"Error : The Player's motions does not initialized!" );
-		return pModel->motionHolder;
+		return pModel;
 	}
 }
 
@@ -327,8 +310,8 @@ void PlayerParam::ShowImGuiNode()
 void Player::MotionManager::Init()
 {
 	prevKind = currKind = MotionKind::Jump;
-	animator.ResetTimer();
 
+	model.Initialize( GetModelOrNullptr() );
 	AssignPose( currKind );
 }
 void Player::MotionManager::Update( Player &inst, float elapsedTime )
@@ -337,23 +320,51 @@ void Player::MotionManager::Update( Player &inst, float elapsedTime )
 	currKind = CalcNowKind( inst );
 	if ( currKind != prevKind )
 	{
-		animator.ResetTimer();
+		model.animator.ResetTimer();
 	}
 	
 	ShouldEnableLoop( currKind )
-	? animator.EnableLoop()
-	: animator.DisableLoop();
+	? model.animator.EnableLoop()
+	: model.animator.DisableLoop();
 
-	animator.Update( elapsedTime );
+	model.animator.Update( elapsedTime );
 	AssignPose( currKind );
 }
-const Donya::Model::Pose &Player::MotionManager::GetPose() const
+void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &W ) const
 {
-	return pose;
+	if ( !pRenderer ) { return; }
+	if ( !model.pResource )
+	{
+		_ASSERT_EXPR( 0, L"Error: Player's model is not assigned!" );
+		return;
+	}
+	// else
+
+	Donya::Model::Constants::PerModel::Common modelConstant{};
+	modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+	modelConstant.worldMatrix	= W;
+	pRenderer->UpdateConstant( modelConstant );
+	pRenderer->ActivateConstantModel();
+
+	pRenderer->Render( model.pResource->model, model.pose );
+
+	pRenderer->DeactivateConstantModel();
 }
 int  Player::MotionManager::ToMotionIndex( MotionKind kind ) const
 {
 	return scast<int>( kind );
+}
+void Player::MotionManager::AssignPose( MotionKind kind )
+{
+	const int motionIndex = ToMotionIndex( kind );
+	if ( !model.IsAssignableIndex( motionIndex ) )
+	{
+		_ASSERT_EXPR( 0, L"Error: Specified motion index out of range!" );
+		return;
+	}
+	// else
+
+	model.AssignMotion( motionIndex );
 }
 bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 {
@@ -368,21 +379,6 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 
 	_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
 	return false;
-}
-void Player::MotionManager::AssignPose( MotionKind kind )
-{
-	const int   motionIndex  = ToMotionIndex( kind );
-	const auto &motionHolder = GetMotions();
-	if ( motionHolder.IsOutOfRange( motionIndex ) )
-	{
-		_ASSERT_EXPR( 0, L"Error: Specified motion index out of range!" );
-		return;
-	}
-	// else
-
-	const auto &currentMotion = motionHolder.GetMotion( motionIndex );
-	animator.SetRepeatRange( currentMotion );
-	pose.AssignSkeletal( animator.CalcCurrentPose( currentMotion ) );
 }
 Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst ) const
 {
@@ -657,7 +653,7 @@ void Player::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision
 
 	pMover->Move( *this, elapsedTime, solids );
 }
-void Player::Draw( RenderingHelper *pRenderer )
+void Player::Draw( RenderingHelper *pRenderer ) const
 {
 	if ( !pRenderer ) { return; }
 	if ( !pMover )
@@ -668,25 +664,12 @@ void Player::Draw( RenderingHelper *pRenderer )
 	if ( !pMover->Drawable( *this ) || !invincibleTimer.Drawable() ) { return; }
 	// else
 
-	// TODO: Change the model instance to ModelHelper's
-
-	const Donya::Vector3 &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
+	const Donya::Vector3   &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
 	const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
 
-	const auto &drawModel = GetModel();
-	const auto &drawPose  = motionManager.GetPose();
-
-	Donya::Model::Constants::PerModel::Common modelConstant{};
-	modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-	modelConstant.worldMatrix	= W;;
-	pRenderer->UpdateConstant( modelConstant );
-	pRenderer->ActivateConstantModel();
-
-	pRenderer->Render( drawModel, drawPose );
-
-	pRenderer->DeactivateConstantModel();
+	motionManager.Draw( pRenderer, W );
 }
-void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP )
+void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused ) const
 {
 	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 	// else

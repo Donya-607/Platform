@@ -533,7 +533,7 @@ namespace Boss
 		UpdateOrientation( lookingRight );
 		
 		// TODO: Set a current motion index
-		UpdateMotion( elapsedTime, NULL );
+		UpdateMotionIfCan( elapsedTime, NULL );
 
 		previousInput = input;
 	}

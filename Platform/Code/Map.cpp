@@ -30,20 +30,8 @@ void Tile::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP
 	// else
 
 #if DEBUG_MODE
-	Donya::Model::Cube::Constant constant;
-	auto &W = constant.matWorld;
-	const auto wsPos = body.WorldPosition();
-	W._11 = body.size.x * 2.0f;
-	W._22 = body.size.y * 2.0f;
-	W._33 = body.size.z * 2.0f;
-	W._41 = wsPos.x;
-	W._42 = wsPos.y;
-	W._43 = wsPos.z;
-	constant.matViewProj	= matVP;
-	constant.drawColor		= { 0.8f, 0.8f, 0.8f, 0.6f };
-	constant.lightDirection	= -Donya::Vector3::Up();
-
-	pRenderer->ProcessDrawingCube( constant );
+	constexpr Donya::Vector4 tileColor{ 0.8f, 0.8f, 0.8f, 0.6f };
+	Solid::DrawHitBox( pRenderer, matVP, tileColor );
 #endif // DEBUG_MODE
 }
 bool Tile::ShouldRemove() const

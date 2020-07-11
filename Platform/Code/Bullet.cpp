@@ -139,13 +139,8 @@ namespace Bullet
 
 	void Base::Init( const FireDesc &parameter )
 	{
-		model.pResource = GetModelPtrOrNullptr( GetKind() );
-		if ( model.pResource )
-		{
-			model.pose.AssignSkeletal( model.pResource->skeletal );
-			model.animator.ResetTimer();
-		}
-
+		model.Initialize( GetModelPtrOrNullptr( GetKind() ) );
+		
 		InitBody( parameter );
 
 		velocity	= parameter.direction * parameter.initialSpeed;

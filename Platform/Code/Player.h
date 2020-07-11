@@ -13,6 +13,7 @@
 
 #include "CSVLoader.h"
 #include "Damage.h"
+#include "ModelHelper.h"
 #include "ObjectBase.h"
 #include "Parameter.h"
 #include "Renderer.h"
@@ -93,17 +94,15 @@ private:
 	private:
 		MotionKind prevKind = MotionKind::Jump;
 		MotionKind currKind = MotionKind::Jump;
-		Donya::Model::Animator	animator;
-		Donya::Model::Pose		pose;
+		ModelHelper::SkinningOperator model;
 	public:
 		void Init();
 		void Update( Player &instance, float elapsedTime );
-	public:
-		const Donya::Model::Pose &GetPose() const;
+		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW ) const;
 	private:
 		int  ToMotionIndex( MotionKind kind ) const;
-		bool ShouldEnableLoop( MotionKind kind ) const;
 		void AssignPose( MotionKind kind );
+		bool ShouldEnableLoop( MotionKind kind ) const;
 		MotionKind CalcNowKind( Player &instance ) const;
 	};
 	class Flusher
@@ -205,8 +204,8 @@ public:
 	void Update( float elapsedTime, Input input );
 	void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
 
-	void Draw( RenderingHelper *pRenderer );
-	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP );
+	void Draw( RenderingHelper *pRenderer ) const;
+	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
 public:
 	bool NowMiss() const;
 	using Actor::GetHitBox;

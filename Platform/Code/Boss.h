@@ -89,26 +89,19 @@ namespace Boss
 
 	class Base : public Actor
 	{
-	protected:
-		struct ModelSet
-		{
-			std::shared_ptr<ModelHelper::SkinningSet> pResource = nullptr;
-			Donya::Model::Pose		pose;
-			Donya::Model::Animator	animator;
-		};
 	protected: // Seralize values
-		InitializeParam			initializer;
-		int						roomID		= Room::invalidID;
-		Donya::Collision::Box3F roomArea;	// World space
+		InitializeParam					initializer;
+		int								roomID		= Room::invalidID;
+		Donya::Collision::Box3F			roomArea;	// World space
 	protected:
-		ModelSet				model;
-		using Actor::body;					// VS a terrain
-		Donya::Collision::Box3F	hurtBox;	// VS an attack
-		Donya::Vector3			velocity;
-		Donya::Quaternion		orientation;
-		int						hp			= 1;	// Alive if this is greater than 0(if 0 < hp)
-		bool					isDead		= false;
-		bool					wantRemove	= false;
+		ModelHelper::SkinningOperator	model;
+		using					 Actor::body;		// VS a terrain
+		Donya::Collision::Box3F			hurtBox;	// VS an attack
+		Donya::Vector3					velocity;
+		Donya::Quaternion				orientation;
+		int								hp			= 1;	// Alive if this is greater than 0(if 0 < hp)
+		bool							isDead		= false;
+		bool							wantRemove	= false;
 		mutable std::unique_ptr<Definition::Damage> pReceivedDamage	= nullptr; // Will be made at GiveDamage()
 	public:
 		Base() = default;
@@ -157,14 +150,6 @@ namespace Boss
 		virtual void GiveDamage( const Definition::Damage &damage ) const;
 	protected:
 		/// <summary>
-		/// Assign the specified motion to model.pose. The animator is not change.
-		/// </summary>
-		virtual void AssignMotion( int motionIndex );
-		/// <summary>
-		/// Update the animator then call AssignMotion().
-		/// </summary>
-		virtual void UpdateMotion( float elapsedTime, int motionIndex );
-		/// <summary>
 		/// After this, the "pReceivedDamage" will be reset.
 		/// </summary>
 		virtual void ApplyReceivedDamageIfHas();
@@ -174,6 +159,7 @@ namespace Boss
 		virtual void DieMoment();
 	protected:
 		void UpdateOrientation( bool lookingRight );
+		void UpdateMotionIfCan( float elapsedTime, int motionIndex );
 		/// <summary>
 		/// Returns the return value of Actor::MoveX().
 		/// </summary>

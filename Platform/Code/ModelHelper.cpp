@@ -4,6 +4,15 @@
 
 namespace ModelHelper
 {
+	void SkinningOperator::Initialize( const std::shared_ptr<ModelHelper::SkinningSet> &pAssignResource )
+	{
+		pResource = pAssignResource;
+		if ( pResource )
+		{
+			pose.AssignSkeletal( pResource->skeletal );
+			animator.ResetTimer();
+		}
+	}
 	int  SkinningOperator::GetMotionCount() const
 	{
 		return ( !pResource ) ? 0 : scast<int>( pResource->motionHolder.GetMotionCount() );
@@ -27,6 +36,8 @@ namespace ModelHelper
 
 		const auto &motion = pResource->motionHolder.GetMotion( motionIndex );
 		pose.AssignSkeletal( animator.CalcCurrentPose( motion ) );
+
+		animator.SetRepeatRange( motion );
 	}
 	void SkinningOperator::UpdateMotion( float elapsedTime, int motionIndex )
 	{
