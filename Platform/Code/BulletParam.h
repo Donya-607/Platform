@@ -8,12 +8,11 @@
 
 namespace Bullet
 {
-	struct BusterParam
+	struct GeneralParam
 	{
 	public:
-		Donya::Vector3		hitBoxOffset{ 0.0f, 0.0f, 0.0f };
-		Donya::Vector3		hitBoxSize  { 1.0f, 1.0f, 1.0f };
-		Definition::Damage	damage;
+		float reflectSpeed	= 1.0f;
+		float reflectDegree	= 45.0f;	// XY axis. Right side angle. If you using it when left side, use as: "180 - reflectDegree"
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -21,15 +20,11 @@ namespace Bullet
 		{
 			archive
 			(
-				CEREAL_NVP( hitBoxOffset ),
-				CEREAL_NVP( hitBoxSize   )
+				CEREAL_NVP( reflectSpeed  ),
+				CEREAL_NVP( reflectDegree )
 			);
 
 			if ( 1 <= version )
-			{
-				archive( CEREAL_NVP( damage ) );
-			}
-			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -40,4 +35,4 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::BusterParam, 1 )
+CEREAL_CLASS_VERSION( Bullet::GeneralParam, 0 )

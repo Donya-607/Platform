@@ -26,6 +26,7 @@ namespace Bullet
 	};
 
 	struct BusterParam;
+	struct GeneralParam;
 	struct SkullBusterParam;
 	struct SkullShieldParam;
 	namespace Parameter
@@ -33,6 +34,7 @@ namespace Bullet
 		void Load();
 
 		const BusterParam		&GetBuster();
+		const GeneralParam		&GetGeneral();
 		const SkullBusterParam	&GetSkullBuster();
 		const SkullShieldParam	&GetSkullShield();
 
@@ -42,10 +44,12 @@ namespace Bullet
 		namespace Impl
 		{
 			void LoadBuster();
+			void LoadGeneral();
 			void LoadSkullBuster();
 			void LoadSkullShield();
 		#if USE_IMGUI
 			void UpdateBuster( const std::string &nodeCaption );
+			void UpdateGeneral( const std::string &nodeCaption );
 			void UpdateSkullBuster( const std::string &nodeCaption );
 			void UpdateSkullShield( const std::string &nodeCaption );
 		#endif // USE_IMGUI
@@ -104,8 +108,15 @@ namespace Bullet
 		Donya::Collision::Sphere3F		hitSphere;	// Hit box as Sphere
 		Donya::Vector3					velocity;	// [m/s]
 		Donya::Quaternion				orientation;
-		bool							wantRemove	= false;
-		mutable bool					wasCollided	= false;
+		bool							wantRemove		= false;
+		mutable bool					wasCollided		= false;
+		
+		// It means: "(was protected) from XXX side".
+		enum class ProtectedInfo
+		{
+			None, ByRightSide, ByLeftSide, Processed
+		};
+		mutable ProtectedInfo			wasProtected	= ProtectedInfo::None;
 	public:
 		Base() = default;
 		Base( const Base &  ) = default;
@@ -124,6 +135,10 @@ namespace Bullet
 		virtual bool ShouldRemove() const;
 		virtual bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
 		virtual void CollidedToObject() const;
+		virtual void ProtectedBy( const Donya::Collision::Box3F		&protectObjectBody ) const;
+		virtual void ProtectedBy( const Donya::Collision::Sphere3F	&protectObjectBody ) const;
+	protected:
+		virtual void ProtectedByImpl( float distLeft, float distRight ) const;
 	public:
 		using						 Solid::GetHitBox;
 		virtual Donya::Collision::Sphere3F	GetHitSphere()	const;
@@ -137,6 +152,10 @@ namespace Bullet
 		/// It will be called when update if it was collided to some object.
 		/// </summary>
 		virtual void CollidedProcess();
+		/// <summary>
+		/// It will be called when update if it was protected. Default behavior will disable the exist of hit box.
+		/// </summary>
+		virtual void ProtectedProcess();
 		virtual void AssignBodyParameter( const Donya::Vector3 &wsPos ) = 0;
 		virtual void InitBody( const FireDesc &parameter );
 		virtual void UpdateOrientation( const Donya::Vector3 &direction );

@@ -4,6 +4,7 @@
 
 #include "Donya/Sound.h"
 
+#include "BulletParam.h"
 #include "Bullets/Buster.h"
 #include "Bullets/SkullBullet.h"
 #include "Common.h"				// Use IsShowCollision()
@@ -97,6 +98,7 @@ namespace Bullet
 		void Load()
 		{
 			Impl::LoadBuster();
+			Impl::LoadGeneral();
 			Impl::LoadSkullBuster();
 			Impl::LoadSkullShield();
 		}
@@ -107,6 +109,7 @@ namespace Bullet
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
 
+			Impl::UpdateGeneral( u8"General" );
 			Impl::UpdateBuster( u8"Buster" );
 			Impl::UpdateSkullBuster( u8"SkullBuster" );
 			Impl::UpdateSkullShield( u8"SkullShield" );
@@ -114,6 +117,25 @@ namespace Bullet
 			ImGui::TreePop();
 		}
 	#endif // USE_IMGUI
+
+		static ParamOperator<GeneralParam> generalParam{ "General" };
+		const GeneralParam &GetGeneral()
+		{
+			return generalParam.Get();
+		}
+		namespace Impl
+		{
+			void LoadGeneral()
+			{
+				generalParam.LoadParameter();
+			}
+		#if USE_IMGUI
+			void UpdateGeneral( const std::string &nodeCaption )
+			{
+				generalParam.ShowImGuiNode( nodeCaption );
+			}
+		#endif // USE_IMGUI
+		}
 	}
 
 	bool LoadResource()
@@ -172,6 +194,13 @@ namespace Bullet
 
 		ImGui::TreePop();
 	}
+
+	void GeneralParam::ShowImGuiNode()
+	{
+		ImGui::DragFloat( u8"”½ŽËŒã‚Ì‘¬“x",		&reflectSpeed,  0.01f );
+		ImGui::DragFloat( u8"”½ŽËŠp“x(degree)",	&reflectDegree, 1.0f  );
+		reflectSpeed  = std::max( 0.1f, reflectSpeed  );
+	}
 #endif // USE_IMGUI
 
 	void Base::Init( const FireDesc &parameter )
@@ -191,6 +220,10 @@ namespace Bullet
 		if ( wasCollided )
 		{
 			CollidedProcess();
+		}
+		if ( wasProtected != ProtectedInfo::None && wasProtected != ProtectedInfo::Processed )
+		{
+			ProtectedProcess();
 		}
 
 		if ( OnOutSide( wsScreen ) )
@@ -288,6 +321,47 @@ namespace Bullet
 		wasCollided = true;
 		// Donya::Sound::Play( Music::Bullet_Hit );
 	}
+	void Base::ProtectedBy( const Donya::Collision::Box3F &otherBody ) const
+	{
+		const auto myCenter		= ( hitSphere.exist ) ? hitSphere.WorldPosition() : body.WorldPosition();
+		const auto otherMax		= otherBody.Max();
+		const auto otherMin		= otherBody.Min();
+		const float distLeft	= otherMin.x - myCenter.x;
+		const float distRight	= otherMax.x - myCenter.x;
+		ProtectedByImpl( distLeft, distRight );
+	}
+	void Base::ProtectedBy( const Donya::Collision::Sphere3F &otherBody ) const
+	{
+		const auto myCenter		= ( hitSphere.exist ) ? hitSphere.WorldPosition() : body.WorldPosition();
+		const auto otherCenter	= otherBody.WorldPosition();
+		const auto otherRight	= otherCenter.x + otherBody.radius;
+		const auto otherLeft	= otherCenter.x - otherBody.radius;
+		const float distLeft	= otherLeft  - myCenter.x;
+		const float distRight	= otherRight - myCenter.x;
+		ProtectedByImpl( distLeft, distRight );
+	}
+	void Base::ProtectedByImpl( float distLeft, float distRight ) const
+	{
+		if ( wasProtected == ProtectedInfo::Processed ) { return; }
+		// else
+
+		bool fromRightSide{};
+		if ( 0.0f <= distLeft  ) { fromRightSide = true;  }
+		else
+		if ( distRight <= 0.0f ) { fromRightSide = false; }
+		else
+		{
+			/*
+			|	<-distLeft->	|	<-distRight->	|
+			Min				myCenter				Max
+			*/
+			fromRightSide = ( fabsf( distLeft ) <= fabsf( distRight ) );
+		}
+
+		wasProtected	= ( fromRightSide )
+						? ProtectedInfo::ByRightSide
+						: ProtectedInfo::ByLeftSide;
+	}
 	Donya::Collision::Sphere3F Base::GetHitSphere() const
 	{
 		return hitSphere;
@@ -306,6 +380,26 @@ namespace Bullet
 		wantRemove		= true;
 		body.exist		= false;
 		hitSphere.exist	= false;
+	}
+	void Base::ProtectedProcess()
+	{
+		wasCollided		= false;
+		wasProtected	= ProtectedInfo::Processed;
+		body.exist		= false;
+		hitSphere.exist	= false;
+
+		const auto &data	= Parameter::GetGeneral();
+		const bool fromLeft	= wasProtected == ProtectedInfo::ByLeftSide;
+		const float directionRadian	= ( fromLeft )
+									? ToRadian( 180.0f - data.reflectDegree )
+									: ToRadian( data.reflectDegree );
+		const float cos = cosf( directionRadian );
+		const float sin = sinf( directionRadian );
+
+		velocity.x = cos * data.reflectSpeed;
+		velocity.y = sin * data.reflectSpeed;
+		velocity.z = 0.0f;
+		// The orientation is not change
 	}
 	void Base::InitBody( const FireDesc &parameter )
 	{
