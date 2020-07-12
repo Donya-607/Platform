@@ -277,9 +277,11 @@ namespace Bullet
 	}
 	bool Base::OnOutSide( const Donya::Collision::Box3F &wsScreen ) const
 	{
-		const bool outAABB		= ( !Donya::Collision::IsHit( body,			wsScreen ) );
-		const bool outSphere	= ( !Donya::Collision::IsHit( hitSphere,	wsScreen ) );
-		return outAABB || outSphere;
+		// I am not consider an invalid hit box(exist == false) in here,
+		// so I make to true an invalid one certainly.
+		const bool outAABB		= ( !body.exist			|| !Donya::Collision::IsHit( body,		wsScreen ) );
+		const bool outSphere	= ( !hitSphere.exist	|| !Donya::Collision::IsHit( hitSphere,	wsScreen ) );
+		return outAABB & outSphere; // Which one is true certainly, so I should combine it.
 	}
 	void Base::CollidedToObject() const
 	{
