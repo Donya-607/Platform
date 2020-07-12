@@ -139,6 +139,7 @@
     <ClCompile Include="Code\Bosses\Skull.cpp" />
     <ClCompile Include="Code\Bullet.cpp" />
     <ClCompile Include="Code\Bullets\Buster.cpp" />
+    <ClCompile Include="Code\Bullets\SkullBullet.cpp" />
     <ClCompile Include="Code\ClearEvent.cpp" />
     <ClCompile Include="Code\Common.cpp" />
     <ClCompile Include="Code\CSVLoader.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="Code\Bullet.h" />
     <ClInclude Include="Code\BulletParam.h" />
     <ClInclude Include="Code\Bullets\Buster.h" />
+    <ClInclude Include="Code\Bullets\SkullBullet.h" />
     <ClInclude Include="Code\ClearEvent.h" />
     <ClInclude Include="Code\Common.h" />
     <ClInclude Include="Code\CSVLoader.h" />

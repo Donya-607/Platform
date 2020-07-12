@@ -209,7 +209,8 @@ namespace Boss
 	{
 		const auto &data = Parameter::GetSkull();
 
-		Bullet::FireDesc desc;
+		Bullet::FireDesc desc = data.shotDesc;
+		desc.kind			=  data.shotDesc.kind;
 		desc.initialSpeed	=  data.shotDesc.initialSpeed;
 		desc.position		=  inst.orientation.RotateVector( data.shotDesc.position );
 		desc.position		+= inst.body.WorldPosition(); // Local space to World space

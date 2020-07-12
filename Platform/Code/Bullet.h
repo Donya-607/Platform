@@ -19,16 +19,19 @@ namespace Bullet
 	enum class Kind
 	{
 		Buster,
+		SkullBuster,
 
 		KindCount
 	};
 
 	struct BusterParam;
+	struct SkullBusterParam;
 	namespace Parameter
 	{
 		void Load();
 
 		const BusterParam &GetBuster();
+		const SkullBusterParam &GetSkullBuster();
 
 	#if USE_IMGUI
 		void Update( const std::string &nodeCaption );
@@ -36,8 +39,10 @@ namespace Bullet
 		namespace Impl
 		{
 			void LoadBuster();
+			void LoadSkullBuster();
 		#if USE_IMGUI
 			void UpdateBuster( const std::string &nodeCaption );
+			void UpdateSkullBuster( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}
 	}
@@ -165,4 +170,4 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::FireDesc, 0 )
+CEREAL_CLASS_VERSION( Bullet::FireDesc, 1 )

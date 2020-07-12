@@ -1,11 +1,12 @@
 #include "Bullet.h"
 
-#include <algorithm>		// Use std::remove_if
+#include <algorithm>			// Use std::remove_if
 
 #include "Donya/Sound.h"
 
 #include "Bullets/Buster.h"
-#include "Common.h"			// Use IsShowCollision()
+#include "Bullets/SkullBullet.h"
+#include "Common.h"				// Use IsShowCollision()
 #include "FilePath.h"
 #include "ModelHelper.h"
 #include "Music.h"
@@ -20,6 +21,7 @@ namespace Bullet
 		constexpr std::array<const char *, kindCount> modelNames
 		{
 			"Buster",
+			"SkullBuster",
 		};
 
 		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
@@ -103,6 +105,7 @@ namespace Bullet
 			// else
 
 			Impl::UpdateBuster( u8"Buster" );
+			Impl::UpdateSkullBuster( u8"SkullBuster" );
 
 			ImGui::TreePop();
 		}
@@ -116,10 +119,40 @@ namespace Bullet
 	}
 
 #if USE_IMGUI
+	constexpr const char *GetKindName( Kind kind )
+	{
+		switch ( kind )
+		{
+		case Kind::Buster:		return "Buster";
+		case Kind::SkullBuster:	return "SkullBuster";
+		default: break;
+		}
+
+		_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
+		return "ERROR_KIND";
+	}
+	void ShowKindNode( const std::string &nodeCaption, Kind *p )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		for ( size_t i = 0; i < kindCount; ++i )
+		{
+			const Kind current = scast<Kind>( i );
+			if ( ImGui::RadioButton( GetKindName( current ), *p == current ) )
+			{
+				*p = current;
+			}
+		}
+
+		ImGui::TreePop();
+	}
 	void FireDesc::ShowImGuiNode( const std::string &nodeCaption, bool isRelativePos )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
+
+		ShowKindNode( u8"ê∂ê¨Ç∑ÇÈéÌóﬁ", &kind );
 
 		ImGui::DragFloat( u8"èâë¨[m/s]", &initialSpeed, 0.1f );
 		initialSpeed = std::max( 0.0f, initialSpeed );
@@ -366,8 +399,9 @@ namespace Bullet
 
 			switch ( parameter.kind )
 			{
-			case Kind::Buster: tmp = std::make_shared<Buster>(); break;
-			default: _ASSERT_EXPR( 0, L"Error: Unexpected bullet kind!" ); return;
+			case Kind::Buster:		tmp = std::make_shared<Buster>();		break;
+			case Kind::SkullBuster:	tmp = std::make_shared<SkullBuster>();	break;
+			default: _ASSERT_EXPR( 0, L"Error: Unexpected bullet kind!" );	return;
 			}
 
 			if ( !tmp ) { return; }

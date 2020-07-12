@@ -5,30 +5,20 @@
 namespace Bullet
 {
 	/// <summary>
-	/// Kind of the player fires.
-	/// You must call Init() when generate and Uninit() before remove. Because these method manages instance count.
+	/// Kind of the skull fires.
 	/// </summary>
-	class Buster final : public Base
+	class SkullBuster final : public Base
 	{
-	private:
-		static int livingCount;
 	public:
-		static int GetLivingCount();
-	public:
-		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
 	public:
 		Kind				GetKind()	const override;
 		Definition::Damage	GetDamage()	const override;
 	private:
 		void AssignBodyParameter( const Donya::Vector3 &wsPos ) override;
-	public:
-	#if USE_IMGUI
-		void ShowImGuiNode( const std::string &nodeCaption ) override;
-	#endif // USE_IMGUI
 	};
 
-	struct BusterParam
+	struct SkullBusterParam
 	{
 	public:
 		Donya::Vector3		hitBoxOffset{ 0.0f, 0.0f, 0.0f };
@@ -41,15 +31,12 @@ namespace Bullet
 		{
 			archive
 			(
-				CEREAL_NVP( hitBoxOffset ),
-				CEREAL_NVP( hitBoxSize   )
+				CEREAL_NVP( hitBoxOffset	),
+				CEREAL_NVP( hitBoxSize		),
+				CEREAL_NVP( damage			)
 			);
 
 			if ( 1 <= version )
-			{
-				archive( CEREAL_NVP( damage ) );
-			}
-			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -60,4 +47,4 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::BusterParam, 1 )
+CEREAL_CLASS_VERSION( Bullet::SkullBusterParam, 0 )
