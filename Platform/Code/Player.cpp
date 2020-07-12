@@ -725,15 +725,28 @@ Donya::Quaternion		Player::GetOrientation() const
 }
 void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F &collidingHitBox ) const
 {
+	const auto myCenter		= body.WorldPosition();
+	const auto otherMax		= collidingHitBox.Max();
+	const auto otherMin		= collidingHitBox.Min();
+	const float distLeft	= otherMin.x - myCenter.x;
+	const float distRight	= otherMax.x - myCenter.x;
+	GiveDamageImpl( damage, distLeft, distRight );
+}
+void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collision::Sphere3F &collidingHitBox ) const
+{
+	const auto myCenter		= body.WorldPosition();
+	const auto otherCenter	= collidingHitBox.WorldPosition();
+	const auto otherLeft	= otherCenter.x - collidingHitBox.radius;
+	const auto otherRight	= otherCenter.x + collidingHitBox.radius;
+	const float distLeft	= otherLeft  - myCenter.x;
+	const float distRight	= otherRight - myCenter.x;
+	GiveDamageImpl( damage, distLeft, distRight );
+}
+void Player::GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const
+{
 	// Receive only smallest damage if same timing
 	if ( pReceivedDamage && pReceivedDamage->damage.amount <= damage.amount ) { return; }
 	// else
-
-	const auto myCenter = body.WorldPosition();
-	const auto otherMax = collidingHitBox.Max();
-	const auto otherMin = collidingHitBox.Min();
-	const float distLeft	= otherMin.x - myCenter.x;
-	const float distRight	= otherMax.x - myCenter.x;
 
 	bool knockedFromRight{};
 	if ( 0.0f <= distLeft  ) { knockedFromRight = true;  }

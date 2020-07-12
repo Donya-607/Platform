@@ -760,7 +760,12 @@ void SceneGame::Collision_BulletVSBoss()
 		if ( !pBullet ) { continue; }
 		// else
 
-		if ( Donya::Collision::IsHit( bossBody, pBullet->GetHitBox() ) )
+		// The bullet's hit box is only either AABB or Sphere is valid
+		// (Invalid one's exist flag will false, so IsHit() will returns false)
+		if	(
+				Donya::Collision::IsHit( bossBody, pBullet->GetHitBox()		) ||
+				Donya::Collision::IsHit( bossBody, pBullet->GetHitSphere()	)
+			)
 		{
 			pBoss->GiveDamage( pBullet->GetDamage() );
 			pBullet->CollidedToObject();
@@ -781,7 +786,11 @@ void SceneGame::Collision_BulletVSEnemy()
 		const auto result = std::find( collidedEnemyIndices.begin(), collidedEnemyIndices.end(), enemyIndex );
 		return ( result != collidedEnemyIndices.end() );
 	};
-	auto FindCollidingEnemyOrNullptr	= [&]( const Donya::Collision::Box3F &other )
+	auto IsHitImpl						= [&]( const auto &a, const auto &b )
+	{
+		return Donya::Collision::IsHit( a, b );
+	};
+	auto FindCollidingEnemyOrNullptr	= [&]( const auto &otherHitBox )
 	{
 		std::shared_ptr<const Enemy::Base> pEnemy = nullptr;
 		for ( size_t i = 0; i < enemyCount; ++i )
@@ -793,7 +802,7 @@ void SceneGame::Collision_BulletVSEnemy()
 			if ( !pEnemy ) { continue; }
 			// else
 
-			if ( Donya::Collision::IsHit( pEnemy->GetHurtBox(), other ) )
+			if ( IsHitImpl( pEnemy->GetHurtBox(), otherHitBox ) )
 			{
 				collidedEnemyIndices.emplace_back( i );
 				return pEnemy;
@@ -804,25 +813,47 @@ void SceneGame::Collision_BulletVSEnemy()
 		return pEnemy;
 	};
 
+	// The bullet's hit box is only either AABB or Sphere is valid
+	// (Invalid one's exist flag will false, so IsHit() will returns false)
+	Donya::Collision::Box3F		otherAABB;
+	Donya::Collision::Sphere3F	otherSphere;
+
 	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
 	std::shared_ptr<const Enemy::Base>  pOther  = nullptr;
+
+	auto Process = [&]( const auto &bulletBody )
+	{
+		if ( !pBullet ) { return false; }
+		// else
+
+		bool collided = false;
+
+		pOther = FindCollidingEnemyOrNullptr( bulletBody );
+		while ( pOther )
+		{
+			collided = true;
+
+			pOther->GiveDamage( pBullet->GetDamage() );
+			pOther = FindCollidingEnemyOrNullptr( bulletBody );
+		}
+
+		return collided;
+	};
+
 	for ( size_t i = 0; i < bulletCount; ++i )
 	{
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pBullet ) { continue; }
 		// else
 
-		bool collided = false;
+		otherAABB	= pBullet->GetHitBox();
+		otherSphere	= pBullet->GetHitSphere();
+		if ( !otherAABB.exist && !otherSphere.exist ) { continue; }
+		// else
 
-		pOther = FindCollidingEnemyOrNullptr( pBullet->GetHitBox() );
-		while ( pOther )
-		{
-			collided = true;
-
-			pOther->GiveDamage( pBullet->GetDamage() );
-			pOther = FindCollidingEnemyOrNullptr( pBullet->GetHitBox() );
-		}
-
+		bool collided	= ( otherAABB.exist )
+						? Process( otherAABB   )
+						: Process( otherSphere );
 		if ( collided )
 		{
 			pBullet->CollidedToObject();
@@ -841,7 +872,11 @@ void SceneGame::Collision_BulletVSPlayer()
 	auto &bulletAdmin = Bullet::Admin::Get();
 	const size_t bulletCount = bulletAdmin.GetInstanceCount();
 
-	Donya::Collision::Box3F bulletBody;
+	// The bullet's hit box is only either AABB or Sphere is valid
+	// (Invalid one's exist flag will false, so IsHit() will returns false)
+	Donya::Collision::Box3F		bulletAABB;
+	Donya::Collision::Sphere3F	bulletSphere;
+
 	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
 	for ( size_t i = 0; i < bulletCount; ++i )
 	{
@@ -849,10 +884,19 @@ void SceneGame::Collision_BulletVSPlayer()
 		if ( !pBullet ) { continue; }
 		// else
 
-		bulletBody = pBullet->GetHitBox();
-		if ( Donya::Collision::IsHit( playerBody, bulletBody ) )
+		bulletAABB = pBullet->GetHitBox();
+		if ( Donya::Collision::IsHit( playerBody, bulletAABB ) )
 		{
-			pPlayer->GiveDamage( pBullet->GetDamage(), bulletBody );
+			pPlayer->GiveDamage( pBullet->GetDamage(), bulletAABB );
+			pBullet->CollidedToObject();
+			continue;
+		}
+		// else
+
+		bulletSphere = pBullet->GetHitSphere();
+		if ( Donya::Collision::IsHit( playerBody, bulletSphere ) )
+		{
+			pPlayer->GiveDamage( pBullet->GetDamage(), bulletSphere );
 			pBullet->CollidedToObject();
 		}
 	}

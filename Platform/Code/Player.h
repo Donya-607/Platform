@@ -211,7 +211,10 @@ public:
 	using Actor::GetHitBox;
 	Donya::Collision::Box3F	GetHurtBox()		const;
 	Donya::Quaternion		GetOrientation()	const;
-	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F &collidingHitBox ) const;
+	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F	&collidingHitBox ) const;
+	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Sphere3F	&collidingHitBox ) const;
+private:
+	void GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const;
 private:
 	template<class Mover>
 	void AssignMover()

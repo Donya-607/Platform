@@ -20,18 +20,21 @@ namespace Bullet
 	{
 		Buster,
 		SkullBuster,
+		SkullShield,
 
 		KindCount
 	};
 
 	struct BusterParam;
 	struct SkullBusterParam;
+	struct SkullShieldParam;
 	namespace Parameter
 	{
 		void Load();
 
-		const BusterParam &GetBuster();
-		const SkullBusterParam &GetSkullBuster();
+		const BusterParam		&GetBuster();
+		const SkullBusterParam	&GetSkullBuster();
+		const SkullShieldParam	&GetSkullShield();
 
 	#if USE_IMGUI
 		void Update( const std::string &nodeCaption );
@@ -40,9 +43,11 @@ namespace Bullet
 		{
 			void LoadBuster();
 			void LoadSkullBuster();
+			void LoadSkullShield();
 		#if USE_IMGUI
 			void UpdateBuster( const std::string &nodeCaption );
 			void UpdateSkullBuster( const std::string &nodeCaption );
+			void UpdateSkullShield( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}
 	}
@@ -94,12 +99,13 @@ namespace Bullet
 	class Base : public Solid
 	{
 	protected:
-		ModelHelper::SkinningOperator model;
-		using Solid::body;
-		Donya::Vector3		velocity; // [m/s]
-		Donya::Quaternion	orientation;
-		bool				wantRemove	= false;
-		mutable bool		wasCollided	= false;
+		ModelHelper::SkinningOperator	model;
+		using					 Solid::body;		// Hit box as AABB
+		Donya::Collision::Sphere3F		hitSphere;	// Hit box as Sphere
+		Donya::Vector3					velocity;	// [m/s]
+		Donya::Quaternion				orientation;
+		bool							wantRemove	= false;
+		mutable bool					wasCollided	= false;
 	public:
 		Base() = default;
 		Base( const Base &  ) = default;
@@ -110,8 +116,8 @@ namespace Bullet
 	public:
 		virtual void Init( const FireDesc &parameter );
 		virtual void Uninit() = 0;
-		virtual void Update( float elasedTime, const Donya::Collision::Box3F &wsScreenHitBox );
-		virtual void PhysicUpdate( float elasedTime );
+		virtual void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox );
+		virtual void PhysicUpdate( float elapsedTime );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
@@ -119,8 +125,10 @@ namespace Bullet
 		virtual bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
 		virtual void CollidedToObject() const;
 	public:
-		virtual Kind				GetKind()	const = 0;
-		virtual Definition::Damage	GetDamage()	const = 0;
+		using						 Solid::GetHitBox;
+		virtual Donya::Collision::Sphere3F	GetHitSphere()	const;
+		virtual Kind						GetKind()		const = 0;
+		virtual Definition::Damage			GetDamage()		const = 0;
 	protected:
 		/// <summary>
 		/// It will be called when update if it was collided to some object.

@@ -22,6 +22,7 @@ namespace Bullet
 		{
 			"Buster",
 			"SkullBuster",
+			"SkullShield",
 		};
 
 		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
@@ -96,6 +97,8 @@ namespace Bullet
 		void Load()
 		{
 			Impl::LoadBuster();
+			Impl::LoadSkullBuster();
+			Impl::LoadSkullShield();
 		}
 
 	#if USE_IMGUI
@@ -106,6 +109,7 @@ namespace Bullet
 
 			Impl::UpdateBuster( u8"Buster" );
 			Impl::UpdateSkullBuster( u8"SkullBuster" );
+			Impl::UpdateSkullShield( u8"SkullShield" );
 
 			ImGui::TreePop();
 		}
@@ -198,6 +202,9 @@ namespace Bullet
 	{
 		const auto movement = velocity * elapsedTime;
 		Solid::Move( movement, {}, {} );
+
+		// Move() moves only the "body", so apply here.
+		hitSphere.pos = body.pos;
 	}
 	void Base::Draw( RenderingHelper *pRenderer ) const
 	{
@@ -205,12 +212,14 @@ namespace Bullet
 		if ( !model.pResource	) { return; }
 		// else
 
-		const Donya::Vector3   &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
+		const bool useAABB = ( !hitSphere.exist );
+		// I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
+		const Donya::Vector3   &drawPos	= ( useAABB ) ? body.pos : hitSphere.pos;
 		const Donya::Vector4x4 W		= MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
 
 		Donya::Model::Constants::PerModel::Common modelConstant{};
 		modelConstant.drawColor			= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-		modelConstant.worldMatrix		= W;;
+		modelConstant.worldMatrix		= W;
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();
 
@@ -224,13 +233,42 @@ namespace Bullet
 		// else
 
 	#if DEBUG_MODE
-		Donya::Model::Cube::Constant constant;
-		constant.matWorld			= MakeWorldMatrix( body.size * 2.0f, /* enableRotation = */ false, body.WorldPosition() );
-		constant.matViewProj		= VP;
-		constant.drawColor			= Donya::Vector4{ 1.0f, 0.6f, 0.0f, 0.6f };
-		constant.lightDirection		= -Donya::Vector3::Up();
+		constexpr Donya::Vector4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
+		constexpr Donya::Vector3 lightDir = -Donya::Vector3::Up();
 
-		pRenderer->ProcessDrawingCube( constant );
+		const bool useAABB		= ( !hitSphere.exist	);
+		const bool useSphere	= ( !body.exist			);
+		if ( !useAABB && !useSphere ) { return; }
+		// else
+
+		const Donya::Vector3 size	=
+									( useAABB	) ? body.size * 2.0f :
+									( useSphere	) ? hitSphere.radius * 2.0f :
+									0.0f;
+		const Donya::Vector3 wsPos	=
+									( useAABB	) ? body.WorldPosition() :
+									( useSphere	) ? hitSphere.WorldPosition() :
+									0.0f;
+		const Donya::Vector4x4 W	= MakeWorldMatrix( size, /* enableRotation = */ false, wsPos );
+
+		if ( useAABB )
+		{
+			Donya::Model::Cube::Constant constant;
+			constant.matWorld			= W;
+			constant.matViewProj		= VP;
+			constant.drawColor			= color;
+			constant.lightDirection		= lightDir;
+			pRenderer->ProcessDrawingCube( constant );
+		}
+		else
+		{
+			Donya::Model::Sphere::Constant constant;
+			constant.matWorld			= W;
+			constant.matViewProj		= VP;
+			constant.drawColor			= color;
+			constant.lightDirection		= lightDir;
+			pRenderer->ProcessDrawingSphere( constant );
+		}
 	#endif // DEBUG_MODE
 	}
 	bool Base::ShouldRemove() const
@@ -239,28 +277,43 @@ namespace Bullet
 	}
 	bool Base::OnOutSide( const Donya::Collision::Box3F &wsScreen ) const
 	{
-		return ( !Donya::Collision::IsHit( body, wsScreen ) );
+		const bool outAABB		= ( !Donya::Collision::IsHit( body,			wsScreen ) );
+		const bool outSphere	= ( !Donya::Collision::IsHit( hitSphere,	wsScreen ) );
+		return outAABB || outSphere;
 	}
 	void Base::CollidedToObject() const
 	{
 		wasCollided = true;
 		// Donya::Sound::Play( Music::Bullet_Hit );
 	}
+	Donya::Collision::Sphere3F Base::GetHitSphere() const
+	{
+		return hitSphere;
+	}
 	void Base::CollidedProcess()
 	{
-		wasCollided = false;
-		wantRemove  = true;
-		body.exist  = false;
+		wasCollided		= false;
+		wantRemove		= true;
+		body.exist		= false;
+		hitSphere.exist	= false;
 	}
 	void Base::InitBody( const FireDesc &parameter )
 	{
+		// Default hit box is used as AABB
+		body.exist			= true;
+		hitSphere.exist		= false;
 		AssignBodyParameter( parameter.position );
-		body.id			= Donya::Collision::GetUniqueID();
-		body.ownerID	= parameter.owner;
+		body.id				= Donya::Collision::GetUniqueID();
+		body.ownerID		= parameter.owner;
 		body.ignoreList.clear();
+		hitSphere.id		= body.id;
+		hitSphere.ownerID	= body.ownerID;
+		hitSphere.ignoreList.clear();
 	}
 	void Base::UpdateOrientation( const Donya::Vector3 &direction )
 	{
+		if ( direction.IsZero() ) { return; }
+		// else
 		orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), direction );
 	}
 	void Base::UpdateMotionIfCan( float elapsedTime, int motionIndex )
@@ -401,6 +454,7 @@ namespace Bullet
 			{
 			case Kind::Buster:		tmp = std::make_shared<Buster>();		break;
 			case Kind::SkullBuster:	tmp = std::make_shared<SkullBuster>();	break;
+			case Kind::SkullShield:	tmp = std::make_shared<SkullShield>();	break;
 			default: _ASSERT_EXPR( 0, L"Error: Unexpected bullet kind!" );	return;
 			}
 
