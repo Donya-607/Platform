@@ -84,10 +84,6 @@ namespace Bullet
 
 		currentDegree += Parameter::GetSkullShield().rotateDegree * elapsedTime;
 	}
-	void SkullShield::PhysicUpdate( float elapsedTime )
-	{
-		Base::PhysicUpdate( elapsedTime );
-	}
 	void SkullShield::Draw( RenderingHelper *pRenderer ) const
 	{
 		if ( !pRenderer			) { return; }
@@ -145,10 +141,10 @@ namespace Bullet
 #if USE_IMGUI
 	void SkullShieldParam::ShowImGuiNode()
 	{
-		ImGui::DragFloat3( u8"回転角度(degree)",			&rotateDegree,		1.0f );
-		ImGui::DragFloat3( u8"パーツ位置の半径",			&drawPartOffset,	0.01f );
+		ImGui::DragFloat ( u8"回転角度(degree)",			&rotateDegree,		1.0f );
+		ImGui::DragFloat ( u8"パーツ位置の半径",			&drawPartOffset,	0.01f );
 		ImGui::DragFloat3( u8"当たり判定・オフセット",	&hitBoxOffset.x,	0.01f );
-		ImGui::DragFloat3( u8"当たり判定・半径",			&hitBoxRadius,		0.01f );
+		ImGui::DragFloat ( u8"当たり判定・半径",			&hitBoxRadius,		0.01f );
 		hitBoxRadius = std::max( 0.0f, hitBoxRadius );
 		damage.ShowImGuiNode( u8"基本ダメージ設定" );
 	}

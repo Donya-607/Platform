@@ -59,7 +59,6 @@ namespace Bullet
 		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
 		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
-		void PhysicUpdate( float elapsedTime ) override;
 		void Draw( RenderingHelper *pRenderer ) const override;
 	public:
 		Kind				GetKind()	const override;

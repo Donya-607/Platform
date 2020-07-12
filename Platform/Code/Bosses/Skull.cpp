@@ -4,6 +4,7 @@
 
 #include "../Donya/Random.h"
 
+#include "../Bullets/SkullBullet.h"
 #include "../Parameter.h"
 
 namespace Boss
@@ -352,6 +353,7 @@ namespace Boss
 	void Skull::Shield::Init( Skull &inst )
 	{
 		inst.velocity	= 0.0f;
+		ReleaseShieldIfHas( inst );
 
 		nowProtected	= false;
 		timer			= 0.0f;
@@ -391,18 +393,12 @@ namespace Boss
 		if ( data.shieldBeginLagSecond <= timer && timer < protectSecond )
 		{
 			nowProtected = true;
-
-		#if DEBUG_MODE
-			inst.body.pos.z = sinf( timer * PI * 2.0f ) * 2.0f;
-		#endif // DEBUG_MODE
+			GenerateShieldIfNull( inst );
 		}
 		else
 		{
 			nowProtected = false;
-
-		#if DEBUG_MODE
-			inst.body.pos.z = 0.0f;
-		#endif // DEBUG_MODE
+			ReleaseShieldIfHas( inst );
 		}
 
 		// Calculate the destination of Run state
@@ -425,6 +421,12 @@ namespace Boss
 				inst.aimingPos = destination;
 			}
 		}
+
+		if ( inst.pShield )
+		{
+			inst.pShield->Update( elapsedTime, inst.roomArea );
+			inst.pShield->SetWorldPosition( inst.body.WorldPosition() );
+		}
 	}
 	bool Skull::Shield::ShouldChangeMover( const Skull &inst ) const
 	{
@@ -440,6 +442,28 @@ namespace Boss
 		return u8"ÉVÅ[ÉãÉh";
 	}
 #endif // USE_IMGUI
+	void Skull::Shield::GenerateShieldIfNull( Skull &inst )
+	{
+		if ( inst.pShield ) { return; }
+		// else
+
+		Bullet::FireDesc desc;
+		desc.kind			= Bullet::Kind::SkullShield;
+		desc.initialSpeed	= 0.0f;
+		desc.direction		= Donya::Vector3::Zero();
+		desc.position		= inst.body.WorldPosition();
+		
+		inst.pShield = std::make_unique<Bullet::SkullShield>();
+		inst.pShield->Init( desc );
+	}
+	void Skull::Shield::ReleaseShieldIfHas( Skull &inst )
+	{
+		if ( !inst.pShield ) { return; }
+		// else
+
+		inst.pShield->Uninit();
+		inst.pShield.reset();
+	}
 
 	void Skull::Run::Init( Skull &inst )
 	{
@@ -548,6 +572,24 @@ namespace Boss
 		// else
 
 		pMover->PhysicUpdate( *this, elapsedTime, solids );
+	}
+	void Skull::Draw( RenderingHelper *pRenderer ) const
+	{
+		Base::Draw( pRenderer );
+
+		if ( pShield )
+		{
+			pShield->Draw( pRenderer );
+		}
+	}
+	void Skull::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
+	{
+		Base::DrawHitBox( pRenderer, matVP );
+
+		if ( pShield )
+		{
+			pShield->DrawHitBox( pRenderer, matVP );
+		}
 	}
 	float Skull::GetGravity() const
 	{

@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "../Boss.h"
-#include "../Bullet.h"	// Use Bullet::FireDesc
+#include "../Bullet.h"	// Use Bullet::FireDesc and Shield
 #include "../Damage.h"
 
 namespace Boss
@@ -108,6 +108,9 @@ namespace Boss
 		#if USE_IMGUI
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
+		private:
+			void GenerateShieldIfNull( Skull &instance );
+			void ReleaseShieldIfHas( Skull &instance );
 		};
 		class Run : public MoverBase
 		{
@@ -135,10 +138,11 @@ namespace Boss
 			Jump
 		};
 	private:
-		Input						previousInput;
-		std::array<Behavior, 2>		previousBehaviors{ Behavior::None }; // Contains: [0:One previous], [1:Two previous]
-		Donya::Vector3				aimingPos;		// Used for store the target pos of some timing
-		std::unique_ptr<MoverBase>	pMover = nullptr;
+		Input							previousInput;
+		std::array<Behavior, 2>			previousBehaviors{ Behavior::None }; // Contains: [0:One previous], [1:Two previous]
+		Donya::Vector3					aimingPos;		// Used for store the target pos of some timing
+		std::unique_ptr<MoverBase>		pMover  = nullptr;
+		std::unique_ptr<Bullet::Base>	pShield = nullptr;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -157,6 +161,8 @@ namespace Boss
 		void Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea ) override;
 		void Update( float elapsedTime, const Input &input ) override;
 		void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+		void Draw( RenderingHelper *pRenderer ) const override;
+		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
 	public:
 		float				GetGravity()		const override;
 		Kind				GetKind()			const override;

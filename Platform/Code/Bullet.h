@@ -129,6 +129,9 @@ namespace Bullet
 		virtual Donya::Collision::Sphere3F	GetHitSphere()	const;
 		virtual Kind						GetKind()		const = 0;
 		virtual Definition::Damage			GetDamage()		const = 0;
+	public:
+		virtual void SetWorldPosition( const Donya::Vector3 &wsPos );
+		virtual void SetVelocity( const Donya::Vector3 &newVelocity );
 	protected:
 		/// <summary>
 		/// It will be called when update if it was collided to some object.

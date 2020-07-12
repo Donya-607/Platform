@@ -233,7 +233,7 @@ namespace Bullet
 		// else
 
 	#if DEBUG_MODE
-		constexpr Donya::Vector4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
+		constexpr Donya::Vector4 color{ 1.0f, 1.0f, 1.0f, 0.6f };
 		constexpr Donya::Vector3 lightDir = -Donya::Vector3::Up();
 
 		const bool useAABB		= ( !hitSphere.exist	);
@@ -289,6 +289,14 @@ namespace Bullet
 	Donya::Collision::Sphere3F Base::GetHitSphere() const
 	{
 		return hitSphere;
+	}
+	void Base::SetWorldPosition( const Donya::Vector3 &wsPos )
+	{
+		hitSphere.pos = body.pos = wsPos;
+	}
+	void Base::SetVelocity( const Donya::Vector3 &newVelocity )
+	{
+		velocity = newVelocity;
 	}
 	void Base::CollidedProcess()
 	{
