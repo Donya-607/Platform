@@ -1097,6 +1097,7 @@ namespace
 	static GuiWindow enemyWindow { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static GuiWindow bossWindow  { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static bool enableFloatWindow = true;
+	static GuiWindow testTileWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 }
 void SceneGame::UseImGui()
 {
@@ -1500,6 +1501,58 @@ void SceneGame::UseScreenSpaceImGui()
 					pBossContainer->ShowInstanceNode( i );
 				}
 			);
+		}
+	}
+
+	// Test tile
+	if ( pMap )
+	{
+		const Donya::Vector4x4 toWorld = MakeScreenTransform().Inverse();
+
+		Donya::Plane xyPlane;
+		xyPlane.distance	= 0.0f;
+		xyPlane.normal		= -Donya::Vector3::Front();
+
+		auto Transform		= [&]( const Donya::Vector3 &v, float fourthParam, const Donya::Vector4x4 &m )
+		{
+			Donya::Vector4 tmp = m.Mul( v, fourthParam );
+			tmp /= tmp.w;
+			return tmp.XYZ();
+		};
+		auto CalcWorldPos	= [&]( const Donya::Vector2 &ssPos, const Donya::Vector3 &oldPos )
+		{
+			const Donya::Vector3 ssRayStart{ ssPos, 0.0f };
+			const Donya::Vector3 ssRayEnd  { ssPos, 1.0f };
+
+			const Donya::Vector3 wsRayStart	= Transform( ssRayStart,	1.0f, toWorld );
+			const Donya::Vector3 wsRayEnd	= Transform( ssRayEnd,		1.0f, toWorld );
+
+			const auto result = Donya::CalcIntersectionPoint( wsRayStart, wsRayEnd, xyPlane );
+			return ( result.isIntersect ) ? result.intersection : oldPos;
+		};
+
+		const Donya::Vector2 ssMouse
+		{
+			scast<float>( Donya::Mouse::Coordinate().x ),
+			scast<float>( Donya::Mouse::Coordinate().y ),
+		};
+		Donya::Vector3 wsMouse = Donya::Vector3{ ssMouse, 0.0f };
+		wsMouse = CalcWorldPos( ssMouse, wsMouse );
+
+		auto pTile = pMap->GetPlaceTileOrNullptr( wsMouse );
+		if ( pTile )
+		{
+			const Donya::Vector3 ssPos = WorldToScreen( pTile->GetPosition() );
+			testTileWindow.pos = ssPos.XY();
+			testTileWindow.SetNextWindow();
+
+			if ( ImGui::BeginIfAllowed( u8"ƒ^ƒCƒ‹" ) )
+			{
+				const Donya::Vector3 p = pTile->GetPosition();
+				ImGui::Text( u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]", p.x, p.y, p.z );
+
+				ImGui::End();
+			}
 		}
 	}
 }

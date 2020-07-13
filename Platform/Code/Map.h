@@ -69,10 +69,14 @@ class Map
 {
 public:
 	/// <summary>
-	/// Convert from 2D row/column(screen space) to 3D XYZ(world space, Z is zero).
+	/// Convert from 2D row/column(tile/screen space) to 3D XYZ(world space, Z is zero).
 	/// "alignToCenterOfTile" adds an half size of tile.
 	/// </summary>
 	static Donya::Vector3 ToWorldPos( size_t row, size_t column, bool alignToCenterOfTile = true );
+	/// <summary>
+	/// Convert from 3D XYZ(world space, Z is zero) to 2D row/column(tile/screen space).
+	/// </summary>
+	static Donya::Vector2 ToTilePos( const Donya::Vector3 &wsPos );
 private: // shared_ptr<> make be able to copy
 	using ElementType = std::shared_ptr<Tile>;
 	std::vector<std::vector<ElementType>> tilePtrs; // [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
@@ -99,6 +103,10 @@ public:
 	/// Returns tiles forming as: [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
 	/// </summary>
 	const std::vector<std::vector<std::shared_ptr<Tile>>> &GetTiles() const;
+	/// <summary>
+	/// Returns a tile that there on argument position. Or nullptr if that position is empty.
+	/// </summary>
+	std::shared_ptr<const Tile> GetPlaceTileOrNullptr( const Donya::Vector3 &wsPos ) const;
 private:
 	/// <summary>
 	/// It calls Method() with an argument of "std::shared_ptr&lt;Tile&gt;(ElementType) &amp;".

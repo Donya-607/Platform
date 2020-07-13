@@ -88,6 +88,15 @@ Donya::Vector3 Map::ToWorldPos( size_t row, size_t column, bool alignToCenter )
 			? generatePos + halfOffset
 			: generatePos;
 }
+Donya::Vector2 Map::ToTilePos( const Donya::Vector3 &wsPos )
+{
+	const Donya::Vector2 screenPos
+	{
+		wsPos.x / Tile::unitWholeSize,
+		wsPos.y / Tile::unitWholeSize * -1.0f,
+	};
+	return screenPos;
+}
 bool Map::Init( int stageNumber )
 {
 	const bool succeeded = LoadMap( stageNumber, IOFromBinaryFile );
@@ -175,6 +184,27 @@ const std::vector<std::vector<Map::ElementType>> &Map::GetTiles() const
 {
 	return tilePtrs;
 }
+std::shared_ptr<const Tile> Map::GetPlaceTileOrNullptr( const Donya::Vector3 &wsPos ) const
+{
+	const auto ssPosF = ToTilePos( wsPos );
+	const Donya::Int2 ssPos
+	{	// Discard under the decimal point
+		scast<int>( ssPosF.x ),
+		scast<int>( ssPosF.y ),
+	};
+
+	const int rowCount = scast<int>( tilePtrs.size() );
+	if ( ssPos.y < 0 || rowCount <= ssPos.y ) { return nullptr; }
+	// else
+
+	const auto &row = tilePtrs[ssPos.y];
+
+	const int columnCount = scast<int>( row.size() );
+	if ( ssPos.x < 0 || columnCount <= ssPos.x ) { return nullptr; }
+	// else
+
+	return row[ssPos.x];
+}
 bool Map::LoadMap( int stageNumber, bool fromBinary )
 {
 	const std::string filePath	= ( fromBinary )
@@ -219,7 +249,6 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 
 	const auto &data = loadedData.Get();
 	const size_t rowCount = data.size();
-	tilePtrs.resize( rowCount );
 
 	std::vector<ElementType> row;
 	for ( size_t r = 0; r < rowCount; ++r )
