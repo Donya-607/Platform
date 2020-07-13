@@ -97,6 +97,25 @@ Donya::Vector2 Map::ToTilePos( const Donya::Vector3 &wsPos )
 	};
 	return screenPos;
 }
+std::vector<Donya::Collision::Box3F> Map::ToAABB( const std::vector<std::shared_ptr<const Tile>> &tilePtrs, bool removeEmpties )
+{
+	std::vector<Donya::Collision::Box3F> results;
+
+	for ( const auto &pIt : tilePtrs )
+	{
+		if ( pIt )
+		{
+			results.emplace_back( pIt->GetHitBox() );
+		}
+		else if ( !removeEmpties )
+		{
+			// Fill by Nil() for align the index
+			results.emplace_back( Donya::Collision::Box3F::Nil() );
+		}
+	}
+
+	return results;
+}
 bool Map::Init( int stageNumber )
 {
 	const bool succeeded = LoadMap( stageNumber, IOFromBinaryFile );
@@ -204,6 +223,49 @@ std::shared_ptr<const Tile> Map::GetPlaceTileOrNullptr( const Donya::Vector3 &ws
 	// else
 
 	return row[ssPos.x];
+}
+std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const std::vector<Donya::Vector3> &wsPositions ) const
+{
+	const size_t count = wsPositions.size();
+	
+	std::vector<std::shared_ptr<const Tile>> results{ count };
+	for ( size_t i = 0; i < count; ++i )
+	{
+		results[i] = GetPlaceTileOrNullptr( wsPositions[i] );
+	}
+	return std::move( results );
+}
+std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const Donya::Collision::Box3F &wsArea ) const
+{
+	// Note: Currently, all Z component of the tiles is zero. So it only considers X and Y axis.
+
+	const auto  areaCenter	= wsArea.WorldPosition();
+	const auto  areaMax		= wsArea.Max();
+	const auto  areaMin		= wsArea.Min();
+	const float halfWidth	= fabsf( areaMax.x - areaMin.x ) * 0.5f;
+	const float halfHeight	= fabsf( areaMax.y - areaMin.y ) * 0.5f;
+
+	std::vector<std::shared_ptr<const Tile>> results{};
+	auto AppendByCalc = [&]( const Donya::Vector3 &wsPos )
+	{
+		results.emplace_back( GetPlaceTileOrNullptr( wsPos ) );
+	};
+
+	AppendByCalc( areaCenter );
+
+	Donya::Vector3 offset{ 0.0f, 0.0f, 0.0f };
+	for ( float offsetY = halfHeight; 0.0f <= offsetY; offsetY -= Tile::unitWholeSize )
+	{
+		for ( float offsetX = halfWidth; 0.0f <= offsetX; offsetX -= Tile::unitWholeSize )
+		{
+			offset.x = offsetX;
+			offset.y = offsetY;
+
+			AppendByCalc( areaCenter + offset );
+		}
+	}
+
+	return std::move( results );
 }
 bool Map::LoadMap( int stageNumber, bool fromBinary )
 {

@@ -77,6 +77,10 @@ public:
 	/// Convert from 3D XYZ(world space, Z is zero) to 2D row/column(tile/screen space).
 	/// </summary>
 	static Donya::Vector2 ToTilePos( const Donya::Vector3 &wsPos );
+	/// <summary>
+	/// Convert from "const Tile &amp;" vector to "Collision::Box3F" vector. An empty tiles will be removed(if "removeEmpties" is true). Or to be Nil(if "removeEmpties" is false).
+	/// </summary>
+	static std::vector<Donya::Collision::Box3F> ToAABB(const std::vector<std::shared_ptr<const Tile>> &constTilePtrs, bool removeEmpties = true );
 private: // shared_ptr<> make be able to copy
 	using ElementType = std::shared_ptr<Tile>;
 	std::vector<std::vector<ElementType>> tilePtrs; // [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
@@ -107,6 +111,14 @@ public:
 	/// Returns a tile that there on argument position. Or nullptr if that position is empty.
 	/// </summary>
 	std::shared_ptr<const Tile> GetPlaceTileOrNullptr( const Donya::Vector3 &wsPos ) const;
+	/// <summary>
+	/// Call GetPlaceTileOrNullptr() as many argument count as.
+	/// </summary>
+	std::vector<std::shared_ptr<const Tile>> GetPlaceTiles( const std::vector<Donya::Vector3> &wsPositions ) const;
+	/// <summary>
+	/// Call GetPlaceTileOrNullptr() as filling the argument area as.
+	/// </summary>
+	std::vector<std::shared_ptr<const Tile>> GetPlaceTiles( const Donya::Collision::Box3F &wsSearchArea ) const;
 private:
 	/// <summary>
 	/// It calls Method() with an argument of "std::shared_ptr&lt;Tile&gt;(ElementType) &amp;".

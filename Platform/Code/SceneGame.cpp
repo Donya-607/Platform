@@ -1097,7 +1097,7 @@ namespace
 	static GuiWindow enemyWindow { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static GuiWindow bossWindow  { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static bool enableFloatWindow = true;
-	static GuiWindow testTileWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
+	// static GuiWindow testTileWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 }
 void SceneGame::UseImGui()
 {
@@ -1505,7 +1505,7 @@ void SceneGame::UseScreenSpaceImGui()
 	}
 
 	// Test tile
-	if ( pMap )
+	if ( 0 && pMap )
 	{
 		const Donya::Vector4x4 toWorld = MakeScreenTransform().Inverse();
 
@@ -1543,8 +1543,8 @@ void SceneGame::UseScreenSpaceImGui()
 		if ( pTile )
 		{
 			const Donya::Vector3 ssPos = WorldToScreen( pTile->GetPosition() );
-			testTileWindow.pos = ssPos.XY();
-			testTileWindow.SetNextWindow();
+			// testTileWindow.pos = ssPos.XY();
+			// testTileWindow.SetNextWindow();
 
 			if ( ImGui::BeginIfAllowed( u8"ƒ^ƒCƒ‹" ) )
 			{
