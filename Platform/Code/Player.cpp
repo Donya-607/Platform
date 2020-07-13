@@ -432,17 +432,21 @@ void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime )
 {
 	inst.motionManager.Update( inst, elapsedTime );
 }
-void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain )
 {
-	inst.Actor::MoveX( inst.velocity.x * elapsedTime, solids );
-	inst.Actor::MoveZ( inst.velocity.z * elapsedTime, solids );
+	const auto aroundTiles  = terrain.GetPlaceTiles( inst.GetHitBox() );
+	const auto aroundSolids = Map::ToAABB( aroundTiles );
+	inst.Actor::MoveX( inst.velocity.x * elapsedTime, aroundSolids );
+	inst.Actor::MoveZ( inst.velocity.z * elapsedTime, aroundSolids );
 
 	// We must apply world position to hurt box also.
 	inst.hurtBox.pos = inst.body.pos;
 }
-void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const Map &terrain )
 {
-	const int collideIndex = inst.Actor::MoveY( inst.velocity.y * elapsedTime, solids );
+	const auto aroundTiles  = terrain.GetPlaceTiles( inst.GetHitBox() );
+	const auto aroundSolids = Map::ToAABB( aroundTiles );
+	const int  collideIndex = inst.Actor::MoveY( inst.velocity.y * elapsedTime, aroundSolids );
 	if ( collideIndex != -1 ) // If collided to any
 	{
 		if ( inst.velocity.y <= 0.0f )
@@ -470,10 +474,10 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input )
 
 	MotionUpdate( inst, elapsedTime );
 }
-void Player::Normal::Move( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain )
 {
-	MoveOnlyHorizontal( inst, elapsedTime, solids );
-	MoveOnlyVertical  ( inst, elapsedTime, solids );
+	MoveOnlyHorizontal( inst, elapsedTime, terrain );
+	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 }
 bool Player::Normal::ShouldChangeMover( const Player &inst ) const
 {
@@ -514,10 +518,10 @@ void Player::KnockBack::Update( Player &inst, float elapsedTime, Input input )
 
 	MotionUpdate( inst, elapsedTime );
 }
-void Player::KnockBack::Move( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+void Player::KnockBack::Move( Player &inst, float elapsedTime, const Map &terrain )
 {
-	MoveOnlyHorizontal( inst, elapsedTime, solids );
-	MoveOnlyVertical  ( inst, elapsedTime, solids );
+	MoveOnlyHorizontal( inst, elapsedTime, terrain );
+	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 }
 bool Player::KnockBack::ShouldChangeMover( const Player &inst ) const
 {
@@ -546,7 +550,7 @@ void Player::Miss::Update( Player &inst, float elapsedTime, Input input )
 	inst.body.exist		= false;
 	inst.hurtBox.exist	= false;
 }
-void Player::Miss::Move( Player &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+void Player::Miss::Move( Player &inst, float elapsedTime, const Map &terrain )
 {
 	// No op
 }
@@ -642,7 +646,7 @@ void Player::Update( float elapsedTime, Input input )
 		ChangeMethod();
 	}
 }
-void Player::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+void Player::PhysicUpdate( float elapsedTime, const Map &terrain )
 {
 	if ( !pMover )
 	{
@@ -651,7 +655,7 @@ void Player::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision
 	}
 	// else
 
-	pMover->Move( *this, elapsedTime, solids );
+	pMover->Move( *this, elapsedTime, terrain );
 }
 void Player::Draw( RenderingHelper *pRenderer ) const
 {

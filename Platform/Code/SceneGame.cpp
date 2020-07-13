@@ -275,7 +275,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 			}
 		}
 
-		if ( pPlayer ) { pPlayer->PhysicUpdate( elapsedTime, hitBoxes ); }
+		const Map failSafe{}; // Used for empty argument
+		const Map &mapRef = ( pMap ) ? *pMap : failSafe;
+
+		if ( pPlayer ) { pPlayer->PhysicUpdate( elapsedTime, mapRef ); }
 
 		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
 		Enemy::Admin::Get().PhysicUpdate( elapsedTime, hitBoxes );

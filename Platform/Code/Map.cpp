@@ -258,10 +258,17 @@ std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const Donya::Collis
 	{
 		for ( float offsetX = halfWidth; 0.0f <= offsetX; offsetX -= Tile::unitWholeSize )
 		{
-			offset.x = offsetX;
 			offset.y = offsetY;
-
-			AppendByCalc( areaCenter + offset );
+			offset.x = offsetX;
+			AppendByCalc( areaCenter + offset ); // Right-Top
+			offset.x = -offsetX;
+			AppendByCalc( areaCenter + offset ); // Left-Top
+			
+			offset.y = -offsetY;
+			offset.x = offsetX;
+			AppendByCalc( areaCenter + offset ); // Right-Bottom
+			offset.x = -offsetX;
+			AppendByCalc( areaCenter + offset ); // Left-Bottom
 		}
 	}
 

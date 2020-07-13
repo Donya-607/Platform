@@ -13,6 +13,7 @@
 
 #include "CSVLoader.h"
 #include "Damage.h"
+#include "Map.h"
 #include "ModelHelper.h"
 #include "ObjectBase.h"
 #include "Parameter.h"
@@ -122,7 +123,7 @@ private:
 		virtual void Init( Player &instance ) {}
 		virtual void Uninit( Player &instance ) {}
 		virtual void Update( Player &instance, float elapsedTime, Input input ) = 0;
-		virtual void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) = 0;
+		virtual void Move( Player &instance, float elapsedTime, const Map &terrain ) = 0;
 		virtual bool NowKnockBacking( const Player &instance ) const { return false; }
 		virtual bool NowMiss( const Player &instance ) const { return false; }
 		virtual bool Drawable( const Player &instance ) const { return true; }
@@ -133,14 +134,14 @@ private:
 	#endif // USE_IMGUI
 	protected:
 		void MotionUpdate( Player &instance, float elapsedTime );
-		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
-		void MoveOnlyVertical( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const Map &terrain );
+		void MoveOnlyVertical( Player &instance, float elapsedTime, const Map &terrain );
 	};
 	class Normal : public MoverBase
 	{
 	public:
 		void Update( Player &instance, float elapsedTime, Input input ) override;
-		void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -155,7 +156,7 @@ private:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, Input input ) override;
-		void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
 		bool NowKnockBacking( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
@@ -168,7 +169,7 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, Input input ) override;
-		void Move( Player &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
 		bool NowMiss( const Player &instance ) const override { return true; }
 		bool Drawable( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
@@ -202,7 +203,7 @@ public:
 	void Uninit();
 
 	void Update( float elapsedTime, Input input );
-	void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+	void PhysicUpdate( float elapsedTime, const Map &terrain );
 
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
