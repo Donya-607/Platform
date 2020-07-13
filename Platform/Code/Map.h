@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 
+#undef max
+#undef min
+#include <cereal/types/memory.hpp>
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
 
@@ -70,8 +73,9 @@ public:
 	/// "alignToCenterOfTile" adds an half size of tile.
 	/// </summary>
 	static Donya::Vector3 ToWorldPos( size_t row, size_t column, bool alignToCenterOfTile = true );
-private:
-	std::vector<Tile> tiles;
+private: // shared_ptr<> make be able to copy
+	using ElementType = std::shared_ptr<Tile>;
+	std::vector<std::vector<ElementType>> tilePtrs; // [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -91,9 +95,39 @@ public:
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
-	const std::vector<Tile> &GetTiles() const;
+	/// <summary>
+	/// Returns tiles forming as: [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
+	/// </summary>
+	const std::vector<std::vector<std::shared_ptr<Tile>>> &GetTiles() const;
 private:
-	void RemoveTiles();
+	/// <summary>
+	/// It calls Method() with an argument of "std::shared_ptr&lt;Tile&gt;(ElementType) &amp;".
+	/// </summary>
+	template<typename ElementMethod>
+	void ForEach( ElementMethod Method )
+	{
+		for ( auto &itr : tilePtrs )
+		{
+			for ( auto &pIt : itr )
+			{
+				Method( pIt );
+			}
+		}
+	}
+	/// <summary>
+	/// It calls Method() with an argument of "std::shared_ptr&lt;Tile&gt;(ElementType) &amp;".
+	/// </summary>
+	template<typename ElementMethod>
+	void ForEach( ElementMethod Method ) const
+	{
+		for ( const auto &itr : tilePtrs )
+		{
+			for ( const auto &pIt : itr )
+			{
+				Method( pIt );
+			}
+		}
+	}
 	bool LoadMap( int stageNumber, bool fromBinary );
 #if USE_IMGUI
 public:

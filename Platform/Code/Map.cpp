@@ -98,19 +98,29 @@ bool Map::Init( int stageNumber )
 	SaveMap( stageNumber, /* fromBinary = */ true );
 
 	// Generate safe plane
-	if ( tiles.empty() )
+	if ( tilePtrs.empty() )
 	{
 		constexpr float				wholeSize = Tile::unitWholeSize;
 		constexpr int				tileCount = 5;
-		constexpr Donya::Vector3	base  {-wholeSize * tileCount, -wholeSize, 0.0f };
-		constexpr Donya::Vector3	offset{ wholeSize, 0.0f, 0.0f };
+		constexpr Donya::Vector3	base   {-wholeSize * ( tileCount >> 1 ), -wholeSize, 0.0f };
+		constexpr Donya::Vector3	offsetX{ wholeSize, 0.0f,  0.0f };
+		constexpr Donya::Vector3	offsetY{ 0.0f, -wholeSize, 0.0f };
 		constexpr Donya::Int2		texOrigin{ 0, 0 };
 		
-		for ( int i = 0; i < tileCount; ++i )
+		Donya::Vector3 offset;
+		std::vector<Tile> row;
+		for ( int y = 0; y < tileCount; ++y )
 		{
-			Tile tmp{};
-			tmp.Init( base + ( offset * scast<float>( i ) ), wholeSize, texOrigin );
-			tiles.emplace_back( std::move( tmp ) );
+			row.clear();
+			for ( int x = 0; x < tileCount; ++x )
+			{
+				offset = ( offsetX * scast<float>( x ) ) + ( offsetY * scast<float>( y ) );
+				
+				Tile tmp{};
+				tmp.Init( base + offset, wholeSize, texOrigin );
+				row.emplace_back( std::move( tmp ) );
+			}
+			tilePtrs.emplace_back( row );
 		}
 
 		return true;
@@ -121,24 +131,31 @@ bool Map::Init( int stageNumber )
 }
 void Map::Uninit()
 {
-	for ( auto &it : tiles )
-	{
-		it.Uninit();
-	}
+	ForEach
+	(
+		[]( ElementType &pElement )
+		{
+			if ( pElement ) { pElement->Uninit(); }
+		}
+	);
 }
 void Map::Update( float elapsedTime )
 {
-	for ( auto &it : tiles )
-	{
-		it.Update( elapsedTime );
-
-		if ( it.ShouldRemove() )
+	ForEach
+	(
+		[&]( const ElementType &pElement )
 		{
-			it.Uninit();
-		}
-	}
+			if ( pElement )
+			{
+				pElement->Update( elapsedTime );
 
-	RemoveTiles();
+				//if ( pElement->ShouldRemove() )
+				//{
+				//	pElement->Uninit();
+				//}
+			}
+		}
+	);
 }
 void Map::Draw( RenderingHelper *pRenderer ) const
 {
@@ -146,26 +163,17 @@ void Map::Draw( RenderingHelper *pRenderer ) const
 }
 void Map::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 {
-	for ( const auto &it : tiles )
-	{
-		it.DrawHitBox( pRenderer, matVP );
-	}
-}
-const std::vector<Tile> &Map::GetTiles() const
-{
-	return tiles;
-}
-void Map::RemoveTiles()
-{
-	auto itr = std::remove_if
+	ForEach
 	(
-		tiles.begin(), tiles.end(),
-		[]( Tile &element )
+		[&]( const ElementType &pElement )
 		{
-			return element.ShouldRemove();
+			if ( pElement ) { pElement->DrawHitBox( pRenderer, matVP ); }
 		}
 	);
-	tiles.erase( itr, tiles.end() );
+}
+const std::vector<std::vector<std::shared_ptr<Tile>>> &Map::GetTiles() const
+{
+	return tilePtrs;
 }
 bool Map::LoadMap( int stageNumber, bool fromBinary )
 {
@@ -187,28 +195,42 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 
 		return false;
 	};
-	auto Append		= [&]( int id, size_t row, size_t column )
+	auto Append		= [&]( int id, size_t row, size_t column, std::vector<std::shared_ptr<Tile>> *pOutput )
 	{
-		if ( !IsTileID( id ) ) { return; }
+		if ( !pOutput ) { return; }
 		// else
 
-		Tile tmp;
-		tmp.Init( ToWorldPos( row, column ), Tile::unitWholeSize, 0 );
-		tiles.emplace_back( std::move( tmp ) );
+		std::shared_ptr<Tile> tmp = nullptr;
+
+		if ( !IsTileID( id ) )
+		{
+			pOutput->emplace_back( std::move( tmp ) );
+			return;
+		}
+		// else
+
+		tmp = std::make_shared<Tile>();
+		tmp->Init( ToWorldPos( row, column ), Tile::unitWholeSize, 0 );
+		pOutput->emplace_back( std::move( tmp ) );
 	};
 
-	for ( auto &it : tiles ) { it.Uninit(); }
-	tiles.clear();
+	ForEach( []( ElementType &pElement ) { if ( pElement ) { pElement->Uninit(); } } );
+	tilePtrs.clear();
 
 	const auto &data = loadedData.Get();
 	const size_t rowCount = data.size();
+	tilePtrs.resize( rowCount );
+
+	std::vector<std::shared_ptr<Tile>> row;
 	for ( size_t r = 0; r < rowCount; ++r )
 	{
+		row.clear();
 		const size_t columnCount = data[r].size();
 		for ( size_t c = 0; c < columnCount; ++c )
 		{
-			Append( data[r][c], r, c );
+			Append( data[r][c], r, c, &row );
 		}
+		tilePtrs.emplace_back( row );
 	}
 }
 void Map::SaveMap( int stageNumber, bool fromBinary )
@@ -230,36 +252,61 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	{
 		// Resize
 		{
-		constexpr float				wholeSize = Tile::unitWholeSize;
-		constexpr Donya::Vector3	wsPos = Donya::Vector3::Zero();
-		constexpr Donya::Int2		texOrigin{ 0, 0 };
-		Tile ctorArg;
-		ctorArg.Init( wsPos, wholeSize, texOrigin );
-		ImGui::Helper::ResizeByButton( &tiles, ctorArg );
-	}
+			std::vector<ElementType> argument;
+			ImGui::Helper::ResizeByButton( &tilePtrs, argument );
+		}
+
+		auto MakeIndexStr		= []( const std::string &elementName, size_t v )
+		{
+			std::string
+			caption =  "[" + elementName + ":";
+			if ( v < 100 ) { caption += "_"; } // Align
+			if ( v < 10  ) { caption += "_"; } // Align
+			caption += std::to_string( v );
+			caption += "]";
+			return v;
+		};
+		auto MakeCoordinateStr	= []( const Donya::Vector3 &wsPos )
+		{
+			constexpr size_t	width	= 6U;
+			constexpr size_t	decimal	= 2U;
+			constexpr char		fill	= '_';
+			std::string
+			caption =  "[";
+			caption += "X:" + Donya::ToString( wsPos.x, width, decimal, fill ) + ", ";
+			caption += "Y:" + Donya::ToString( wsPos.y, width, decimal, fill ) + ", ";
+			caption += "Z:" + Donya::ToString( wsPos.z, width, decimal, fill );
+			caption += "]";
+			return caption;
+		};
 
 		std::string caption;
-		const size_t count = tiles.size();
-		for ( size_t i = 0; i < count; ++i )
+		const size_t rowCount = tilePtrs.size();
+		for ( size_t y = 0; y < rowCount; ++y )
 		{
-			caption =  "[";
-			if ( i < 100 ) { caption += "_"; } // Align
-			if ( i < 10  ) { caption += "_"; } // Align
-			caption += std::to_string( i );
-			caption += "]";
-			tiles[i].ShowImGuiNode( caption );
-			ImGui::SameLine();
+			auto &row = tilePtrs[y];
+			const size_t columnCount = row.size();
+			for ( size_t x = 0; x < columnCount; ++x )
+			{
+				auto &pTile = row[x];
 
-			constexpr size_t width		= 6U;
-			constexpr size_t decimal	= 2U;
-			constexpr char   fill		= '_';
-			const Donya::Vector3 itPos	= tiles[i].GetPosition();
-			caption =  "[";
-			caption += "X:" + Donya::ToString( itPos.x, width, decimal, fill ) + ", ";
-			caption += "Y:" + Donya::ToString( itPos.y, width, decimal, fill ) + ", ";
-			caption += "Z:" + Donya::ToString( itPos.z, width, decimal, fill );
-			caption += "]";
-			ImGui::Text( caption.c_str() );
+				caption =  MakeIndexStr( "Y", y );
+				caption += MakeIndexStr( "X", x );
+
+				if ( !pTile )
+				{
+					caption += ", " + MakeCoordinateStr( ToWorldPos( y, x ) );
+					ImGui::TextDisabled( caption.c_str() );
+					return;
+				}
+				// else
+
+				pTile->ShowImGuiNode( caption );
+				ImGui::SameLine();
+
+				caption = MakeCoordinateStr( pTile->GetPosition() );
+				ImGui::Text( caption.c_str() );
+			}
 		}
 
 		ImGui::TreePop();
@@ -274,14 +321,14 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	}
 	else if ( result == Op::LoadBinary )
 	{
-		for ( auto &it : tiles ) { it.Uninit(); }
-		tiles.clear();
+		ForEach( []( ElementType &pElement ) { if ( pElement ) { pElement->Uninit(); } } );
+		tilePtrs.clear();
 		LoadMap( stageNo, true );
 	}
 	else if ( result == Op::LoadJson )
 	{
-		for ( auto &it : tiles ) { it.Uninit(); }
-		tiles.clear();
+		ForEach( []( ElementType &pElement ) { if ( pElement ) { pElement->Uninit(); } } );
+		tilePtrs.clear();
 		LoadMap( stageNo, false );
 	}
 
