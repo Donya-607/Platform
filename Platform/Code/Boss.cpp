@@ -264,6 +264,10 @@ namespace Boss
 	{
 		return initializer;
 	}
+	bool Base::NowProtecting() const
+	{
+		return false;
+	}
 	void Base::GiveDamage( const Definition::Damage &damage ) const
 	{
 		if ( !pReceivedDamage )

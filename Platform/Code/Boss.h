@@ -147,6 +147,7 @@ namespace Boss
 		virtual Kind				GetKind()			const = 0;
 		InitializeParam				GetInitializer()	const;
 		virtual Definition::Damage	GetTouchDamage()	const = 0;
+		virtual bool				NowProtecting()		const;
 		virtual void GiveDamage( const Definition::Damage &damage ) const;
 	protected:
 		/// <summary>

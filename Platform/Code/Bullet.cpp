@@ -384,7 +384,6 @@ namespace Bullet
 	void Base::ProtectedProcess()
 	{
 		wasCollided		= false;
-		wasProtected	= ProtectedInfo::Processed;
 		body.exist		= false;
 		hitSphere.exist	= false;
 
@@ -400,6 +399,8 @@ namespace Bullet
 		velocity.y = sin * data.reflectSpeed;
 		velocity.z = 0.0f;
 		// The orientation is not change
+
+		wasProtected	= ProtectedInfo::Processed;
 	}
 	void Base::InitBody( const FireDesc &parameter )
 	{

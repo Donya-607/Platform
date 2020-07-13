@@ -753,22 +753,52 @@ void SceneGame::Collision_BulletVSBoss()
 	auto &bulletAdmin = Bullet::Admin::Get();
 	const size_t bulletCount = bulletAdmin.GetInstanceCount();
 
+	// The bullet's hit box is only either AABB or Sphere is valid
+	// (Invalid one's exist flag will false, so IsHit() will returns false)
+	Donya::Collision::Box3F		bulletAABB;
+	Donya::Collision::Sphere3F	bulletSphere;
+
 	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
+	auto Process = [&]( const auto &otherBody )
+	{
+		if ( !pBullet ) { return; }
+		// ekse
+
+		if ( !Donya::Collision::IsHit( bossBody, otherBody ) ) { return; }
+		// else
+
+		if ( pBoss->NowProtecting() )
+		{
+			pBullet->ProtectedBy( otherBody );
+			// TODO: Play protection SE
+		}
+		else
+		{
+			pBoss->GiveDamage( pBullet->GetDamage() );
+			pBullet->CollidedToObject();
+			// TODO: Play hit SE
+		}
+	};
+
 	for ( size_t i = 0; i < bulletCount; ++i )
 	{
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pBullet ) { continue; }
 		// else
 
-		// The bullet's hit box is only either AABB or Sphere is valid
-		// (Invalid one's exist flag will false, so IsHit() will returns false)
-		if	(
-				Donya::Collision::IsHit( bossBody, pBullet->GetHitBox()		) ||
-				Donya::Collision::IsHit( bossBody, pBullet->GetHitSphere()	)
-			)
+		bulletAABB = pBullet->GetHitBox();
+		if ( bulletAABB.exist )
 		{
-			pBoss->GiveDamage( pBullet->GetDamage() );
-			pBullet->CollidedToObject();
+			Process( bulletAABB );
+			continue;
+		}
+		// else
+
+		bulletSphere = pBullet->GetHitSphere();
+		if ( bulletSphere.exist )
+		{
+			Process( bulletSphere );
+			continue;
 		}
 	}
 }

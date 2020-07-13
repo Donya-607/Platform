@@ -167,6 +167,7 @@ namespace Boss
 		float				GetGravity()		const override;
 		Kind				GetKind()			const override;
 		Definition::Damage	GetTouchDamage()	const override;
+		bool				NowProtecting()		const override;
 	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;

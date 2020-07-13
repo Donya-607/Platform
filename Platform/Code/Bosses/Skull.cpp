@@ -600,6 +600,10 @@ namespace Boss
 	{
 		return Parameter::GetSkull().touchDamage;
 	}
+	bool Skull::NowProtecting() const
+	{
+		return ( pShield ) ? true : false;
+	}
 	int  Skull::GetInitialHP() const
 	{
 		return Parameter::GetSkull().hp;
