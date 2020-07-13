@@ -81,7 +81,7 @@ private:
 	template<class Archive>
 	void serialize( Archive &archive, std::uint32_t version )
 	{
-		archive( CEREAL_NVP( tiles ) );
+		archive( CEREAL_NVP( tilePtrs ) );
 		if ( 1 <= version )
 		{
 			// archive();

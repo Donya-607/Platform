@@ -263,9 +263,15 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		if ( pMap )
 		{
 			const auto &tiles = pMap->GetTiles();
-			for ( const auto &it : tiles )
+			for ( const auto &itr : tiles )
 			{
-				hitBoxes.emplace_back( it.GetHitBox() );
+				for ( const auto &pIt : itr )
+				{
+					if ( pIt )
+					{
+						hitBoxes.emplace_back( pIt->GetHitBox() );
+					}
+				}
 			}
 		}
 

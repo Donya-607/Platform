@@ -108,7 +108,7 @@ bool Map::Init( int stageNumber )
 		constexpr Donya::Int2		texOrigin{ 0, 0 };
 		
 		Donya::Vector3 offset;
-		std::vector<Tile> row;
+		std::vector<ElementType> row;
 		for ( int y = 0; y < tileCount; ++y )
 		{
 			row.clear();
@@ -116,8 +116,8 @@ bool Map::Init( int stageNumber )
 			{
 				offset = ( offsetX * scast<float>( x ) ) + ( offsetY * scast<float>( y ) );
 				
-				Tile tmp{};
-				tmp.Init( base + offset, wholeSize, texOrigin );
+				ElementType tmp = std::make_shared<Tile>();
+				tmp->Init( base + offset, wholeSize, texOrigin );
 				row.emplace_back( std::move( tmp ) );
 			}
 			tilePtrs.emplace_back( row );
@@ -171,7 +171,7 @@ void Map::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matV
 		}
 	);
 }
-const std::vector<std::vector<std::shared_ptr<Tile>>> &Map::GetTiles() const
+const std::vector<std::vector<Map::ElementType>> &Map::GetTiles() const
 {
 	return tilePtrs;
 }
@@ -195,12 +195,12 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 
 		return false;
 	};
-	auto Append		= [&]( int id, size_t row, size_t column, std::vector<std::shared_ptr<Tile>> *pOutput )
+	auto Append		= [&]( int id, size_t row, size_t column, std::vector<ElementType> *pOutput )
 	{
 		if ( !pOutput ) { return; }
 		// else
 
-		std::shared_ptr<Tile> tmp = nullptr;
+		ElementType tmp = nullptr;
 
 		if ( !IsTileID( id ) )
 		{
@@ -221,7 +221,7 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 	const size_t rowCount = data.size();
 	tilePtrs.resize( rowCount );
 
-	std::vector<std::shared_ptr<Tile>> row;
+	std::vector<ElementType> row;
 	for ( size_t r = 0; r < rowCount; ++r )
 	{
 		row.clear();
@@ -256,15 +256,15 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 			ImGui::Helper::ResizeByButton( &tilePtrs, argument );
 		}
 
-		auto MakeIndexStr		= []( const std::string &elementName, size_t v )
+		auto MakeIndexStr		= []( char elementName, size_t v )
 		{
 			std::string
-			caption =  "[" + elementName + ":";
+				caption = "[" + std::string{ elementName } +":";
 			if ( v < 100 ) { caption += "_"; } // Align
 			if ( v < 10  ) { caption += "_"; } // Align
 			caption += std::to_string( v );
 			caption += "]";
-			return v;
+			return caption;
 		};
 		auto MakeCoordinateStr	= []( const Donya::Vector3 &wsPos )
 		{
@@ -290,8 +290,8 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 			{
 				auto &pTile = row[x];
 
-				caption =  MakeIndexStr( "Y", y );
-				caption += MakeIndexStr( "X", x );
+				caption =  MakeIndexStr( 'Y', y );
+				caption += MakeIndexStr( 'X', x );
 
 				if ( !pTile )
 				{
