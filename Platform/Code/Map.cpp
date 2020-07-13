@@ -235,15 +235,23 @@ std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const std::vector<D
 	}
 	return std::move( results );
 }
-std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const Donya::Collision::Box3F &wsArea ) const
+std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const Donya::Collision::Box3F &wsArea, const Donya::Vector3 &wsVelocity ) const
 {
 	// Note: Currently, all Z component of the tiles is zero. So it only considers X and Y axis.
 
-	const auto  areaCenter	= wsArea.WorldPosition();
-	const auto  areaMax		= wsArea.Max();
-	const auto  areaMin		= wsArea.Min();
-	const float halfWidth	= fabsf( areaMax.x - areaMin.x ) * 0.5f;
-	const float halfHeight	= fabsf( areaMax.y - areaMin.y ) * 0.5f;
+	const Donya::Vector3 halfVelocity = wsVelocity * 0.5f;
+	// Make extended hit box by min/max of between pre-moved hit box and moved hit box.
+	Donya::Collision::Box3F extArea = wsArea;
+	extArea.offset += halfVelocity * 0.5f;
+	extArea.size.x += fabsf( halfVelocity.x );
+	extArea.size.y += fabsf( halfVelocity.y );
+//	extArea.size.z += fabsf( halfVelocity.z );
+
+	const auto  areaCenter	= extArea.WorldPosition();
+	const auto  areaMax		= extArea.Max();
+	const auto  areaMin		= extArea.Min();
+	const float &halfWidth	= extArea.size.x;
+	const float &halfHeight	= extArea.size.y;
 
 	std::vector<std::shared_ptr<const Tile>> results{};
 	auto AppendByCalc = [&]( const Donya::Vector3 &wsPos )

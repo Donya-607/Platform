@@ -117,8 +117,9 @@ public:
 	std::vector<std::shared_ptr<const Tile>> GetPlaceTiles( const std::vector<Donya::Vector3> &wsPositions ) const;
 	/// <summary>
 	/// Call GetPlaceTileOrNullptr() as filling the argument area as.
+	/// [Option] "wsSearchersVelocity" can be extend the argument area.
 	/// </summary>
-	std::vector<std::shared_ptr<const Tile>> GetPlaceTiles( const Donya::Collision::Box3F &wsSearchArea ) const;
+	std::vector<std::shared_ptr<const Tile>> GetPlaceTiles( const Donya::Collision::Box3F &wsSearchArea, const Donya::Vector3 &wsSearchersVelocity = { 0.0f, 0.0f, 0.0f } ) const;
 private:
 	/// <summary>
 	/// It calls Method() with an argument of "std::shared_ptr&lt;Tile&gt;(ElementType) &amp;".

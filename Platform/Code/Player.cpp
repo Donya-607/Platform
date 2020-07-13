@@ -434,19 +434,21 @@ void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime )
 }
 void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain )
 {
-	const auto aroundTiles  = terrain.GetPlaceTiles( inst.GetHitBox() );
-	const auto aroundSolids = Map::ToAABB( aroundTiles );
-	inst.Actor::MoveX( inst.velocity.x * elapsedTime, aroundSolids );
-	inst.Actor::MoveZ( inst.velocity.z * elapsedTime, aroundSolids );
+	const auto movement		= inst.velocity * elapsedTime;
+	const auto aroundTiles	= terrain.GetPlaceTiles( inst.GetHitBox(), movement );
+	const auto aroundSolids	= Map::ToAABB( aroundTiles );
+	inst.Actor::MoveX( movement.x, aroundSolids );
+	inst.Actor::MoveZ( movement.z, aroundSolids );
 
 	// We must apply world position to hurt box also.
 	inst.hurtBox.pos = inst.body.pos;
 }
 void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const Map &terrain )
 {
-	const auto aroundTiles  = terrain.GetPlaceTiles( inst.GetHitBox() );
-	const auto aroundSolids = Map::ToAABB( aroundTiles );
-	const int  collideIndex = inst.Actor::MoveY( inst.velocity.y * elapsedTime, aroundSolids );
+	const auto movement		= inst.velocity * elapsedTime;
+	const auto aroundTiles	= terrain.GetPlaceTiles( inst.GetHitBox(), movement );
+	const auto aroundSolids	= Map::ToAABB( aroundTiles );
+	const int  collideIndex	= inst.Actor::MoveY( movement.y, aroundSolids );
 	if ( collideIndex != -1 ) // If collided to any
 	{
 		if ( inst.velocity.y <= 0.0f )
