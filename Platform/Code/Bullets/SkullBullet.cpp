@@ -134,8 +134,9 @@ namespace Bullet
 		hitSphere.offset	= data.hitBoxOffset;
 		hitSphere.radius	= data.hitBoxRadius;
 
-		// Enable sphere hit box
+		// Only enable sphere hit box
 		hitSphere.exist	= true;
+		body.size		= 0.0f;
 		body.exist		= false;
 	}
 #if USE_IMGUI

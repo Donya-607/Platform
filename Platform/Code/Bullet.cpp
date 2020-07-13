@@ -310,10 +310,10 @@ namespace Bullet
 	}
 	bool Base::OnOutSide( const Donya::Collision::Box3F &wsScreen ) const
 	{
-		// I am not consider an invalid hit box(exist == false) in here,
+		// I am not consider an unused hit box(size or radius is zero) in here,
 		// so I make to true an invalid one certainly.
-		const bool outAABB		= ( !body.exist			|| !Donya::Collision::IsHit( body,		wsScreen ) );
-		const bool outSphere	= ( !hitSphere.exist	|| !Donya::Collision::IsHit( hitSphere,	wsScreen ) );
+		const bool outAABB		= ( body.size.IsZero()			|| !Donya::Collision::IsHit( body,		wsScreen, /* considerExistFlag = */ false ) );
+		const bool outSphere	= ( IsZero( hitSphere.radius )	|| !Donya::Collision::IsHit( hitSphere,	wsScreen, /* considerExistFlag = */ false ) );
 		return outAABB & outSphere; // Which one is true certainly, so I should combine it.
 	}
 	void Base::CollidedToObject() const
@@ -387,9 +387,9 @@ namespace Bullet
 		body.exist		= false;
 		hitSphere.exist	= false;
 
-		const auto &data	= Parameter::GetGeneral();
-		const bool fromLeft	= wasProtected == ProtectedInfo::ByLeftSide;
-		const float directionRadian	= ( fromLeft )
+		const auto &data		= Parameter::GetGeneral();
+		const bool fromRight	= wasProtected == ProtectedInfo::ByRightSide;
+		const float directionRadian	= ( fromRight )
 									? ToRadian( 180.0f - data.reflectDegree )
 									: ToRadian( data.reflectDegree );
 		const float cos = cosf( directionRadian );
@@ -406,6 +406,7 @@ namespace Bullet
 	{
 		// Default hit box is used as AABB
 		body.exist			= true;
+		hitSphere.radius	= 0.0f;
 		hitSphere.exist		= false;
 		AssignBodyParameter( parameter.position );
 		body.id				= Donya::Collision::GetUniqueID();

@@ -104,6 +104,7 @@ namespace Bullet
 	{
 	protected:
 		ModelHelper::SkinningOperator	model;
+		// Please make unused hit box has zero sizes(or radius), and false exist flag.
 		using					 Solid::body;		// Hit box as AABB
 		Donya::Collision::Sphere3F		hitSphere;	// Hit box as Sphere
 		Donya::Vector3					velocity;	// [m/s]
