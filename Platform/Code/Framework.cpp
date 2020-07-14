@@ -62,11 +62,7 @@ void Framework::Update( float elapsedTime )
 #endif // USE_IMGUI
 
 	// Prevent the elapsedTime will be very larging
-	{
-		constexpr float lowestAllowFPS	= 10.0f;
-		constexpr float largestDelta	= 1.0f / lowestAllowFPS;
-		elapsedTime = std::min( largestDelta, elapsedTime );
-	}
+	elapsedTime = std::min( Common::LargestDeltaTime(), elapsedTime );
 
 	pSceneMng->Update( elapsedTime );
 }
