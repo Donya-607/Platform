@@ -70,17 +70,18 @@ class Map
 public:
 	/// <summary>
 	/// Convert from 2D row/column(tile/screen space) to 3D XYZ(world space, Z is zero).
-	/// "alignToCenterOfTile" adds an half size of tile.
+	/// "alignToCenterOfTile" adds half size of tile.
 	/// </summary>
 	static Donya::Vector3 ToWorldPos( size_t row, size_t column, bool alignToCenterOfTile = true );
 	/// <summary>
 	/// Convert from 3D XYZ(world space, Z is zero) to 2D row/column(tile/screen space).
+	/// "alignToLeftTopOfTile" subtracts half size of tile. It makes a compatible to ToWorldPos().
 	/// </summary>
-	static Donya::Vector2 ToTilePos( const Donya::Vector3 &wsPos );
+	static Donya::Vector2 ToTilePos( const Donya::Vector3 &wsPos, bool alignToLeftTopOfTile = false );
 	/// <summary>
 	/// Convert from "const Tile &amp;" vector to "Collision::Box3F" vector. An empty tiles will be removed(if "removeEmpties" is true). Or to be Nil(if "removeEmpties" is false).
 	/// </summary>
-	static std::vector<Donya::Collision::Box3F> ToAABB(const std::vector<std::shared_ptr<const Tile>> &constTilePtrs, bool removeEmpties = true );
+	static std::vector<Donya::Collision::Box3F> ToAABB( const std::vector<std::shared_ptr<const Tile>> &constTilePtrs, bool removeEmpties = true );
 private: // shared_ptr<> make be able to copy
 	using ElementType = std::shared_ptr<Tile>;
 	std::vector<std::vector<ElementType>> tilePtrs; // [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).

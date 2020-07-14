@@ -65,18 +65,19 @@ namespace
 #else
 	constexpr bool IOFromBinaryFile = true;
 #endif // DEBUG_MODE
+
+	constexpr Donya::Vector3 halfTileSize
+	{
+		Tile::unitWholeSize * 0.5f,
+		Tile::unitWholeSize * 0.5f * -1.0f,
+		0.0f,
+	};
 }
 
 Donya::Vector3 Map::ToWorldPos( size_t row, size_t column, bool alignToCenter )
 {
 	// I expect the CSV stage data is screen space, so the Y component must be reverse.(stage's Y+ is down, application's Y+ is up)
 
-	constexpr Donya::Vector3 halfOffset
-	{
-		Tile::unitWholeSize * 0.5f,
-		Tile::unitWholeSize * 0.5f * -1.0f,
-		0.0f,
-	};
 	const Donya::Vector3 generatePos
 	{
 		Tile::unitWholeSize * column,
@@ -85,17 +86,24 @@ Donya::Vector3 Map::ToWorldPos( size_t row, size_t column, bool alignToCenter )
 	};
 
 	return	( alignToCenter )
-			? generatePos + halfOffset
+			? generatePos + halfTileSize
 			: generatePos;
 }
-Donya::Vector2 Map::ToTilePos( const Donya::Vector3 &wsPos )
+Donya::Vector2 Map::ToTilePos( const Donya::Vector3 &wsPos, bool alignToLeftTop )
 {
+	constexpr Donya::Vector2 ssHalfTileSize2
+	{
+		halfTileSize.x,
+		halfTileSize.y * 1.0f,
+	};
 	const Donya::Vector2 screenPos
 	{
 		wsPos.x / Tile::unitWholeSize,
 		wsPos.y / Tile::unitWholeSize * -1.0f,
 	};
-	return screenPos;
+	return	( alignToLeftTop )
+			? screenPos - ssHalfTileSize2
+			: screenPos;
 }
 std::vector<Donya::Collision::Box3F> Map::ToAABB( const std::vector<std::shared_ptr<const Tile>> &tilePtrs, bool removeEmpties )
 {
@@ -239,10 +247,10 @@ std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const Donya::Collis
 {
 	// Note: Currently, all Z component of the tiles is zero. So it only considers X and Y axis.
 
-	const Donya::Vector3 halfVelocity = wsVelocity * 0.5f;
 	// Make extended hit box by min/max of between pre-moved hit box and moved hit box.
 	Donya::Collision::Box3F extArea = wsArea;
-	extArea.offset += halfVelocity * 0.5f;
+	const Donya::Vector3 halfVelocity = wsVelocity * 0.5f;
+	extArea.offset += halfVelocity;
 	extArea.size.x += fabsf( halfVelocity.x );
 	extArea.size.y += fabsf( halfVelocity.y );
 //	extArea.size.z += fabsf( halfVelocity.z );
