@@ -1110,7 +1110,7 @@ namespace Donya
 						}
 						else
 						{
-							ImGui::BeginChild( ImGui::GetID( scast<void *>( NULL ) ), childFrameSize );
+							ImGui::BeginChild( ImGui::GetID( reinterpret_cast<void *>( NULL ) ), childFrameSize );
 							const size_t end = pos.size();
 							for ( size_t i = 0; i < end; ++i )
 							{
@@ -1126,7 +1126,7 @@ namespace Donya
 
 					if ( ImGui::TreeNode( "Index" ) )
 					{
-						ImGui::BeginChild( ImGui::GetID( scast<void *>( NULL ) ), childFrameSize );
+						ImGui::BeginChild( ImGui::GetID( reinterpret_cast<void *>( NULL ) ), childFrameSize );
 						size_t end = mesh.indices.size();
 						for ( size_t i = 0; i < end; ++i )
 						{
@@ -1198,7 +1198,7 @@ namespace Donya
 				{
 					if ( ImGui::TreeNode( "Influences" ) )
 					{
-						ImGui::BeginChild( ImGui::GetID( scast<void *>( NULL ) ), childFrameSize );
+						ImGui::BeginChild( ImGui::GetID( reinterpret_cast<void *>( NULL ) ), childFrameSize );
 						size_t boneInfluencesCount = mesh.boneInfluences.size();
 						for ( size_t v = 0; v < boneInfluencesCount; ++v )
 						{
