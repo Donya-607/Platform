@@ -84,6 +84,7 @@ public:
 	{
 		Idle = 0,
 		Run,
+		Slide,
 		Jump,
 		KnockBack,
 
@@ -124,6 +125,7 @@ private:
 		virtual void Uninit( Player &instance ) {}
 		virtual void Update( Player &instance, float elapsedTime, Input input ) = 0;
 		virtual void Move( Player &instance, float elapsedTime, const Map &terrain ) = 0;
+		virtual bool NowSliding( const Player &instance ) const { return false; }
 		virtual bool NowKnockBacking( const Player &instance ) const { return false; }
 		virtual bool NowMiss( const Player &instance ) const { return false; }
 		virtual bool Drawable( const Player &instance ) const { return true; }
@@ -170,6 +172,7 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, Input input ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
+		bool NowSliding( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI

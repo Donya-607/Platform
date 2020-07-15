@@ -23,7 +23,9 @@ namespace
 	{
 		"Idle",
 		"Run",
+		"Slide",
 		"Jump",
+		"KnockBack",
 	};
 
 	static std::shared_ptr<ModelHelper::SkinningSet> pModel{};
@@ -378,6 +380,7 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 	{
 	case MotionKind::Idle:		return true;
 	case MotionKind::Run:		return true;
+	case MotionKind::Slide:		return true;
 	case MotionKind::Jump:		return false;
 	case MotionKind::KnockBack:	return true;
 	default: break;
@@ -390,6 +393,8 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst ) const
 {
 	if ( inst.pMover && inst.pMover->NowKnockBacking( inst ) )
 	{ return MotionKind::KnockBack; }
+	if ( inst.pMover && inst.pMover->NowSliding( inst ) )
+	{ return MotionKind::Slide; }
 	// else
 
 	const bool nowMoving = IsZero( inst.velocity.x ) ? false : true;
@@ -571,12 +576,16 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input )
 {
 	timer += elapsedTime;
 
-	if ( input.useJump && inst.Jumpable() )
+	const bool slideIsEnd =
+							( input.useJump && inst.Jumpable() ) ||
+							( Parameter().Get().slideMoveSeconds <= timer )
+							;
+	if ( slideIsEnd )
 	{
 		nextStatus = Destination::Normal;
 	}
 
-	// If the jump was triggered in here, the above condition will be pass also.
+	// If the jump was triggered in here, the "slideIsEnd" is also true.
 	inst.MoveVertical( elapsedTime, input );
 
 	MotionUpdate( inst, elapsedTime );
@@ -588,7 +597,7 @@ void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain )
 }
 bool Player::Slide::ShouldChangeMover( const Player &inst ) const
 {
-	return ( nextStatus != Destination::None || Parameter().Get().slideMoveSeconds <= timer );
+	return ( nextStatus != Destination::None );
 }
 std::function<void()> Player::Slide::GetChangeStateMethod( Player &inst ) const
 {
