@@ -35,9 +35,9 @@ namespace Boss
 	void Skull::MoverBase::Init( Skull &inst ) {}
 	void Skull::MoverBase::Uninit( Skull &inst ) {}
 	void Skull::MoverBase::Update( Skull &inst, float elapsedTime, const Input &input ) {}
-	void Skull::MoverBase::PhysicUpdate( Skull &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	void Skull::MoverBase::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
 	{
-		inst.Base::PhysicUpdate( elapsedTime, solids );
+		inst.Base::PhysicUpdate( elapsedTime, terrain );
 	}
 	
 	void Skull::AppearPerformance::Init( Skull &inst )
@@ -48,9 +48,9 @@ namespace Boss
 	{
 		inst.AppearUpdate( elapsedTime, input );
 	}
-	void Skull::AppearPerformance::PhysicUpdate( Skull &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	void Skull::AppearPerformance::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
 	{
-		wasLanding = inst.AppearPhysicUpdate( elapsedTime, solids );
+		wasLanding = inst.AppearPhysicUpdate( elapsedTime, terrain );
 	}
 	bool Skull::AppearPerformance::ShouldChangeMover( const Skull &inst ) const
 	{
@@ -318,15 +318,17 @@ namespace Boss
 	{
 		inst.velocity.y -= inst.GetGravity() * elapsedTime;
 	}
-	void Skull::Jump::PhysicUpdate( Skull &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	void Skull::Jump::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
 	{
 		if ( inst.NowDead() ) { return; }
 		// else
 
-		inst.MoveOnlyX( elapsedTime, solids );
-		inst.MoveOnlyZ( elapsedTime, solids );
+		const auto aroundSolids = inst.FetchSolidsByBody( terrain, inst.GetHitBox(), elapsedTime, inst.velocity );
 
-		const int collideIndex = inst.MoveOnlyY( elapsedTime, solids );
+		inst.MoveOnlyX( elapsedTime, aroundSolids );
+		inst.MoveOnlyZ( elapsedTime, aroundSolids );
+
+		const int collideIndex = inst.MoveOnlyY( elapsedTime, aroundSolids );
 		if ( collideIndex != -1 ) // If collide to any
 		{
 			if ( inst.velocity.y <= 0.0f )
@@ -481,11 +483,11 @@ namespace Boss
 			timer += elapsedTime;
 		}
 	}
-	void Skull::Run::PhysicUpdate( Skull &inst, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	void Skull::Run::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
 	{
-		const int prevSign = GetCurrentDirectionSign( inst );
-		MoverBase::PhysicUpdate( inst, elapsedTime, solids );
-		const int nowSign  = GetCurrentDirectionSign( inst );
+		const int prevSign = GetCurrentDirectionSign(  inst );
+		MoverBase::PhysicUpdate( inst, elapsedTime, terrain );
+		const int nowSign  = GetCurrentDirectionSign(  inst );
 
 		if ( nowSign != prevSign || nowSign == 0 )
 		{
@@ -562,7 +564,7 @@ namespace Boss
 
 		previousInput = input;
 	}
-	void Skull::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	void Skull::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
 		if ( !pMover )
 		{
@@ -571,7 +573,7 @@ namespace Boss
 		}
 		// else
 
-		pMover->PhysicUpdate( *this, elapsedTime, solids );
+		pMover->PhysicUpdate( *this, elapsedTime, terrain );
 	}
 	void Skull::Draw( RenderingHelper *pRenderer ) const
 	{

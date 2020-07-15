@@ -167,15 +167,17 @@ namespace Boss
 
 		ApplyReceivedDamageIfHas();
 	}
-	void Base::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
 		if ( NowDead() ) { return; }
 		// else
 
-		MoveOnlyX( elapsedTime, solids );
-		MoveOnlyZ( elapsedTime, solids );
+		const auto aroundSolids = FetchSolidsByBody( terrain, GetHitBox(), elapsedTime, velocity );
 
-		MoveOnlyY( elapsedTime, solids );
+		MoveOnlyX( elapsedTime, aroundSolids );
+		MoveOnlyZ( elapsedTime, aroundSolids );
+
+		MoveOnlyY( elapsedTime, aroundSolids );
 	}
 	void Base::Draw( RenderingHelper *pRenderer ) const
 	{
@@ -309,9 +311,15 @@ namespace Boss
 
 		model.UpdateMotion( elapsedTime, motionIndex );
 	}
+	std::vector<Donya::Collision::Box3F> Base::FetchSolidsByBody( const Map &terrain, const Donya::Collision::Box3F &hitBox, float elapsedTime, const Donya::Vector3 &currentVelocity )
+	{
+		const  auto movement	= currentVelocity * elapsedTime;
+		const  auto aroundTiles	= terrain.GetPlaceTiles( hitBox, movement );
+		return Map::ToAABB( aroundTiles );
+	}
 	int  Base::MoveOnlyX( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
-		const int collideIndex = Actor::MoveX( velocity.x * elapsedTime, solids );
+		const int  collideIndex	= Actor::MoveX( velocity.x * elapsedTime, solids );
 		hurtBox.pos = body.pos; // We must apply world position to hurt box also.
 		return collideIndex;
 	}
@@ -339,7 +347,7 @@ namespace Boss
 		hurtBox.pos = body.pos; // We must apply world position to hurt box also.
 		return collideIndex;
 	}
-	int  Base::MoveOnlyZ( float elapsedTime, const std::vector<Donya::Collision::Box3F> & solids )
+	int  Base::MoveOnlyZ( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
 		const int collideIndex = Actor::MoveZ( velocity.z * elapsedTime, solids );
 		hurtBox.pos = body.pos; // We must apply world position to hurt box also.
@@ -382,15 +390,17 @@ namespace Boss
 		const float applyGravity = std::max( lowestGravity, GetGravity() );
 		velocity.y -= applyGravity * elapsedTime;
 	}
-	bool Base::AppearPhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	bool Base::AppearPhysicUpdate( float elapsedTime, const Map &terrain )
 	{
 		if ( NowDead() ) { return false; }
 		// else
 
-		MoveOnlyX( elapsedTime, solids );
-		MoveOnlyZ( elapsedTime, solids );
+		const auto aroundSolids = FetchSolidsByBody( terrain, GetHitBox(), elapsedTime, velocity );
 
-		const int collideIndex = MoveOnlyY( elapsedTime, solids );
+		MoveOnlyX( elapsedTime, aroundSolids );
+		MoveOnlyZ( elapsedTime, aroundSolids );
+
+		const int collideIndex = MoveOnlyY( elapsedTime, aroundSolids );
 		return (  collideIndex != -1 ) ? true : false; // If collide to any
 	}
 	Donya::Vector4x4 Base::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
@@ -473,11 +483,11 @@ namespace Boss
 
 		RemoveBosses();
 	}
-	void Container::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	void Container::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
 		for ( auto &it : bosses )
 		{
-			if ( it.pBoss ) { it.pBoss->PhysicUpdate( elapsedTime, solids ); }
+			if ( it.pBoss ) { it.pBoss->PhysicUpdate( elapsedTime, terrain ); }
 		}
 	}
 	void Container::Draw( RenderingHelper *pRenderer ) const

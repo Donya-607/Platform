@@ -20,6 +20,7 @@
 
 #include "CSVLoader.h"
 #include "Damage.h"
+#include "Map.h"
 #include "ModelHelper.h"
 #include "ObjectBase.h"
 #include "Room.h"				// Use Room::invalidID
@@ -130,7 +131,7 @@ namespace Boss
 		virtual void Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea );
 		virtual void Uninit();
 		virtual void Update( float elapsedTime, const Input &input );
-		virtual void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+		virtual void PhysicUpdate( float elapsedTime, const Map &terrain );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
@@ -161,6 +162,7 @@ namespace Boss
 	protected:
 		void UpdateOrientation( bool lookingRight );
 		void UpdateMotionIfCan( float elapsedTime, int motionIndex );
+		std::vector<Donya::Collision::Box3F> FetchSolidsByBody( const Map &terrain, const Donya::Collision::Box3F &hitBoxVSTerrain, float elapsedTime, const Donya::Vector3 &currentVelocity );
 		/// <summary>
 		/// Returns the return value of Actor::MoveX().
 		/// </summary>
@@ -178,7 +180,7 @@ namespace Boss
 		/// <summary>
 		/// Returns true when landing to ground.
 		/// </summary>
-		virtual bool AppearPhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+		virtual bool AppearPhysicUpdate( float elapsedTime, const Map &terrain );
 	protected:
 		virtual int GetInitialHP() const = 0;
 		virtual void AssignMyBody( const Donya::Vector3 &wsPos ) = 0;
@@ -244,7 +246,7 @@ namespace Boss
 		bool Init( int stageNumber );
 		void Uninit();
 		void Update( float elapsedTime, const Input &input );
-		void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+		void PhysicUpdate( float elapsedTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:

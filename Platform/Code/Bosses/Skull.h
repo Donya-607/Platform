@@ -20,7 +20,7 @@ namespace Boss
 			virtual void Init( Skull &instance );
 			virtual void Uninit( Skull &instance );
 			virtual void Update( Skull &instance, float elapsedTime, const Input &input );
-			virtual void PhysicUpdate( Skull &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+			virtual void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain );
 			virtual bool ShouldChangeMover( const Skull &instance ) const = 0;
 			virtual std::function<void()> GetChangeStateMethod( Skull &instance ) const = 0;
 		#if USE_IMGUI
@@ -34,7 +34,7 @@ namespace Boss
 		public:
 			void Init( Skull &instance ) override;
 			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
-			void PhysicUpdate( Skull &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+			void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain ) override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
@@ -87,7 +87,7 @@ namespace Boss
 		public:
 			void Init( Skull &instance ) override;
 			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
-			void PhysicUpdate( Skull &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+			void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain ) override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
@@ -121,7 +121,7 @@ namespace Boss
 		public:
 			void Init( Skull &instance ) override;
 			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
-			void PhysicUpdate( Skull &instance, float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+			void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain ) override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
@@ -160,7 +160,7 @@ namespace Boss
 	public:
 		void Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea ) override;
 		void Update( float elapsedTime, const Input &input ) override;
-		void PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids ) override;
+		void PhysicUpdate( float elapsedTime, const Map &terrain ) override;
 		void Draw( RenderingHelper *pRenderer ) const override;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
 	public:

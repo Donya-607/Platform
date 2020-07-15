@@ -283,7 +283,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
 		Enemy::Admin::Get().PhysicUpdate( elapsedTime, mapRef );
 
-		if ( pBossContainer ) { pBossContainer->PhysicUpdate( elapsedTime, hitBoxes ); }
+		if ( pBossContainer ) { pBossContainer->PhysicUpdate( elapsedTime, mapRef ); }
 	}
 
 	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
