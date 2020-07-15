@@ -577,14 +577,53 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 {
 	timer += elapsedTime;
 
-	const bool moveToBackward	=  Donya::SignBit( input.moveVelocity.x ) != Donya::SignBit( slideSign );
-	const bool slideIsEnd		=  ( Parameter().Get().slideMoveSeconds <= timer )
-								|| ( moveToBackward )
-								|| ( input.useJump && inst.Jumpable() )
-								;
+	const int  horizontalInputSign	= Donya::SignBit( input.moveVelocity.x );
+	const bool moveToBackward		=  ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( slideSign ) );
+	const bool slideIsEnd			=  ( Parameter().Get().slideMoveSeconds <= timer )
+									|| ( moveToBackward )
+									|| ( !inst.onGround )
+									|| ( input.useJump && inst.Jumpable() )
+									;
 	if ( slideIsEnd )
 	{
-		nextStatus = Destination::Normal;
+		Donya::Collision::Box3F normalBody{};
+		normalBody.pos		= inst.body.pos;
+		normalBody.offset	= Parameter().Get().hitBox.offset;
+		normalBody.size		= Parameter().Get().hitBox.size;
+		normalBody.exist	= true;
+		const auto aroundTiles	= terrain.GetPlaceTiles( normalBody, inst.velocity * elapsedTime );
+		const auto aroundSolids	= Map::ToAABB( aroundTiles );
+
+		const size_t solidCount = aroundSolids.size();
+		size_t collideIndex = solidCount;
+		for ( size_t i = 0; i < solidCount; ++i )
+		{
+			if ( Donya::Collision::IsHit( normalBody, aroundSolids[i] ) )
+			{
+				collideIndex = i;
+				break;
+			}
+		}
+
+		// If collided to any
+		if ( collideIndex < solidCount )
+		{
+			// I can not finish the sliding now, because I will be buried.
+			if ( moveToBackward )
+			{
+				inst.velocity.x	*= -1.0f;
+				slideSign		*= -1.0f;
+
+				const auto halfTurn = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( 180.0f ) );
+				inst.orientation.RotateBy( halfTurn );
+				inst.orientation.Normalize();
+			}
+		}
+		else
+		{
+			// I can finish the sliding here.
+			nextStatus = Destination::Normal;
+		}
 	}
 
 	// If the jump was triggered in here, the "slideIsEnd" is also true.
