@@ -12,19 +12,23 @@ struct PlayerParam
 {
 public:
 	int		maxHP				= 28;
-	int		maxBusterCount		= 3;	// Max generatable count of buster at same time.
+	int		maxBusterCount		= 3;		// Max generatable count of buster at same time.
 	float	moveSpeed			= 1.0f;
+	float	slideMoveSpeed		= 1.0f;
+	float	slideMoveSeconds	= 1.0f;
 	float	jumpStrength		= 1.0f;
 	float	gravity				= 1.0f;
-	float	gravityResistance	= 0.5f;	// Multiply to gravity if while pressing a jump key
+	float	gravityResistance	= 0.5f;		// Multiply to gravity if while pressing a jump key
 	float	resistableSeconds	= 0.5f;
 	float	maxFallSpeed		= 1.0f;
 	float	knockBackSeconds	= 0.5f;
-	float	knockBackSpeed		= 1.0f;	// X speed
+	float	knockBackSpeed		= 1.0f;		// X speed
 	float	invincibleSeconds	= 2.0f;
-	float	flushingInterval	= 0.1f;	// Seconds
-	Donya::Collision::Box3F	hitBox;		// VS a terrain
-	Donya::Collision::Box3F	hurtBox;	// VS an attack(e.g. enemy)
+	float	flushingInterval	= 0.1f;		// Seconds
+	Donya::Collision::Box3F	hitBox;			// VS a terrain
+	Donya::Collision::Box3F	hurtBox;		// VS an attack(e.g. enemy)
+	Donya::Collision::Box3F	slideHitBox;	// VS a terrain when sliding
+	Donya::Collision::Box3F	slideHurtBox;	// VS an attack(e.g. enemy) when sliding
 	Bullet::FireDesc		fireParam;
 private:
 	friend class cereal::access;
@@ -64,6 +68,16 @@ private:
 		}
 		if ( 4 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( slideMoveSpeed		),
+				CEREAL_NVP( slideMoveSeconds	),
+				CEREAL_NVP( slideHitBox			),
+				CEREAL_NVP( slideHurtBox		)
+			);
+		}
+		if ( 5 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -72,4 +86,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 3 )
+CEREAL_CLASS_VERSION( PlayerParam, 4 )

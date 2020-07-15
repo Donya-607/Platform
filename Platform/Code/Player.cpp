@@ -275,6 +275,8 @@ void PlayerParam::ShowImGuiNode()
 {
 	ImGui::DragInt  ( u8"最大体力",				&maxHP						);
 	ImGui::DragFloat( u8"移動速度",				&moveSpeed,			0.01f	);
+	ImGui::DragFloat( u8"スライディング速度",		&slideMoveSpeed,	0.01f	);
+	ImGui::DragFloat( u8"スライディング秒数",		&slideMoveSeconds,	0.01f	);
 	ImGui::DragFloat( u8"ジャンプ力",			&jumpStrength,		0.01f	);
 	ImGui::DragFloat( u8"重力",					&gravity,			0.01f	);
 	ImGui::SliderFloat( u8"重力抵抗力",			&gravityResistance,	0.0f, 1.0f );
@@ -288,6 +290,8 @@ void PlayerParam::ShowImGuiNode()
 	ImGui::DragInt( u8"画面内に出せる弾数",	&maxBusterCount );
 	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定", &hitBox  );
 	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定", &hurtBox );
+	ImGui::Helper::ShowAABBNode( u8"スライド中・地形との当たり判定", &slideHitBox  );
+	ImGui::Helper::ShowAABBNode( u8"スライド中・攻撃との喰らい判定", &slideHurtBox );
 
 	auto MakePositive = []( float *v )
 	{
@@ -295,6 +299,8 @@ void PlayerParam::ShowImGuiNode()
 	};
 	maxHP			= std::max( 1, maxHP			);
 	MakePositive( &moveSpeed			);
+	MakePositive( &slideMoveSpeed		);
+	MakePositive( &slideMoveSeconds		);
 	MakePositive( &jumpStrength			);
 	MakePositive( &gravity				);
 	MakePositive( &resistableSeconds	);
