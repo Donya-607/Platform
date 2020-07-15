@@ -167,17 +167,18 @@ namespace Enemy
 
 		ApplyReceivedDamageIfHas();
 	}
-	void Base::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
 		if ( NowWaiting() ) { return; }
 		// else
 
-		const auto movement = velocity * elapsedTime;
-	
-		Actor::MoveX( movement.x, solids );
-		Actor::MoveZ( movement.z, solids );
+		const auto movement		= velocity * elapsedTime;
+		const auto aroundTiles	= terrain.GetPlaceTiles( GetHitBox(), movement );
+		const auto aroundSolids	= Map::ToAABB( aroundTiles );
+		Actor::MoveX( movement.x, aroundSolids );
+		Actor::MoveZ( movement.z, aroundSolids );
 
-		const int collideIndex = Actor::MoveY( movement.y, solids );
+		const int collideIndex = Actor::MoveY( movement.y, aroundSolids );
 		if ( collideIndex != -1 ) // If collided to any
 		{
 			// Consider as landing
@@ -380,11 +381,11 @@ namespace Enemy
 			if ( pIt ) { pIt->Update( elapsedTime, wsTargetPos, wsScreen ); }
 		}
 	}
-	void Admin::PhysicUpdate( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
+	void Admin::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
 		for ( auto &pIt : enemyPtrs )
 		{
-			if ( pIt ) { pIt->PhysicUpdate( elapsedTime, solids ); }
+			if ( pIt ) { pIt->PhysicUpdate( elapsedTime, terrain ); }
 		}
 	}
 	void Admin::Draw( RenderingHelper *pRenderer ) const

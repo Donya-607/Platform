@@ -6,7 +6,7 @@
 #include "Donya/Mouse.h"
 #include "Donya/Sprite.h"
 
-#include "Common.h"			// Use IsShowCollision()
+#include "Common.h"			// Use LargestDeltaTime(), IsShowCollision()
 #include "FilePath.h"
 #include "Parameter.h"		// Use ParameterHelper
 #if USE_IMGUI
@@ -247,13 +247,12 @@ std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const Donya::Collis
 {
 	// Note: Currently, all Z component of the tiles is zero. So it only considers X and Y axis.
 
-	// Make extended hit box by min/max of between pre-moved hit box and moved hit box.
+	// Make the hit box that covers an area of at least moving amount.
 	Donya::Collision::Box3F extArea = wsArea;
-	const Donya::Vector3 halfVelocity = wsVelocity * 0.5f;
-	extArea.offset += halfVelocity;
-	extArea.size.x += fabsf( halfVelocity.x );
-	extArea.size.y += fabsf( halfVelocity.y );
-//	extArea.size.z += fabsf( halfVelocity.z );
+	constexpr float margin = 0.1f;
+	extArea.size.x += fabsf( wsVelocity.x ) + margin;
+	extArea.size.y += fabsf( wsVelocity.y ) + margin;
+//	extArea.size.z += fabsf( wsVelocity.z ) + margin;
 
 	const auto  areaCenter	= extArea.WorldPosition();
 	const auto  areaMax		= extArea.Max();
@@ -267,24 +266,26 @@ std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const Donya::Collis
 		results.emplace_back( GetPlaceTileOrNullptr( wsPos ) );
 	};
 
-	AppendByCalc( areaCenter );
+	AppendByCalc( areaCenter ); // Center
 
 	Donya::Vector3 offset{ 0.0f, 0.0f, 0.0f };
 	for ( float offsetY = halfHeight; 0.0f <= offsetY; offsetY -= Tile::unitWholeSize )
 	{
 		for ( float offsetX = halfWidth; 0.0f <= offsetX; offsetX -= Tile::unitWholeSize )
 		{
+			offset.y = 0.0f;
+			offset.x = offsetX;		AppendByCalc( areaCenter + offset ); // Right
+			offset.x = -offsetX;	AppendByCalc( areaCenter + offset ); // Left
+
 			offset.y = offsetY;
-			offset.x = offsetX;
-			AppendByCalc( areaCenter + offset ); // Right-Top
-			offset.x = -offsetX;
-			AppendByCalc( areaCenter + offset ); // Left-Top
+			offset.x = 0.0f;		AppendByCalc( areaCenter + offset ); // Top
+			offset.x = offsetX;		AppendByCalc( areaCenter + offset ); // Right-Top
+			offset.x = -offsetX;	AppendByCalc( areaCenter + offset ); // Left-Top
 			
 			offset.y = -offsetY;
-			offset.x = offsetX;
-			AppendByCalc( areaCenter + offset ); // Right-Bottom
-			offset.x = -offsetX;
-			AppendByCalc( areaCenter + offset ); // Left-Bottom
+			offset.x = 0.0f;		AppendByCalc( areaCenter + offset ); // Bottom
+			offset.x = offsetX;		AppendByCalc( areaCenter + offset ); // Right-Bottom
+			offset.x = -offsetX;	AppendByCalc( areaCenter + offset ); // Left-Bottom
 		}
 	}
 

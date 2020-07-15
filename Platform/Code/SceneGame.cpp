@@ -281,7 +281,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		if ( pPlayer ) { pPlayer->PhysicUpdate( elapsedTime, mapRef ); }
 
 		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
-		Enemy::Admin::Get().PhysicUpdate( elapsedTime, hitBoxes );
+		Enemy::Admin::Get().PhysicUpdate( elapsedTime, mapRef );
 
 		if ( pBossContainer ) { pBossContainer->PhysicUpdate( elapsedTime, hitBoxes ); }
 	}
@@ -1508,7 +1508,7 @@ void SceneGame::UseScreenSpaceImGui()
 	}
 
 	// Test tile
-	if ( pMap )
+	if ( 0 && pMap )
 	{
 		const Donya::Vector4x4 toWorld = MakeScreenTransform().Inverse();
 
@@ -1558,12 +1558,10 @@ void SceneGame::UseScreenSpaceImGui()
 		testTileWindow.SetNextWindow();
 		if ( ImGui::BeginIfAllowed( u8"ƒ^ƒCƒ‹" ) )
 		{
-			ImGui::Text( u8"World Mouse:" );
-			ImGui::Text( u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]", wsMouse.x, wsMouse.y, wsMouse.z );
+			ImGui::Text( u8"World: [X:%5.2f][Y:%5.2f][Z:%5.2f]", wsMouse.x, wsMouse.y, wsMouse.z );
 			
 			const auto tileIndex = ToTileIndex( wsMouse );
-			ImGui::Text( u8"Tile Index:" );
-			ImGui::Text( u8"[X:%3d][Y:%3d]", tileIndex.x, tileIndex.y );
+			ImGui::Text( u8"Tile Index: [X:%3d][Y:%3d]", tileIndex.x, tileIndex.y );
 			
 			auto pTile = pMap->GetPlaceTileOrNullptr( wsMouse );
 			if ( pTile )
@@ -1572,33 +1570,31 @@ void SceneGame::UseScreenSpaceImGui()
 				// testTileWindow.pos = ssPos.XY();
 
 				const Donya::Vector3 p = pTile->GetPosition();
-				ImGui::Text( u8"Tile:" );
-				ImGui::Text( u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]", p.x, p.y, p.z );
+				ImGui::Text( u8"wsPos: [X:%5.2f][Y:%5.2f][Z:%5.2f]", p.x, p.y, p.z );
 
+				const auto wholeArray = pMap->GetTiles();
+				const size_t rowCount = wholeArray.size();
+				for ( size_t r = 0; r < rowCount; ++r )
+				{
+					bool shouldBreak = false;
+					const size_t colCount = wholeArray[r].size();
+					for ( size_t c = 0; c < colCount; ++c )
+					{
+						if ( wholeArray[r][c] == pTile )
+						{
+							ImGui::Text( u8"Actual Index:" );
+							ImGui::Text( u8"[Row:%3d][Col:%3d]", r, c );
+
+							shouldBreak = true;
+							break;
+						}
+					}
+					if ( shouldBreak ) { break; }
+				}
 			}
 			else
 			{
 				ImGui::TextDisabled( u8"Now is empty tile chosen." );
-			}
-
-			const auto wholeArray = pMap->GetTiles();
-			const size_t rowCount = wholeArray.size();
-			for ( size_t r = 0; r < rowCount; ++r )
-			{
-				bool shouldBreak = false;
-				const size_t colCount = wholeArray[r].size();
-				for ( size_t c = 0; c < colCount; ++c )
-				{
-					if ( wholeArray[r][c] == pTile )
-					{
-						ImGui::Text( u8"Actual Index:" );
-						ImGui::Text( u8"[Row:%3d][Col:%3d]", r, c );
-
-						shouldBreak = true;
-						break;
-					}
-				}
-				if ( shouldBreak ) { break; }
 			}
 
 			ImGui::End();
