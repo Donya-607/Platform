@@ -94,7 +94,7 @@ private:
 	void	CameraUpdate();
 
 	void	PlayerInit();
-	void	PlayerUpdate( float elapsedTime );
+	void	PlayerUpdate( float elapsedTime, const Map &terrain );
 	
 	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 

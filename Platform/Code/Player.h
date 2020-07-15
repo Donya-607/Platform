@@ -123,7 +123,7 @@ private:
 	public:
 		virtual void Init( Player &instance );
 		virtual void Uninit( Player &instance ) {}
-		virtual void Update( Player &instance, float elapsedTime, Input input ) = 0;
+		virtual void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) = 0;
 		virtual void Move( Player &instance, float elapsedTime, const Map &terrain ) = 0;
 		virtual bool NowSliding( const Player &instance ) const { return false; }
 		virtual bool NowKnockBacking( const Player &instance ) const { return false; }
@@ -148,7 +148,7 @@ private:
 	private:
 		bool gotoSlide = false;
 	public:
-		void Update( Player &instance, float elapsedTime, Input input ) override;
+		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
@@ -167,10 +167,11 @@ private:
 	private:
 		Destination	nextStatus	= Destination::None;
 		float		timer		= 0.0f;
+		float		slideSign	= 1.0f;
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, Input input ) override;
+		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
 		bool NowSliding( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
@@ -189,7 +190,7 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, Input input ) override;
+		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
 		bool NowKnockBacking( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
@@ -202,7 +203,7 @@ private:
 	{
 	public:
 		void Init( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, Input input ) override;
+		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
 		bool NowMiss( const Player &instance ) const override { return true; }
 		bool Drawable( const Player &instance ) const override;
@@ -236,7 +237,7 @@ public:
 	void Init( const PlayerInitializer &initializer );
 	void Uninit();
 
-	void Update( float elapsedTime, Input input );
+	void Update( float elapsedTime, Input input, const Map &terrain );
 	void PhysicUpdate( float elapsedTime, const Map &terrain );
 
 	void Draw( RenderingHelper *pRenderer ) const;

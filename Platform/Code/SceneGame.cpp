@@ -212,6 +212,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	AssignCurrentInput();
 
 	if ( pMap ) { pMap->Update( elapsedTime ); }
+	const Map emptyMap{}; // Used for empty argument. Fali safe.
+	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 
 	const int oldRoomID = currentRoomID;
 	UpdateCurrentRoomID();
@@ -242,7 +244,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		StartFade( Scene::Type::Result );
 	}
 	
-	PlayerUpdate( elapsedTime );
+	PlayerUpdate( elapsedTime, mapRef );
 	if ( FetchParameter().waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
 	{
 		// TODO: Go to game-over scene here if the remains of player is less-eq than zero.
@@ -259,25 +261,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	// PhysicUpdates
 	{
-		std::vector<Donya::Collision::Box3F> hitBoxes;
-		if ( pMap )
-		{
-			const auto &tiles = pMap->GetTiles();
-			for ( const auto &itr : tiles )
-			{
-				for ( const auto &pIt : itr )
-				{
-					if ( pIt )
-					{
-						hitBoxes.emplace_back( pIt->GetHitBox() );
-					}
-				}
-			}
-		}
-
-		const Map failSafe{}; // Used for empty argument
-		const Map &mapRef = ( pMap ) ? *pMap : failSafe;
-
 		if ( pPlayer ) { pPlayer->PhysicUpdate( elapsedTime, mapRef ); }
 
 		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
@@ -704,7 +687,7 @@ void SceneGame::PlayerInit()
 	pPlayer = std::make_unique<Player>();
 	pPlayer->Init( *pPlayerIniter );
 }
-void SceneGame::PlayerUpdate( float elapsedTime )
+void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 {
 	if ( !pPlayer ) { return; }
 	// else
@@ -714,7 +697,7 @@ void SceneGame::PlayerUpdate( float elapsedTime )
 	input.useJump		= currentInput.pressJump;
 	input.useShot		= currentInput.pressShot;
 
-	pPlayer->Update( elapsedTime, input );
+	pPlayer->Update( elapsedTime, input, terrain );
 
 	if ( pPlayer->NowMiss() )
 	{

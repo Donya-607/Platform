@@ -501,7 +501,7 @@ const Donya::Vector3 &Player::MoverBase::GetBodyPosOffset( bool ofHurtBox ) cons
 			: Parameter().Get().hitBox.offset;
 }
 
-void Player::Normal::Update( Player &inst, float elapsedTime, Input input )
+void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
 {
 	inst.MoveHorizontal( elapsedTime, input );
 
@@ -556,15 +556,16 @@ void Player::Slide::Init( Player &inst )
 {
 	MoverBase::Init( inst );
 
-	float lookingSign = Donya::SignBitF( inst.orientation.LocalFront().x );
-	if ( IsZero( lookingSign ) ) { lookingSign = 1.0f; } // Fail safe
+	nextStatus	= Destination::None;
+	timer		= 0.0f;
 
-	inst.velocity.x = Parameter().Get().slideMoveSpeed * lookingSign;
+	slideSign	= Donya::SignBitF( inst.orientation.LocalFront().x );
+	if ( IsZero( slideSign ) ) { slideSign = 1.0f; } // Fail safe
+
+	inst.velocity.x = Parameter().Get().slideMoveSpeed * slideSign;
 //	inst.velocity.y = 0.0f; // We must not erase the Y velocity for keeping a landing by gravity continuously.
 	inst.velocity.z = 0.0f;
-	inst.UpdateOrientation( /* lookingRight = */ ( lookingSign < 0.0f ) ? false : true );
-	
-	timer = 0.0f;
+	inst.UpdateOrientation( /* lookingRight = */ ( slideSign < 0.0f ) ? false : true );
 }
 void Player::Slide::Uninit( Player &inst )
 {
@@ -572,14 +573,15 @@ void Player::Slide::Uninit( Player &inst )
 
 	inst.velocity.x = 0.0f;
 }
-void Player::Slide::Update( Player &inst, float elapsedTime, Input input )
+void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
 {
 	timer += elapsedTime;
 
-	const bool slideIsEnd =
-							( input.useJump && inst.Jumpable() ) ||
-							( Parameter().Get().slideMoveSeconds <= timer )
-							;
+	const bool moveToBackward	=  Donya::SignBit( input.moveVelocity.x ) != Donya::SignBit( slideSign );
+	const bool slideIsEnd		=  ( Parameter().Get().slideMoveSeconds <= timer )
+								|| ( moveToBackward )
+								|| ( input.useJump && inst.Jumpable() )
+								;
 	if ( slideIsEnd )
 	{
 		nextStatus = Destination::Normal;
@@ -643,7 +645,7 @@ void Player::KnockBack::Uninit( Player &inst )
 
 	inst.velocity.x = 0.0f;
 }
-void Player::KnockBack::Update( Player &inst, float elapsedTime, Input input )
+void Player::KnockBack::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
 {
 	timer += elapsedTime;
 
@@ -678,7 +680,7 @@ void Player::Miss::Init( Player &inst )
 
 	Donya::Sound::Play( Music::Player_Miss );
 }
-void Player::Miss::Update( Player &inst, float elapsedTime, Input input )
+void Player::Miss::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
 {
 	// Overwrite forcely
 	inst.body.exist		= false;
@@ -727,7 +729,7 @@ void Player::Uninit()
 {
 
 }
-void Player::Update( float elapsedTime, Input input )
+void Player::Update( float elapsedTime, Input input, const Map &terrain )
 {
 #if USE_IMGUI
 	// Apply for be able to see an adjustment immediately
@@ -774,7 +776,7 @@ void Player::Update( float elapsedTime, Input input )
 	invincibleTimer.Update( elapsedTime );
 	hurtBox.exist = !invincibleTimer.NowWorking();
 
-	pMover->Update( *this, elapsedTime, input );
+	pMover->Update( *this, elapsedTime, input, terrain );
 	if ( pMover->ShouldChangeMover( *this ) )
 	{
 		auto ChangeMethod = pMover->GetChangeStateMethod( *this );
