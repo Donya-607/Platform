@@ -193,7 +193,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		else
 		{
 			iCamera.SetOrientation( Donya::Quaternion::Identity() );
-			iCamera.Init( Donya::ICamera::Mode::Look );
+			CameraInit();
 		}
 	}
 #endif // DEBUG_MODE
@@ -510,6 +510,8 @@ void SceneGame::AssignCurrentInput()
 {
 	bool pressLeft	= false;
 	bool pressRight	= false;
+	bool pressUp	= false;
+	bool pressDown	= false;
 	bool pressJump	= false;
 	bool pressShot	= false;
 
@@ -520,22 +522,28 @@ void SceneGame::AssignCurrentInput()
 		using Button	= Donya::Gamepad::Button;
 		using Direction	= Donya::Gamepad::StickDirection;
 		
-		pressLeft  = controller.Press( Button::LEFT  ) || controller.PressStick( Direction::LEFT  );
-		pressRight = controller.Press( Button::RIGHT ) || controller.PressStick( Direction::RIGHT );
-		pressJump  = controller.Press( Button::A );
-		pressShot  = controller.Press( Button::B );
+		pressLeft	= controller.Press( Button::LEFT	) || controller.PressStick( Direction::LEFT		);
+		pressRight	= controller.Press( Button::RIGHT	) || controller.PressStick( Direction::RIGHT	);
+		pressUp		= controller.Press( Button::UP		) || controller.PressStick( Direction::UP		);
+		pressDown	= controller.Press( Button::DOWN	) || controller.PressStick( Direction::DOWN		);
+		pressJump	= controller.Press( Button::A );
+		pressShot	= controller.Press( Button::B );
 	}
 	else
 	{
-		pressLeft  = Donya::Keyboard::Press( VK_LEFT  );
-		pressRight = Donya::Keyboard::Press( VK_RIGHT );
-		pressJump  = Donya::Keyboard::Press( VK_SHIFT );
-		pressShot  = Donya::Keyboard::Press( 'Z' );
+		pressLeft	= Donya::Keyboard::Press( VK_LEFT	);
+		pressRight	= Donya::Keyboard::Press( VK_RIGHT	);
+		pressUp		= Donya::Keyboard::Press( VK_UP		);
+		pressDown	= Donya::Keyboard::Press( VK_DOWN	);
+		pressJump	= Donya::Keyboard::Press( VK_SHIFT	);
+		pressShot	= Donya::Keyboard::Press( 'Z' );
 	}
 
 	currentInput.Clear();
-	if ( pressLeft  ) { currentInput.inputDirection.x -= 1.0f; }
-	if ( pressRight ) { currentInput.inputDirection.x += 1.0f; }
+	if ( pressLeft	) { currentInput.inputDirection.x -= 1.0f; }
+	if ( pressRight	) { currentInput.inputDirection.x += 1.0f; }
+	if ( pressUp	) { currentInput.inputDirection.y += 1.0f; } // World space direction
+	if ( pressDown	) { currentInput.inputDirection.y -= 1.0f; } // World space direction
 	currentInput.pressJump = pressJump;
 	currentInput.pressShot = pressShot;
 }

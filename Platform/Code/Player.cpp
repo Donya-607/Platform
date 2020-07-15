@@ -434,6 +434,10 @@ bool Player::Flusher::NowWorking() const
 
 #pragma region Mover
 
+void Player::MoverBase::Init( Player &inst )
+{
+	AssignBodyParameter( inst );
+}
 void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime )
 {
 	inst.motionManager.Update( inst, elapsedTime );
@@ -472,11 +476,53 @@ void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const
 	// We must apply world position to hurt box also.
 	inst.hurtBox.pos = inst.body.pos;
 }
+void Player::MoverBase::AssignBodyParameter( Player &inst )
+{
+	inst.body.offset	= GetBodyPosOffset( /* ofHurtBox = */ false );
+	inst.body.size		= GetBodyHalfSize ( /* ofHurtBox = */ false );
+	inst.hurtBox.offset	= GetBodyPosOffset( /* ofHurtBox = */ true  );
+	inst.hurtBox.size	= GetBodyHalfSize ( /* ofHurtBox = */ true  );
+}
+const Donya::Vector3 &Player::MoverBase::GetBodyHalfSize ( bool ofHurtBox ) const
+{
+	return	( ofHurtBox )
+			? Parameter().Get().hurtBox.size
+			: Parameter().Get().hitBox.size;
+}
+const Donya::Vector3 &Player::MoverBase::GetBodyPosOffset( bool ofHurtBox ) const
+{
+	return	( ofHurtBox )
+			? Parameter().Get().hurtBox.offset
+			: Parameter().Get().hitBox.offset;
+}
 
 void Player::Normal::Update( Player &inst, float elapsedTime, Input input )
 {
 	inst.MoveHorizontal( elapsedTime, input );
-	inst.MoveVertical( elapsedTime, input );
+
+	// Deformity of MoverVertical()
+	{
+		if ( input.useJump && inst.Jumpable() )
+		{
+			if ( Donya::SignBit( input.moveVelocity.y ) < 0 )
+			{
+				gotoSlide = true;
+
+				// Certainly doing Fall() if do not jump
+				inst.Fall( elapsedTime, input );
+				// But We must set the pressing flag because We wanna prevent to jump.
+				inst.wasReleasedJumpInput = false;
+			}
+			else
+			{
+				inst.Jump();
+			}
+		}
+		else
+		{
+			inst.Fall( elapsedTime, input );
+		}
+	}
 
 	inst.Shot( elapsedTime, input );
 
@@ -489,11 +535,82 @@ void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain )
 }
 bool Player::Normal::ShouldChangeMover( const Player &inst ) const
 {
-	return false;
+	return gotoSlide;
 }
 std::function<void()> Player::Normal::GetChangeStateMethod( Player &inst ) const
 {
+	if ( gotoSlide )
+	{
+		return [&inst]() { inst.AssignMover<Slide>(); };
+	}
+	// else
 	return []() {}; // No op
+}
+
+void Player::Slide::Init( Player &inst )
+{
+	MoverBase::Init( inst );
+
+	float lookingSign = Donya::SignBitF( inst.orientation.LocalFront().x );
+	if ( IsZero( lookingSign ) ) { lookingSign = 1.0f; } // Fail safe
+
+	inst.velocity.x = Parameter().Get().slideMoveSpeed * lookingSign;
+//	inst.velocity.y = 0.0f; // We must not erase the Y velocity for keeping a landing by gravity continuously.
+	inst.velocity.z = 0.0f;
+	inst.UpdateOrientation( /* lookingRight = */ ( lookingSign < 0.0f ) ? false : true );
+	
+	timer = 0.0f;
+}
+void Player::Slide::Uninit( Player &inst )
+{
+	MoverBase::Uninit( inst );
+
+	inst.velocity.x = 0.0f;
+}
+void Player::Slide::Update( Player &inst, float elapsedTime, Input input )
+{
+	timer += elapsedTime;
+
+	if ( input.useJump && inst.Jumpable() )
+	{
+		nextStatus = Destination::Normal;
+	}
+
+	// If the jump was triggered in here, the above condition will be pass also.
+	inst.MoveVertical( elapsedTime, input );
+
+	MotionUpdate( inst, elapsedTime );
+}
+void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain )
+{
+	MoveOnlyHorizontal( inst, elapsedTime, terrain );
+	MoveOnlyVertical  ( inst, elapsedTime, terrain );
+}
+bool Player::Slide::ShouldChangeMover( const Player &inst ) const
+{
+	return ( nextStatus != Destination::None || Parameter().Get().slideMoveSeconds <= timer );
+}
+std::function<void()> Player::Slide::GetChangeStateMethod( Player &inst ) const
+{
+	switch ( nextStatus )
+	{
+	case Destination::Normal: return [&inst]() { inst.AssignMover<Normal>(); };
+	default: break;
+	}
+
+	return [&inst]() { inst.AssignMover<Normal>(); };
+}
+const Donya::Vector3 &Player::Slide::GetBodyHalfSize(  bool ofHurtBox )  const
+{
+	return	( ofHurtBox )
+			? Parameter().Get().slideHurtBox.size
+			: Parameter().Get().slideHitBox.size;
+}
+const Donya::Vector3 &Player::Slide::GetBodyPosOffset( bool ofHurtBox ) const
+{
+	return	( ofHurtBox )
+			? Parameter().Get().slideHurtBox.offset
+			: Parameter().Get().slideHitBox.offset;
 }
 
 void Player::KnockBack::Init( Player &inst )
@@ -605,6 +722,7 @@ void Player::Update( float elapsedTime, Input input )
 {
 #if USE_IMGUI
 	// Apply for be able to see an adjustment immediately
+	if ( 0 )
 	{
 		const auto &data = Parameter().Get();
 		auto ApplyExceptPosition = []( Donya::Collision::Box3F *p, const Donya::Collision::Box3F &source )

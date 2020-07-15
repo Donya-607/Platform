@@ -120,7 +120,7 @@ private:
 	class MoverBase
 	{
 	public:
-		virtual void Init( Player &instance ) {}
+		virtual void Init( Player &instance );
 		virtual void Uninit( Player &instance ) {}
 		virtual void Update( Player &instance, float elapsedTime, Input input ) = 0;
 		virtual void Move( Player &instance, float elapsedTime, const Map &terrain ) = 0;
@@ -133,12 +133,18 @@ private:
 		virtual std::string GetMoverName() const = 0;
 	#endif // USE_IMGUI
 	protected:
+		void AssignBodyParameter( Player &instance );
+		virtual const Donya::Vector3 &GetBodyHalfSize ( bool ofHurtBox ) const;
+		virtual const Donya::Vector3 &GetBodyPosOffset( bool ofHurtBox ) const;
+	protected:
 		void MotionUpdate( Player &instance, float elapsedTime );
 		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const Map &terrain );
 		void MoveOnlyVertical( Player &instance, float elapsedTime, const Map &terrain );
 	};
 	class Normal : public MoverBase
 	{
+	private:
+		bool gotoSlide = false;
 	public:
 		void Update( Player &instance, float elapsedTime, Input input ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
@@ -147,6 +153,31 @@ private:
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"通常"; }
 	#endif // USE_IMGUI
+	};
+	class Slide : public MoverBase
+	{
+	private:
+		enum class Destination
+		{
+			None,
+			Normal,
+		};
+	private:
+		Destination	nextStatus	= Destination::None;
+		float		timer		= 0.0f;
+	public:
+		void Init( Player &instance ) override;
+		void Uninit( Player &instance ) override;
+		void Update( Player &instance, float elapsedTime, Input input ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
+		bool ShouldChangeMover( const Player &instance ) const override;
+		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	#if USE_IMGUI
+		std::string GetMoverName() const override { return u8"スライディング"; }
+	#endif // USE_IMGUI
+	private:
+		const Donya::Vector3 &GetBodyHalfSize ( bool ofHurtBox ) const override;
+		const Donya::Vector3 &GetBodyPosOffset( bool ofHurtBox ) const override;
 	};
 	class KnockBack : public MoverBase
 	{
