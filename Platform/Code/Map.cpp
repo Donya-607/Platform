@@ -89,7 +89,7 @@ Donya::Vector3 Map::ToWorldPos( size_t row, size_t column, bool alignToCenter )
 			? generatePos + halfTileSize
 			: generatePos;
 }
-Donya::Vector2 Map::ToTilePos( const Donya::Vector3 &wsPos, bool alignToLeftTop )
+Donya::Vector2 Map::ToTilePosF( const Donya::Vector3 &wsPos, bool alignToLeftTop )
 {
 	constexpr Donya::Vector2 ssHalfTileSize2
 	{
@@ -104,6 +104,15 @@ Donya::Vector2 Map::ToTilePos( const Donya::Vector3 &wsPos, bool alignToLeftTop 
 	return	( alignToLeftTop )
 			? screenPos - ssHalfTileSize2
 			: screenPos;
+}
+Donya::Int2 Map::ToTilePos( const Donya::Vector3 &wsPos, bool alignToLeftTop )
+{
+	const auto ssPosF = ToTilePosF( wsPos );
+	return Donya::Int2
+	{	// Discard under the decimal point
+		scast<int>( ssPosF.x ),
+		scast<int>( ssPosF.y )
+	};
 }
 std::vector<Donya::Collision::Box3F> Map::ToAABB( const std::vector<std::shared_ptr<const Tile>> &tilePtrs, bool removeEmpties )
 {
@@ -213,12 +222,7 @@ const std::vector<std::vector<Map::ElementType>> &Map::GetTiles() const
 }
 std::shared_ptr<const Tile> Map::GetPlaceTileOrNullptr( const Donya::Vector3 &wsPos ) const
 {
-	const auto ssPosF = ToTilePos( wsPos );
-	const Donya::Int2 ssPos
-	{	// Discard under the decimal point
-		scast<int>( ssPosF.x ),
-		scast<int>( ssPosF.y ),
-	};
+	const auto ssPos = ToTilePos( wsPos );
 
 	const int rowCount = scast<int>( tilePtrs.size() );
 	if ( ssPos.y < 0 || rowCount <= ssPos.y ) { return nullptr; }

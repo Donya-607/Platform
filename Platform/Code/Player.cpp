@@ -633,7 +633,110 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 }
 void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain )
 {
+#if 0 // Falling prevention
+	// Horizontal move
+	{
+		const auto movement		= inst.velocity * elapsedTime;
+		const auto aroundTiles	= terrain.GetPlaceTiles( inst.GetHitBox(), movement );
+		const auto aroundSolids	= Map::ToAABB( aroundTiles );
+		const int  collideIndex = inst.Actor::MoveX( movement.x, aroundSolids );
+		inst.Actor::MoveZ( movement.z, aroundSolids );
+
+		// Prevent falling into a hole that size is almost the same as my body.
+		// e.g. If my body size is one tile, the sliding move is not fall into a space that one tile size.
+		// But if I was pushed back by some solid when above process, I should prioritize that resolution.
+		if ( collideIndex != -1 ) // If do not collided to any
+		{
+			// I will fall if the under tile is empty, and the left and right tiles is tile.
+			
+			const auto myBody = inst.GetHitBox(); // It is moved by above process
+			const Donya::Vector3 center = myBody.WorldPosition();
+
+			Donya::Vector3 search = center;
+			search.y -= myBody.size.y;
+
+			const auto underTile = terrain.GetPlaceTileOrNullptr( search );
+
+			if ( !underTile )
+			{
+				const float centerX = search.x;
+
+				search.x = centerX - myBody.size.x;
+				const auto leftIndex  = Map::ToTilePos( search );
+
+				search.x = centerX + myBody.size.x;
+				const auto rightIndex = Map::ToTilePos( search );
+
+				if ( leftIndex == rightIndex )
+				{
+					// Prevent falling by more move
+					float	gapLength		= 0.0f;
+					int		horizontalSign	= Donya::SignBit( movement.x );
+
+					// Calculate the "gapLength"
+					{
+						const auto baseIndex = leftIndex;
+
+						constexpr float halfTileSize = Tile::unitWholeSize * 0.5f;
+						auto CalcRightDiffLength = [&]()
+						{
+							const float rightWall = Map::ToWorldPos( 0, baseIndex.x + 1 ).x - halfTileSize;
+							const float rightBody = centerX + myBody.size.x;
+							return fabsf( rightWall - rightBody );
+						};
+						auto CalcLeftDiffLength  = [&]()
+						{
+							const float leftWall = Map::ToWorldPos( 0, baseIndex.x - 1 ).x + halfTileSize;
+							const float leftBody = centerX - myBody.size.x;
+							return fabsf( leftWall - leftBody );
+						};
+
+						if ( horizontalSign == 1 )
+						{
+							gapLength = CalcLeftDiffLength();
+						}
+						else
+						if ( horizontalSign == -1 )
+						{
+							gapLength = CalcRightDiffLength();
+						}
+						else
+						{
+							const float right = CalcRightDiffLength();
+							const float left  = CalcLeftDiffLength();
+							if ( left < right )
+							{
+								gapLength = left;
+								horizontalSign = -1;
+							}
+							else
+							{
+								gapLength = right;
+								horizontalSign = 1;
+							}
+						}
+					}
+
+					Donya::Vector3 extraMovement
+					{
+						gapLength * scast<float>( horizontalSign ),
+						0.0f,
+						0.0f
+					};
+					const auto exAroundTiles  = terrain.GetPlaceTiles( myBody, extraMovement );
+					const auto exAroundSolids = Map::ToAABB( exAroundTiles );
+					inst.Actor::MoveX( extraMovement.x, exAroundSolids );
+				}
+			}
+		}
+
+		// We must apply world position to hurt box also.
+		inst.hurtBox.pos = inst.body.pos;
+	}
+#else
 	MoveOnlyHorizontal( inst, elapsedTime, terrain );
+#endif // Falling prevention
+
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 }
 bool Player::Slide::ShouldChangeMover( const Player &inst ) const

@@ -77,7 +77,12 @@ public:
 	/// Convert from 3D XYZ(world space, Z is zero) to 2D row/column(tile/screen space).
 	/// "alignToLeftTopOfTile" subtracts half size of tile. It makes a compatible to ToWorldPos().
 	/// </summary>
-	static Donya::Vector2 ToTilePos( const Donya::Vector3 &wsPos, bool alignToLeftTopOfTile = false );
+	static Donya::Vector2 ToTilePosF( const Donya::Vector3 &wsPos, bool alignToLeftTopOfTile = false );
+	/// <summary>
+	/// Convert from 3D XYZ(world space, Z is zero) to 2D row/column(tile/screen space).
+	/// "alignToLeftTopOfTile" subtracts half size of tile. It makes a compatible to ToWorldPos().
+	/// </summary>
+	static Donya::Int2 ToTilePos( const Donya::Vector3 &wsPos, bool alignToLeftTopOfTile = false );
 	/// <summary>
 	/// Convert from "const Tile &amp;" vector to "Collision::Box3F" vector. An empty tiles will be removed(if "removeEmpties" is true). Or to be Nil(if "removeEmpties" is false).
 	/// </summary>

@@ -1533,25 +1533,13 @@ void SceneGame::UseScreenSpaceImGui()
 		Donya::Vector3 wsMouse = Donya::Vector3{ ssMouse, 0.0f };
 		wsMouse = CalcWorldPos( ssMouse, wsMouse );
 
-		auto ToTileIndex = []( const Donya::Vector3 &wsPos )
-		{
-			const auto ssPosF = Map::ToTilePos( wsPos );
-			const Donya::Int2 ssPos
-			{	// Discard under the decimal point
-				scast<int>( ssPosF.x ),
-				scast<int>( ssPosF.y ),
-			};
-
-			return ssPos;
-		};
-
 		testTileWindow.pos = ssMouse;
 		testTileWindow.SetNextWindow();
 		if ( ImGui::BeginIfAllowed( u8"ƒ^ƒCƒ‹" ) )
 		{
 			ImGui::Text( u8"World: [X:%5.2f][Y:%5.2f][Z:%5.2f]", wsMouse.x, wsMouse.y, wsMouse.z );
 			
-			const auto tileIndex = ToTileIndex( wsMouse );
+			const auto tileIndex = Map::ToTilePos( wsMouse );
 			ImGui::Text( u8"Tile Index: [X:%3d][Y:%3d]", tileIndex.x, tileIndex.y );
 			
 			auto pTile = pMap->GetPlaceTileOrNullptr( wsMouse );
