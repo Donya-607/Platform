@@ -483,22 +483,8 @@ void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const
 }
 void Player::MoverBase::AssignBodyParameter( Player &inst )
 {
-	inst.body.offset	= GetBodyPosOffset( /* ofHurtBox = */ false );
-	inst.body.size		= GetBodyHalfSize ( /* ofHurtBox = */ false );
-	inst.hurtBox.offset	= GetBodyPosOffset( /* ofHurtBox = */ true  );
-	inst.hurtBox.size	= GetBodyHalfSize ( /* ofHurtBox = */ true  );
-}
-const Donya::Vector3 &Player::MoverBase::GetBodyHalfSize ( bool ofHurtBox ) const
-{
-	return	( ofHurtBox )
-			? Parameter().Get().hurtBox.size
-			: Parameter().Get().hitBox.size;
-}
-const Donya::Vector3 &Player::MoverBase::GetBodyPosOffset( bool ofHurtBox ) const
-{
-	return	( ofHurtBox )
-			? Parameter().Get().hurtBox.offset
-			: Parameter().Get().hitBox.offset;
+	inst.body		= inst.GetNormalBody( /* ofHurtBox = */ false );
+	inst.hurtBox	= inst.GetNormalBody( /* ofHurtBox = */ true  );
 }
 
 void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
@@ -586,27 +572,9 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 									;
 	if ( slideIsEnd )
 	{
-		Donya::Collision::Box3F normalBody{};
-		normalBody.pos		= inst.body.pos;
-		normalBody.offset	= Parameter().Get().hitBox.offset;
-		normalBody.size		= Parameter().Get().hitBox.size;
-		normalBody.exist	= true;
-		const auto aroundTiles	= terrain.GetPlaceTiles( normalBody, inst.velocity * elapsedTime );
-		const auto aroundSolids	= Map::ToAABB( aroundTiles );
-
-		const size_t solidCount = aroundSolids.size();
-		size_t collideIndex = solidCount;
-		for ( size_t i = 0; i < solidCount; ++i )
-		{
-			if ( Donya::Collision::IsHit( normalBody, aroundSolids[i] ) )
-			{
-				collideIndex = i;
-				break;
-			}
-		}
-
-		// If collided to any
-		if ( collideIndex < solidCount )
+		const Donya::Collision::Box3F normalBody = inst.GetNormalBody( /* ofHurtBox = */ false );
+		
+		if ( inst.WillCollideToAroundTiles( normalBody, inst.velocity * elapsedTime, terrain ) )
 		{
 			// I can not finish the sliding now, because I will be buried.
 			if ( moveToBackward )
@@ -753,33 +721,26 @@ std::function<void()> Player::Slide::GetChangeStateMethod( Player &inst ) const
 
 	return [&inst]() { inst.AssignMover<Normal>(); };
 }
-const Donya::Vector3 &Player::Slide::GetBodyHalfSize(  bool ofHurtBox )  const
+void Player::Slide::AssignBodyParameter( Player &inst )
 {
-	return	( ofHurtBox )
-			? Parameter().Get().slideHurtBox.size
-			: Parameter().Get().slideHitBox.size;
-}
-const Donya::Vector3 &Player::Slide::GetBodyPosOffset( bool ofHurtBox ) const
-{
-	return	( ofHurtBox )
-			? Parameter().Get().slideHurtBox.offset
-			: Parameter().Get().slideHitBox.offset;
+	inst.body		= inst.GetSlidingBody( /* ofHurtBox = */ false );
+	inst.hurtBox	= inst.GetSlidingBody( /* ofHurtBox = */ true  );
 }
 
 void Player::KnockBack::Init( Player &inst )
 {
 	MoverBase::Init( inst );
 
-	// TODO: I should consider the sliding status to knock-back sign
-
-	const bool  knockedFromRight	= ( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight );
-	const float impulseSign			= ( knockedFromRight ) ? -1.0f : 1.0f;
-	inst.velocity.x = Parameter().Get().knockBackSpeed * impulseSign;
+	const bool knockedFromRight = ( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight );
 	inst.UpdateOrientation( knockedFromRight );
+
+	if ( !inst.prevSlidingStatus )
+	{
+		const float impulseSign = ( knockedFromRight ) ? -1.0f : 1.0f;
+		inst.velocity.x = Parameter().Get().knockBackSpeed * impulseSign;
+	}
 	
 	timer = 0.0f;
-
-	Donya::Sound::Play( Music::Player_Damage );
 }
 void Player::KnockBack::Uninit( Player &inst )
 {
@@ -861,6 +822,7 @@ void Player::Init( const PlayerInitializer &initializer )
 	velocity			= 0.0f;
 	motionManager.Init();
 	currentHP			= data.maxHP;
+	prevSlidingStatus	= false;
 	onGround			= false;
 	
 	UpdateOrientation( initializer.ShouldLookingRight() );
@@ -909,7 +871,22 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 		else
 		{
 			invincibleTimer.Start( Parameter().Get().invincibleSeconds );
-			AssignMover<KnockBack>();
+
+			if ( prevSlidingStatus )
+			{
+				// If now throughing under a tile, I do not knock-backing.
+				// Else do knock-backing but do not push back the position(it will process in KnockBack::Init()).
+				if ( !WillCollideToAroundTiles( GetNormalBody( /* ofHurtBox = */ false ), velocity * elapsedTime, terrain ) )
+				{
+					AssignMover<KnockBack>();
+				}
+			}
+			else
+			{
+				AssignMover<KnockBack>();
+			}
+
+			Donya::Sound::Play( Music::Player_Damage );
 		}
 
 		pReceivedDamage.reset();
@@ -924,6 +901,8 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 		auto ChangeMethod = pMover->GetChangeStateMethod( *this );
 		ChangeMethod();
 	}
+
+	prevSlidingStatus = pMover->NowSliding( *this );
 }
 void Player::PhysicUpdate( float elapsedTime, const Map &terrain )
 {
@@ -1051,6 +1030,47 @@ void Player::GiveDamageImpl( const Definition::Damage &damage, float distLeft, f
 
 	pReceivedDamage->damage = damage;
 	pReceivedDamage->knockedFromRight = knockedFromRight;
+}
+Donya::Collision::Box3F Player::GetNormalBody ( bool ofHurtBox ) const
+{
+	const auto &data = Parameter().Get();
+
+	Donya::Collision::Box3F tmp = ( ofHurtBox ) ? data.hurtBox : data.hitBox;
+	tmp.pos			= ( ofHurtBox ) ? hurtBox.pos			: body.pos;
+	tmp.id			= ( ofHurtBox ) ? hurtBox.id			: body.id;
+	tmp.ownerID		= ( ofHurtBox ) ? hurtBox.ownerID		: body.ownerID;
+	tmp.ignoreList	= ( ofHurtBox ) ? hurtBox.ignoreList	: body.ignoreList;
+	tmp.exist		= ( ofHurtBox ) ? hurtBox.exist			: body.exist;
+	return tmp;
+}
+Donya::Collision::Box3F Player::GetSlidingBody( bool ofHurtBox ) const
+{
+	const auto &data = Parameter().Get();
+
+	Donya::Collision::Box3F tmp = ( ofHurtBox ) ? data.slideHurtBox : data.slideHitBox;
+	tmp.pos			= ( ofHurtBox ) ? hurtBox.pos			: body.pos;
+	tmp.id			= ( ofHurtBox ) ? hurtBox.id			: body.id;
+	tmp.ownerID		= ( ofHurtBox ) ? hurtBox.ownerID		: body.ownerID;
+	tmp.ignoreList	= ( ofHurtBox ) ? hurtBox.ignoreList	: body.ignoreList;
+	tmp.exist		= ( ofHurtBox ) ? hurtBox.exist			: body.exist;
+	return tmp;
+}
+bool Player::WillCollideToAroundTiles( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
+{
+	const auto aroundTiles	= terrain.GetPlaceTiles( body, movement );
+	const auto aroundSolids	= Map::ToAABB( aroundTiles );
+
+	const size_t solidCount = aroundSolids.size();
+	size_t collideIndex = solidCount;
+	for ( size_t i = 0; i < solidCount; ++i )
+	{
+		if ( Donya::Collision::IsHit( body, aroundSolids[i] ) )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 void Player::MoveHorizontal( float elapsedTime, Input input )
 {

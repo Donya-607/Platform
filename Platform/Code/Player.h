@@ -135,9 +135,7 @@ private:
 		virtual std::string GetMoverName() const = 0;
 	#endif // USE_IMGUI
 	protected:
-		void AssignBodyParameter( Player &instance );
-		virtual const Donya::Vector3 &GetBodyHalfSize ( bool ofHurtBox ) const;
-		virtual const Donya::Vector3 &GetBodyPosOffset( bool ofHurtBox ) const;
+		virtual void AssignBodyParameter( Player &instance );
 	protected:
 		void MotionUpdate( Player &instance, float elapsedTime );
 		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const Map &terrain );
@@ -180,8 +178,7 @@ private:
 		std::string GetMoverName() const override { return u8"スライディング"; }
 	#endif // USE_IMGUI
 	private:
-		const Donya::Vector3 &GetBodyHalfSize ( bool ofHurtBox ) const override;
-		const Donya::Vector3 &GetBodyPosOffset( bool ofHurtBox ) const override;
+		void AssignBodyParameter( Player &instance ) override;
 	};
 	class KnockBack : public MoverBase
 	{
@@ -225,6 +222,7 @@ private:
 	float						keepJumpSecond			= 0.0f;
 	float						keepShotSecond			= 0.0f;
 	bool						wasReleasedJumpInput	= false;
+	bool						prevSlidingStatus		= false;
 	bool						onGround				= false;
 
 	struct DamageDesc
@@ -265,6 +263,9 @@ private:
 		pMover->Init( *this );
 	}
 private:
+	Donya::Collision::Box3F GetNormalBody ( bool ofHurtBox ) const;
+	Donya::Collision::Box3F GetSlidingBody( bool ofHurtBox ) const;
+	bool WillCollideToAroundTiles( const Donya::Collision::Box3F &verifyBody, const Donya::Vector3 &movement, const Map &terrain ) const;
 	using Actor::MoveX;
 	using Actor::MoveY;
 	using Actor::MoveZ;
