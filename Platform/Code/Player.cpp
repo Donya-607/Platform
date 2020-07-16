@@ -406,6 +406,22 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst ) const
 	return MotionKind::Idle;
 }
 
+void Player::ShotManager::Init()
+{
+	chargeSecond = 0.0f;
+}
+void Player::ShotManager::Update( float elapsedTime, Input input )
+{
+	if ( input.useShot )
+	{
+		chargeSecond += elapsedTime;
+	}
+	else
+	{
+		chargeSecond = 0.0f;
+	}
+}
+
 void Player::Flusher::Start( float flushingSeconds )
 {
 	workingSeconds	= flushingSeconds;
@@ -821,6 +837,7 @@ void Player::Init( const PlayerInitializer &initializer )
 	hurtBox.pos			= body.pos;
 	velocity			= 0.0f;
 	motionManager.Init();
+	shotManager.Init();
 	currentHP			= data.maxHP;
 	prevSlidingStatus	= false;
 	onGround			= false;
@@ -837,7 +854,6 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 {
 #if USE_IMGUI
 	// Apply for be able to see an adjustment immediately
-	if ( 0 )
 	{
 		const auto &data = Parameter().Get();
 		auto ApplyExceptPosition = []( Donya::Collision::Box3F *p, const Donya::Collision::Box3F &source )
@@ -847,8 +863,16 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 			p->exist	= source.exist;
 		};
 
-		ApplyExceptPosition( &body,		data.hitBox  );
-		ApplyExceptPosition( &hurtBox,	data.hurtBox );
+		if ( prevSlidingStatus )
+		{
+			ApplyExceptPosition( &body,		data.slideHitBox  );
+			ApplyExceptPosition( &hurtBox,	data.slideHurtBox );
+		}
+		else
+		{
+			ApplyExceptPosition( &body,		data.hitBox  );
+			ApplyExceptPosition( &hurtBox,	data.hurtBox );
+		}
 	}
 #endif // USE_IMGUI
 

@@ -107,6 +107,24 @@ private:
 		bool ShouldEnableLoop( MotionKind kind ) const;
 		MotionKind CalcNowKind( Player &instance ) const;
 	};
+	class ShotManager
+	{
+	public:
+		enum class Level
+		{
+			Normal,	// 1 damage.
+			Tough,	// 2 damage, Pierce.
+			Strong	// 3 damage, Pierce.
+		};
+	private:
+		Level chargeLevel  = Level::Normal;
+		float chargeSecond = 0.0f;
+	public:
+		void Init();
+		void Update( float elapsedTime, Input input );
+	public:
+		Level ChargeLevel() const { return chargeLevel; }
+	};
 	class Flusher
 	{
 	private:
@@ -216,6 +234,7 @@ private:
 	Donya::Vector3				velocity;	// Z element is almost unused.
 	Donya::Quaternion			orientation;
 	MotionManager				motionManager;
+	ShotManager					shotManager;
 	Flusher						invincibleTimer;
 	std::unique_ptr<MoverBase>	pMover					= nullptr;
 	int							currentHP				= 1;

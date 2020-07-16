@@ -1,6 +1,6 @@
 #include "Damage.h"
 
-#define scast static_cast
+#include "Constant.h"	// Use scast macro
 
 namespace Definition
 {
@@ -11,6 +11,7 @@ namespace Definition
 
 		std::string str = "";
 		if ( scast<int>( value & Type::Buster ) != 0 ) { str += "[Buster]"; }
+		if ( scast<int>( value & Type::Pierce ) != 0 ) { str += "[Pierce]"; }
 		return str;
 	}
 	Damage::Type Damage::Add( Type lhs, Type rhs )

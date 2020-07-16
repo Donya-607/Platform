@@ -18,6 +18,7 @@ namespace Definition
 		{
 			None	= 0,
 			Buster	= 1 << 0,
+			Pierce	= 1 << 1,	// If an other is broken by damage, a breaker object is not receive an impact.
 		};
 	public:
 		/// <summary>

@@ -2,6 +2,10 @@
 
 #include <vector>
 
+#undef max
+#undef min
+#include <cereal/types/memory.hpp>
+
 #include "Donya/Collision.h"
 #include "Donya/Quaternion.h"
 #include "Donya/Serializer.h"
@@ -68,6 +72,7 @@ namespace Bullet
 		float			initialSpeed	= 1.0f;			// [m/s]
 		Donya::Vector3	direction{ 1.0f, 0.0f, 0.0f };	// Unit vector
 		Donya::Vector3	position;
+		std::shared_ptr<Definition::Damage> pOverrideDamage = nullptr; // If it is not a nullptr, the fire requestor desires override damage.
 	public:
 		Donya::Collision::IDType owner = Donya::Collision::invalidID;
 	private:
@@ -86,6 +91,10 @@ namespace Bullet
 				archive( CEREAL_NVP( kind ) );
 			}
 			if ( 2 <= version )
+			{
+				archive( CEREAL_NVP( pOverrideDamage ) );
+			}
+			if ( 3 <= version )
 			{
 				// archive( CEREAL_NVP() );
 			}
@@ -201,4 +210,4 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::FireDesc, 1 )
+CEREAL_CLASS_VERSION( Bullet::FireDesc, 2 )
