@@ -1,6 +1,11 @@
 #pragma once
 
 #include <string>
+#include <vector>
+
+#undef max
+#undef min
+#include <cereal/types/vector.hpp>
 
 #include "Donya/Collision.h"
 #include "Donya/Serializer.h"
@@ -30,6 +35,7 @@ public:
 	Donya::Collision::Box3F	slideHitBox;	// VS a terrain when sliding
 	Donya::Collision::Box3F	slideHurtBox;	// VS an attack(e.g. enemy) when sliding
 	Bullet::FireDesc		fireParam;
+	std::vector<float>		chargeSeconds;	// It size() == Player::ShotLevel::LevelCount
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -78,6 +84,10 @@ private:
 		}
 		if ( 5 <= version )
 		{
+			archive( CEREAL_NVP( chargeSeconds ) );
+		}
+		if ( 6 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -86,4 +96,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 4 )
+CEREAL_CLASS_VERSION( PlayerParam, 5 )

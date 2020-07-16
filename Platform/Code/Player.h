@@ -90,6 +90,14 @@ public:
 
 		MotionCount
 	};
+	enum class ShotLevel
+	{
+		Normal,	// 1 damage.
+		Tough,	// 2 damage, Pierce.
+		Strong,	// 3 damage, Pierce.
+
+		LevelCount // Invalid
+	};
 private:
 	class MotionManager
 	{
@@ -109,21 +117,14 @@ private:
 	};
 	class ShotManager
 	{
-	public:
-		enum class Level
-		{
-			Normal,	// 1 damage.
-			Tough,	// 2 damage, Pierce.
-			Strong	// 3 damage, Pierce.
-		};
 	private:
-		Level chargeLevel  = Level::Normal;
+		ShotLevel chargeLevel = ShotLevel::Normal;
 		float chargeSecond = 0.0f;
 	public:
 		void Init();
 		void Update( float elapsedTime, Input input );
 	public:
-		Level ChargeLevel() const { return chargeLevel; }
+		ShotLevel ChargeLevel() const { return chargeLevel; }
 	};
 	class Flusher
 	{

@@ -288,8 +288,28 @@ void PlayerParam::ShowImGuiNode()
 	ImGui::DragFloat( u8"のけぞり速度",			&knockBackSpeed,	0.01f	);
 	ImGui::DragFloat( u8"無敵秒数",				&invincibleSeconds,	0.01f	);
 	ImGui::DragFloat( u8"無敵中点滅間隔（秒）",	&flushingInterval,	0.01f	);
-	fireParam.ShowImGuiNode( u8"ショット設定" );
-	ImGui::DragInt( u8"画面内に出せる弾数",	&maxBusterCount );
+
+	constexpr size_t levelCount = scast<size_t>( Player::ShotLevel::LevelCount );
+	if ( chargeSeconds.size() != levelCount )
+	{
+		chargeSeconds.resize( levelCount, 1.0f );
+	}
+	if ( ImGui::TreeNode( u8"ショット設定" ) )
+	{
+		fireParam.ShowImGuiNode( u8"発射情報" );
+		ImGui::DragInt( u8"画面内に出せる弾数",	&maxBusterCount );
+
+		if ( ImGui::TreeNode( u8"チャージ時間設定" ) )
+		{
+
+			ImGui::TreePop();
+		}
+
+		maxBusterCount = std::max( 1, maxBusterCount );
+
+		ImGui::TreePop();
+	}
+
 	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定", &hitBox  );
 	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定", &hurtBox );
 	ImGui::Helper::ShowAABBNode( u8"スライド中・地形との当たり判定", &slideHitBox  );
@@ -299,7 +319,7 @@ void PlayerParam::ShowImGuiNode()
 	{
 		*v = std::max( 0.001f, *v );
 	};
-	maxHP			= std::max( 1, maxHP			);
+	maxHP = std::max( 1, maxHP			);
 	MakePositive( &moveSpeed			);
 	MakePositive( &slideMoveSpeed		);
 	MakePositive( &slideMoveSeconds		);
@@ -311,7 +331,6 @@ void PlayerParam::ShowImGuiNode()
 	MakePositive( &knockBackSpeed		);
 	MakePositive( &invincibleSeconds	);
 	MakePositive( &flushingInterval		);
-	maxBusterCount	= std::max( 1, maxBusterCount	);
 }
 #endif // USE_IMGUI
 
