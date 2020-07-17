@@ -18,9 +18,9 @@ namespace Bullet
 		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
 	public:
-		Kind				GetKind()	const override;
-		Definition::Damage	GetDamage()	const override;
+		Kind GetKind() const override;
 	private:
+		Definition::Damage GetDamageParameter() const override;
 		void AssignBodyParameter( const Donya::Vector3 &wsPos ) override;
 	public:
 	#if USE_IMGUI

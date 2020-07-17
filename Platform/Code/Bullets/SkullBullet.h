@@ -12,9 +12,9 @@ namespace Bullet
 	public:
 		void Uninit() override;
 	public:
-		Kind				GetKind()	const override;
-		Definition::Damage	GetDamage()	const override;
+		Kind GetKind() const override;
 	private:
+		Definition::Damage GetDamageParameter() const override;
 		void AssignBodyParameter( const Donya::Vector3 &wsPos ) override;
 	};
 
@@ -61,9 +61,9 @@ namespace Bullet
 		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 		void Draw( RenderingHelper *pRenderer ) const override;
 	public:
-		Kind				GetKind()	const override;
-		Definition::Damage	GetDamage()	const override;
+		Kind GetKind() const override;
 	private:
+		Definition::Damage GetDamageParameter() const override;
 		void AssignBodyParameter( const Donya::Vector3 &wsPos ) override;
 	};
 

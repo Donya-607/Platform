@@ -73,7 +73,7 @@ namespace Bullet
 		Donya::Vector3	direction{ 1.0f, 0.0f, 0.0f };	// Unit vector
 		Donya::Vector3	position;
 		// shared_ptr<> make be able to copy
-		std::shared_ptr<Definition::Damage> pOverrideDamage = nullptr; // If it is not a nullptr, the fire requestor desires override damage.
+		std::shared_ptr<Definition::Damage> pAdditionalDamage = nullptr; // If it is not a nullptr, the fire requestor desires add a damage.
 	public:
 		Donya::Collision::IDType owner = Donya::Collision::invalidID;
 	private:
@@ -93,7 +93,7 @@ namespace Bullet
 			}
 			if ( 2 <= version )
 			{
-				archive( CEREAL_NVP( pOverrideDamage ) );
+				archive( CEREAL_NVP( pAdditionalDamage ) );
 			}
 			if ( 3 <= version )
 			{
@@ -119,8 +119,7 @@ namespace Bullet
 		Donya::Collision::Sphere3F		hitSphere;	// Hit box as Sphere
 		Donya::Vector3					velocity;	// [m/s]
 		Donya::Quaternion				orientation;
-		// shared_ptr<> make be able to copy
-		std::shared_ptr<Definition::Damage> pOverrideDamage = nullptr; // If it is not a nullptr, the fire requestor desires override damage.
+		Definition::Damage				damage;
 
 		bool							wantRemove		= false;
 		mutable bool					wasCollided		= false;
@@ -157,7 +156,7 @@ namespace Bullet
 		using						 Solid::GetHitBox;
 		virtual Donya::Collision::Sphere3F	GetHitSphere()	const;
 		virtual Kind						GetKind()		const = 0;
-		virtual Definition::Damage			GetDamage()		const = 0;
+		Definition::Damage					GetDamage()		const;
 	public:
 		virtual void SetWorldPosition( const Donya::Vector3 &wsPos );
 		virtual void SetVelocity( const Donya::Vector3 &newVelocity );
@@ -170,6 +169,10 @@ namespace Bullet
 		/// It will be called when update if it was protected. Default behavior will disable the exist of hit box.
 		/// </summary>
 		virtual void ProtectedProcess();
+		/// <summary>
+		/// Returns constant parameter of damage.
+		/// </summary>
+		virtual Definition::Damage GetDamageParameter() const = 0;
 		virtual void AssignBodyParameter( const Donya::Vector3 &wsPos ) = 0;
 		virtual void InitBody( const FireDesc &parameter );
 		virtual void UpdateOrientation( const Donya::Vector3 &direction );

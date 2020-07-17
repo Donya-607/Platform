@@ -47,7 +47,7 @@ namespace Bullet
 	{
 		return Kind::SkullBuster;
 	}
-	Definition::Damage SkullBuster::GetDamage() const
+	Definition::Damage SkullBuster::GetDamageParameter() const
 	{
 		return Parameter::GetSkullBuster().damage;
 	}
@@ -123,7 +123,7 @@ namespace Bullet
 	{
 		return Kind::SkullShield;
 	}
-	Definition::Damage SkullShield::GetDamage() const
+	Definition::Damage SkullShield::GetDamageParameter() const
 	{
 		return Parameter::GetSkullShield().damage;
 	}

@@ -211,7 +211,11 @@ namespace Bullet
 
 		velocity	= parameter.direction * parameter.initialSpeed;
 		UpdateOrientation( parameter.direction );
-		pOverrideDamage = parameter.pOverrideDamage;
+		damage		= GetDamageParameter();
+		if ( parameter.pAdditionalDamage )
+		{
+			damage.Combine( *parameter.pAdditionalDamage );
+		}
 		wantRemove	= false;
 	}
 	void Base::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
@@ -319,14 +323,8 @@ namespace Bullet
 	}
 	void Base::CollidedToObject( bool otherIsBroken ) const
 	{
-		auto HasPierce = []( const Definition::Damage &damage )
-		{
-			return Definition::Damage::Contain( Definition::Damage::Type::Pierce, damage.type );
-		};
-
-		const auto paramDamage	= GetDamage();
-		const bool pierceable	= HasPierce( paramDamage ) || ( pOverrideDamage && HasPierce( *pOverrideDamage ) );
-		if ( pierceable ) { return; }
+		const bool pierceable = Definition::Damage::Contain( Definition::Damage::Type::Pierce, damage.type );
+		if ( otherIsBroken && pierceable ) { return; }
 		// else
 
 		wasCollided = true;
@@ -376,6 +374,10 @@ namespace Bullet
 	Donya::Collision::Sphere3F Base::GetHitSphere() const
 	{
 		return hitSphere;
+	}
+	Definition::Damage Base::GetDamage() const
+	{
+		return damage;
 	}
 	void Base::SetWorldPosition( const Donya::Vector3 &wsPos )
 	{

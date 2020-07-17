@@ -1224,9 +1224,9 @@ void Player::ShotIfRequested( float elapsedTime, Input input )
 	if ( level != ShotLevel::Normal && level != ShotLevel::LevelCount )
 	{
 		using Dmg = Definition::Damage;
-		desc.pOverrideDamage			= std::make_shared<Dmg>();
-		desc.pOverrideDamage->amount	= scast<int>( level ) + 1;
-		desc.pOverrideDamage->type		= Dmg::Add( Dmg::Type::Pierce, desc.pOverrideDamage->type );
+		desc.pAdditionalDamage			= std::make_shared<Dmg>();
+		desc.pAdditionalDamage->amount	= scast<int>( level );
+		desc.pAdditionalDamage->type	= Dmg::Type::Pierce;
 	}
 		
 	Bullet::Admin::Get().RequestFire( desc );

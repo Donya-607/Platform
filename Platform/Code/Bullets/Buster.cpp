@@ -47,7 +47,7 @@ namespace Bullet
 	{
 		return Kind::Buster;
 	}
-	Definition::Damage Buster::GetDamage() const
+	Definition::Damage Buster::GetDamageParameter() const
 	{
 		return Parameter::GetBuster().damage;
 	}
