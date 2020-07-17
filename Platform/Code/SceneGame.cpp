@@ -925,7 +925,7 @@ void SceneGame::Collision_BulletVSPlayer()
 		if ( Donya::Collision::IsHit( playerBody, bulletAABB ) )
 		{
 			pPlayer->GiveDamage( pBullet->GetDamage(), bulletAABB );
-			pBullet->CollidedToObject();
+			pBullet->CollidedToObject( pPlayer->WillDie() );
 			continue;
 		}
 		// else
@@ -934,7 +934,7 @@ void SceneGame::Collision_BulletVSPlayer()
 		if ( Donya::Collision::IsHit( playerBody, bulletSphere ) )
 		{
 			pPlayer->GiveDamage( pBullet->GetDamage(), bulletSphere );
-			pBullet->CollidedToObject();
+			pBullet->CollidedToObject( pPlayer->WillDie() );
 		}
 	}
 }

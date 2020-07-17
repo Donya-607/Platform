@@ -439,6 +439,11 @@ void Player::ShotManager::Update( float elapsedTime, Input input )
 {
 	prevChargeSecond = currChargeSecond;
 
+	// If calculate the charge level after update the "currChargeSecond",
+	// the level will be zero(ShotLevel::Normal) absolutely when fire timing, because that timing is the input was released.
+	// So I must calculate it before the update. It will not be late for one frame by this.
+	CalcChargeLevel();
+
 	if ( input.useShot )
 	{
 		currChargeSecond += elapsedTime;
@@ -447,26 +452,6 @@ void Player::ShotManager::Update( float elapsedTime, Input input )
 	{
 		currChargeSecond = 0.0f;
 	}
-
-	const auto &data = Parameter().Get();
-
-	constexpr ShotLevel compareHighLevels[]
-	{
-		ShotLevel::Strong,
-		ShotLevel::Tough,
-	};
-
-	bool assigned = false;
-	for ( const auto &it : compareHighLevels )
-	{
-		if ( data.chargeSeconds[scast<int>( it )] <= currChargeSecond )
-		{
-			chargeLevel	= it;
-			assigned	= true;
-			break;
-		}
-	}
-	if ( !assigned ) { chargeLevel = ShotLevel::Normal; }
 }
 bool Player::ShotManager::IsShotRequested() const
 {
@@ -475,6 +460,35 @@ bool Player::ShotManager::IsShotRequested() const
 
 	return ( prevIsZero && !currIsZero )	// Now triggered a button
 		|| ( !prevIsZero && currIsZero );	// Now released a button
+}
+void Player::ShotManager::CalcChargeLevel()
+{
+	const auto &data = Parameter().Get();
+
+	constexpr std::array<ShotLevel, 2> compareHighLevels
+	{
+		ShotLevel::Strong,
+		ShotLevel::Tough,
+	};
+
+	if ( data.chargeSeconds.size() < compareHighLevels.size() )
+	{
+		chargeLevel = ShotLevel::Normal;
+	}
+	else
+	{
+		bool assigned = false;
+		for ( const auto &it : compareHighLevels )
+		{
+			if ( data.chargeSeconds[scast<int>( it )] <= currChargeSecond )
+			{
+				chargeLevel = it;
+				assigned = true;
+				break;
+			}
+		}
+		if ( !assigned ) { chargeLevel = ShotLevel::Normal; }
+	}
 }
 
 void Player::Flusher::Start( float flushingSeconds )
@@ -942,36 +956,7 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 	}
 	// else
 
-	if ( pReceivedDamage )
-	{
-		currentHP -= pReceivedDamage->damage.amount;
-		if ( currentHP <= 0 )
-		{
-			AssignMover<Miss>();
-		}
-		else
-		{
-			invincibleTimer.Start( Parameter().Get().invincibleSeconds );
-
-			if ( prevSlidingStatus )
-			{
-				// If now throughing under a tile, I do not knock-backing.
-				// Else do knock-backing but do not push back the position(it will process in KnockBack::Init()).
-				if ( !WillCollideToAroundTiles( GetNormalBody( /* ofHurtBox = */ false ), velocity * elapsedTime, terrain ) )
-				{
-					AssignMover<KnockBack>();
-				}
-			}
-			else
-			{
-				AssignMover<KnockBack>();
-			}
-
-			Donya::Sound::Play( Music::Player_Damage );
-		}
-
-		pReceivedDamage.reset();
-	}
+	ApplyReceivedDamageIfHas( elapsedTime, terrain );
 
 	invincibleTimer.Update( elapsedTime );
 	hurtBox.exist = !invincibleTimer.NowWorking();
@@ -1085,6 +1070,12 @@ void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collisio
 	const float distRight	= otherRight - myCenter.x;
 	GiveDamageImpl( damage, distLeft, distRight );
 }
+bool Player::WillDie() const
+{
+	if ( !pReceivedDamage ) { return false; }
+
+	return ( currentHP - pReceivedDamage->damage.amount <= 0 );
+}
 void Player::GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const
 {
 	// Receive only smallest damage if same timing
@@ -1111,6 +1102,39 @@ void Player::GiveDamageImpl( const Definition::Damage &damage, float distLeft, f
 
 	pReceivedDamage->damage = damage;
 	pReceivedDamage->knockedFromRight = knockedFromRight;
+}
+void Player::ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain )
+{
+	if ( !pReceivedDamage ) { return; }
+	// else
+
+	currentHP -= pReceivedDamage->damage.amount;
+	if ( currentHP <= 0 )
+	{
+		AssignMover<Miss>();
+	}
+	else
+	{
+		invincibleTimer.Start( Parameter().Get().invincibleSeconds );
+
+		if ( prevSlidingStatus )
+		{
+			// If now throughing under a tile, I do not knock-backing.
+			// Else do knock-backing but do not push back the position(it will process in KnockBack::Init()).
+			if ( !WillCollideToAroundTiles( GetNormalBody( /* ofHurtBox = */ false ), velocity * elapsedTime, terrain ) )
+			{
+				AssignMover<KnockBack>();
+			}
+		}
+		else
+		{
+			AssignMover<KnockBack>();
+		}
+
+		Donya::Sound::Play( Music::Player_Damage );
+	}
+
+	pReceivedDamage.reset();
 }
 Donya::Collision::Box3F Player::GetNormalBody ( bool ofHurtBox ) const
 {
@@ -1296,7 +1320,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::SliderFloat3( u8"前方向",		&front.x, -1.0f, 1.0f );
 	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), front.Unit(), Donya::Quaternion::Freeze::Up );
 
-	ImGui::Text( u8"%6.3f: ショットを入力し続けている秒数", shotManager.ChargeSecond() );
+	ImGui::Text( u8"%06.3f: ショットを入力し続けている秒数", shotManager.ChargeSecond() );
 	ImGui::Text( u8"%d: チャージレベル", scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::DragFloat( u8"ジャンプを入力し続けている秒数", &keepJumpSecond, 0.01f );
 	ImGui::Checkbox( u8"ジャンプ入力を離したか",	&wasReleasedJumpInput );

@@ -128,6 +128,8 @@ private:
 		bool		IsShotRequested() const;
 		float		ChargeSecond()	const { return currChargeSecond;	}
 		ShotLevel	ChargeLevel()	const { return chargeLevel;			}
+	private:
+		void CalcChargeLevel();
 	};
 	class Flusher
 	{
@@ -264,13 +266,22 @@ public:
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
 public:
 	bool NowMiss() const;
-	using Actor::GetHitBox;
-	Donya::Collision::Box3F	GetHurtBox()		const;
-	Donya::Quaternion		GetOrientation()	const;
+	using				 Actor::GetHitBox;
+	Donya::Collision::Box3F		GetHurtBox()		const;
+	Donya::Quaternion			GetOrientation()	const;
 	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F	&collidingHitBox ) const;
 	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Sphere3F	&collidingHitBox ) const;
+	/// <summary>
+	/// GiveDamage() is not apply damage as immediately, so if you wanna know to will dead by GiveDamage(), you should use this instead of NowDead().
+	/// It may return false even when NowDead() is true.
+	/// </summary>
+	virtual bool				WillDie()			const;
 private:
 	void GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const;
+	/// <summary>
+	/// After this, the "pReceivedDamage" will be reset.
+	/// </summary>
+	void ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain );
 private:
 	template<class Mover>
 	void AssignMover()
