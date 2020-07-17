@@ -72,6 +72,7 @@ namespace Bullet
 		float			initialSpeed	= 1.0f;			// [m/s]
 		Donya::Vector3	direction{ 1.0f, 0.0f, 0.0f };	// Unit vector
 		Donya::Vector3	position;
+		// shared_ptr<> make be able to copy
 		std::shared_ptr<Definition::Damage> pOverrideDamage = nullptr; // If it is not a nullptr, the fire requestor desires override damage.
 	public:
 		Donya::Collision::IDType owner = Donya::Collision::invalidID;

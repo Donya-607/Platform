@@ -118,13 +118,16 @@ private:
 	class ShotManager
 	{
 	private:
-		ShotLevel chargeLevel = ShotLevel::Normal;
-		float chargeSecond = 0.0f;
+		ShotLevel chargeLevel  = ShotLevel::Normal;
+		float prevChargeSecond = 0.0f;
+		float currChargeSecond = 0.0f;
 	public:
 		void Init();
 		void Update( float elapsedTime, Input input );
 	public:
-		ShotLevel ChargeLevel() const { return chargeLevel; }
+		bool		IsShotRequested() const;
+		float		ChargeSecond()	const { return currChargeSecond;	}
+		ShotLevel	ChargeLevel()	const { return chargeLevel;			}
 	};
 	class Flusher
 	{
@@ -240,7 +243,6 @@ private:
 	std::unique_ptr<MoverBase>	pMover					= nullptr;
 	int							currentHP				= 1;
 	float						keepJumpSecond			= 0.0f;
-	float						keepShotSecond			= 0.0f;
 	bool						wasReleasedJumpInput	= false;
 	bool						prevSlidingStatus		= false;
 	bool						onGround				= false;
@@ -292,7 +294,7 @@ private:
 	using Actor::DrawHitBox;
 	void MoveHorizontal( float elapsedTime, Input input );
 	void MoveVertical  ( float elapsedTime, Input input );
-	void Shot( float elapsedTime, Input input );
+	void ShotIfRequested( float elapsedTime, Input input );
 	void UpdateOrientation( bool lookingRight );
 	void Jump();
 	bool Jumpable() const;

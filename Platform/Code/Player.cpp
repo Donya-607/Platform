@@ -299,8 +299,13 @@ void PlayerParam::ShowImGuiNode()
 		fireParam.ShowImGuiNode( u8"発射情報" );
 		ImGui::DragInt( u8"画面内に出せる弾数",	&maxBusterCount );
 
-		if ( ImGui::TreeNode( u8"チャージ時間設定" ) )
+		if ( ImGui::TreeNode( u8"チャージ秒数設定" ) )
 		{
+			ImGui::DragFloat( u8"通常", &chargeSeconds[scast<int>( Player::ShotLevel::Normal )], 0.1f );
+			chargeSeconds[scast<int>( Player::ShotLevel::Normal )] = 0.0f;
+
+			ImGui::DragFloat( u8"強化", &chargeSeconds[scast<int>( Player::ShotLevel::Tough  )], 0.1f );
+			ImGui::DragFloat( u8"最大", &chargeSeconds[scast<int>( Player::ShotLevel::Strong )], 0.1f );
 
 			ImGui::TreePop();
 		}
@@ -427,18 +432,49 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst ) const
 
 void Player::ShotManager::Init()
 {
-	chargeSecond = 0.0f;
+	prevChargeSecond = 0.0f;
+	currChargeSecond = 0.0f;
 }
 void Player::ShotManager::Update( float elapsedTime, Input input )
 {
+	prevChargeSecond = currChargeSecond;
+
 	if ( input.useShot )
 	{
-		chargeSecond += elapsedTime;
+		currChargeSecond += elapsedTime;
 	}
 	else
 	{
-		chargeSecond = 0.0f;
+		currChargeSecond = 0.0f;
 	}
+
+	const auto &data = Parameter().Get();
+
+	constexpr ShotLevel compareHighLevels[]
+	{
+		ShotLevel::Strong,
+		ShotLevel::Tough,
+	};
+
+	bool assigned = false;
+	for ( const auto &it : compareHighLevels )
+	{
+		if ( data.chargeSeconds[scast<int>( it )] <= currChargeSecond )
+		{
+			chargeLevel	= it;
+			assigned	= true;
+			break;
+		}
+	}
+	if ( !assigned ) { chargeLevel = ShotLevel::Normal; }
+}
+bool Player::ShotManager::IsShotRequested() const
+{
+	const bool prevIsZero = IsZero( prevChargeSecond );
+	const bool currIsZero = IsZero( currChargeSecond );
+
+	return ( prevIsZero && !currIsZero )	// Now triggered a button
+		|| ( !prevIsZero && currIsZero );	// Now released a button
 }
 
 void Player::Flusher::Start( float flushingSeconds )
@@ -550,7 +586,7 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 		}
 	}
 
-	inst.Shot( elapsedTime, input );
+	inst.ShotIfRequested( elapsedTime, input );
 
 	MotionUpdate( inst, elapsedTime );
 }
@@ -897,6 +933,8 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 
 	hurtBox.UpdateIgnoreList( elapsedTime );
 
+	shotManager.Update( elapsedTime, input );
+
 	if ( !pMover )
 	{
 		_ASSERT_EXPR( 0, L"Error: Player's mover is not assigned!" );
@@ -1139,38 +1177,36 @@ void Player::MoveVertical  ( float elapsedTime, Input input )
 		Fall( elapsedTime, input );
 	}
 }
-void Player::Shot( float elapsedTime, Input input )
+void Player::ShotIfRequested( float elapsedTime, Input input )
 {
-	if ( !input.useShot )
-	{
-		keepShotSecond = 0.0f;
-		return;
-	}
+	if ( !shotManager.IsShotRequested() ) { return; }
 	// else
 
-	const bool nowTriggered = IsZero( keepShotSecond );
+	const auto &data = Parameter().Get();
+	if ( data.maxBusterCount <= Bullet::Buster::GetLivingCount() ) { return; }
+	// else
 
-	keepShotSecond += elapsedTime;
+	const Donya::Vector3 front = orientation.LocalFront();
+	const float dot = Donya::Dot( front, Donya::Vector3::Right() );
+	const float lookingSign = Donya::SignBitF( dot );
 
-	if ( nowTriggered )
+	Bullet::FireDesc desc = data.fireParam;
+	desc.direction	=  Donya::Vector3::Right() * lookingSign;
+	desc.position.x	*= lookingSign;
+	desc.position	+= GetPosition();
+	desc.owner		=  hurtBox.id;
+
+	const ShotLevel level = shotManager.ChargeLevel();
+	if ( level != ShotLevel::Normal && level != ShotLevel::LevelCount )
 	{
-		const auto &data = Parameter().Get();
-		if ( Bullet::Buster::GetLivingCount() < data.maxBusterCount )
-		{
-			const Donya::Vector3 front = orientation.LocalFront();
-			const float dot = Donya::Dot( front, Donya::Vector3::Right() );
-			const float lookingSign = Donya::SignBitF( dot );
-
-			Bullet::FireDesc desc = data.fireParam;
-			desc.direction	=  Donya::Vector3::Right() * lookingSign;
-			desc.position.x	*= lookingSign;
-			desc.position	+= GetPosition();
-			desc.owner		=  hurtBox.id;
-		
-			Bullet::Admin::Get().RequestFire( desc );
-			Donya::Sound::Play( Music::Player_Shot );
-		}
+		using Dmg = Definition::Damage;
+		desc.pOverrideDamage			= std::make_shared<Dmg>();
+		desc.pOverrideDamage->amount	= scast<int>( level ) + 1;
+		desc.pOverrideDamage->type		= Dmg::Add( Dmg::Type::Pierce, desc.pOverrideDamage->type );
 	}
+		
+	Bullet::Admin::Get().RequestFire( desc );
+	Donya::Sound::Play( Music::Player_Shot );
 }
 void Player::UpdateOrientation( bool lookingRight )
 {
@@ -1260,7 +1296,8 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::SliderFloat3( u8"前方向",		&front.x, -1.0f, 1.0f );
 	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), front.Unit(), Donya::Quaternion::Freeze::Up );
 
-	ImGui::DragFloat( u8"ショットを入力し続けている秒数", &keepShotSecond, 0.01f );
+	ImGui::Text( u8"%6.3f: ショットを入力し続けている秒数", shotManager.ChargeSecond() );
+	ImGui::Text( u8"%d: チャージレベル", scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::DragFloat( u8"ジャンプを入力し続けている秒数", &keepJumpSecond, 0.01f );
 	ImGui::Checkbox( u8"ジャンプ入力を離したか",	&wasReleasedJumpInput );
 	ImGui::Checkbox( u8"地上にいるか",			&onGround );
