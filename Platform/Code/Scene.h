@@ -20,6 +20,7 @@ public:
 		Load,
 		Title,
 		Game,
+		Over,
 		Result,
 		Pause,
 	};

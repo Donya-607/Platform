@@ -253,7 +253,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 			// Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true );
 
 			// TODO: Go to a game-over scene
-			StartFade( Scene::Type::Title );
+			StartFade( Scene::Type::Over );
 			// TODO: Impl it
 			// The remaining count will be re-set at transitioned scene.
 		}
