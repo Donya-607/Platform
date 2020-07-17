@@ -247,10 +247,23 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	PlayerUpdate( elapsedTime, mapRef );
 	if ( FetchParameter().waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
 	{
-		// TODO: Go to game-over scene here if the remains of player is less-eq than zero.
+		const int remaining = Player::Remaining::Get();
+		if ( remaining <= 0 )
+		{
+			// Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true );
 
-		// Re-try the game
-		StartFade( Scene::Type::Game );
+			// TODO: Go to a game-over scene
+			StartFade( Scene::Type::Title );
+			// TODO: Impl it
+			// The remaining count will be re-set at transitioned scene.
+		}
+		else
+		{
+			// Re-try the game
+			StartFade( Scene::Type::Game );
+
+			Player::Remaining::Decrement();
+		}
 	}
 
 	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
