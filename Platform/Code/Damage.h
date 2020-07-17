@@ -20,6 +20,7 @@ namespace Definition
 			Buster	= 1 << 0,
 			Pierce	= 1 << 1,	// If an other is broken by damage, a breaker object is not receive an impact.
 		};
+		static constexpr int TypeCount = 2; // Except the None
 	public:
 		/// <summary>
 		/// GetContainName( Buster | XXX ) returns "[Buster][XXX]".

@@ -196,8 +196,12 @@ namespace Bullet
 		ImGui::Checkbox( u8"ダメージを追加するか", &addDamage );
 		if ( addDamage )
 		{
+			if ( !pAdditionalDamage )
+			{
+				pAdditionalDamage = std::make_shared<Definition::Damage>();
+			}
+
 			ImGui::Text( u8"生成する弾の持つダメージ・属性等に合算します" );
-			pAdditionalDamage = std::make_shared<Definition::Damage>();
 			pAdditionalDamage->ShowImGuiNode( u8"加算ダメージ設定" );
 		}
 		else

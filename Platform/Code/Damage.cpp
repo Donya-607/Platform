@@ -29,35 +29,36 @@ namespace Definition
 #if USE_IMGUI
 	void Damage::ShowImGuiNode( const std::string &nodeCaption, Type *p, bool useTreeNode )
 	{
-		constexpr int typeCount = 1;
-		constexpr std::array<Type, typeCount> directions
+		constexpr std::array<Type, TypeCount> attributes
 		{
 			Type::Buster,
+			Type::Pierce,
 		};
 
-		std::array<bool, typeCount> states;
-		for ( int i = 0; i < typeCount; ++i )
+		std::array<bool, TypeCount> states;
+		for ( int i = 0; i < TypeCount; ++i )
 		{
-			states[i] = Contain( *p, directions[i] );
+			states[i] = Contain( *p, attributes[i] );
 		}
 
-		constexpr std::array<const char *, typeCount> captions
+		constexpr std::array<const char *, TypeCount> captions
 		{
 			"Buster",
+			"Pierce",
 		};
-		for ( int i = 0; i < typeCount; ++i )
+		for ( int i = 0; i < TypeCount; ++i )
 		{
 			ImGui::Checkbox( captions[i], &states[i] );
-			if ( i + 1 < typeCount )
+			if ( i + 1 < TypeCount )
 			{
 				ImGui::SameLine();
 			}
 		}
 
-		for ( int i = 0; i < typeCount; ++i )
+		for ( int i = 0; i < TypeCount; ++i )
 		{
-			if ( states[i] )	{ *p = Add		( *p, directions[i] ); }
-			else				{ *p = Subtract	( *p, directions[i] ); }
+			if ( states[i] )	{ *p = Add		( *p, attributes[i] ); }
+			else				{ *p = Subtract	( *p, attributes[i] ); }
 		}
 
 		ImGui::Text( u8"Œ»ÝF%s", GetContainName( *p ).c_str() );
