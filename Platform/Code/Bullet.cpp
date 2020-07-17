@@ -192,6 +192,20 @@ namespace Bullet
 		const char *caption = ( isRelativePos ) ? u8"生成位置（ローカル・相対）" : u8"ワールド座標";
 		ImGui::DragFloat3( caption, &position.x, 0.1f );
 
+		bool addDamage = ( !pAdditionalDamage ) ? false : true;
+		ImGui::Checkbox( u8"ダメージを追加するか", &addDamage );
+		if ( addDamage )
+		{
+			ImGui::Text( u8"生成する弾の持つダメージ・属性等に合算します" );
+			pAdditionalDamage = std::make_shared<Definition::Damage>();
+			pAdditionalDamage->ShowImGuiNode( u8"加算ダメージ設定" );
+		}
+		else
+		{
+			pAdditionalDamage.reset();
+			ImGui::TextDisabled( u8"加算ダメージ設定" );
+		}
+
 		ImGui::TreePop();
 	}
 
