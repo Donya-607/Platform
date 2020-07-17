@@ -358,10 +358,11 @@ namespace Enemy
 		}
 		
 		initializer.ShowImGuiNode( u8"初期化パラメータ" );
-		ImGui::DragFloat3( u8"ワールド座標", &body.pos.x, 0.01f );
+		ImGui::DragInt		( u8"現在ＨＰ",				&hp );
+		ImGui::DragFloat3	( u8"ワールド座標",			&body.pos.x, 0.01f );
 		ImGui::Helper::ShowFrontNode( "", &orientation );
-		ImGui::Text( u8"画面内にいる：%d", ( onOutSideCurrent ) ? 0 : 1 );
-		ImGui::Text( u8"リスポーン待ち：%d", ( waitForRespawn ) ? 1 : 0 );
+		ImGui::Text			( u8"画面内にいる：%d",		( onOutSideCurrent	) ? 0 : 1 );
+		ImGui::Text			( u8"リスポーン待ち：%d",		( waitForRespawn	) ? 1 : 0 );
 		if ( ImGui::Button( u8"リスポーン待ち状態にする" ) )
 		{
 			BeginWaitIfActive();

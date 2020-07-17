@@ -458,8 +458,12 @@ bool Player::ShotManager::IsShotRequested() const
 	const bool prevIsZero = IsZero( prevChargeSecond );
 	const bool currIsZero = IsZero( currChargeSecond );
 
-	return ( prevIsZero && !currIsZero )	// Now triggered a button
-		|| ( !prevIsZero && currIsZero );	// Now released a button
+	// I wanna fire a charge shot by release,
+	// but I don't wanna fire the normal shot by release.
+	const bool nowHighLevel = ( chargeLevel != ShotLevel::Normal && chargeLevel != ShotLevel::LevelCount );
+
+	return ( prevIsZero && !currIsZero )					// Now triggered a button
+		|| ( !prevIsZero && currIsZero && nowHighLevel );	// Now released a button, and now charging at least one.
 }
 void Player::ShotManager::CalcChargeLevel()
 {
@@ -1310,26 +1314,26 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::DragInt   ( u8"現在の体力",		&currentHP );
-	ImGui::Text      ( u8"現在のステート：%s", pMover->GetMoverName().c_str() );
+	ImGui::DragInt		( u8"現在の体力",					&currentHP );
+	ImGui::Text			( u8"現在のステート：%s",				pMover->GetMoverName().c_str() );
 
-	ImGui::DragFloat3( u8"ワールド座標",	&body.pos.x,	0.01f );
-	ImGui::DragFloat3( u8"速度",			&velocity.x,	0.01f );
-
-	Donya::Vector3 front = orientation.LocalFront();
-	ImGui::SliderFloat3( u8"前方向",		&front.x, -1.0f, 1.0f );
-	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), front.Unit(), Donya::Quaternion::Freeze::Up );
-
-	ImGui::Text( u8"%06.3f: ショットを入力し続けている秒数", shotManager.ChargeSecond() );
-	ImGui::Text( u8"%d: チャージレベル", scast<int>( shotManager.ChargeLevel() ) );
-	ImGui::DragFloat( u8"ジャンプを入力し続けている秒数", &keepJumpSecond, 0.01f );
-	ImGui::Checkbox( u8"ジャンプ入力を離したか",	&wasReleasedJumpInput );
-	ImGui::Checkbox( u8"地上にいるか",			&onGround );
+	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );
+	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
+	ImGui::DragFloat	( u8"ジャンプを入力し続けている秒数",	&keepJumpSecond, 0.01f );
+	ImGui::Checkbox		( u8"ジャンプ入力を離したか",			&wasReleasedJumpInput );
+	ImGui::Checkbox		( u8"地上にいるか",					&onGround );
 	bool tmp{};
 	tmp = pMover->NowKnockBacking( *this );
-	ImGui::Checkbox( u8"のけぞり中か",			&tmp );
+	ImGui::Checkbox		( u8"のけぞり中か",					&tmp );
 	tmp = invincibleTimer.NowWorking();
-	ImGui::Checkbox( u8"無敵中か",				&tmp );
+	ImGui::Checkbox		( u8"無敵中か",						&tmp );
+
+	ImGui::DragFloat3	( u8"ワールド座標",					&body.pos.x,	0.01f );
+	ImGui::DragFloat3	( u8"速度",							&velocity.x,	0.01f );
+
+	Donya::Vector3 front = orientation.LocalFront();
+	ImGui::SliderFloat3	( u8"前方向",						&front.x, -1.0f, 1.0f );
+	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), front.Unit(), Donya::Quaternion::Freeze::Up );
 
 	ImGui::TreePop();
 }
