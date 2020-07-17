@@ -18,6 +18,8 @@ struct PlayerParam
 public:
 	int		maxHP				= 28;
 	int		maxBusterCount		= 3;		// Max generatable count of buster at same time.
+	int		maxRemainCount		= 9;
+	int		initialRemainCount	= 2;
 	float	moveSpeed			= 1.0f;
 	float	slideMoveSpeed		= 1.0f;
 	float	slideMoveSeconds	= 1.0f;
@@ -88,6 +90,14 @@ private:
 		}
 		if ( 6 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( maxRemainCount		),
+				CEREAL_NVP( initialRemainCount	)
+			);
+		}
+		if ( 7 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -96,4 +106,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 5 )
+CEREAL_CLASS_VERSION( PlayerParam, 6 )

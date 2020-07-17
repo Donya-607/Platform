@@ -1113,7 +1113,7 @@ void SceneGame::UseImGui()
 
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
-	
+
 	sceneParam.ShowImGuiNode( u8"ゲームシーンのパラメータ" );
 
 	if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )

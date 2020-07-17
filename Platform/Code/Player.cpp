@@ -258,6 +258,16 @@ void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption, int stage
 }
 #endif // USE_IMGUI
 
+
+int  Player::Remaining::count = 2;
+int  Player::Remaining::Get() { return count; }
+void Player::Remaining::Set( int v )
+{
+	const auto &maxCount = Parameter().Get().maxRemainCount;
+	count = std::min( maxCount, v );
+}
+void Player::Remaining::Decrement() { count--; }
+
 ParamOperator<PlayerParam> Player::paramInstance{ "Player" };
 bool Player::LoadResource()
 {
@@ -276,6 +286,8 @@ void Player::UpdateParameter( const std::string &nodeCaption )
 void PlayerParam::ShowImGuiNode()
 {
 	ImGui::DragInt  ( u8"最大体力",				&maxHP						);
+	ImGui::DragInt  ( u8"最大残機数",			&maxRemainCount				);
+	ImGui::DragInt  ( u8"初期残機数",			&initialRemainCount			);
 	ImGui::DragFloat( u8"移動速度",				&moveSpeed,			0.01f	);
 	ImGui::DragFloat( u8"スライディング速度",		&slideMoveSpeed,	0.01f	);
 	ImGui::DragFloat( u8"スライディング秒数",		&slideMoveSeconds,	0.01f	);
@@ -320,11 +332,13 @@ void PlayerParam::ShowImGuiNode()
 	ImGui::Helper::ShowAABBNode( u8"スライド中・地形との当たり判定", &slideHitBox  );
 	ImGui::Helper::ShowAABBNode( u8"スライド中・攻撃との喰らい判定", &slideHurtBox );
 
-	auto MakePositive = []( float *v )
+	auto MakePositive	= []( float *v )
 	{
 		*v = std::max( 0.001f, *v );
 	};
-	maxHP = std::max( 1, maxHP			);
+	maxHP				= std::max( 1, maxHP				);
+	maxRemainCount		= std::max( 1, maxRemainCount		);
+	initialRemainCount	= std::max( 1, initialRemainCount	);
 	MakePositive( &moveSpeed			);
 	MakePositive( &slideMoveSpeed		);
 	MakePositive( &slideMoveSeconds		);

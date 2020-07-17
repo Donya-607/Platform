@@ -65,6 +65,16 @@ CEREAL_CLASS_VERSION( PlayerInitializer, 0 )
 struct PlayerParam;
 class  Player : public Actor
 {
+public:
+	struct Remaining
+	{
+	private:
+		static int  count;
+	public:
+		static int  Get();
+		static void Set( int newCount );
+		static void Decrement();
+	};
 private:
 	static ParamOperator<PlayerParam> paramInstance;
 public:
