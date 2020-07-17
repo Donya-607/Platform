@@ -281,7 +281,7 @@ void SceneOver::StartFade()
 {
 	Fader::Configuration config{};
 	config.type			= Fader::Type::Gradually;
-	config.closeFrame	= Fader::GetDefaultCloseFrame();;
+	config.closeSecond	= Fader::GetDefaultCloseSecond();
 	config.SetColor( Donya::Color::Code::BLACK );
 	Fader::Get().StartFadeOut( config );
 }

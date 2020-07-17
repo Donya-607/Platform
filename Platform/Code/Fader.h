@@ -35,7 +35,7 @@ public:
 
 	/// <summary>
 	/// "type" : You specify type of fade.<para></para>
-	/// "closeFrame" : You specify time of completely close(per frame).<para></para>
+	/// "closeSecond" : You specify time of completely close(per second).<para></para>
 	/// "parameter" :<para></para>
 	/// Type::Scroll : Used to judge direction(you can specify by Fader::Direction).<para></para>
 	/// Type::Gradually : Used to fill color. This is linking to Donya::Color::Code.
@@ -43,7 +43,7 @@ public:
 	struct Configuration
 	{
 		Type			type{};			// You specify type of fade.
-		int				closeFrame{};	// You specify time of completely close(per frame)
+		float			closeSecond{};	// You specify time of completely close(per second)
 		unsigned int	parameter{};	// [Type::Scroll : Used to judge direction(you can specify by Fader::Direction)] [Type::Gradually : Used to fill color. This is linking to Donya::Color::Code]
 	public:
 		void SetDefault( Type fadeType );
@@ -99,7 +99,7 @@ public:
 	/// <summary>
 	/// Please call every frame.
 	/// </summary>
-	void Update();
+	void Update( float elapsedTime );
 
 	void Draw();
 public:
@@ -118,5 +118,5 @@ public:
 	/// </summary>
 	bool IsExist() const;
 public:
-	static int GetDefaultCloseFrame();
+	static float GetDefaultCloseSecond();
 };

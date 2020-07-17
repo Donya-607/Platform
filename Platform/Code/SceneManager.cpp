@@ -56,7 +56,7 @@ void SceneMng::Update( float elapsedTime )
 		ProcessMessage( message, updateCount, i );
 	}
 
-	Fader::Get().Update();
+	Fader::Get().Update( elapsedTime );
 }
 
 void SceneMng::Draw( float elapsedTime )

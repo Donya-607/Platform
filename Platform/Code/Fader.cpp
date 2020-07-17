@@ -22,14 +22,14 @@ protected:
 	Donya::Vector2 size;	// Half-size of body.
 	Donya::Vector2 pos;		// Origin is center.
 
-	int		timer;			// 0-based.
-	int		closeFrame;		// 0-based.
+	float	timer;			// It used for decrease from closing second
+	float	closeSecond;	// Store specified closing second
 	bool	isClosed;		// Only completely closed.
 	bool	nowHidden;		// True when completely out of screen.
 public:
 	BaseFade() : status( State::FADE_IN ),
 		size(), pos(),
-		timer( 0 ), closeFrame( 0 ),
+		timer( 0.0f ), closeSecond( 0.0f ),
 		isClosed( false ), nowHidden( false )
 	{}
 	virtual ~BaseFade() = default;
@@ -37,9 +37,9 @@ public:
 	/// <summary>
 	/// Please call this immediately-after constructor.
 	/// </summary>
-	virtual void Init( int wholeCloseFrame )	= 0;
-	virtual void Update()	= 0;
-	virtual void Draw()		= 0;
+	virtual void Init( float wholeCloseSecond )	= 0;
+	virtual void Update( float elapsedTime )	= 0;
+	virtual void Draw()							= 0;
 public:
 	/// <summary>
 	/// Returns true only completely closed.
@@ -50,11 +50,13 @@ public:
 	/// </summary>
 	virtual bool NowHidden() const { return nowHidden; }
 protected:
-	void SwitchFlagsByTimer()
+	void SwitchFlagsByTimer( float oldTimer )
 	{
-		isClosed = ( timer == 0 ) ? true : false;
+		const int oldSign = Donya::SignBit( oldTimer );
+		const int nowSign = Donya::SignBit( timer );
+		isClosed = ( oldSign != nowSign ) ? true : false;
 
-		if ( timer <= -closeFrame )
+		if ( timer <= -closeSecond )
 		{
 			nowHidden = true;
 		}
@@ -70,21 +72,21 @@ public:
 		velocity( direction )
 	{}
 public:
-	void Init( int wholeCloseFrame ) override
+	void Init( float wholeCloseSecond ) override
 	{
 		size = Donya::Vector2{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
 		pos  = Donya::Vector2{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
-		timer		= wholeCloseFrame;
-		closeFrame	= wholeCloseFrame;
+		timer		= wholeCloseSecond;
+		closeSecond	= wholeCloseSecond;
 
 		Donya::Vector2 destination = pos;
 
-		pos.x += ( size.x * 2 ) * ( Donya::SignBit( velocity.x ) * -1/*Adjust pos direction is inverse of velocity.*/ );
-		pos.y += ( size.y * 2 ) * ( Donya::SignBit( velocity.y ) * -1/*Adjust pos direction is inverse of velocity.*/ );
+		pos.x += ( size.x * 2 ) * ( Donya::SignBit( velocity.x ) * -1/* Adjust pos direction is inverse of velocity */ );
+		pos.y += ( size.y * 2 ) * ( Donya::SignBit( velocity.y ) * -1/* Adjust pos direction is inverse of velocity */ );
 
 		Donya::Vector2 vecToDest = destination - pos;
 
-		if ( wholeCloseFrame <= 0 )
+		if ( wholeCloseSecond <= 0 )
 		{
 			// Prevent zero-divide.
 			velocity.Normalize();
@@ -92,17 +94,18 @@ public:
 		}
 		// else
 
-		float speed = vecToDest.Length() / scast<float>( wholeCloseFrame );
+		const float speed = vecToDest.Length() / scast<float>( wholeCloseSecond );
 		velocity.Normalize();
 		velocity *= speed;
 	}
 
-	void Update() override
+	void Update( float elapsedTime ) override
 	{
-		timer--;
-		pos += velocity;
+		const float oldTimer = timer;
+		timer -= elapsedTime;
+		pos += velocity * elapsedTime;
 
-		SwitchFlagsByTimer();
+		SwitchFlagsByTimer( oldTimer );
 	}
 
 	void Draw() override
@@ -131,14 +134,14 @@ public:
 		
 	}
 public:
-	void Init( int wholeCloseFrame ) override
+	void Init( float wholeCloseSecond ) override
 	{
 		size = Donya::Vector2{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
 		pos  = Donya::Vector2{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
-		timer		= wholeCloseFrame;
-		closeFrame	= wholeCloseFrame;
+		timer		= wholeCloseSecond;
+		closeSecond	= wholeCloseSecond;
 
-		if ( wholeCloseFrame <= 0 )
+		if ( wholeCloseSecond <= 0 )
 		{
 			// Prevent zero-divide and minus value.
 
@@ -147,18 +150,18 @@ public:
 		}
 		// else
 		
-		fadeSpeed = 1.0f / scast<float>( wholeCloseFrame );
+		fadeSpeed = 1.0f / scast<float>( wholeCloseSecond );
 	}
 
-	void Update() override
+	void Update( float elapsedTime ) override
 	{
-		timer--;
+		timer -= elapsedTime;
 		isClosed = false;
 
 		switch ( status )
 		{
 		case BaseFade::State::FADE_IN:
-			alpha += fadeSpeed;
+			alpha += fadeSpeed * elapsedTime;
 			if ( 1.0f <= alpha )
 			{
 				alpha = 1.0f;
@@ -168,7 +171,7 @@ public:
 			}
 			break;
 		case BaseFade::State::FADE_OUT:
-			alpha -= fadeSpeed;
+			alpha -= fadeSpeed * elapsedTime;
 			if ( alpha <= 0.0f )
 			{
 				alpha = 0.0f;
@@ -193,21 +196,19 @@ public:
 
 void Fader::Configuration::SetDefault( Type fadeType )
 {
-	const int DEFAULT_CLOSE_FRAME = GetDefaultCloseFrame();
-
 	switch ( fadeType )
 	{
 	case Fader::Type::Scroll:
 		type		= fadeType;
-		closeFrame	= DEFAULT_CLOSE_FRAME;
+		closeSecond	= GetDefaultCloseSecond();
 		parameter	= Direction::LEFT;
-		break;
+		return;
 	case Fader::Type::Gradually:
 		type		= fadeType;
-		closeFrame	= DEFAULT_CLOSE_FRAME;
+		closeSecond	= GetDefaultCloseSecond();
 		parameter	= scast<unsigned int>( Donya::Color::Code::BLACK );
-		break;
-	default: break;
+		return;
+	default: _ASSERT_EXPR( 0, L"Error: Unexpected type!" ); return;
 	}
 }
 
@@ -279,12 +280,12 @@ public:
 		pFade.reset( nullptr );
 	}
 
-	void Update()
+	void Update( float elapsedTime )
 	{
 		if ( !pFade ) { return; }
 		// else
 
-		pFade->Update();
+		pFade->Update( elapsedTime );
 
 		if ( pFade->NowHidden() )
 		{
@@ -332,7 +333,7 @@ public:
 		default: return;
 		}
 
-		pFade->Init( config.closeFrame );
+		pFade->Init( config.closeSecond );
 	}
 };
 
@@ -350,7 +351,7 @@ void Fader::Init()
 	pImpl->Init();
 }
 
-void Fader::Update()
+void Fader::Update( float elapsedTime )
 {
 	if ( !pImpl->pFade && !pImpl->reserves.empty() )
 	{
@@ -358,7 +359,7 @@ void Fader::Update()
 		pImpl->reserves.pop();
 	}
 
-	pImpl->Update();
+	pImpl->Update( elapsedTime );
 }
 
 void Fader::Draw()
@@ -397,8 +398,8 @@ bool Fader::IsExist() const
 	return ( pImpl->pFade || !pImpl->reserves.empty() ) ? true : false;
 }
 
-int Fader::GetDefaultCloseFrame()
+float Fader::GetDefaultCloseSecond()
 {
-	constexpr int DEFAULT_CLOSE_FRAME = 30;
-	return DEFAULT_CLOSE_FRAME;
+	constexpr float DEFAULT_CLOSE_SECOND = 0.5f;
+	return DEFAULT_CLOSE_SECOND;
 }
