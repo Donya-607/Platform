@@ -119,6 +119,9 @@ namespace Bullet
 		Donya::Collision::Sphere3F		hitSphere;	// Hit box as Sphere
 		Donya::Vector3					velocity;	// [m/s]
 		Donya::Quaternion				orientation;
+		// shared_ptr<> make be able to copy
+		std::shared_ptr<Definition::Damage> pOverrideDamage = nullptr; // If it is not a nullptr, the fire requestor desires override damage.
+
 		bool							wantRemove		= false;
 		mutable bool					wasCollided		= false;
 		
@@ -145,7 +148,7 @@ namespace Bullet
 	public:
 		virtual bool ShouldRemove() const;
 		virtual bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
-		virtual void CollidedToObject() const;
+		virtual void CollidedToObject( bool otherIsBroken ) const;
 		virtual void ProtectedBy( const Donya::Collision::Box3F		&protectObjectBody ) const;
 		virtual void ProtectedBy( const Donya::Collision::Sphere3F	&protectObjectBody ) const;
 	protected:

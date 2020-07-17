@@ -149,7 +149,12 @@ namespace Boss
 		InitializeParam				GetInitializer()	const;
 		virtual Definition::Damage	GetTouchDamage()	const = 0;
 		virtual bool				NowProtecting()		const;
-		virtual void GiveDamage( const Definition::Damage &damage ) const;
+		virtual void				GiveDamage( const Definition::Damage &damage ) const;
+		/// <summary>
+		/// GiveDamage() is not apply damage as immediately, so if you wanna know to will dead by GiveDamage(), you should use this instead of NowDead().
+		/// It may return false even when NowDead() is true.
+		/// </summary>
+		virtual bool				WillDie()			const;
 	protected:
 		/// <summary>
 		/// After this, the "pReceivedDamage" will be reset.

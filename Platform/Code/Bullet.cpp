@@ -211,6 +211,7 @@ namespace Bullet
 
 		velocity	= parameter.direction * parameter.initialSpeed;
 		UpdateOrientation( parameter.direction );
+		pOverrideDamage = parameter.pOverrideDamage;
 		wantRemove	= false;
 	}
 	void Base::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
@@ -316,8 +317,18 @@ namespace Bullet
 		const bool outSphere	= ( IsZero( hitSphere.radius )	|| !Donya::Collision::IsHit( hitSphere,	wsScreen, /* considerExistFlag = */ false ) );
 		return outAABB & outSphere; // Which one is true certainly, so I should combine it.
 	}
-	void Base::CollidedToObject() const
+	void Base::CollidedToObject( bool otherIsBroken ) const
 	{
+		auto HasPierce = []( const Definition::Damage &damage )
+		{
+			return Definition::Damage::Contain( Definition::Damage::Type::Pierce, damage.type );
+		};
+
+		const auto paramDamage	= GetDamage();
+		const bool pierceable	= HasPierce( paramDamage ) || ( pOverrideDamage && HasPierce( *pOverrideDamage ) );
+		if ( pierceable ) { return; }
+		// else
+
 		wasCollided = true;
 		// Donya::Sound::Play( Music::Bullet_Hit );
 	}

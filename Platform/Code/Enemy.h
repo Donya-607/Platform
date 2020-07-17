@@ -120,13 +120,18 @@ namespace Enemy
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
-		virtual bool ShouldRemove()				const;
-		using Actor::GetHitBox;
-		Donya::Collision::Box3F	GetHurtBox()	const;
-		virtual Kind GetKind()					const = 0;
-		InitializeParam GetInitializer()		const;
-		virtual Definition::Damage GetTouchDamage() const = 0;
-		virtual void GiveDamage( const Definition::Damage &damage ) const;
+		virtual bool				ShouldRemove()		const;
+		using				 Actor::GetHitBox;
+		Donya::Collision::Box3F		GetHurtBox()		const;
+		virtual Kind				GetKind()			const = 0;
+		InitializeParam				GetInitializer()	const;
+		virtual Definition::Damage	GetTouchDamage()	const = 0;
+		virtual void				GiveDamage( const Definition::Damage &damage ) const;
+		/// <summary>
+		/// GiveDamage() is not apply damage as immediately, so if you wanna know to will dead by GiveDamage(), you should use this instead of NowDead().
+		/// It may return false even when NowDead() is true.
+		/// </summary>
+		virtual bool				WillDie()			const;
 	protected:
 		void UpdateOutSideState( const Donya::Collision::Box3F &wsScreenHitBox );
 		bool OnOutSide() const;

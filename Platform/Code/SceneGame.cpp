@@ -767,7 +767,7 @@ void SceneGame::Collision_BulletVSBoss()
 		else
 		{
 			pBoss->GiveDamage( pBullet->GetDamage() );
-			pBullet->CollidedToObject();
+			pBullet->CollidedToObject( pBoss->WillDie() );
 			// TODO: Play hit SE
 		}
 	};
@@ -844,23 +844,37 @@ void SceneGame::Collision_BulletVSEnemy()
 	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
 	std::shared_ptr<const Enemy::Base>  pOther  = nullptr;
 
+	struct ProccessResult
+	{
+		bool collided	= false;
+		bool pierced	= false;
+	};
 	auto Process = [&]( const auto &bulletBody )
 	{
-		if ( !pBullet ) { return false; }
+		ProccessResult result{};
+		result.collided = false;
+		result.pierced  = false;
+
+		if ( !pBullet ) { return result; }
 		// else
 
-		bool collided = false;
+		result.pierced = true;
 
 		pOther = FindCollidingEnemyOrNullptr( bulletBody );
 		while ( pOther )
 		{
-			collided = true;
+			result.collided = true;
 
 			pOther->GiveDamage( pBullet->GetDamage() );
+			if ( !pOther->WillDie() )
+			{
+				result.pierced = false;
+			}
+
 			pOther = FindCollidingEnemyOrNullptr( bulletBody );
 		}
 
-		return collided;
+		return result;
 	};
 
 	for ( size_t i = 0; i < bulletCount; ++i )
@@ -874,12 +888,12 @@ void SceneGame::Collision_BulletVSEnemy()
 		if ( !otherAABB.exist && !otherSphere.exist ) { continue; }
 		// else
 
-		bool collided	= ( otherAABB.exist )
-						? Process( otherAABB   )
-						: Process( otherSphere );
-		if ( collided )
+		const auto result	= ( otherAABB.exist )
+							? Process( otherAABB   )
+							: Process( otherSphere );
+		if ( result.collided )
 		{
-			pBullet->CollidedToObject();
+			pBullet->CollidedToObject( result.pierced );
 		}
 
 		collidedEnemyIndices.clear();

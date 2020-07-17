@@ -279,6 +279,12 @@ namespace Boss
 
 		pReceivedDamage->Combine( damage );
 	}
+	bool Base::WillDie() const
+	{
+		if ( !pReceivedDamage ) { return false; }
+
+		return ( hp - pReceivedDamage->amount <= 0 );
+	}
 	void Base::ApplyReceivedDamageIfHas()
 	{
 		if ( !pReceivedDamage ) { return; }

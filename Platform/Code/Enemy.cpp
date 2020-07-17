@@ -287,6 +287,12 @@ namespace Enemy
 
 		pReceivedDamage->Combine( damage );
 	}
+	bool Base::WillDie() const
+	{
+		if ( !pReceivedDamage ) { return false; }
+
+		return ( hp - pReceivedDamage->amount <= 0 );
+	}
 	void Base::UpdateOutSideState( const Donya::Collision::Box3F &wsScreen )
 	{
 		onOutSidePrevious = onOutSideCurrent;
