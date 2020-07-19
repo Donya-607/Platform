@@ -332,23 +332,7 @@ void House::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 		ImGui::TreePop();
 	}
 
-	const auto result = ParameterHelper::ShowIONode();
-	using Op = ParameterHelper::IOOperation;
-	if ( result == Op::Save )
-	{
-		SaveRooms( stageNo, true  );
-		SaveRooms( stageNo, false );
-	}
-	else if ( result == Op::LoadBinary )
-	{
-		rooms.clear();
-		LoadRooms( stageNo, true );
-	}
-	else if ( result == Op::LoadJson )
-	{
-		rooms.clear();
-		LoadRooms( stageNo, false );
-	}
+	ShowIONode( stageNo );
 
 	ImGui::TreePop();
 }
@@ -359,5 +343,25 @@ void House::ShowInstanceNode( const std::string &nodeCaption, int roomID )
 	// else
 
 	found->second.ShowImGuiNode( nodeCaption );
+}
+void House::ShowIONode( int stageNo )
+{
+	const auto result = ParameterHelper::ShowIONode();
+	using Op = ParameterHelper::IOOperation;
+	if ( result == Op::Save )
+	{
+		SaveRooms( stageNo, true  );
+		SaveRooms( stageNo, false );
+	}
+	else if ( result == Op::LoadBinary )
+	{
+		rooms.clear();
+		LoadRooms( stageNo, true  );
+	}
+	else if ( result == Op::LoadJson )
+	{
+		rooms.clear();
+		LoadRooms( stageNo, false );
+	}
 }
 #endif // USE_IMGUI

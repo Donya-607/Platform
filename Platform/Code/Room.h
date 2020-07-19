@@ -106,6 +106,7 @@ public:
 public:
 	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
 	void ShowInstanceNode( const std::string &nodeCaption, int roomID );
+	void ShowIONode( int stageNo );
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( House, 0 )

@@ -690,7 +690,10 @@ void SceneGame::CameraUpdate()
 			if ( isReverseCameraRotX ) { rotation.x *= -1.0f; }
 			if ( isReverseCameraRotY ) { rotation.y *= -1.0f; }
 		}
-		else
+	}
+
+	// Operation that ALT key is not needed 
+	{
 		if ( Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) )
 		{
 			constexpr float MOVE_SPEED = 0.05f;
@@ -701,7 +704,7 @@ void SceneGame::CameraUpdate()
 			if ( isReverseCameraMoveY ) { movement.y *= -1.0f; }
 		}
 
-		constexpr float FRONT_SPEED = 2.0f;
+		constexpr float FRONT_SPEED = 3.0f;
 		movement.z = FRONT_SPEED * scast<float>( Donya::Mouse::WheelRot() );
 	}
 
@@ -1473,17 +1476,21 @@ void SceneGame::UseImGui()
 		ImGui::TreePop();
 	}
 
-	if ( pChosenRoom )
+	if ( ImGui::TreeNode( u8"ルーム選択" ) )
 	{
-		pHouse->ShowInstanceNode( u8"選んだルーム", pChosenRoom->GetID() );
-	}
-	else
-	{
-		ImGui::TextDisabled( u8"選んだルーム" );
-		ImGui::TextDisabled
-		(
-			u8"右クリックで，マウス位置にあるルームを選択します。"
-		);
+		ImGui::TextDisabled( u8"右クリックで，マウス位置にあるルームを選択します。" );
+
+		if ( pChosenRoom )
+		{
+			pHouse->ShowInstanceNode( u8"選んだルーム", pChosenRoom->GetID() );
+			pHouse->ShowIONode( stageNumber );
+		}
+		else
+		{
+			ImGui::TextDisabled( u8"選んだルーム" );
+		}
+
+		ImGui::TreePop();
 	}
 	
 	ImGui::End();
