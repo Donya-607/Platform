@@ -158,7 +158,7 @@ private:
 		virtual void Init( Player &instance );
 		virtual void Uninit( Player &instance ) {}
 		virtual void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) = 0;
-		virtual void Move( Player &instance, float elapsedTime, const Map &terrain ) = 0;
+		virtual void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) = 0;
 		virtual bool NowSliding( const Player &instance ) const { return false; }
 		virtual bool NowKnockBacking( const Player &instance ) const { return false; }
 		virtual bool NowMiss( const Player &instance ) const { return false; }
@@ -172,7 +172,7 @@ private:
 		virtual void AssignBodyParameter( Player &instance );
 	protected:
 		void MotionUpdate( Player &instance, float elapsedTime );
-		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const Map &terrain );
+		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
 		void MoveOnlyVertical( Player &instance, float elapsedTime, const Map &terrain );
 	};
 	class Normal : public MoverBase
@@ -181,7 +181,7 @@ private:
 		bool gotoSlide = false;
 	public:
 		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -204,7 +204,7 @@ private:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 		bool NowSliding( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
@@ -222,7 +222,7 @@ private:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 		bool NowKnockBacking( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
@@ -235,7 +235,7 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 		bool NowMiss( const Player &instance ) const override { return true; }
 		bool Drawable( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
@@ -270,7 +270,7 @@ public:
 	void Uninit();
 
 	void Update( float elapsedTime, Input input, const Map &terrain );
-	void PhysicUpdate( float elapsedTime, const Map &terrain );
+	void PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
 
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;

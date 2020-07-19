@@ -40,6 +40,10 @@ int  Room::GetID() const
 {
 	return id;
 }
+Definition::Direction Room::GetTransitionableDirection() const
+{
+	return transition;
+}
 const Donya::Collision::Box3F &Room::GetArea() const
 {
 	return area;

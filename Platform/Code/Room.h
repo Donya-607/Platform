@@ -48,6 +48,7 @@ public:
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
 	int GetID() const;
+	Definition::Direction GetTransitionableDirection() const;
 	const Donya::Collision::Box3F &GetArea() const;
 	/// <summary>
 	/// Also consider connecting room area.

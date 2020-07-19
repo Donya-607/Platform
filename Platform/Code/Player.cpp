@@ -550,13 +550,27 @@ void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime )
 {
 	inst.motionManager.Update( inst, elapsedTime );
 }
-void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain )
+void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
 	const auto movement		= inst.velocity * elapsedTime;
 	const auto aroundTiles	= terrain.GetPlaceTiles( inst.GetHitBox(), movement );
 	const auto aroundSolids	= Map::ToAABB( aroundTiles );
 	inst.Actor::MoveX( movement.x, aroundSolids );
 	inst.Actor::MoveZ( movement.z, aroundSolids );
+
+	// Clamp into room
+	{
+		const float outsideLengthL = roomLeftBorder - inst.body.Min().x;
+		if ( 0.0f < outsideLengthL )
+		{
+			inst.body.pos.x += outsideLengthL;
+		}
+		const float outsideLengthR = inst.body.Max().x - roomRightBorder;
+		if ( 0.0f < outsideLengthR )
+		{
+			inst.body.pos.x -= outsideLengthR;
+		}
+	}
 
 	// We must apply world position to hurt box also.
 	inst.hurtBox.pos = inst.body.pos;
@@ -622,9 +636,9 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 
 	MotionUpdate( inst, elapsedTime );
 }
-void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain )
+void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
-	MoveOnlyHorizontal( inst, elapsedTime, terrain );
+	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 }
 bool Player::Normal::ShouldChangeMover( const Player &inst ) const
@@ -702,7 +716,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 
 	MotionUpdate( inst, elapsedTime );
 }
-void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain )
+void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
 #if 0 // Falling prevention
 	// Horizontal move
@@ -805,7 +819,7 @@ void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain )
 		inst.hurtBox.pos = inst.body.pos;
 	}
 #else
-	MoveOnlyHorizontal( inst, elapsedTime, terrain );
+	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 #endif // Falling prevention
 
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
@@ -860,9 +874,9 @@ void Player::KnockBack::Update( Player &inst, float elapsedTime, Input input, co
 
 	MotionUpdate( inst, elapsedTime );
 }
-void Player::KnockBack::Move( Player &inst, float elapsedTime, const Map &terrain )
+void Player::KnockBack::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
-	MoveOnlyHorizontal( inst, elapsedTime, terrain );
+	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 }
 bool Player::KnockBack::ShouldChangeMover( const Player &inst ) const
@@ -892,7 +906,7 @@ void Player::Miss::Update( Player &inst, float elapsedTime, Input input, const M
 	inst.body.exist		= false;
 	inst.hurtBox.exist	= false;
 }
-void Player::Miss::Move( Player &inst, float elapsedTime, const Map &terrain )
+void Player::Miss::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
 	// No op
 }
@@ -988,7 +1002,7 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 
 	prevSlidingStatus = pMover->NowSliding( *this );
 }
-void Player::PhysicUpdate( float elapsedTime, const Map &terrain )
+void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
 	if ( !pMover )
 	{
@@ -997,7 +1011,7 @@ void Player::PhysicUpdate( float elapsedTime, const Map &terrain )
 	}
 	// else
 
-	pMover->Move( *this, elapsedTime, terrain );
+	pMover->Move( *this, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 }
 void Player::Draw( RenderingHelper *pRenderer ) const
 {

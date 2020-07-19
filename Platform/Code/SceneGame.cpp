@@ -243,6 +243,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		// then call it.
 		StartFade( Scene::Type::Result );
 	}
+
+	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
 	
 	PlayerUpdate( elapsedTime, mapRef );
 	if ( FetchParameter().waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
@@ -274,7 +276,26 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	// PhysicUpdates
 	{
-		if ( pPlayer ) { pPlayer->PhysicUpdate( elapsedTime, mapRef ); }
+		using Dir = Definition::Direction;
+
+		const auto currentRoomArea	= ( pCurrentRoom )
+									? pHouse->CalcRoomArea( currentRoomID )
+									: currentScreen; // Fail safe
+		const auto transitionable	= ( pCurrentRoom )
+									? pCurrentRoom->GetTransitionableDirection()
+									: Dir::Nil;
+
+		if ( pPlayer )
+		{
+			const float leftBorder	= Contain( transitionable, Dir::Left )
+									? -FLT_MAX
+									: currentRoomArea.Min().x;
+			const float rightBorder	= Contain( transitionable, Dir::Right )
+									? FLT_MAX
+									: currentRoomArea.Max().x;
+
+			pPlayer->PhysicUpdate( elapsedTime, mapRef, leftBorder, rightBorder );
+		}
 
 		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
 		Enemy::Admin::Get().PhysicUpdate( elapsedTime, mapRef );
@@ -290,7 +311,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	if ( pPlayer && !pPlayer->NowMiss() )
 	{
 		const float playerTop  = pPlayer->GetHitBox().Max().y;
-		const float roomBottom = pHouse->CalcRoomArea( currentRoomID ).Min().y;
+		const float roomBottom = ( pCurrentRoom ) ? pCurrentRoom->GetArea().Min().y : currentScreen.Min().y;
 		if ( playerTop < roomBottom )
 		{
 			pPlayer->KillMe();
@@ -1364,6 +1385,8 @@ void SceneGame::UseImGui()
 
 	if ( ImGui::TreeNode( u8"各オブジェクトの調整" ) )
 	{
+		ImGui::InputInt( u8"現在のルーム番号", &currentRoomID );
+
 		if ( ImGui::TreeNode( u8"カメラの現在" ) )
 		{
 			ImGui::Checkbox( u8"移動方向を反転する・Ｘ", &isReverseCameraMoveX );
