@@ -1094,6 +1094,10 @@ bool Player::WillDie() const
 
 	return ( currentHP - pReceivedDamage->damage.amount <= 0 );
 }
+void Player::KillMe()
+{
+	AssignMover<Miss>();
+}
 void Player::GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const
 {
 	// Receive only smallest damage if same timing
@@ -1129,7 +1133,7 @@ void Player::ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain )
 	currentHP -= pReceivedDamage->damage.amount;
 	if ( currentHP <= 0 )
 	{
-		AssignMover<Miss>();
+		KillMe();
 	}
 	else
 	{

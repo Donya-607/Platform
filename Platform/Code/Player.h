@@ -286,6 +286,8 @@ public:
 	/// It may return false even when NowDead() is true.
 	/// </summary>
 	virtual bool				WillDie()			const;
+public:
+	void KillMe();
 private:
 	void GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const;
 	/// <summary>

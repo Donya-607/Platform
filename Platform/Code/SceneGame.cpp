@@ -286,6 +286,17 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate();
 
+	// Kill the player if fall out from current room
+	if ( pPlayer && !pPlayer->NowMiss() )
+	{
+		const float playerTop  = pPlayer->GetHitBox().Max().y;
+		const float roomBottom = pHouse->CalcRoomArea( currentRoomID ).Min().y;
+		if ( playerTop < roomBottom )
+		{
+			pPlayer->KillMe();
+		}
+	}
+
 	Collision_BulletVSBoss();
 	Collision_BulletVSEnemy();
 	Collision_BulletVSPlayer();
@@ -417,15 +428,15 @@ Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 		return ( result.isIntersect ) ? result.intersection : oldPos;
 	};
 
-	const Donya::Vector2 halfScreenSize
+	constexpr Donya::Vector2 halfScreenSize
 	{
 		Common::HalfScreenWidthF(),
 		Common::HalfScreenHeightF(),
 	};
-	const Donya::Vector2 left	{ 0.0f,						halfScreenSize.y		};
-	const Donya::Vector2 top	{ halfScreenSize.x,			0.0f					};
-	const Donya::Vector2 right	{ halfScreenSize.x * 2.0f,	halfScreenSize.y		};
-	const Donya::Vector2 bottom	{ halfScreenSize.x,			halfScreenSize.y * 2.0f	};
+	constexpr Donya::Vector2 left	{ 0.0f,						halfScreenSize.y		};
+	constexpr Donya::Vector2 top	{ halfScreenSize.x,			0.0f					};
+	constexpr Donya::Vector2 right	{ halfScreenSize.x * 2.0f,	halfScreenSize.y		};
+	constexpr Donya::Vector2 bottom	{ halfScreenSize.x,			halfScreenSize.y * 2.0f	};
 
 	Donya::Vector3 nowLeft		{ currentScreen.Min().x,	currentScreen.pos.y,	0.0f };
 	Donya::Vector3 nowTop		{ currentScreen.pos.x,		currentScreen.Min().y,	0.0f };
@@ -476,6 +487,8 @@ void SceneGame::InitStage( int stageNo )
 	currentRoomID = pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
 
 	CameraInit();
+	// The calculation of screen space uses camera's view and projection matrix, so I must calc after CameraInit().
+	currentScreen = CalcCurrentScreenPlane();
 
 	Bullet::Admin::Get().ClearInstances();
 
@@ -741,11 +754,8 @@ void SceneGame::UpdateCurrentRoomID()
 	if ( !pPlayer || !pHouse ) { return; }
 	// else
 
-	const auto playerPos = pPlayer->GetPosition();
-	if ( Donya::Collision::IsHit( playerPos, currentScreen, /* considerExistFlag = */ false ) ) { return; }
-	// else
-
-	const int nextID = pHouse->CalcBelongRoomID( playerPos );
+	const auto	playerPos	= pPlayer->GetPosition();
+	const int	nextID		= pHouse->CalcBelongRoomID( playerPos );
 	if ( nextID != Room::invalidID )
 	{
 		currentRoomID = nextID;
