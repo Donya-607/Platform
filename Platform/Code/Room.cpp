@@ -319,18 +319,14 @@ void House::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 		for ( size_t i = 0; i < roomCount; ++i )
 		{
 			auto &pRoom = roomPtrs[i];
-
 			if ( !pRoom ) { continue; }
 			// else
 
-			caption = Donya::MakeArraySuffix( i );
-			pRoom->ShowImGuiNode( caption );
-
-			caption = "[ID:";
+			caption =  Donya::MakeArraySuffix( i );
+			caption += "[ID:";
 			caption += std::to_string( pRoom->GetID() );
 			caption += "]";
-			ImGui::SameLine();
-			ImGui::Text( caption.c_str() );
+			pRoom->ShowImGuiNode( caption );
 		}
 
 		ImGui::TreePop();
@@ -355,5 +351,13 @@ void House::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 	}
 
 	ImGui::TreePop();
+}
+void House::ShowInstanceNode( const std::string &nodeCaption, int roomID )
+{
+	const auto found = rooms.find( roomID );
+	if ( found == rooms.end() ) { return; }
+	// else
+
+	found->second.ShowImGuiNode( nodeCaption );
 }
 #endif // USE_IMGUI

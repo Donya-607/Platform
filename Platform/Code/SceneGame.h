@@ -70,6 +70,7 @@ private:
 	bool	isReverseCameraMoveY	= false;
 	bool	isReverseCameraRotX		= false;
 	bool	isReverseCameraRotY		= false;
+	const Room *pChosenRoom			= nullptr; // It used for ImGui
 #endif // DEBUG_MODE
 public:
 	SceneGame() : Scene() {}

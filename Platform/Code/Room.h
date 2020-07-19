@@ -98,7 +98,6 @@ public:
 	/// Returns Room::invalidID(-1) if the argument is not belongs which rooms.
 	/// </summary>
 	int CalcBelongRoomID( const Donya::Vector3 &wsSearchPoint ) const;
-private:
 	bool LoadRooms( int stageNo, bool fromBinary );
 #if USE_IMGUI
 public:
@@ -106,6 +105,7 @@ public:
 	void SaveRooms( int stageNo, bool fromBinary );
 public:
 	void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
+	void ShowInstanceNode( const std::string &nodeCaption, int roomID );
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( House, 0 )

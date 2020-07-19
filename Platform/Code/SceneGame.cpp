@@ -1155,6 +1155,47 @@ void SceneGame::UseImGui()
 {
 	UseScreenSpaceImGui();
 
+	// Choose a room by mouse
+	if ( Donya::Mouse::Trigger( Donya::Mouse::Kind::RIGHT ) && pHouse )
+	{
+		const Donya::Vector4x4 toWorld = MakeScreenTransform().Inverse();
+
+		Donya::Plane xyPlane;
+		xyPlane.distance	= 0.0f;
+		xyPlane.normal		= -Donya::Vector3::Front();
+
+		auto Transform		= [&]( const Donya::Vector3 &v, float fourthParam, const Donya::Vector4x4 &m )
+		{
+			Donya::Vector4 tmp = m.Mul( v, fourthParam );
+			tmp /= tmp.w;
+			return tmp.XYZ();
+		};
+		auto CalcWorldPos	= [&]( const Donya::Vector2 &ssPos, const Donya::Vector3 &oldPos )
+		{
+			const Donya::Vector3 ssRayStart{ ssPos, 0.0f };
+			const Donya::Vector3 ssRayEnd  { ssPos, 1.0f };
+
+			const Donya::Vector3 wsRayStart	= Transform( ssRayStart,	1.0f, toWorld );
+			const Donya::Vector3 wsRayEnd	= Transform( ssRayEnd,		1.0f, toWorld );
+
+			const auto result = Donya::CalcIntersectionPoint( wsRayStart, wsRayEnd, xyPlane );
+			return ( result.isIntersect ) ? result.intersection : oldPos;
+		};
+
+		const Donya::Vector2 ssMouse
+		{
+			scast<float>( Donya::Mouse::Coordinate().x ),
+			scast<float>( Donya::Mouse::Coordinate().y ),
+		};
+		Donya::Vector3 wsMouse = Donya::Vector3{ ssMouse, 0.0f };
+		wsMouse = CalcWorldPos( ssMouse, wsMouse );
+
+		const int choiceID = pHouse->CalcBelongRoomID( wsMouse );
+		pChosenRoom	= ( choiceID == Room::invalidID )
+					? nullptr
+					: pHouse->FindRoomOrNullptr( choiceID );
+	}
+
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 
@@ -1430,6 +1471,19 @@ void SceneGame::UseImGui()
 		Boss::Parameter::Update( u8"ボスのパラメータ" );
 
 		ImGui::TreePop();
+	}
+
+	if ( pChosenRoom )
+	{
+		pHouse->ShowInstanceNode( u8"選んだルーム", pChosenRoom->GetID() );
+	}
+	else
+	{
+		ImGui::TextDisabled( u8"選んだルーム" );
+		ImGui::TextDisabled
+		(
+			u8"右クリックで，マウス位置にあるルームを選択します。"
+		);
 	}
 	
 	ImGui::End();
