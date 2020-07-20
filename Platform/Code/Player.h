@@ -123,7 +123,7 @@ private:
 		int  ToMotionIndex( MotionKind kind ) const;
 		void AssignPose( MotionKind kind );
 		bool ShouldEnableLoop( MotionKind kind ) const;
-		MotionKind CalcNowKind( Player &instance ) const;
+		MotionKind CalcNowKind( Player &instance, float elapsedTime ) const;
 	};
 	class ShotManager
 	{

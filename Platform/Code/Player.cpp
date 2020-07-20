@@ -363,7 +363,7 @@ void Player::MotionManager::Init()
 void Player::MotionManager::Update( Player &inst, float elapsedTime )
 {
 	prevKind = currKind;
-	currKind = CalcNowKind( inst );
+	currKind = CalcNowKind( inst, elapsedTime );
 	if ( currKind != prevKind )
 	{
 		model.animator.ResetTimer();
@@ -427,8 +427,12 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 	_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
 	return false;
 }
-Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst ) const
+Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elapsedTime ) const
 {
+	// Continue same motion if the game time is pausing
+	if ( IsZero( elapsedTime ) ) { return currKind; }
+	// else
+
 	if ( inst.pMover && inst.pMover->NowKnockBacking( inst ) )
 	{ return MotionKind::KnockBack; }
 	if ( inst.pMover && inst.pMover->NowSliding( inst ) )
@@ -590,7 +594,7 @@ void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const
 
 		inst.velocity.y = 0.0f;
 	}
-	else
+	else if ( !IsZero( movement.y ) ) // Should not change if the movement is none
 	{
 		inst.onGround = false;
 	}
