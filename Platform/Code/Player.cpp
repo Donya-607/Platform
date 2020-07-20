@@ -1220,7 +1220,7 @@ void Player::MoveHorizontal( float elapsedTime, Input input )
 	const float  movement = data.moveSpeed * input.moveVelocity.x;
 	velocity.x = movement;
 
-	if ( !IsZero( velocity.x ) )
+	if ( !IsZero( velocity.x * elapsedTime ) ) // The "elapsedTime" prevents to rotate when pauses a game time
 	{
 		const bool lookRight = ( 0.0f < velocity.x ) ? true : false;
 		UpdateOrientation( lookRight );
