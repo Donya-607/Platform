@@ -14,13 +14,13 @@
 #endif // USE_IMGUI
 
 
-void Tile::Init( const Donya::Vector3 &wsTilePos, const Donya::Vector3 &wsTileWholeSize, const Donya::Int2 &texCoordOffset )
+void Tile::Init( StageFormat::ID identifier, const Donya::Vector3 &wsTilePos, const Donya::Vector3 &wsTileWholeSize )
 {
 	body.pos	= wsTilePos;
 	body.offset	= Donya::Vector3::Zero();
 	body.size	= wsTileWholeSize * 0.5f;
 	body.exist	= true;
-	texOffset	= texCoordOffset;
+	tileID		= identifier;
 }
 void Tile::Uninit() {}
 void Tile::Update( float elapsedTime ) {}
@@ -51,7 +51,7 @@ void Tile::ShowImGuiNode( const std::string &nodeCaption )
 	wantRemove = ImGui::Button( ( nodeCaption + u8"を削除" ).c_str() );
 
 	ImGui::Helper::ShowAABBNode( u8"体",			&body );
-	ImGui::DragInt2( u8"テクスチャオフセット",	&texOffset.x );
+	//ImGui::DragInt2( u8"テクスチャオフセット",	&texOffset.x );
 
 	ImGui::TreePop();
 }
@@ -150,7 +150,6 @@ bool Map::Init( int stageNumber )
 		constexpr Donya::Vector3	base   {-wholeSize * ( tileCount >> 1 ), -wholeSize, 0.0f };
 		constexpr Donya::Vector3	offsetX{ wholeSize, 0.0f,  0.0f };
 		constexpr Donya::Vector3	offsetY{ 0.0f, -wholeSize, 0.0f };
-		constexpr Donya::Int2		texOrigin{ 0, 0 };
 		
 		Donya::Vector3 offset;
 		std::vector<ElementType> row;
@@ -162,7 +161,7 @@ bool Map::Init( int stageNumber )
 				offset = ( offsetX * scast<float>( x ) ) + ( offsetY * scast<float>( y ) );
 				
 				ElementType tmp = std::make_shared<Tile>();
-				tmp->Init( base + offset, wholeSize, texOrigin );
+				tmp->Init( StageFormat::ID::Normal, base + offset, wholeSize );
 				row.emplace_back( std::move( tmp ) );
 			}
 			tilePtrs.emplace_back( row );
@@ -310,6 +309,7 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 		switch ( id )
 		{
 		case StageFormat::Normal:	return true;
+		case StageFormat::Ladder:	return true;
 		default: break;
 		}
 
@@ -330,7 +330,7 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 		// else
 
 		tmp = std::make_shared<Tile>();
-		tmp->Init( ToWorldPos( row, column ), Tile::unitWholeSize, 0 );
+		tmp->Init( scast<StageFormat::ID>( id ), ToWorldPos( row, column ), Tile::unitWholeSize );
 		pOutput->emplace_back( std::move( tmp ) );
 	};
 

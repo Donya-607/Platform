@@ -10,6 +10,8 @@ namespace StageFormat
 		StartPointLeft	= 2,	// Looking left
 		ClearEvent		= 3,
 		Normal			= 4,
+		Ladder			= 5,
+		Needle			= 6,
 
 		RoomStart		= 8,				// [RoomStart <= N <= RoomLast] is room identifier
 		RoomLast		= RoomStart + 15,	// [RoomStart <= N <= RoomLast] is room identifier

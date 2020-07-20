@@ -15,6 +15,7 @@
 
 #include "CSVLoader.h"
 #include "ObjectBase.h"
+#include "StageFormat.h"
 
 
 /// <summary>
@@ -26,7 +27,7 @@ public:
 	static constexpr float unitWholeSize = 1.0f; // Whole size of a standard tile.
 private:
 	using Solid::body;
-	Donya::Int2 texOffset;	// Texture space, Left-Top
+	StageFormat::ID tileID = StageFormat::ID::Space;
 #if USE_IMGUI
 	bool wantRemove = false;
 #endif // USE_IMGUI
@@ -38,7 +39,7 @@ private:
 		archive
 		(
 			cereal::base_class<Solid>( this ),
-			CEREAL_NVP( texOffset )
+			CEREAL_NVP( tileID )
 		);
 		if ( 1 <= version )
 		{
@@ -46,7 +47,7 @@ private:
 		}
 	}
 public:
-	void Init( const Donya::Vector3 &wsTilePos, const Donya::Vector3 &wsTileWholeSize, const Donya::Int2 &texCoordOffset );
+	void Init( StageFormat::ID tileID, const Donya::Vector3 &wsTilePos, const Donya::Vector3 &wsTileWholeSize );
 	void Uninit();
 	void Update( float elapsedTime );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
