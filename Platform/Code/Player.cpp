@@ -691,7 +691,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 									|| ( !inst.onGround )
 									|| ( input.useJump && inst.Jumpable() )
 									;
-	if ( slideIsEnd )
+	if ( slideIsEnd && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 	{
 		const Donya::Collision::Box3F normalBody = inst.GetNormalBody( /* ofHurtBox = */ false );
 		
@@ -1232,7 +1232,7 @@ void Player::MoveHorizontal( float elapsedTime, Input input )
 }
 void Player::MoveVertical  ( float elapsedTime, Input input )
 {
-	if ( input.useJump && Jumpable() )
+	if ( input.useJump && Jumpable() && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 	{
 		Jump();
 	}
