@@ -57,7 +57,8 @@ namespace
 		
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
 
-		float waitSecondRetry = 1.0f; // Waiting second between Miss ~ Re-try
+		float scrollTakeSecond	= 1.0f;	// The second required for scrolling
+		float waitSecondRetry	= 1.0f; // Waiting second between Miss ~ Re-try
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -78,6 +79,10 @@ namespace
 				archive( CEREAL_NVP( waitSecondRetry ) );
 			}
 			if ( 2 <= version )
+			{
+				archive( CEREAL_NVP( scrollTakeSecond ) );
+			}
+			if ( 3 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -106,7 +111,10 @@ namespace
 
 			if ( ImGui::TreeNode( u8"秒数関連" ) )
 			{
-				ImGui::DragFloat( u8"ミスからリトライまでの待機秒数", &waitSecondRetry, 0.01f );
+				ImGui::DragFloat( u8"スクロールに要する秒数",			&scrollTakeSecond,	0.01f );
+				ImGui::DragFloat( u8"ミスからリトライまでの待機秒数",	&waitSecondRetry,	0.01f );
+				scrollTakeSecond = std::max( 0.01f, scrollTakeSecond );
+				waitSecondRetry  = std::max( 0.01f, waitSecondRetry  );
 
 				ImGui::TreePop();
 			}
@@ -146,7 +154,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam, 0 )
+CEREAL_CLASS_VERSION( SceneParam, 2 )
 
 void SceneGame::Init()
 {
@@ -201,7 +209,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 #if USE_IMGUI
 	UseImGui();
 #endif // USE_IMGUI
-
 	if ( Fader::Get().IsClosed() && nextScene == Scene::Type::Game )
 	{
 		UninitStage();
@@ -211,12 +218,15 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	controller.Update();
 	AssignCurrentInput();
 
-	if ( pMap ) { pMap->Update( elapsedTime ); }
+	const float deltaTimeForMove  = ( scroll.active ) ? 0.0f : elapsedTime;
+	const float deltaTimeForAnime = ( scroll.active ) ? 0.0f : elapsedTime;
+
+	if ( pMap ) { pMap->Update( deltaTimeForMove ); }
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 
 	const int oldRoomID = currentRoomID;
-	UpdateCurrentRoomID();
+	currentRoomID = CalcCurrentRoomID();
 	if ( oldRoomID != currentRoomID )
 	{
 		isThereClearEvent	= ( pClearEvent		&& pClearEvent->IsThereIn( currentRoomID ) );
@@ -246,7 +256,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
 	
-	PlayerUpdate( elapsedTime, mapRef );
+	PlayerUpdate( deltaTimeForMove, mapRef );
 	if ( FetchParameter().waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
 	{
 		const int remaining = Player::Remaining::Get();
@@ -269,10 +279,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 
 	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
-	Bullet::Admin::Get().Update( elapsedTime, currentScreen );
-	Enemy::Admin::Get().Update( elapsedTime, playerPos, currentScreen );
+	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
+	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
 
-	BossUpdate( elapsedTime, playerPos );
+	BossUpdate( deltaTimeForMove, playerPos );
 
 	// PhysicUpdates
 	{
@@ -294,18 +304,28 @@ Scene::Result SceneGame::Update( float elapsedTime )
 									? FLT_MAX
 									: currentRoomArea.Max().x;
 
-			pPlayer->PhysicUpdate( elapsedTime, mapRef, leftBorder, rightBorder );
+			pPlayer->PhysicUpdate( deltaTimeForMove, mapRef, leftBorder, rightBorder );
+
+			const int movedRoomID = CalcCurrentRoomID();
+			if ( movedRoomID != currentRoomID )
+			{
+				// If allow the scroll to a connecting room, the scroll waiting will occur as strange.
+				if ( pCurrentRoom && !pCurrentRoom->IsConnectTo( movedRoomID ) )
+				{
+					PrepareScrollIfNotActive( currentRoomID, movedRoomID );
+				}
+			}
 		}
 
-		Bullet::Admin::Get().PhysicUpdate( elapsedTime );
-		Enemy::Admin::Get().PhysicUpdate( elapsedTime, mapRef );
+		Bullet::Admin::Get().PhysicUpdate( deltaTimeForMove );
+		Enemy::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
 
-		if ( pBossContainer ) { pBossContainer->PhysicUpdate( elapsedTime, mapRef ); }
+		if ( pBossContainer ) { pBossContainer->PhysicUpdate( deltaTimeForMove, mapRef ); }
 	}
 
 	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
-	CameraUpdate();
+	CameraUpdate( elapsedTime );
 
 	// Kill the player if fall out from current room
 	if ( pPlayer && !pPlayer->NowMiss() )
@@ -596,39 +616,73 @@ void SceneGame::CameraInit()
 	moveInitPoint.SetNoOperation();
 	moveInitPoint.slerpPercent = 1.0f;
 	iCamera.Update( moveInitPoint );
+
+	scroll.active			= false;
+	scroll.elapsedSecond	= 0.0f;
+}
+Donya::Vector3 SceneGame::ClampFocusPoint( const Donya::Vector3 &focusPoint, int roomID )
+{
+	if ( !pHouse ) { return focusPoint; }
+	// else
+		
+	const auto area = pHouse->CalcRoomArea( roomID );
+	if ( area == Donya::Collision::Box3F::Nil() ) { return focusPoint; }
+	// else
+
+	const auto &data = FetchParameter();
+
+	const auto min = area.Min();
+	const auto max = area.Max();
+			
+	const float halfAreaWidth		= ( max.x - min.x ) * 0.5f;
+	const float halfAreaHeight		= ( max.y - min.y ) * 0.5f;
+	const float halfScreenWidth		= ( currentScreen.Max().x - currentScreen.Min().x ) * 0.5f;
+	const float halfScreenHeight	= ( currentScreen.Max().y - currentScreen.Min().y ) * 0.5f;
+	const float halfWidth			= std::min( halfAreaWidth,  halfScreenWidth  ); // If area size smaller than screen, set to center the focus point
+	const float halfHeight			= std::min( halfAreaHeight, halfScreenHeight ); // If area size smaller than screen, set to center the focus point
+
+	Donya::Vector3 clamped = focusPoint;
+	clamped += data.camera.offsetFocus; // Clamp the center pos in offseted value
+	clamped.x = Donya::Clamp( clamped.x, min.x + halfWidth,  max.x - halfWidth  );
+	clamped.y = Donya::Clamp( clamped.y, min.y + halfHeight, max.y - halfHeight );
+	clamped.z = Donya::Clamp( clamped.z, min.z, max.z );
+	clamped -= data.camera.offsetFocus; // Back to before offset pos because below setting process expects that value
+	return clamped;
+}
+void SceneGame::PrepareScrollIfNotActive( int oldRoomID, int newRoomID )
+{
+	if ( scroll.active ) { return; }
+	// else
+
+	scroll.active			= true;
+	scroll.elapsedSecond	= 0.0f;
+
+	const Donya::Vector3 baseFocus  = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+	scroll.cameraFocusStart = ClampFocusPoint( baseFocus, oldRoomID );
+	scroll.cameraFocusDest  = ClampFocusPoint( baseFocus, newRoomID );
 }
 void SceneGame::AssignCameraPos()
 {
 	const auto &data = FetchParameter();
-	Donya::Vector3 focusPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 	
-	if ( pHouse )
+	Donya::Vector3 focusPos;
+	if ( scroll.active )
 	{
-		const auto area = pHouse->CalcRoomArea( currentRoomID );
-		if ( area != Donya::Collision::Box3F::Nil() )
-		{
-			const auto min = area.Min();
-			const auto max = area.Max();
-			
-			const float halfAreaWidth		= ( max.x - min.x ) * 0.5f;
-			const float halfAreaHeight		= ( max.y - min.y ) * 0.5f;
-			const float halfScreenWidth		= ( currentScreen.Max().x - currentScreen.Min().x ) * 0.5f;
-			const float halfScreenHeight	= ( currentScreen.Max().y - currentScreen.Min().y ) * 0.5f;
-			const float halfWidth			= std::min( halfAreaWidth,  halfScreenWidth  ); // If area size smaller than screen, set to center the focus point
-			const float halfHeight			= std::min( halfAreaHeight, halfScreenHeight ); // If area size smaller than screen, set to center the focus point
+		const float percent = scroll.elapsedSecond / ( data.scrollTakeSecond + EPSILON );
+		const Donya::Vector3 diff = scroll.cameraFocusDest - scroll.cameraFocusStart;
 
-			focusPos += data.camera.offsetFocus; // Clamp the center pos in offseted value
-			focusPos.x = Donya::Clamp( focusPos.x, min.x + halfWidth,  max.x - halfWidth  );
-			focusPos.y = Donya::Clamp( focusPos.y, min.y + halfHeight, max.y - halfHeight );
-			focusPos.z = Donya::Clamp( focusPos.z, min.z, max.z );
-			focusPos -= data.camera.offsetFocus; // Back to before offset pos because below setting process expects that value
-		}
+		focusPos = scroll.cameraFocusStart + ( diff * percent );
+	}
+	else
+	{
+		focusPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+		focusPos = ClampFocusPoint( focusPos, currentRoomID );
 	}
 
 	iCamera.SetPosition  ( focusPos + data.camera.offsetPos   );
 	iCamera.SetFocusPoint( focusPos + data.camera.offsetFocus );
 }
-void SceneGame::CameraUpdate()
+void SceneGame::CameraUpdate( float elapsedTime )
 {
 	const auto &data = FetchParameter();
 
@@ -637,7 +691,14 @@ void SceneGame::CameraUpdate()
 	iCamera.SetProjectionPerspective();
 #endif // USE_IMGUI
 
-	currentScreen = CalcCurrentScreenPlane();
+	if ( scroll.active )
+	{
+		scroll.elapsedSecond += elapsedTime;
+		if ( data.scrollTakeSecond <= scroll.elapsedSecond )
+		{
+			scroll.active = false;
+		}
+	}
 
 	Donya::ICamera::Controller input{};
 	input.SetNoOperation();
@@ -773,17 +834,13 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 	pBossContainer->Update( elapsedTime, input );
 }
 
-void SceneGame::UpdateCurrentRoomID()
+int  SceneGame::CalcCurrentRoomID()
 {
-	if ( !pPlayer || !pHouse ) { return; }
+	if ( !pPlayer || !pHouse ) { return currentRoomID; }
 	// else
 
-	const auto	playerPos	= pPlayer->GetPosition();
-	const int	nextID		= pHouse->CalcBelongRoomID( playerPos );
-	if ( nextID != Room::invalidID )
-	{
-		currentRoomID = nextID;
-	}
+	const int newID =  pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
+	return (  newID == Room::invalidID ) ? currentRoomID : newID;
 }
 
 void SceneGame::Collision_BulletVSBoss()

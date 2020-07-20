@@ -47,7 +47,8 @@ public:
 	void Uninit();
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
-	int GetID() const;
+	bool IsConnectTo( int verifyRoomID ) const;
+	int  GetID() const;
 	Definition::Direction GetTransitionableDirection() const;
 	const Donya::Collision::Box3F &GetArea() const;
 	/// <summary>

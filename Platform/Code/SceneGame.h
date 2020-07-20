@@ -40,8 +40,17 @@ private:
 			pressShot = false;
 		}
 	};
+	struct Scroll
+	{
+		bool			active = false;
+		float			elapsedSecond = 0.0f;
+		Donya::Vector3	cameraFocusStart;
+		Donya::Vector3	cameraFocusDest;
+	};
 private:
 	Donya::ICamera						iCamera;
+	Scroll								scroll;
+
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 	Input								currentInput;
 	Donya::Collision::Box3F				currentScreen;
@@ -91,15 +100,17 @@ private:
 	void	AssignCurrentInput();
 
 	void	CameraInit();
+	Donya::Vector3 ClampFocusPoint( const Donya::Vector3 &focusPoint, int roomID );
+	void	PrepareScrollIfNotActive( int oldRoomID, int newRoomID );
 	void	AssignCameraPos();
-	void	CameraUpdate();
+	void	CameraUpdate( float elapsedTime );
 
 	void	PlayerInit();
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );
 	
 	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 
-	void	UpdateCurrentRoomID();
+	int		CalcCurrentRoomID();
 
 	void	Collision_BulletVSBoss();
 	void	Collision_BulletVSEnemy();

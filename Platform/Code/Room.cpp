@@ -36,6 +36,10 @@ void Room::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) 
 	constant.lightDirection		= -Donya::Vector3::Up();
 	pRenderer->ProcessDrawingCube( constant );
 }
+bool Room::IsConnectTo( int verifyRoomID ) const
+{
+	return ( verifyRoomID == connectingRoomID ) ? true : false;
+}
 int  Room::GetID() const
 {
 	return id;
