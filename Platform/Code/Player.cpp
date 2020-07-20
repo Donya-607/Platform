@@ -612,9 +612,9 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 {
 	inst.MoveHorizontal( elapsedTime, input );
 
-	// Deformity of MoverVertical()
+	// Deformity of MoveVertical()
 	{
-		if ( input.useJump && inst.Jumpable() )
+		if ( input.useJump && inst.Jumpable() && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 		{
 			if ( Donya::SignBit( input.moveVelocity.y ) < 0 )
 			{
