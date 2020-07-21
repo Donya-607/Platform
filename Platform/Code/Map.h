@@ -53,9 +53,15 @@ public:
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
 	bool ShouldRemove() const;
+	StageFormat::ID GetID() const;
+private:
+	Donya::Vector4 GetDrawColor() const;
 public:
 #if USE_IMGUI
-	void ShowImGuiNode( const std::string &nodeCaption );
+	/// <summary>
+	/// Returns the return value of ImGui::TreeNode().
+	/// </summary>
+	bool ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( Tile, 0 )

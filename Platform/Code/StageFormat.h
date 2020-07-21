@@ -1,5 +1,9 @@
 #pragma once
 
+#include <string>
+
+#include "Donya/UseImGui.h"
+
 namespace StageFormat
 {
 	enum ID
@@ -21,5 +25,15 @@ namespace StageFormat
 		
 		BossStart		= EnemyLast + 1,	// [BossStart <= N <= BossLast] is boss identifier
 		BossLast		= BossStart + 7,	// [BossStart <= N <= BossLast] is boss identifier
+
+		IdentifierCount
 	};
+
+	std::string MakeIDName( ID id );
+#if USE_IMGUI
+	/// <summary>
+	/// Returns the return value of ImGui::TreeNode().
+	/// </summary>
+	bool ShowImGuiNode( const std::string &nodeCaption, ID *pID, bool useTreeNode = true );
+#endif // USE_IMGUI
 }

@@ -200,6 +200,7 @@
     <ClCompile Include="Code\SceneResult.cpp" />
     <ClCompile Include="Code\SceneTitle.cpp" />
     <ClCompile Include="Code\Enemies\Terry.cpp" />
+    <ClCompile Include="Code\StageFormat.cpp" />
     <ClCompile Include="Code\UI.cpp" />
     <ClCompile Include="External\ImGui\imgui.cpp" />
     <ClCompile Include="External\ImGui\imgui_demo.cpp" />

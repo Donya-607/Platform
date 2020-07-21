@@ -30,8 +30,7 @@ void Tile::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP
 	// else
 
 #if DEBUG_MODE
-	constexpr Donya::Vector4 tileColor{ 0.8f, 0.8f, 0.8f, 0.6f };
-	Solid::DrawHitBox( pRenderer, matVP, tileColor );
+	Solid::DrawHitBox( pRenderer, matVP, GetDrawColor() );
 #endif // DEBUG_MODE
 }
 bool Tile::ShouldRemove() const
@@ -42,18 +41,46 @@ bool Tile::ShouldRemove() const
 #endif // USE_IMGUI
 	return false;
 }
-#if USE_IMGUI
-void Tile::ShowImGuiNode( const std::string &nodeCaption )
+StageFormat::ID Tile::GetID() const
 {
-	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	return tileID;
+}
+Donya::Vector4 Tile::GetDrawColor() const
+{
+	constexpr Donya::Vector4 normalColor{ 0.8f, 0.8f, 0.8f, 0.6f };
+	constexpr Donya::Vector4 ladderColor{ 0.8f, 0.8f, 0.0f, 0.6f };
+	constexpr Donya::Vector4 needleColor{ 0.8f, 0.6f, 0.6f, 0.6f };
+	constexpr Donya::Vector4 emptyColor { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	switch ( tileID )
+	{
+	case StageFormat::Normal: return normalColor;
+	case StageFormat::Ladder: return ladderColor;
+	case StageFormat::Needle: return needleColor;
+	default: break;
+	}
+
+	return emptyColor;
+}
+#if USE_IMGUI
+bool Tile::ShowImGuiNode( const std::string &nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return false; }
 	// else
 
 	wantRemove = ImGui::Button( ( nodeCaption + u8"を削除" ).c_str() );
 
 	ImGui::Helper::ShowAABBNode( u8"体",			&body );
-	//ImGui::DragInt2( u8"テクスチャオフセット",	&texOffset.x );
+	const bool treeIsOpen = StageFormat::ShowImGuiNode( u8"種類", &tileID );
+	if ( !treeIsOpen )
+	{
+		// Show as: "種類：[%s]"
+		ImGui::SameLine();
+		ImGui::Text( "：[%s]", StageFormat::MakeIDName( tileID ).c_str() );
+	}
 
 	ImGui::TreePop();
+	return true;
 }
 #endif // USE_IMGUI
 
@@ -310,6 +337,7 @@ void Map::RemakeByCSV( const CSVLoader &loadedData )
 		{
 		case StageFormat::Normal:	return true;
 		case StageFormat::Ladder:	return true;
+		case StageFormat::Needle:	return true;
 		default: break;
 		}
 
@@ -416,15 +444,17 @@ void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 				{
 					caption += ", " + MakeCoordinateStr( ToWorldPos( y, x ) );
 					ImGui::TextDisabled( caption.c_str() );
-					return;
+					continue;
 				}
 				// else
 
-				pTile->ShowImGuiNode( caption );
-				ImGui::SameLine();
-
-				caption = MakeCoordinateStr( pTile->GetPosition() );
-				ImGui::Text( caption.c_str() );
+				const bool treeIsOpen = pTile->ShowImGuiNode( caption );
+				if ( !treeIsOpen )
+				{
+					caption = MakeCoordinateStr( pTile->GetPosition() );
+					ImGui::SameLine();
+					ImGui::Text( caption.c_str() );
+				}
 			}
 		}
 
