@@ -172,9 +172,10 @@ namespace Enemy
 		if ( NowWaiting() ) { return; }
 		// else
 
+		const auto myBody		= GetHitBox();
 		const auto movement		= velocity * elapsedTime;
-		const auto aroundTiles	= terrain.GetPlaceTiles( GetHitBox(), movement );
-		const auto aroundSolids	= Map::ToAABB( aroundTiles );
+		const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
+		const auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
 		Actor::MoveX( movement.x, aroundSolids );
 		Actor::MoveZ( movement.z, aroundSolids );
 

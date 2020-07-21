@@ -556,9 +556,10 @@ void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime )
 }
 void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
+	const auto myBody		= inst.GetHitBox();
 	const auto movement		= inst.velocity * elapsedTime;
-	const auto aroundTiles	= terrain.GetPlaceTiles( inst.GetHitBox(), movement );
-	const auto aroundSolids	= Map::ToAABB( aroundTiles );
+	const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
+	const auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
 	inst.Actor::MoveX( movement.x, aroundSolids );
 	inst.Actor::MoveZ( movement.z, aroundSolids );
 
@@ -581,9 +582,10 @@ void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, con
 }
 void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const Map &terrain )
 {
+	const auto myBody		= inst.GetHitBox();
 	const auto movement		= inst.velocity * elapsedTime;
-	const auto aroundTiles	= terrain.GetPlaceTiles( inst.GetHitBox(), movement );
-	const auto aroundSolids	= Map::ToAABB( aroundTiles );
+	const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
+	const auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
 	const int  collideIndex	= inst.Actor::MoveY( movement.y, aroundSolids );
 	if ( collideIndex != -1 ) // If collided to any
 	{
@@ -1203,7 +1205,7 @@ Donya::Collision::Box3F Player::GetSlidingBody( bool ofHurtBox ) const
 bool Player::WillCollideToAroundTiles( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
 {
 	const auto aroundTiles	= terrain.GetPlaceTiles( body, movement );
-	const auto aroundSolids	= Map::ToAABB( aroundTiles );
+	const auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, body );
 
 	const size_t solidCount = aroundSolids.size();
 	size_t collideIndex = solidCount;

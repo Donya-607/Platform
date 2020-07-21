@@ -141,20 +141,54 @@ Donya::Int2 Map::ToTilePos( const Donya::Vector3 &wsPos, bool alignToLeftTop )
 		scast<int>( ssPosF.y )
 	};
 }
-std::vector<Donya::Collision::Box3F> Map::ToAABB( const std::vector<std::shared_ptr<const Tile>> &tilePtrs, bool removeEmpties )
+std::vector<Donya::Collision::Box3F> Map::ToAABBSolids( const std::vector<std::shared_ptr<const Tile>> &tilePtrs, const Map &terrain, const Donya::Collision::Box3F &otherBody, bool removeEmpties )
 {
+	const float otherFoot = otherBody.Min().y;
+
+	auto CanRideOnLadder = [&]( const std::shared_ptr<const Tile> &pLadder )
+	{
+		if ( !pLadder ) { return false; }
+		// else
+
+		const float ladderTop = pLadder->GetHitBox().Max().y;
+		if ( otherFoot < ladderTop ) { return false; }
+		// else
+
+		constexpr Donya::Vector3 oneAboveOffset{ 0.0f, Tile::unitWholeSize, 0.0f };
+		const auto pOneAboveTile = terrain.GetPlaceTileOrNullptr( pLadder->GetPosition() + oneAboveOffset );
+		if ( pOneAboveTile && pOneAboveTile->GetID() == StageFormat::Ladder ) { return false; }
+		// else
+
+		return true;
+	};
+
 	std::vector<Donya::Collision::Box3F> results;
+	auto Skip = [&]()
+	{
+		if ( !removeEmpties )
+		{
+			// Fill by Nil() for align the index
+			results.emplace_back( Donya::Collision::Box3F::Nil() );
+		}
+	};
 
 	for ( const auto &pIt : tilePtrs )
 	{
 		if ( pIt )
 		{
+			// TODO: Also consider the object's horizontal area is inside in ladder area
+			if ( pIt->GetID() == StageFormat::Ladder && !CanRideOnLadder( pIt ) )
+			{
+				Skip();
+				continue;
+			}
+			// else
+
 			results.emplace_back( pIt->GetHitBox() );
 		}
-		else if ( !removeEmpties )
+		else
 		{
-			// Fill by Nil() for align the index
-			results.emplace_back( Donya::Collision::Box3F::Nil() );
+			Skip();
 		}
 	}
 

@@ -321,7 +321,7 @@ namespace Boss
 	{
 		const  auto movement	= currentVelocity * elapsedTime;
 		const  auto aroundTiles	= terrain.GetPlaceTiles( hitBox, movement );
-		return Map::ToAABB( aroundTiles );
+		return Map::ToAABBSolids( aroundTiles, terrain, hitBox );
 	}
 	int  Base::MoveOnlyX( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
