@@ -214,6 +214,25 @@ private:
 	private:
 		void AssignBodyParameter( Player &instance ) override;
 	};
+	class GrabLadder : public MoverBase
+	{
+	private:
+		float	shotLagSecond	= 0.0f;
+		float	lookingSign		= 1.0f;
+		Donya::Collision::Box3F	grabArea;
+	public:
+		void Init( Player &instance ) override;
+		void Uninit( Player &instance ) override;
+		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		bool ShouldChangeMover( const Player &instance ) const override;
+		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	#if USE_IMGUI
+		std::string GetMoverName() const override { return u8"‚Í‚µ‚²‚Â‚©‚Ü‚è"; }
+	#endif // USE_IMGUI
+	private:
+		void AssignBodyParameter( Player &instance ) override;
+	};
 	class KnockBack : public MoverBase
 	{
 	private:
@@ -253,6 +272,7 @@ private:
 	ShotManager					shotManager;
 	Flusher						invincibleTimer;
 	std::unique_ptr<MoverBase>	pMover					= nullptr;
+	std::weak_ptr<const Tile>	pTargetLadder{};		// It only used for initialization of Player::GrabLadder as reference
 	int							currentHP				= 1;
 	float						keepJumpSecond			= 0.0f;
 	bool						wasReleasedJumpInput	= false;
@@ -308,8 +328,10 @@ private:
 		pMover->Init( *this );
 	}
 private:
+	void AssignBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
 	Donya::Collision::Box3F GetNormalBody ( bool ofHurtBox ) const;
 	Donya::Collision::Box3F GetSlidingBody( bool ofHurtBox ) const;
+	Donya::Collision::Box3F GetLadderGrabArea() const;
 	bool WillCollideToAroundTiles( const Donya::Collision::Box3F &verifyBody, const Donya::Vector3 &movement, const Map &terrain ) const;
 	using Actor::MoveX;
 	using Actor::MoveY;

@@ -36,6 +36,7 @@ public:
 	Donya::Collision::Box3F	hurtBox;		// VS an attack(e.g. enemy)
 	Donya::Collision::Box3F	slideHitBox;	// VS a terrain when sliding
 	Donya::Collision::Box3F	slideHurtBox;	// VS an attack(e.g. enemy) when sliding
+	Donya::Collision::Box3F	ladderGrabArea;	// It using for considering to continue to grab the ladder
 	Bullet::FireDesc		fireParam;
 	std::vector<float>		chargeSeconds;	// It size() == Player::ShotLevel::LevelCount
 private:
@@ -98,6 +99,10 @@ private:
 		}
 		if ( 7 <= version )
 		{
+			archive( CEREAL_NVP( ladderGrabArea ) );
+		}
+		if ( 8 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -106,4 +111,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 6 )
+CEREAL_CLASS_VERSION( PlayerParam, 7 )

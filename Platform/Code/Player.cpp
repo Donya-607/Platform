@@ -327,10 +327,11 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::TreePop();
 	}
 
-	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定", &hitBox  );
-	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定", &hurtBox );
+	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定",	&hitBox  );
+	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定",	&hurtBox );
 	ImGui::Helper::ShowAABBNode( u8"スライド中・地形との当たり判定", &slideHitBox  );
 	ImGui::Helper::ShowAABBNode( u8"スライド中・攻撃との喰らい判定", &slideHurtBox );
+	ImGui::Helper::ShowAABBNode( u8"はしごの継続判定",	&ladderGrabArea );
 
 	auto MakePositive	= []( float *v )
 	{
@@ -850,6 +851,99 @@ void Player::Slide::AssignBodyParameter( Player &inst )
 	inst.hurtBox	= inst.GetSlidingBody( /* ofHurtBox = */ true  );
 }
 
+void Player::GrabLadder::Init( Player &inst )
+{
+	MoverBase::Init( inst );
+
+	shotLagSecond		= 0.0f;
+	lookingSign			= Donya::SignBitF( inst.orientation.LocalFront().x );
+	if ( IsZero( lookingSign ) ) { lookingSign = 1.0f; } // Fail safe
+
+	inst.velocity		= 0.0f;
+	inst.orientation	= Donya::Quaternion::Identity(); // Look to front
+
+	// Adjust the position into a ladder
+	{
+		const std::shared_ptr<const Tile> pLadder = inst.pTargetLadder.lock();
+
+		// X axis
+		{
+			float centerPosX = 0.0f;
+			if ( pLadder )
+			{
+				centerPosX = pLadder->GetPosition().x;
+			}
+			else // Fail safe
+			{
+				// Convert to the center of the current tile, then assign it
+
+				const auto tileIndex	= Map::ToTilePos ( inst.GetPosition() );
+				const auto tileCenter	= Map::ToWorldPos( tileIndex.y, tileIndex.x );
+				centerPosX = tileCenter.x;
+			}
+
+			inst.body.pos.x =  centerPosX;
+			inst.body.pos.x -= inst.body.offset.x; // Make to the WorldPosition().x become to tileCenter.x
+		}
+
+		// Y axis
+		{
+			float limitTopY		= 0.0f;
+			float limitBottomY	= 0.0f;
+			if ( pLadder )
+			{
+				const auto ladderBody = pLadder->GetHitBox();
+				limitTopY		= ladderBody.Max().y;
+				limitBottomY	= ladderBody.Min().y;
+			}
+			else // Fail safe
+			{
+				const auto myBody = inst.GetHitBox();
+				limitTopY		= myBody.Max().y;
+				limitBottomY	= myBody.Min().y;
+			}
+
+			const float adjustToDown	= std::max( 0.0f, grabArea.Max().y - limitTopY );
+			const float adjustToUp		= std::max( 0.0f, limitBottomY - grabArea.Min().y );
+			inst.body.pos.y -= adjustToDown;
+			inst.body.pos.y += adjustToUp;
+		}
+	}
+
+	inst.pTargetLadder.reset();
+}
+void Player::GrabLadder::Uninit( Player &inst )
+{
+	MoverBase::Uninit( inst );
+
+	inst.velocity.x = 0.0f;
+	inst.pTargetLadder.reset();
+}
+void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
+{
+	inst.MoveVertical( elapsedTime, input );
+
+	MotionUpdate( inst, elapsedTime );
+}
+void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
+{
+	
+}
+bool Player::GrabLadder::ShouldChangeMover( const Player &inst ) const
+{
+	return false;
+}
+std::function<void()> Player::GrabLadder::GetChangeStateMethod( Player &inst ) const
+{
+	return [&inst]() { inst.AssignMover<Normal>(); };
+}
+void Player::GrabLadder::AssignBodyParameter( Player &inst )
+{
+	grabArea		= inst.GetLadderGrabArea();
+	inst.body		= inst.GetNormalBody( /* ofHurtBox = */ false );
+	inst.hurtBox	= inst.GetNormalBody( /* ofHurtBox = */ true  );
+}
+
 void Player::KnockBack::Init( Player &inst )
 {
 	MoverBase::Init( inst );
@@ -955,7 +1049,7 @@ void Player::Init( const PlayerInitializer &initializer )
 }
 void Player::Uninit()
 {
-
+	pTargetLadder.reset();
 }
 void Player::Update( float elapsedTime, Input input, const Map &terrain )
 {
@@ -1178,16 +1272,20 @@ void Player::ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain )
 
 	pReceivedDamage.reset();
 }
+void Player::AssignBodyInfo( Donya::Collision::Box3F *p, bool useHurtBox ) const
+{
+	p->pos			= ( useHurtBox ) ? hurtBox.pos			: body.pos;
+	p->id			= ( useHurtBox ) ? hurtBox.id			: body.id;
+	p->ownerID		= ( useHurtBox ) ? hurtBox.ownerID		: body.ownerID;
+	p->ignoreList	= ( useHurtBox ) ? hurtBox.ignoreList	: body.ignoreList;
+	p->exist		= ( useHurtBox ) ? hurtBox.exist		: body.exist;
+}
 Donya::Collision::Box3F Player::GetNormalBody ( bool ofHurtBox ) const
 {
 	const auto &data = Parameter().Get();
 
 	Donya::Collision::Box3F tmp = ( ofHurtBox ) ? data.hurtBox : data.hitBox;
-	tmp.pos			= ( ofHurtBox ) ? hurtBox.pos			: body.pos;
-	tmp.id			= ( ofHurtBox ) ? hurtBox.id			: body.id;
-	tmp.ownerID		= ( ofHurtBox ) ? hurtBox.ownerID		: body.ownerID;
-	tmp.ignoreList	= ( ofHurtBox ) ? hurtBox.ignoreList	: body.ignoreList;
-	tmp.exist		= ( ofHurtBox ) ? hurtBox.exist			: body.exist;
+	AssignBodyInfo( &tmp, ofHurtBox );
 	return tmp;
 }
 Donya::Collision::Box3F Player::GetSlidingBody( bool ofHurtBox ) const
@@ -1195,11 +1293,15 @@ Donya::Collision::Box3F Player::GetSlidingBody( bool ofHurtBox ) const
 	const auto &data = Parameter().Get();
 
 	Donya::Collision::Box3F tmp = ( ofHurtBox ) ? data.slideHurtBox : data.slideHitBox;
-	tmp.pos			= ( ofHurtBox ) ? hurtBox.pos			: body.pos;
-	tmp.id			= ( ofHurtBox ) ? hurtBox.id			: body.id;
-	tmp.ownerID		= ( ofHurtBox ) ? hurtBox.ownerID		: body.ownerID;
-	tmp.ignoreList	= ( ofHurtBox ) ? hurtBox.ignoreList	: body.ignoreList;
-	tmp.exist		= ( ofHurtBox ) ? hurtBox.exist			: body.exist;
+	AssignBodyInfo( &tmp, ofHurtBox );
+	return tmp;
+}
+Donya::Collision::Box3F Player::GetLadderGrabArea() const
+{
+	const auto &data = Parameter().Get();
+
+	Donya::Collision::Box3F tmp = data.ladderGrabArea;
+	AssignBodyInfo( &tmp, /* useHurtBoxInfo = */ false );
 	return tmp;
 }
 bool Player::WillCollideToAroundTiles( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
