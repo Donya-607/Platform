@@ -339,6 +339,7 @@ private:
 	using Actor::DrawHitBox;
 	void MoveHorizontal( float elapsedTime, Input input );
 	void MoveVertical  ( float elapsedTime, Input input );
+	bool NowShotable() const;
 	void ShotIfRequested( float elapsedTime, Input input );
 	void UpdateOrientation( bool lookingRight );
 	void Jump();

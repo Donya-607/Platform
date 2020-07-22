@@ -23,6 +23,8 @@ public:
 	float	moveSpeed			= 1.0f;
 	float	slideMoveSpeed		= 1.0f;
 	float	slideMoveSeconds	= 1.0f;
+	float	ladderMoveSpeed		= 1.0f;
+	float	ladderShotLagSecond	= 0.5f;
 	float	jumpStrength		= 1.0f;
 	float	gravity				= 1.0f;
 	float	gravityResistance	= 0.5f;		// Multiply to gravity if while pressing a jump key
@@ -99,7 +101,12 @@ private:
 		}
 		if ( 7 <= version )
 		{
-			archive( CEREAL_NVP( ladderGrabArea ) );
+			archive
+			(
+				CEREAL_NVP( ladderMoveSpeed		),
+				CEREAL_NVP( ladderShotLagSecond	),
+				CEREAL_NVP( ladderGrabArea		)
+			);
 		}
 		if ( 8 <= version )
 		{

@@ -327,11 +327,23 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::TreePop();
 	}
 
-	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定",	&hitBox  );
-	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定",	&hurtBox );
+	if ( ImGui::TreeNode( u8"はしご設定" ) )
+	{
+		ImGui::Helper::ShowAABBNode( u8"はしごの継続判定", &ladderGrabArea );
+
+		ImGui::DragFloat( u8"はしごでの移動速度",		&ladderMoveSpeed,		0.01f );
+		ImGui::DragFloat( u8"はしごショット隙の秒数",	&ladderShotLagSecond,	0.01f );
+
+		ladderMoveSpeed		= std::max( 0.01f,	ladderMoveSpeed		);
+		ladderShotLagSecond	= std::max( 0.0f,	ladderShotLagSecond	);
+
+		ImGui::TreePop();
+	}
+
+	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定", &hitBox  );
+	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定", &hurtBox );
 	ImGui::Helper::ShowAABBNode( u8"スライド中・地形との当たり判定", &slideHitBox  );
 	ImGui::Helper::ShowAABBNode( u8"スライド中・攻撃との喰らい判定", &slideHurtBox );
-	ImGui::Helper::ShowAABBNode( u8"はしごの継続判定",	&ladderGrabArea );
 
 	auto MakePositive	= []( float *v )
 	{
@@ -921,9 +933,36 @@ void Player::GrabLadder::Uninit( Player &inst )
 }
 void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
 {
-	inst.MoveVertical( elapsedTime, input );
+	const auto &data = Parameter().Get();
 
-	MotionUpdate( inst, elapsedTime );
+	inst.velocity = 0.0f;
+
+	if ( 0.0f < shotLagSecond )
+	{
+		shotLagSecond -= elapsedTime;
+		std::max( 0.0f, shotLagSecond );
+	}
+
+	if ( shotLagSecond <= 0.0f )
+	{
+		inst.velocity.y = data.ladderMoveSpeed * input.moveVelocity.y;
+	}
+
+	const bool fired = ( inst.shotManager.IsShotRequested() && inst.NowShotable() );
+	if ( fired )
+	{
+		shotLagSecond = data.ladderShotLagSecond;
+
+		const int sideInputSign = Donya::SignBit( input.moveVelocity.x );
+		if ( sideInputSign != 0 )
+		{
+			lookingSign = scast<float>( sideInputSign );
+		}
+
+		inst.ShotIfRequested( elapsedTime, input );
+	}
+
+	MotionUpdate( inst, IsZero( inst.velocity.y ) ? 0.0f : elapsedTime );
 }
 void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -939,9 +978,9 @@ std::function<void()> Player::GrabLadder::GetChangeStateMethod( Player &inst ) c
 }
 void Player::GrabLadder::AssignBodyParameter( Player &inst )
 {
-	grabArea		= inst.GetLadderGrabArea();
-	inst.body		= inst.GetNormalBody( /* ofHurtBox = */ false );
-	inst.hurtBox	= inst.GetNormalBody( /* ofHurtBox = */ true  );
+	// Use normal body
+	MoverBase::AssignBodyParameter( inst );
+	grabArea= inst.GetLadderGrabArea();
 }
 
 void Player::KnockBack::Init( Player &inst )
@@ -1345,14 +1384,18 @@ void Player::MoveVertical  ( float elapsedTime, Input input )
 		Fall( elapsedTime, input );
 	}
 }
+bool Player::NowShotable() const
+{
+	const bool generatable = ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
+	return ( generatable ) ? true : false;
+}
 void Player::ShotIfRequested( float elapsedTime, Input input )
 {
 	if ( !shotManager.IsShotRequested() ) { return; }
+	if ( !NowShotable() ) { return; }
 	// else
 
 	const auto &data = Parameter().Get();
-	if ( data.maxBusterCount <= Bullet::Buster::GetLivingCount() ) { return; }
-	// else
 
 	const Donya::Vector3 front = orientation.LocalFront();
 	const float dot = Donya::Dot( front, Donya::Vector3::Right() );
