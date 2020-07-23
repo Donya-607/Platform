@@ -26,6 +26,7 @@ namespace
 		"Slide",
 		"Jump",
 		"KnockBack",
+		"GrabLadder",
 	};
 
 	static std::shared_ptr<ModelHelper::SkinningSet> pModel{};
@@ -446,6 +447,8 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 	if ( IsZero( elapsedTime ) ) { return currKind; }
 	// else
 
+	if ( inst.pMover && inst.pMover->NowGrabbingLadder( inst ) )
+	{ return MotionKind::GrabLadder; }
 	if ( inst.pMover && inst.pMover->NowKnockBacking( inst ) )
 	{ return MotionKind::KnockBack; }
 	if ( inst.pMover && inst.pMover->NowSliding( inst ) )
@@ -867,12 +870,12 @@ void Player::GrabLadder::Init( Player &inst )
 {
 	MoverBase::Init( inst );
 
-	shotLagSecond		= 0.0f;
-	lookingSign			= Donya::SignBitF( inst.orientation.LocalFront().x );
+	shotLagSecond	= 0.0f;
+	lookingSign		= Donya::SignBitF( inst.orientation.LocalFront().x );
 	if ( IsZero( lookingSign ) ) { lookingSign = 1.0f; } // Fail safe
 
-	inst.velocity		= 0.0f;
-	inst.orientation	= Donya::Quaternion::Identity(); // Look to front
+	inst.velocity	= 0.0f;
+	LookToFront( inst );
 
 	// Adjust the position into a ladder
 	{
@@ -933,34 +936,24 @@ void Player::GrabLadder::Uninit( Player &inst )
 }
 void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
 {
-	const auto &data = Parameter().Get();
-
 	inst.velocity = 0.0f;
 
-	if ( 0.0f < shotLagSecond )
+	if ( NowUnderShotLag() )
 	{
 		shotLagSecond -= elapsedTime;
 		std::max( 0.0f, shotLagSecond );
 	}
 
-	if ( shotLagSecond <= 0.0f )
+	const auto &data = Parameter().Get();
+
+	if ( !NowUnderShotLag() )
 	{
 		inst.velocity.y = data.ladderMoveSpeed * input.moveVelocity.y;
 	}
 
-	const bool fired = ( inst.shotManager.IsShotRequested() && inst.NowShotable() );
-	if ( fired )
-	{
-		shotLagSecond = data.ladderShotLagSecond;
+	ShotProcess( inst, elapsedTime, input );
 
-		const int sideInputSign = Donya::SignBit( input.moveVelocity.x );
-		if ( sideInputSign != 0 )
-		{
-			lookingSign = scast<float>( sideInputSign );
-		}
-
-		inst.ShotIfRequested( elapsedTime, input );
-	}
+	releaseWay = JudgeWhetherToRelease( inst, elapsedTime, input, terrain );
 
 	MotionUpdate( inst, IsZero( inst.velocity.y ) ? 0.0f : elapsedTime );
 }
@@ -981,6 +974,75 @@ void Player::GrabLadder::AssignBodyParameter( Player &inst )
 	// Use normal body
 	MoverBase::AssignBodyParameter( inst );
 	grabArea= inst.GetLadderGrabArea();
+}
+void Player::GrabLadder::LookToFront( Player &inst )
+{
+	// Initial orientation looks to the front
+	inst.orientation = Donya::Quaternion::Identity();
+}
+bool Player::GrabLadder::NowUnderShotLag() const
+{
+	return ( 0.0f < shotLagSecond ) ? true : false;
+}
+void Player::GrabLadder::ShotProcess( Player &inst, float elapsedTime, Input input )
+{
+	const bool wantShot = ( inst.shotManager.IsShotRequested() && inst.NowShotable() );
+	if ( !wantShot ) { return; }
+	// else
+
+	const auto &data = Parameter().Get();
+	shotLagSecond = data.ladderShotLagSecond;
+
+	const int sideInputSign = Donya::SignBit( input.moveVelocity.x );
+	if ( sideInputSign != 0 )
+	{
+		lookingSign = scast<float>( sideInputSign );
+	}
+
+	// Update the orientation temporarily for decide the shot direction
+	inst.UpdateOrientation( /* lookingRight = */ ( lookingSign < 0.0f ) ? false : true );
+	inst.ShotIfRequested( elapsedTime, input );
+	LookToFront( inst );
+}
+Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player &inst, float elapsedTime, Input input, const Map &terrain ) const
+{
+	if ( releaseWay != ReleaseWay::None ) { return releaseWay; }
+	// else
+
+	if ( input.useJump && inst.wasReleasedJumpInput && !IsZero( elapsedTime ) )
+	{
+		return ReleaseWay::Release;
+	}
+	// else
+
+	bool onNotLadder = false;
+	const auto grabbingTiles = terrain.GetPlaceTiles( grabArea );
+	for ( const auto &pIt : grabbingTiles )
+	{
+		if ( pIt && pIt->GetID() != StageFormat::Ladder )
+		{
+			onNotLadder = true;
+			break;
+		}
+	}
+	if ( onNotLadder )
+	{
+		const auto myBody = inst.GetHitBox();
+		const auto myHead = myBody.WorldPosition() + Donya::Vector3{ 0.0f, myBody.size.y, 0.0f };
+		const auto myFoot = myBody.WorldPosition() - Donya::Vector3{ 0.0f, myBody.size.y, 0.0f };
+
+		const auto topTile		= terrain.GetPlaceTileOrNullptr( myHead );
+		const auto downTile		= terrain.GetPlaceTileOrNullptr( myFoot );
+		const bool topIsLadder	= ( topTile  && topTile ->GetID() == StageFormat::Ladder );
+		const bool downIsLadder	= ( downTile && downTile->GetID() == StageFormat::Ladder );
+
+		if ( topIsLadder  ) { return ReleaseWay::Dismount;	}
+		if ( downIsLadder ) { return ReleaseWay::Climb;		}
+		// else
+		return ReleaseWay::Release;
+	}
+	
+	return releaseWay;
 }
 
 void Player::KnockBack::Init( Player &inst )

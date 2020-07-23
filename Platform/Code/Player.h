@@ -97,6 +97,7 @@ public:
 		Slide,
 		Jump,
 		KnockBack,
+		GrabLadder,
 
 		MotionCount
 	};
@@ -161,6 +162,7 @@ private:
 		virtual void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) = 0;
 		virtual bool NowSliding( const Player &instance ) const { return false; }
 		virtual bool NowKnockBacking( const Player &instance ) const { return false; }
+		virtual bool NowGrabbingLadder( const Player &instance ) const { return false; }
 		virtual bool NowMiss( const Player &instance ) const { return false; }
 		virtual bool Drawable( const Player &instance ) const { return true; }
 		virtual bool ShouldChangeMover( const Player &instance ) const = 0;
@@ -217,6 +219,15 @@ private:
 	class GrabLadder : public MoverBase
 	{
 	private:
+		enum class ReleaseWay
+		{
+			None,
+			Climb,
+			Release,
+			Dismount
+		};
+	private:
+		ReleaseWay releaseWay	= ReleaseWay::None;
 		float	shotLagSecond	= 0.0f;
 		float	lookingSign		= 1.0f;
 		Donya::Collision::Box3F	grabArea;
@@ -225,6 +236,7 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		bool NowGrabbingLadder( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -232,6 +244,12 @@ private:
 	#endif // USE_IMGUI
 	private:
 		void AssignBodyParameter( Player &instance ) override;
+		void LookToFront( Player &instance );
+	private:
+		bool NowUnderShotLag() const;
+		void ShotProcess( Player &instance, float elapsedTime, Input input );
+	private:
+		ReleaseWay JudgeWhetherToRelease( Player &instance, float elapsedTime, Input input, const Map &terrain ) const;
 	};
 	class KnockBack : public MoverBase
 	{
