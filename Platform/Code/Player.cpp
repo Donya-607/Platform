@@ -435,6 +435,7 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 	case MotionKind::Slide:		return true;
 	case MotionKind::Jump:		return false;
 	case MotionKind::KnockBack:	return true;
+	case MotionKind::GrabLadder:return true;
 	default: break;
 	}
 
@@ -691,7 +692,7 @@ void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain, 
 }
 bool Player::Normal::ShouldChangeMover( const Player &inst ) const
 {
-	return gotoSlide;
+	return ( gotoSlide || gotoLadder );
 }
 std::function<void()> Player::Normal::GetChangeStateMethod( Player &inst ) const
 {
@@ -964,6 +965,7 @@ void Player::GrabLadder::Uninit( Player &inst )
 
 	inst.velocity = 0.0f;
 	inst.pTargetLadder.reset();
+	inst.UpdateOrientation( /* lookingRight = */ ( lookingSign < 0.0f ) ? false : true );
 
 	if ( releaseWay == ReleaseWay::Climb )
 	{
@@ -1014,6 +1016,28 @@ bool Player::GrabLadder::ShouldChangeMover( const Player &inst ) const
 {
 	return ( releaseWay != ReleaseWay::None ) ? true : false;
 }
+#if DEBUG_MODE
+void Player::GrabLadder::DrawExtraHitBox( const Player &inst, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
+{
+	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
+	// else
+
+	Donya::Model::Cube::Constant constant;
+	constant.matViewProj	= matVP;
+	constant.lightDirection	= -Donya::Vector3::Up();
+
+	constant.matWorld		= inst.MakeWorldMatrix
+	(
+		grabArea.size * 2.0f,
+		/* enableRotation = */ false,
+		grabArea.WorldPosition()
+	);
+
+	constexpr Donya::Vector4 color{ 0.8f, 0.0f, 0.0f, 0.6f };
+	constant.drawColor = color;
+	pRenderer->ProcessDrawingCube( constant );
+}
+#endif // DEBUG_MODE
 std::function<void()> Player::GrabLadder::GetChangeStateMethod( Player &inst ) const
 {
 	return [&inst]() { inst.AssignMover<Normal>(); };
@@ -1291,6 +1315,9 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 	// else
 
 #if DEBUG_MODE
+
+	if ( pMover ) { pMover->DrawExtraHitBox( *this, pRenderer, matVP ); }
+
 	Donya::Model::Cube::Constant constant;
 	constant.matViewProj	= matVP;
 	constant.lightDirection	= -Donya::Vector3::Up();
