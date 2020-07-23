@@ -156,6 +156,8 @@ private:
 	class MoverBase
 	{
 	public:
+		virtual ~MoverBase() = default;
+	public:
 		virtual void Init( Player &instance );
 		virtual void Uninit( Player &instance ) {}
 		virtual void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) = 0;

@@ -901,6 +901,7 @@ void Player::GrabLadder::Init( Player &inst )
 {
 	MoverBase::Init( inst );
 
+	releaseWay		= ReleaseWay::None;
 	shotLagSecond	= 0.0f;
 	lookingSign		= Donya::SignBitF( inst.orientation.LocalFront().x );
 	if ( IsZero( lookingSign ) ) { lookingSign = 1.0f; } // Fail safe
@@ -911,7 +912,7 @@ void Player::GrabLadder::Init( Player &inst )
 
 	// Adjust the position into a ladder
 	{
-		const std::shared_ptr<const Tile> pLadder = inst.pTargetLadder.lock();
+		std::shared_ptr<const Tile> pLadder = inst.pTargetLadder.lock();
 
 		// X axis
 		{
@@ -957,7 +958,6 @@ void Player::GrabLadder::Init( Player &inst )
 		}
 
 
-
 		// We must apply world position to other boxes also
 		inst.hurtBox.pos	= inst.body.pos;
 		grabArea.pos		= inst.body.pos;
@@ -968,7 +968,7 @@ void Player::GrabLadder::Init( Player &inst )
 void Player::GrabLadder::Uninit( Player &inst )
 {
 	MoverBase::Uninit( inst );
-
+	
 	inst.velocity = 0.0f;
 	inst.pTargetLadder.reset();
 	inst.UpdateOrientation( /* lookingRight = */ ( lookingSign < 0.0f ) ? false : true );
@@ -1222,6 +1222,7 @@ void Player::Init( const PlayerInitializer &initializer )
 }
 void Player::Uninit()
 {
+	if ( pMover ) { pMover->Uninit( *this ); }
 	pTargetLadder.reset();
 }
 void Player::Update( float elapsedTime, Input input, const Map &terrain )
