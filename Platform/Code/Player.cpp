@@ -656,6 +656,32 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 
 	inst.ShotIfRequested( elapsedTime, input );
 
+	// Grabbing ladder?
+	if ( !gotoSlide )
+	{
+		auto GotoLadderIfSpecifyTileIsLadder = [&]( const Donya::Vector3 &wsVerifyPosition )
+		{
+			const auto targetTile = terrain.GetPlaceTileOrNullptr( wsVerifyPosition );
+			if ( targetTile && targetTile->GetID() == StageFormat::Ladder )
+			{
+				inst.pTargetLadder = targetTile;
+				gotoLadder = true;
+			}
+		};
+
+		const int verticalInputSign = Donya::SignBit( input.moveVelocity.y );
+		if ( verticalInputSign == 1 )
+		{
+			GotoLadderIfSpecifyTileIsLadder( inst.GetPosition() );
+		}
+		else if ( verticalInputSign == -1 )
+		{
+			constexpr Donya::Vector3 verticalOffset{ 0.0f, Tile::unitWholeSize, 0.0f };
+			const auto underPosition = inst.GetPosition() - verticalOffset;
+			GotoLadderIfSpecifyTileIsLadder( underPosition );
+		}
+	}
+
 	MotionUpdate( inst, elapsedTime );
 }
 void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
@@ -672,6 +698,10 @@ std::function<void()> Player::Normal::GetChangeStateMethod( Player &inst ) const
 	if ( gotoSlide )
 	{
 		return [&inst]() { inst.AssignMover<Slide>(); };
+	}
+	if ( gotoLadder )
+	{
+		return [&inst]() { inst.AssignMover<GrabLadder>(); };
 	}
 	// else
 	return []() {}; // No op

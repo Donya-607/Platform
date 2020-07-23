@@ -180,7 +180,8 @@ private:
 	class Normal : public MoverBase
 	{
 	private:
-		bool gotoSlide = false;
+		bool gotoSlide  = false;
+		bool gotoLadder = false;
 	public:
 		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
