@@ -876,6 +876,7 @@ void Player::GrabLadder::Init( Player &inst )
 
 	inst.velocity	= 0.0f;
 	LookToFront( inst );
+	inst.onGround	= false;
 
 	// Adjust the position into a ladder
 	{
@@ -931,8 +932,21 @@ void Player::GrabLadder::Uninit( Player &inst )
 {
 	MoverBase::Uninit( inst );
 
-	inst.velocity.x = 0.0f;
+	inst.velocity = 0.0f;
 	inst.pTargetLadder.reset();
+
+	if ( releaseWay == ReleaseWay::Climb )
+	{
+		// Adjust the position onto a ladder
+
+		Donya::Vector3 headPos = inst.GetPosition();
+		headPos.y += inst.body.size.y;
+
+		const auto tileIndex  = Map::ToTilePos ( headPos );
+		const auto tileCenter = Map::ToWorldPos( tileIndex.y, tileIndex.x );
+		inst.body.pos.y =  tileCenter.y;
+		inst.body.pos.y -= inst.body.offset.y; // Make to the WorldPosition().y become to tileCenter.y
+	}
 }
 void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
 {
@@ -959,11 +973,16 @@ void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, c
 }
 void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
-	
+	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
+	MoveOnlyVertical  ( inst, elapsedTime, terrain );
+
+	// We must apply world position to other boxes also.
+	inst.hurtBox.pos	= inst.body.pos;
+	grabArea.pos		= inst.body.pos;
 }
 bool Player::GrabLadder::ShouldChangeMover( const Player &inst ) const
 {
-	return false;
+	return ( releaseWay != ReleaseWay::None ) ? true : false;
 }
 std::function<void()> Player::GrabLadder::GetChangeStateMethod( Player &inst ) const
 {
@@ -1007,6 +1026,12 @@ void Player::GrabLadder::ShotProcess( Player &inst, float elapsedTime, Input inp
 Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player &inst, float elapsedTime, Input input, const Map &terrain ) const
 {
 	if ( releaseWay != ReleaseWay::None ) { return releaseWay; }
+	// else
+
+	if ( inst.onGround )
+	{
+		return ReleaseWay::Dismount;
+	}
 	// else
 
 	if ( input.useJump && inst.wasReleasedJumpInput && !IsZero( elapsedTime ) )
@@ -1533,7 +1558,7 @@ void Player::Landing()
 	{
 		onGround = true;
 
-		if ( pMover && !pMover->NowKnockBacking( *this ) )
+		if ( pMover && !pMover->NowKnockBacking( *this ) && !pMover->NowGrabbingLadder( *this ) )
 		{
 			Donya::Sound::Play( Music::Player_Landing );
 		}
