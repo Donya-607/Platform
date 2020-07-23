@@ -167,9 +167,6 @@ private:
 		virtual bool Drawable( const Player &instance ) const { return true; }
 		virtual bool ShouldChangeMover( const Player &instance ) const = 0;
 		virtual std::function<void()> GetChangeStateMethod( Player &instance ) const = 0;
-	#if DEBUG_MODE
-		virtual void DrawExtraHitBox( const Player &instance, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const {}
-	#endif // DEBUG_MODE
 	#if USE_IMGUI
 		virtual std::string GetMoverName() const = 0;
 	#endif // USE_IMGUI
@@ -243,9 +240,6 @@ private:
 		bool NowGrabbingLadder( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
-	#if DEBUG_MODE
-		void DrawExtraHitBox( const Player &instance, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
-	#endif // DEBUG_MODE
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"‚Í‚µ‚²‚Â‚©‚Ü‚è"; }
 	#endif // USE_IMGUI

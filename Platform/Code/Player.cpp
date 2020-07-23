@@ -594,7 +594,7 @@ void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, con
 		}
 	}
 
-	// We must apply world position to hurt box also.
+	// We must apply world position to hurt box also
 	inst.hurtBox.pos = inst.body.pos;
 }
 void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const Map &terrain )
@@ -618,7 +618,7 @@ void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const
 		inst.onGround = false;
 	}
 
-	// We must apply world position to hurt box also.
+	// We must apply world position to hurt box also
 	inst.hurtBox.pos = inst.body.pos;
 }
 void Player::MoverBase::AssignBodyParameter( Player &inst )
@@ -868,7 +868,7 @@ void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, f
 			}
 		}
 
-		// We must apply world position to hurt box also.
+		// We must apply world position to hurt box also
 		inst.hurtBox.pos = inst.body.pos;
 	}
 #else
@@ -936,25 +936,31 @@ void Player::GrabLadder::Init( Player &inst )
 		// Y axis
 		{
 			float limitTopY		= 0.0f;
-			float limitBottomY	= 0.0f;
+			float limitDownY	= 0.0f;
 			if ( pLadder )
 			{
 				const auto ladderBody = pLadder->GetHitBox();
-				limitTopY		= ladderBody.Max().y;
-				limitBottomY	= ladderBody.Min().y;
+				limitTopY	= ladderBody.Max().y;
+				limitDownY	= ladderBody.Min().y;
 			}
 			else // Fail safe
 			{
 				const auto myBody = inst.GetHitBox();
-				limitTopY		= myBody.Max().y;
-				limitBottomY	= myBody.Min().y;
+				limitTopY	= myBody.Max().y;
+				limitDownY	= myBody.Min().y;
 			}
 
-			const float adjustToDown	= std::max( 0.0f, grabArea.Max().y - limitTopY );
-			const float adjustToUp		= std::max( 0.0f, limitBottomY - grabArea.Min().y );
+			const float adjustToDown	= std::max( 0.0f, grabArea.Max().y - limitTopY  );
+			const float adjustToUp		= std::max( 0.0f, limitDownY - grabArea.Min().y );
 			inst.body.pos.y -= adjustToDown;
 			inst.body.pos.y += adjustToUp;
 		}
+
+
+
+		// We must apply world position to other boxes also
+		inst.hurtBox.pos	= inst.body.pos;
+		grabArea.pos		= inst.body.pos;
 	}
 
 	inst.pTargetLadder.reset();
@@ -971,13 +977,22 @@ void Player::GrabLadder::Uninit( Player &inst )
 	{
 		// Adjust the position onto a ladder
 
-		Donya::Vector3 headPos = inst.GetPosition();
-		headPos.y += inst.body.size.y;
+		Donya::Vector3 grabPos = grabArea.WorldPosition();
+		grabPos.y += grabArea.size.y;
 
-		const auto tileIndex  = Map::ToTilePos ( headPos );
-		const auto tileCenter = Map::ToWorldPos( tileIndex.y, tileIndex.x );
-		inst.body.pos.y =  tileCenter.y;
-		inst.body.pos.y -= inst.body.offset.y; // Make to the WorldPosition().y become to tileCenter.y
+		const auto  tileIndex	= Map::ToTilePos ( grabPos );
+		const auto  tileCenter	= Map::ToWorldPos( tileIndex.y, tileIndex.x );
+		const float tileFoot	= tileCenter.y - ( Tile::unitWholeSize * 0.5f );
+		const float myFoot		= inst.GetHitBox().Min().y;
+
+		const float adjustmentOnLadder = tileFoot - myFoot;
+		inst.body.pos.y += adjustmentOnLadder;
+
+		// We must apply world position to other boxes also
+		inst.hurtBox.pos	= inst.body.pos;
+		grabArea.pos		= inst.body.pos;
+
+		inst.Landing();
 	}
 }
 void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
@@ -1008,7 +1023,7 @@ void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terra
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 
-	// We must apply world position to other boxes also.
+	// We must apply world position to other boxes also
 	inst.hurtBox.pos	= inst.body.pos;
 	grabArea.pos		= inst.body.pos;
 }
@@ -1016,28 +1031,6 @@ bool Player::GrabLadder::ShouldChangeMover( const Player &inst ) const
 {
 	return ( releaseWay != ReleaseWay::None ) ? true : false;
 }
-#if DEBUG_MODE
-void Player::GrabLadder::DrawExtraHitBox( const Player &inst, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
-{
-	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
-	// else
-
-	Donya::Model::Cube::Constant constant;
-	constant.matViewProj	= matVP;
-	constant.lightDirection	= -Donya::Vector3::Up();
-
-	constant.matWorld		= inst.MakeWorldMatrix
-	(
-		grabArea.size * 2.0f,
-		/* enableRotation = */ false,
-		grabArea.WorldPosition()
-	);
-
-	constexpr Donya::Vector4 color{ 0.8f, 0.0f, 0.0f, 0.6f };
-	constant.drawColor = color;
-	pRenderer->ProcessDrawingCube( constant );
-}
-#endif // DEBUG_MODE
 std::function<void()> Player::GrabLadder::GetChangeStateMethod( Player &inst ) const
 {
 	return [&inst]() { inst.AssignMover<Normal>(); };
@@ -1046,7 +1039,7 @@ void Player::GrabLadder::AssignBodyParameter( Player &inst )
 {
 	// Use normal body
 	MoverBase::AssignBodyParameter( inst );
-	grabArea= inst.GetLadderGrabArea();
+	grabArea = inst.GetLadderGrabArea();
 }
 void Player::GrabLadder::LookToFront( Player &inst )
 {
@@ -1098,7 +1091,7 @@ Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player
 	const auto grabbingTiles = terrain.GetPlaceTiles( grabArea );
 	for ( const auto &pIt : grabbingTiles )
 	{
-		if ( pIt && pIt->GetID() != StageFormat::Ladder )
+		if ( !pIt || ( pIt && pIt->GetID() != StageFormat::Ladder ) )
 		{
 			onNotLadder = true;
 			break;
@@ -1316,8 +1309,6 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 
 #if DEBUG_MODE
 
-	if ( pMover ) { pMover->DrawExtraHitBox( *this, pRenderer, matVP ); }
-
 	Donya::Model::Cube::Constant constant;
 	constant.matViewProj	= matVP;
 	constant.lightDirection	= -Donya::Vector3::Up();
@@ -1338,19 +1329,42 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 	
 	constexpr Donya::Vector4 bodyColor{ 0.0f, 1.0f, 0.3f, 0.6f };
 	constexpr Donya::Vector4 hurtColor{ 0.0f, 0.3f, 1.0f, 0.6f };
+	constexpr Donya::Vector4 laddColor{ 1.0f, 0.3f, 0.0f, 0.6f };
 	const auto  &hurt		= hurtBox;
+	const auto  ladd		= GetLadderGrabArea();
 	const float bodyNear	= body.WorldPosition().z - body.size.z;
 	const float hurtNear	= hurt.WorldPosition().z - hurt.size.z;
+	const float laddNear	= ladd.WorldPosition().z - ladd.size.z;
 	// Drawing the far box first
 	if ( bodyNear < hurtNear )
 	{
-		DrawProcess( hurt, hurtColor );
-		DrawProcess( body, bodyColor );
+		if ( laddNear < bodyNear )
+		{
+			DrawProcess( hurt, hurtColor );
+			DrawProcess( body, bodyColor );
+			DrawProcess( ladd, laddColor );
+		}
+		else
+		{
+			DrawProcess( ladd, laddColor );
+			DrawProcess( hurt, hurtColor );
+			DrawProcess( body, bodyColor );
+		}
 	}
 	else
 	{
-		DrawProcess( body, bodyColor );
-		DrawProcess( hurt, hurtColor );
+		if ( laddNear < hurtNear )
+		{
+			DrawProcess( body, bodyColor );
+			DrawProcess( hurt, hurtColor );
+			DrawProcess( ladd, laddColor );
+		}
+		else
+		{
+			DrawProcess( ladd, laddColor );
+			DrawProcess( body, bodyColor );
+			DrawProcess( hurt, hurtColor );
+		}
 	}
 #endif // DEBUG_MODE
 }

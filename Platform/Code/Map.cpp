@@ -313,10 +313,13 @@ std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const Donya::Collis
 
 	// Make the hit box that covers an area of at least moving amount.
 	Donya::Collision::Box3F extArea = wsArea;
-	constexpr float margin = 0.1f;
-	extArea.size.x += fabsf( wsVelocity.x ) + margin;
-	extArea.size.y += fabsf( wsVelocity.y ) + margin;
-//	extArea.size.z += fabsf( wsVelocity.z ) + margin;
+	if ( !wsVelocity.IsZero() )
+	{
+		constexpr float margin = 0.1f;
+		extArea.size.x += fabsf( wsVelocity.x ) + margin;
+		extArea.size.y += fabsf( wsVelocity.y ) + margin;
+//		extArea.size.z += fabsf( wsVelocity.z ) + margin;
+	}
 
 	const auto  areaCenter	= extArea.WorldPosition();
 	const auto  areaMax		= extArea.Max();
