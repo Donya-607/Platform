@@ -988,6 +988,8 @@ void Player::GrabLadder::Uninit( Player &inst )
 
 		const float adjustmentOnLadder = tileFoot - myFoot;
 		inst.body.pos.y += adjustmentOnLadder;
+		constexpr float margin = 0.001f; // Make as: my foot != the ladder top
+		inst.body.pos.y += margin * Donya::SignBitF( adjustmentOnLadder );
 
 		// We must apply world position to other boxes also
 		inst.hurtBox.pos	= inst.body.pos;
