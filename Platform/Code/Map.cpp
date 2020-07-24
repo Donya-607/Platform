@@ -177,7 +177,45 @@ std::vector<Donya::Collision::Box3F> Map::ToAABBSolids( const std::vector<std::s
 	{
 		if ( pIt )
 		{
+			if ( pIt->GetID() == StageFormat::Needle )
+			{
+				Skip();
+				continue;
+			}
 			if ( pIt->GetID() == StageFormat::Ladder && !CanRideOnLadder( pIt ) )
+			{
+				Skip();
+				continue;
+			}
+			// else
+
+			results.emplace_back( pIt->GetHitBox() );
+		}
+		else
+		{
+			Skip();
+		}
+	}
+
+	return results;
+}
+std::vector<Donya::Collision::Box3F> Map::ToAABBKillAreas( const std::vector<std::shared_ptr<const Tile>> &tilePtrs, const Map &terrain, const Donya::Collision::Box3F &unused, bool removeEmpties )
+{
+	std::vector<Donya::Collision::Box3F> results;
+	auto Skip = [&]()
+	{
+		if ( !removeEmpties )
+		{
+			// Fill by Nil() for align the index
+			results.emplace_back( Donya::Collision::Box3F::Nil() );
+		}
+	};
+
+	for ( const auto &pIt : tilePtrs )
+	{
+		if ( pIt )
+		{
+			if ( pIt->GetID() != StageFormat::Needle )
 			{
 				Skip();
 				continue;

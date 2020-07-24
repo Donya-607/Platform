@@ -91,11 +91,17 @@ public:
 	/// </summary>
 	static Donya::Int2 ToTilePos( const Donya::Vector3 &wsPos, bool alignToLeftTopOfTile = false );
 	/// <summary>
-	/// Convert from "const Tile &amp;" vector to "Collision::Box3F" vector.
+	/// Convert from "const Tile &amp;" vector to "Collision::Box3F" vector of collidable solid.
 	/// The "otherBody" is the object body that may collide to returning solids.
 	/// An empty tiles will be removed(if "removeEmpties" is true). Or to be Nil(if "removeEmpties" is false).
 	/// </summary>
 	static std::vector<Donya::Collision::Box3F> ToAABBSolids( const std::vector<std::shared_ptr<const Tile>> &constTilePtrs, const Map &terrain, const Donya::Collision::Box3F &otherBody, bool removeEmpties = true );
+	/// <summary>
+	/// Convert from "const Tile &amp;" vector to "Collision::Box3F" vector of dangerous area.
+	/// The "otherBody" is unused, it there for consistency to ToAABBSolids().
+	/// An empty tiles will be removed(if "removeEmpties" is true). Or to be Nil(if "removeEmpties" is false).
+	/// </summary>
+	static std::vector<Donya::Collision::Box3F> ToAABBKillAreas( const std::vector<std::shared_ptr<const Tile>> &constTilePtrs, const Map &terrain, const Donya::Collision::Box3F &unused = {}, bool removeEmpties = true );
 private: // shared_ptr<> make be able to copy
 	using ElementType = std::shared_ptr<Tile>;
 	std::vector<std::vector<ElementType>> tilePtrs; // [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).

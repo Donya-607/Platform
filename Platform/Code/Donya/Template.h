@@ -2,6 +2,7 @@
 
 #include <algorithm>	// Use std::max, min
 #include <memory>
+#include <vector>
 
 #undef max
 #undef min
@@ -37,6 +38,17 @@ namespace Donya
 	/// You can know the T's type by that error-message.
 	/// </summary>
 	template<typename T> class TypeDetective;
+
+	template<typename T>
+	void AppendVector( std::vector<T> *pDest, const std::vector<T> &value )
+	{
+		pDest->insert( pDest->end(), value.begin(), value.end() );
+	}
+	template<typename T, size_t ArraySize>
+	void AppendVector( std::vector<T> *pDest, const std::array<T, ArraySize> &value )
+	{
+		pDest->insert( pDest->end(), value.begin(), value.end() );
+	}
 
 	/// <summary>
 	/// Returns std::make_unique( source.get() ) if the source pointer is valid.

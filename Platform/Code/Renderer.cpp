@@ -1,6 +1,7 @@
 #include "Renderer.h"
 
 #include "Donya/RenderingStates.h"
+#include "Donya/Template.h"			// Use AppendVector()
 
 namespace
 {
@@ -133,16 +134,11 @@ bool RenderingHelper::ShaderSet::Create()
 	constexpr auto IEDescsTex	= Donya::Model::Vertex::Tex::GenerateInputElements( 1 );
 	constexpr auto IEDescsBone	= Donya::Model::Vertex::Bone::GenerateInputElements( 2 );
 
-	auto Append = []( auto &dest, const auto &source )
-	{
-		dest.insert( dest.end(), source.begin(), source.end() );
-	};
-
 	std::vector<D3D11_INPUT_ELEMENT_DESC> IEDescsStatic{};
-	Append( IEDescsStatic, IEDescsPos );
-	Append( IEDescsStatic, IEDescsTex );
+	Donya::AppendVector( &IEDescsStatic, IEDescsPos );
+	Donya::AppendVector( &IEDescsStatic, IEDescsTex );
 	std::vector<D3D11_INPUT_ELEMENT_DESC> IEDescsSkinning{ IEDescsStatic };
-	Append( IEDescsSkinning, IEDescsBone );
+	Donya::AppendVector( &IEDescsSkinning, IEDescsBone );
 
 	bool succeeded = true;
 	if ( !normalStatic.Create( IEDescsStatic, VSFilePathStatic, PSFilePath ) ) { succeeded = false; }

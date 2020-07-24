@@ -2,11 +2,12 @@
 
 #include "Donya/Loader.h"
 #include "Donya/Sound.h"
+#include "Donya/Template.h"	// Use AppendVector()
 #if DEBUG_MODE
 #include "Donya/Useful.h"	// Use ShowMessageBox
 #endif // DEBUG_MODE
 
-#include "Bullets/Buster.h"	// use Buster::GetLivingCount()
+#include "Bullets/Buster.h"	// Use Buster::GetLivingCount()
 #include "Common.h"
 #include "FilePath.h"
 #include "Map.h"			// Use Map::ToWorldPos()
@@ -1517,6 +1518,25 @@ Donya::Collision::Box3F Player::GetLadderGrabArea() const
 	Donya::Collision::Box3F tmp = data.ladderGrabArea;
 	AssignBodyInfo( &tmp, /* useHurtBoxInfo = */ false );
 	return tmp;
+}
+std::vector<Donya::Collision::Box3F> Player::FetchAroundSolids( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
+{
+	const auto aroundTiles = terrain.GetPlaceTiles( body, movement );
+	auto aroundSolids = Map::ToAABBSolids( aroundTiles, terrain, body );
+	if ( invincibleTimer.NowWorking() )
+	{
+		const auto aroundKillAreas = Map::ToAABBKillAreas( aroundTiles, terrain, body );
+		Donya::AppendVector( &aroundSolids, aroundKillAreas );
+	}
+	return aroundSolids;
+}
+std::vector<Donya::Collision::Box3F> Player::FetchAroundKillingAreas( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
+{
+	if ( invincibleTimer.NowWorking() ) { return {}; }
+	// else
+
+	const auto aroundTiles = terrain.GetPlaceTiles( body, movement );
+	return Map::ToAABBKillAreas( aroundTiles, terrain, body );
 }
 bool Player::WillCollideToAroundTiles( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
 {
