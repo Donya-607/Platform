@@ -673,7 +673,13 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 		const int verticalInputSign = Donya::SignBit( input.moveVelocity.y );
 		if ( verticalInputSign == 1 )
 		{
-			GotoLadderIfSpecifyTileIsLadder( inst.GetPosition() );
+			const auto centerPos = inst.GetPosition();
+			GotoLadderIfSpecifyTileIsLadder( centerPos );
+			if ( !gotoLadder )
+			{
+				const Donya::Vector3 headOffset{ 0.0f, inst.body.size.y, 0.0f };
+				GotoLadderIfSpecifyTileIsLadder( centerPos + headOffset );
+			}
 		}
 		else
 		if ( verticalInputSign == -1 && inst.onGround )
@@ -952,8 +958,9 @@ void Player::GrabLadder::Init( Player &inst )
 				limitDownY	= myBody.Min().y;
 			}
 
-			const float adjustToDown	= std::max( 0.0f, grabArea.Max().y - limitTopY  );
-			const float adjustToUp		= std::max( 0.0f, limitDownY - grabArea.Min().y );
+			constexpr float margin = 0.001f; // Make as: the Max/Min pos != limitTopY/limitDownY
+			const float adjustToDown	= std::max( 0.0f, ( grabArea.Max().y - limitTopY  ) + margin );
+			const float adjustToUp		= std::max( 0.0f, ( limitDownY - grabArea.Min().y ) + margin );
 			inst.body.pos.y -= adjustToDown;
 			inst.body.pos.y += adjustToUp;
 		}
