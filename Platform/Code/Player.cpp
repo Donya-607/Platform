@@ -657,8 +657,8 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 
 	inst.ShotIfRequested( elapsedTime, input );
 
-	// Grabbing ladder?
-	if ( !gotoSlide )
+	// Try to grabbing ladder if the game time is not pausing
+	if ( !gotoSlide && !IsZero( elapsedTime ) )
 	{
 		auto GotoLadderIfSpecifyTileIsLadder = [&]( const Donya::Vector3 &wsVerifyPosition )
 		{
@@ -675,7 +675,8 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 		{
 			GotoLadderIfSpecifyTileIsLadder( inst.GetPosition() );
 		}
-		else if ( verticalInputSign == -1 )
+		else
+		if ( verticalInputSign == -1 && inst.onGround )
 		{
 			constexpr Donya::Vector3 verticalOffset{ 0.0f, Tile::unitWholeSize, 0.0f };
 			const auto underPosition = inst.GetPosition() - verticalOffset;
@@ -1081,8 +1082,10 @@ Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player
 	}
 	// else
 
+	if ( !input.useJump ) { inst.wasReleasedJumpInput = true; }
 	if ( input.useJump && inst.wasReleasedJumpInput && !IsZero( elapsedTime ) )
 	{
+		inst.wasReleasedJumpInput = false; // Prevent the grab-release loop by press keeping the jump and the up input
 		return ReleaseWay::Release;
 	}
 	// else
