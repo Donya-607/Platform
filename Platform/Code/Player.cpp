@@ -1026,7 +1026,7 @@ void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, c
 
 	releaseWay = JudgeWhetherToRelease( inst, elapsedTime, input, terrain );
 
-	MotionUpdate( inst, IsZero( inst.velocity.y ) ? 0.0f : elapsedTime );
+	MotionUpdate( inst, elapsedTime * Donya::SignBitF( inst.velocity.y ) );
 }
 void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
