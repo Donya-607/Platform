@@ -330,6 +330,8 @@ std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const Donya::Collis
 	std::vector<std::shared_ptr<const Tile>> results{};
 	auto AppendByCalc = [&]( const Donya::Vector3 &wsPos )
 	{
+		// HACK: It can optimize by: Cache the tile-space position of "wsPos", then ignore same pos.
+
 		results.emplace_back( GetPlaceTileOrNullptr( wsPos ) );
 	};
 
