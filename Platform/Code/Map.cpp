@@ -144,11 +144,12 @@ Donya::Int2 Map::ToTilePos( const Donya::Vector3 &wsPos, bool alignToLeftTop )
 std::vector<Donya::Collision::Box3F> Map::ToAABBSolids( const std::vector<std::shared_ptr<const Tile>> &tilePtrs, const Map &terrain, const Donya::Collision::Box3F &otherBody, bool removeEmpties )
 {
 	const float otherFoot = otherBody.Min().y;
-
 	auto CanRideOnLadder = [&]( const std::shared_ptr<const Tile> &pLadder )
 	{
 		if ( !pLadder ) { return false; }
 		// else
+		
+		// TODO: Also consider the object's horizontal area is inside in ladder area
 
 		const float ladderTop = pLadder->GetHitBox().Max().y;
 		if ( otherFoot < ladderTop ) { return false; }
@@ -176,7 +177,6 @@ std::vector<Donya::Collision::Box3F> Map::ToAABBSolids( const std::vector<std::s
 	{
 		if ( pIt )
 		{
-			// TODO: Also consider the object's horizontal area is inside in ladder area
 			if ( pIt->GetID() == StageFormat::Ladder && !CanRideOnLadder( pIt ) )
 			{
 				Skip();
