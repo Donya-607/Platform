@@ -574,10 +574,8 @@ void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime )
 }
 void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
-	const auto myBody		= inst.GetHitBox();
 	const auto movement		= inst.velocity * elapsedTime;
-	const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
-	const auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
+	const auto aroundSolids	= inst.FetchAroundSolids( inst.GetHitBox(), movement, terrain );
 	inst.Actor::MoveX( movement.x, aroundSolids );
 	inst.Actor::MoveZ( movement.z, aroundSolids );
 
@@ -600,10 +598,8 @@ void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, con
 }
 void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const Map &terrain )
 {
-	const auto myBody		= inst.GetHitBox();
 	const auto movement		= inst.velocity * elapsedTime;
-	const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
-	const auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
+	const auto aroundSolids	= inst.FetchAroundSolids( inst.GetHitBox(), movement, terrain );
 	const int  collideIndex	= inst.Actor::MoveY( movement.y, aroundSolids );
 	if ( collideIndex != -1 ) // If collided to any
 	{
@@ -779,7 +775,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 }
 void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
-#if 0 // Falling prevention
+#if 0 // Prevent to fall into a tight hole
 	// Horizontal move
 	{
 		const auto movement		= inst.velocity * elapsedTime;
@@ -881,7 +877,7 @@ void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, f
 	}
 #else
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
-#endif // Falling prevention
+#endif // Prevent to fall into a tight hole
 
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 }
@@ -1182,6 +1178,7 @@ void Player::Miss::Init( Player &inst )
 	inst.body.exist		= false;
 	inst.hurtBox.exist	= false;
 	inst.velocity		= 0.0f;
+	inst.currentHP		= 0;
 	inst.onGround		= false;
 
 	Donya::Sound::Play( Music::Player_Miss );
@@ -1299,6 +1296,17 @@ void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeft
 	// else
 
 	pMover->Move( *this, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
+
+	const auto nowBody		= GetHitBox();
+	const auto killAreas	= FetchAroundKillAreas( nowBody, velocity * elapsedTime, terrain );
+	for ( const auto &it : killAreas )
+	{
+		if ( Donya::Collision::IsHit( nowBody, it ) )
+		{
+			KillMe();
+			break;
+		}
+	}
 }
 void Player::Draw( RenderingHelper *pRenderer ) const
 {
@@ -1429,6 +1437,10 @@ void Player::KillMe()
 }
 void Player::GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const
 {
+	// Reject if now invincible
+	if ( invincibleTimer.NowWorking() ) { return; }
+	// else
+
 	// Receive only smallest damage if same timing
 	if ( pReceivedDamage && pReceivedDamage->damage.amount <= damage.amount ) { return; }
 	// else
@@ -1530,7 +1542,7 @@ std::vector<Donya::Collision::Box3F> Player::FetchAroundSolids( const Donya::Col
 	}
 	return aroundSolids;
 }
-std::vector<Donya::Collision::Box3F> Player::FetchAroundKillingAreas( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
+std::vector<Donya::Collision::Box3F> Player::FetchAroundKillAreas( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
 {
 	if ( invincibleTimer.NowWorking() ) { return {}; }
 	// else
@@ -1540,9 +1552,7 @@ std::vector<Donya::Collision::Box3F> Player::FetchAroundKillingAreas( const Dony
 }
 bool Player::WillCollideToAroundTiles( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
 {
-	const auto aroundTiles	= terrain.GetPlaceTiles( body, movement );
-	const auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, body );
-
+	const auto aroundSolids	= FetchAroundSolids( body, movement, terrain );
 	const size_t solidCount = aroundSolids.size();
 	size_t collideIndex = solidCount;
 	for ( size_t i = 0; i < solidCount; ++i )

@@ -358,7 +358,7 @@ private:
 	Donya::Collision::Box3F GetSlidingBody( bool ofHurtBox ) const;
 	Donya::Collision::Box3F GetLadderGrabArea() const;
 	std::vector<Donya::Collision::Box3F> FetchAroundSolids( const Donya::Collision::Box3F &searchingBody, const Donya::Vector3 &movement, const Map &terrain ) const;
-	std::vector<Donya::Collision::Box3F> FetchAroundKillingAreas( const Donya::Collision::Box3F &searchingBody, const Donya::Vector3 &movement, const Map &terrain ) const;
+	std::vector<Donya::Collision::Box3F> FetchAroundKillAreas( const Donya::Collision::Box3F &searchingBody, const Donya::Vector3 &movement, const Map &terrain ) const;
 	bool WillCollideToAroundTiles( const Donya::Collision::Box3F &verifyBody, const Donya::Vector3 &movement, const Map &terrain ) const;
 	using Actor::MoveX;
 	using Actor::MoveY;
