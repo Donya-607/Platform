@@ -110,7 +110,7 @@ private:
 	
 	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 
-	int		CalcCurrentRoomID();
+	int		CalcCurrentRoomID() const;
 
 	void	Collision_BulletVSBoss();
 	void	Collision_BulletVSEnemy();

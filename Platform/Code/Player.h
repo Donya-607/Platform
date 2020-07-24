@@ -317,6 +317,7 @@ public:
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
 public:
 	bool NowMiss() const;
+	bool NowGrabbingLadder() const;
 	using				 Actor::GetHitBox;
 	Donya::Collision::Box3F		GetHurtBox()		const;
 	Donya::Quaternion			GetOrientation()	const;

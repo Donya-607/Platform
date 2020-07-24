@@ -1385,6 +1385,10 @@ bool Player::NowMiss() const
 {
 	return ( !pMover ) ? true : ( pMover->NowMiss( *this ) ) ? true : false;
 }
+bool Player::NowGrabbingLadder() const
+{
+	return ( pMover && pMover->NowGrabbingLadder( *this ) ) ? true : false;
+}
 Donya::Collision::Box3F	Player::GetHurtBox() const
 {
 	return hurtBox;

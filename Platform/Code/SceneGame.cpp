@@ -226,7 +226,12 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 
 	const int oldRoomID = currentRoomID;
-	currentRoomID = CalcCurrentRoomID();
+	if ( scroll.active )
+	{
+		// Update the roomID if the game is pausing for the scroll.
+		// That limit prevents the camera moves to not allowed direction.
+		currentRoomID = CalcCurrentRoomID();
+	}
 	if ( oldRoomID != currentRoomID )
 	{
 		isThereClearEvent	= ( pClearEvent		&& pClearEvent->IsThereIn( currentRoomID ) );
@@ -303,16 +308,50 @@ Scene::Result SceneGame::Update( float elapsedTime )
 			const float rightBorder	= Contain( transitionable, Dir::Right )
 									? FLT_MAX
 									: currentRoomArea.Max().x;
-
 			pPlayer->PhysicUpdate( deltaTimeForMove, mapRef, leftBorder, rightBorder );
 
 			const int movedRoomID = CalcCurrentRoomID();
 			if ( movedRoomID != currentRoomID )
 			{
+				// RoomID will update in next frame of the game.
+				// But if the scroll is not allowed, stay in the current room.
+
 				// If allow the scroll to a connecting room, the scroll waiting will occur as strange.
 				if ( pCurrentRoom && !pCurrentRoom->IsConnectTo( movedRoomID ) )
 				{
-					PrepareScrollIfNotActive( currentRoomID, movedRoomID );
+					bool scrollToUp		= false;
+					bool scrollToDown	= false;
+					{
+						const auto movedRoomArea = pHouse->CalcRoomArea( movedRoomID );
+						if ( currentRoomArea.pos.y < movedRoomArea.pos.y )
+						{
+							scrollToUp		= true;
+						}
+						if ( currentRoomArea.pos.y > movedRoomArea.pos.y )
+						{
+							scrollToDown	= true;
+						}
+					}
+
+					if ( scrollToUp )
+					{
+						if ( pPlayer->NowGrabbingLadder() && Contain( transitionable, Dir::Up ) )
+						{
+							PrepareScrollIfNotActive( currentRoomID, movedRoomID );
+						}
+					}
+					else
+					if ( scrollToDown )
+					{
+						if ( Contain( transitionable, Dir::Down ) )
+						{
+							PrepareScrollIfNotActive( currentRoomID, movedRoomID );
+						}
+					}
+					else
+					{
+						PrepareScrollIfNotActive( currentRoomID, movedRoomID );
+					}
 				}
 			}
 		}
@@ -330,6 +369,11 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	// Kill the player if fall out from current room
 	if ( pPlayer && !pPlayer->NowMiss() )
 	{
+		// If the transition to downward is allowed,
+		// the bottom of current room will scroll faster than the player's falling.
+		// But if that transition is not allowed,
+		// the current room does not scroll, so the player will fall out from current room, then die.
+
 		const float playerTop  = pPlayer->GetHitBox().Max().y;
 		const float roomBottom = ( pCurrentRoom ) ? pCurrentRoom->GetArea().Min().y : currentScreen.Min().y;
 		if ( playerTop < roomBottom )
@@ -834,7 +878,7 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 	pBossContainer->Update( elapsedTime, input );
 }
 
-int  SceneGame::CalcCurrentRoomID()
+int  SceneGame::CalcCurrentRoomID() const
 {
 	if ( !pPlayer || !pHouse ) { return currentRoomID; }
 	// else
