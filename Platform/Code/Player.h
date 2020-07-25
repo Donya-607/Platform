@@ -333,6 +333,7 @@ public:
 	virtual bool				WillDie()			const;
 public:
 	void KillMe();
+	void KillMeIfCollideToKillAreas( float elapsedTime, const Map &terrain );
 private:
 	void GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const;
 	/// <summary>

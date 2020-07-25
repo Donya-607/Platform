@@ -595,6 +595,8 @@ void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, con
 
 	// We must apply world position to hurt box also
 	inst.hurtBox.pos = inst.body.pos;
+
+	// inst.KillMeIfCollideToKillAreas( elapsedTime, terrain );
 }
 void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const Map &terrain )
 {
@@ -617,6 +619,8 @@ void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const
 
 	// We must apply world position to hurt box also
 	inst.hurtBox.pos = inst.body.pos;
+
+	// inst.KillMeIfCollideToKillAreas( elapsedTime, terrain );
 }
 void Player::MoverBase::AssignBodyParameter( Player &inst )
 {
@@ -1272,9 +1276,9 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 	}
 	// else
 
+	invincibleTimer.Update( elapsedTime );
 	ApplyReceivedDamageIfHas( elapsedTime, terrain );
 
-	invincibleTimer.Update( elapsedTime );
 	hurtBox.exist = !invincibleTimer.NowWorking();
 
 	pMover->Update( *this, elapsedTime, input, terrain );
@@ -1296,20 +1300,6 @@ void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeft
 	// else
 
 	pMover->Move( *this, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
-
-	if ( !invincibleTimer.NowWorking() )
-	{
-		const auto nowBody		= GetHitBox();
-		const auto killAreas	= FetchAroundKillAreas( nowBody, velocity * elapsedTime, terrain );
-		for ( const auto &it : killAreas )
-		{
-			if ( Donya::Collision::IsHit( nowBody, it ) )
-			{
-				KillMe();
-				break;
-			}
-		}
-	}
 }
 void Player::Draw( RenderingHelper *pRenderer ) const
 {
@@ -1438,12 +1428,25 @@ void Player::KillMe()
 {
 	AssignMover<Miss>();
 }
-void Player::GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const
+void Player::KillMeIfCollideToKillAreas( float elapsedTime, const Map &terrain )
 {
-	// Reject if now invincible
-	if ( invincibleTimer.NowWorking() ) { return; }
+	if ( invincibleTimer.NowWorking() || NowMiss() ) { return; }
+	if ( pReceivedDamage ) { return; } // If now receiving damage, I prioritize that.
 	// else
 
+	const auto nowBody   = GetHitBox();
+	const auto killAreas = FetchAroundKillAreas( nowBody, velocity * elapsedTime, terrain );
+	for ( const auto &it : killAreas )
+	{
+		if ( Donya::Collision::IsHit( nowBody, it ) )
+		{
+			KillMe();
+			return;
+		}
+	}
+}
+void Player::GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const
+{
 	// Receive only smallest damage if same timing
 	if ( pReceivedDamage && pReceivedDamage->damage.amount <= damage.amount ) { return; }
 	// else
@@ -1472,6 +1475,14 @@ void Player::GiveDamageImpl( const Definition::Damage &damage, float distLeft, f
 void Player::ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain )
 {
 	if ( !pReceivedDamage ) { return; }
+	// else
+
+	// Reject if now invincible
+	if ( invincibleTimer.NowWorking() )
+	{
+		pReceivedDamage.reset();
+		return;
+	}
 	// else
 
 	currentHP -= pReceivedDamage->damage.amount;

@@ -388,6 +388,13 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Collision_BossVSPlayer();
 	Collision_EnemyVSPlayer();
 
+	// Needle VS Player.
+	// By call it after VS Boss/Enemy, it makes to priority the VS Boss/Enemy than VS Needle if these collisions occur at the same time.
+	if ( pPlayer && !pPlayer->NowMiss() )
+	{
+		pPlayer->KillMeIfCollideToKillAreas( deltaTimeForMove, mapRef );
+	}
+
 	return ReturnResult();
 }
 
