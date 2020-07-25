@@ -1297,14 +1297,17 @@ void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeft
 
 	pMover->Move( *this, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 
-	const auto nowBody		= GetHitBox();
-	const auto killAreas	= FetchAroundKillAreas( nowBody, velocity * elapsedTime, terrain );
-	for ( const auto &it : killAreas )
+	if ( !invincibleTimer.NowWorking() )
 	{
-		if ( Donya::Collision::IsHit( nowBody, it ) )
+		const auto nowBody		= GetHitBox();
+		const auto killAreas	= FetchAroundKillAreas( nowBody, velocity * elapsedTime, terrain );
+		for ( const auto &it : killAreas )
 		{
-			KillMe();
-			break;
+			if ( Donya::Collision::IsHit( nowBody, it ) )
+			{
+				KillMe();
+				break;
+			}
 		}
 	}
 }
@@ -1544,20 +1547,21 @@ std::vector<Donya::Collision::Box3F> Player::FetchAroundSolids( const Donya::Col
 }
 std::vector<Donya::Collision::Box3F> Player::FetchAroundKillAreas( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
 {
-	if ( invincibleTimer.NowWorking() ) { return {}; }
-	// else
-
 	const auto aroundTiles = terrain.GetPlaceTiles( body, movement );
 	return Map::ToAABBKillAreas( aroundTiles, terrain, body );
 }
 bool Player::WillCollideToAroundTiles( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
 {
-	const auto aroundSolids	= FetchAroundSolids( body, movement, terrain );
-	const size_t solidCount = aroundSolids.size();
-	size_t collideIndex = solidCount;
-	for ( size_t i = 0; i < solidCount; ++i )
+	auto aroundSolids = FetchAroundSolids( body, movement, terrain );
+	if ( !invincibleTimer.NowWorking() )
 	{
-		if ( Donya::Collision::IsHit( body, aroundSolids[i] ) )
+		const auto aroundKillAreas = FetchAroundKillAreas( body, movement, terrain );
+		Donya::AppendVector( &aroundSolids, aroundKillAreas );
+	}
+
+	for ( const auto &it : aroundSolids )
+	{
+		if ( Donya::Collision::IsHit( body, it ) )
 		{
 			return true;
 		}
