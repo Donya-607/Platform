@@ -81,6 +81,8 @@ void SceneOver::Init()
 	assert( result );
 #endif // DEBUG_MODE
 
+	Player::Remaining::Set( Player::Parameter().Get().initialRemainCount );
+
 	CameraInit();
 }
 void SceneOver::Uninit()
@@ -300,8 +302,6 @@ Scene::Result SceneOver::ReturnResult()
 	// TODO: Temporary condition, should fix this
 	if ( Fader::Get().IsClosed() )
 	{
-		Player::Remaining::Set( Player::Parameter().Get().initialRemainCount );
-
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
 		change.sceneType = Scene::Type::Title;
