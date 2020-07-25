@@ -16,10 +16,12 @@ private:
 public:
 	float			degree = 0.0f;
 	float			alpha  = 1.0f;
-	Donya::Vector2	pos;		// Screen space.
-	Donya::Vector2	texPos;		// Texture space.
-	Donya::Vector2	texSize;	// Whole size. Texture space.
-	Donya::Vector2	drawScale{ 1.0f, 1.0f };
+	Donya::Vector2	pos;					// Screen space
+	Donya::Vector2	origin{ 0.5f, 0.5f };	// 0.0f ~ 1.0f
+	Donya::Vector2	texPos;					// Texture space
+	Donya::Vector2	texSize;				// Whole size, Texture space
+	Donya::Vector2	scale{ 1.0f, 1.0f };
+	Donya::Vector3	color{ 1.0f, 1.0f, 1.0f };
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -27,12 +29,14 @@ private:
 	{
 		archive
 		(
-			CEREAL_NVP( degree		),
-			CEREAL_NVP( alpha		),
-			CEREAL_NVP( pos			),
-			CEREAL_NVP( texPos		),
-			CEREAL_NVP( texSize		),
-			CEREAL_NVP( drawScale	)
+			CEREAL_NVP( degree	),
+			CEREAL_NVP( alpha	),
+			CEREAL_NVP( pos		),
+			CEREAL_NVP( origin	),
+			CEREAL_NVP( texPos	),
+			CEREAL_NVP( texSize	),
+			CEREAL_NVP( scale	),
+			CEREAL_NVP( color	)
 		);
 
 		if ( 1 <= version )

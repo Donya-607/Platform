@@ -350,11 +350,11 @@ bool SceneLoad::SpritesInit()
 	if ( !sprNowLoading.LoadSprite( GetSpritePath( SpriteAttribute::NowLoading ), MAX_INSTANCE_COUNT ) )
 	{ succeeded = false; }
 
-	sprNowLoading.pos		= data.sprLoadPos;
-	sprNowLoading.drawScale	= data.sprLoadScale;
-	sprNowLoading.alpha		= 1.0f;
+	sprNowLoading.pos	= data.sprLoadPos;
+	sprNowLoading.scale	= data.sprLoadScale;
+	sprNowLoading.alpha	= 1.0f;
 
-	flushingTimer			= 0.0f;
+	flushingTimer		= 0.0f;
 
 	return succeeded;
 }
