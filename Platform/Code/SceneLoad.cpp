@@ -98,8 +98,19 @@ namespace
 }
 CEREAL_CLASS_VERSION( Member, 0 )
 
+#if USE_IMGUI
+namespace
+{
+	static bool stopFadeout = false;
+}
+#endif // USE_IMGUI
+
 void SceneLoad::Init()
 {
+#if USE_IMGUI
+	stopFadeout = false;
+#endif // USE_IMGUI
+
 	sceneParam.LoadParameter();
 	
 	constexpr auto CoInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
@@ -273,6 +284,9 @@ Scene::Result SceneLoad::Update( float elapsedTime )
 	{
 		if ( allSucceeded )
 		{
+		#if USE_IMGUI
+			if ( !stopFadeout )
+		#endif // USE_IMGUI
 			StartFade();
 		}
 		else
@@ -281,7 +295,7 @@ Scene::Result SceneLoad::Update( float elapsedTime )
 			MessageBox
 			(
 				hWnd,
-				TEXT( "リソースの読み込みが失敗しました。アプリを終了します。" ),
+				TEXT( "リソースの読み込みに失敗しました。アプリを終了します。" ),
 				TEXT( "リソース読み込みエラー" ),
 				MB_ICONERROR | MB_OK
 			);
@@ -348,13 +362,12 @@ void SceneLoad::SpritesUpdate( float elapsedTime )
 {
 	const auto &data = FetchParameter();
 
-	const float cycle = data.sprLoadFlushingInterval * elapsedTime;
-	if ( !IsZero( cycle ) )
+	if ( !IsZero( data.sprLoadFlushingInterval ) )
 	{
-		const float sinIncrement = 360.0f / ( 60.0f * cycle );
-		flushingTimer += sinIncrement;
+		const float sinIncrement = 360.0f / ( 60.0f * data.sprLoadFlushingInterval );
+		flushingTimer += sinIncrement * elapsedTime;
 
-		const float sin_01 = ( sinf( ToRadian( flushingTimer ) ) + 1.0f ) * 0.5f;
+		const float sin_01 = ( sinf( flushingTimer ) + 1.0f ) * 0.5f;
 		const float shake  = sin_01 * data.sprLoadFlushingRange;
 
 		sprNowLoading.alpha = std::max( data.sprLoadMinAlpha, std::min( 1.0f, shake ) );
@@ -408,20 +421,22 @@ void SceneLoad::UseImGui()
 	{
 		if ( ImGui::TreeNode( u8"ロード画面のメンバ" ) )
 		{
+			ImGui::Checkbox( u8"フェードアウトを止めるか", &stopFadeout );
+
+			sceneParam.ShowImGuiNode( u8"パラメータ調整" );
+
+			sprNowLoading.ShowImGuiNode	( u8"画像調整・ロード中" );
+
 			auto GetBoolStr = []( bool v )->std::string
 			{
 				return ( v ) ? "True" : "False";
 			};
-
-			sceneParam.ShowImGuiNode( u8"パラメータ調整" );
 
 			ImGui::Text( u8"終了フラグ・モデル[%s]",		GetBoolStr( finishModels	).c_str() );
 			ImGui::Text( u8"終了フラグ・スプライト[%s]",	GetBoolStr( finishSprites	).c_str() );
 			ImGui::Text( u8"終了フラグ・サウンド[%s]",	GetBoolStr( finishSounds	).c_str() );
 			
 			ImGui::Text( u8"経過時間：[%6.3f]", elapsedTimer );
-
-			sprNowLoading.ShowImGuiNode	( u8"画像調整・ロード中" );
 
 			ImGui::TreePop();
 		}
