@@ -13,13 +13,15 @@ bool UIObject::Draw( float depth ) const
 	const float prevDepth = Donya::Sprite::GetDrawDepth();
 	Donya::Sprite::SetDrawDepth( depth );
 
+	const Donya::Vector2 wholeTexSize = GetSpriteSize().Float();
+
 	const bool result =
 	Donya::Sprite::DrawExt
 	(
 		sprite,
 		pos.x,		pos.y,
 		scale.x,	scale.y,
-		degree,		origin,
+		degree,		origin.Product( wholeTexSize ),
 		alpha,		color.x,	color.y,	color.z
 	);
 
@@ -31,6 +33,8 @@ bool UIObject::DrawPart( float depth ) const
 	const float prevDepth = Donya::Sprite::GetDrawDepth();
 	Donya::Sprite::SetDrawDepth( depth );
 
+	const Donya::Vector2 wholeTexSize = GetSpriteSize().Float();
+
 	const bool result =
 	Donya::Sprite::DrawPartExt
 	(
@@ -39,7 +43,7 @@ bool UIObject::DrawPart( float depth ) const
 		texPos.x,	texPos.y,
 		texSize.x,	texSize.y,
 		scale.x,	scale.y,
-		degree,		origin,
+		degree,		origin.Product( wholeTexSize ),
 		alpha,		color.x,	color.y,	color.z
 	);
 

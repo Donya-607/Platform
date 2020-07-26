@@ -102,12 +102,25 @@ namespace Meter
 	}
 	void Drawer::DrawAmount( float drawDepth ) const
 	{
+		if ( IsZero( maxAmount ) ) { return; }
+		// else
+
 		const auto &data = Parameter::GetMeter();
 		sprite.texPos  = data.amountTexOrigin;
 		sprite.texSize = data.amountTexSize;
-		
+
+		const float drawPercent = current / maxAmount;
+		sprite.texSize.y *= drawPercent;
+
+		const float reducedAmount = data.amountTexSize.y - sprite.texSize.y;
+		sprite.texPos.y += reducedAmount;
+
+		Donya::Vector2 drawOffset = data.amountPosOffset;
+		drawOffset.y += reducedAmount;
+		drawOffset = drawOffset.Product( sprite.scale );
+
 		const auto oldPos = sprite.pos;
-		sprite.pos += data.amountPosOffset;
+		sprite.pos += drawOffset;
 		sprite.DrawPart( drawDepth );
 		sprite.pos = oldPos;
 	}
