@@ -24,6 +24,7 @@
 #include "Enemy.h"
 #include "Fader.h"
 #include "FilePath.h"
+#include "Meter.h"
 #include "Music.h"
 #include "Parameter.h"
 #include "PlayerParam.h"
@@ -1579,6 +1580,8 @@ void SceneGame::UseImGui()
 
 		if ( pBossContainer ) { pBossContainer->ShowImGuiNode( u8"ボスの現在", stageNumber ); }
 		Boss::Parameter::Update( u8"ボスのパラメータ" );
+
+		Meter::Parameter::Update( u8"メータのパラメータ" );
 
 		ImGui::TreePop();
 	}

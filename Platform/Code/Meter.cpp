@@ -107,4 +107,14 @@ namespace Meter
 		
 		sprite.DrawPart( drawDepth );
 	}
+
+#if USE_IMGUI
+	void MeterParam::ShowImGuiNode()
+	{
+		ImGui::DragFloat2( u8"ゲージ・テクスチャ原点",			&gaugeTexOrigin.x	);
+		ImGui::DragFloat2( u8"ゲージ・切り取りサイズ（全体）",		&gaugeTexSize.x		);
+		ImGui::DragFloat2( u8"めもり・テクスチャ原点",			&amountTexOrigin.x	);
+		ImGui::DragFloat2( u8"めもり・切り取りサイズ（全体）",		&amountTexSize.x	);
+	}
+#endif // USE_IMGUI
 }
