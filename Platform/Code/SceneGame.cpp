@@ -24,6 +24,7 @@
 #include "Enemy.h"
 #include "Fader.h"
 #include "FilePath.h"
+#include "Item.h"
 #include "Meter.h"
 #include "Music.h"
 #include "Parameter.h"
@@ -586,6 +587,13 @@ void SceneGame::InitStage( int stageNo )
 
 	Bullet::Admin::Get().ClearInstances();
 
+	auto &itemAdmin = Item::Admin::Get();
+	itemAdmin.ClearInstances();
+	itemAdmin.LoadItems( stageNo, IOFromBinary );
+#if DEBUG_MODE
+	itemAdmin.SaveItems( stageNo, true );
+#endif // DEBUG_MODE
+
 	auto &enemyAdmin = Enemy::Admin::Get();
 	enemyAdmin.ClearInstances();
 	enemyAdmin.LoadEnemies( stageNo, IOFromBinary );
@@ -607,6 +615,7 @@ void SceneGame::UninitStage()
 
 	Bullet::Admin::Get().ClearInstances();
 	Enemy::Admin::Get().ClearInstances();
+	Item::Admin::Get().ClearInstances();
 }
 
 void SceneGame::AssignCurrentInput()

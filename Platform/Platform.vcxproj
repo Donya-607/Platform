@@ -183,6 +183,7 @@
     <ClCompile Include="Code\FilePath.cpp" />
     <ClCompile Include="Code\Framework.cpp" />
     <ClCompile Include="Code\Grid.cpp" />
+    <ClCompile Include="Code\Item.cpp" />
     <ClCompile Include="Code\Main.cpp" />
     <ClCompile Include="Code\Map.cpp" />
     <ClCompile Include="Code\Meter.cpp" />
@@ -271,6 +272,7 @@
     <ClInclude Include="Code\Framework.h" />
     <ClInclude Include="Code\Grid.h" />
     <ClInclude Include="Code\Icon.h" />
+    <ClInclude Include="Code\Item.h" />
     <ClInclude Include="Code\Map.h" />
     <ClInclude Include="Code\Meter.h" />
     <ClInclude Include="Code\MeterParam.h" />

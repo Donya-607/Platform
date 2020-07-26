@@ -27,6 +27,7 @@
 #include "Enemy.h"
 #include "Fader.h"
 #include "FilePath.h"
+#include "Item.h"
 #include "Meter.h"
 #include "Music.h"
 #include "Parameter.h"
@@ -136,6 +137,7 @@ void SceneLoad::Init()
 		if ( !Boss	::LoadResource()		) { succeeded = false; }
 		if ( !Bullet::LoadResource()		) { succeeded = false; }
 		if ( !Enemy	::LoadResource()		) { succeeded = false; }
+		if ( !Item	::LoadResource()		) { succeeded = false; }
 		if ( !Meter	::LoadResource()		) { succeeded = false; }
 		if ( !Player::LoadResource()		) { succeeded = false; }
 		
