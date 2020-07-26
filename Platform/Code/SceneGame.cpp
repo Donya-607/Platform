@@ -1309,6 +1309,7 @@ void SceneGame::UseImGui()
 					: pHouse->FindRoomOrNullptr( choiceID );
 	}
 
+	ImGui::SetNextWindowBgAlpha( 0.6f );
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 
