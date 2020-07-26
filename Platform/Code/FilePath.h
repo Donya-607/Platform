@@ -27,6 +27,8 @@ enum class SpriteAttribute
 
 	NowLoading,
 	TitleLogo,
+	
+	Meter,
 };
 std::wstring	GetSpritePath( SpriteAttribute spriteAttribute );
 size_t			GetSpriteInstanceCount( SpriteAttribute spriteAttribute );

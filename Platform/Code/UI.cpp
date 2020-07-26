@@ -47,6 +47,13 @@ bool UIObject::DrawPart( float depth ) const
 	return result;
 }
 
+void UIObject::AssignSpriteID( size_t id )
+{
+	if ( id == NULL ) { return; }
+	// else
+	sprite = id;
+}
+
 Donya::Int2 UIObject::GetSpriteSize() const
 {
 	return Donya::Sprite::GetTextureSize( sprite );

@@ -37,14 +37,15 @@ namespace Bullet
 	{
 		void Load();
 
+	#if USE_IMGUI
+		void Update( const std::string &nodeCaption );
+	#endif // USE_IMGUI
+
 		const BusterParam		&GetBuster();
 		const GeneralParam		&GetGeneral();
 		const SkullBusterParam	&GetSkullBuster();
 		const SkullShieldParam	&GetSkullShield();
 
-	#if USE_IMGUI
-		void Update( const std::string &nodeCaption );
-	#endif // USE_IMGUI
 		namespace Impl
 		{
 			void LoadBuster();

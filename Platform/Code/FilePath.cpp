@@ -94,6 +94,9 @@ namespace
 			return Make( L"UI/NowLoading.png",	1U );
 		case SpriteAttribute::TitleLogo:
 			return Make( L"Title/Logo.png",		2U );
+		
+		case SpriteAttribute::Meter:
+			return Make( L"UI/Meter.png",		16U );
 
 		default: break;
 		}

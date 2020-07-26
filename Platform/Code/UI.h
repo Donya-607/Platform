@@ -50,6 +50,7 @@ public:
 	bool Draw( float drawDepth = 1.0f ) const;
 	bool DrawPart( float drawDepth = 1.0f ) const;
 public:
+	void AssignSpriteID( size_t spriteIdentifier );
 	/// <summary>
 	/// Returns whole size. or -1 if the sprite didn't loaded.
 	/// </summary>
