@@ -43,6 +43,7 @@ public:
 	std::vector<float>		chargeSeconds;	// It size() == Player::ShotLevel::LevelCount
 	Donya::Vector2			hpDrawPos;		// Left-Top pos, Screen space
 	Donya::Vector3			hpDrawColor;
+	float					hpDrawScale = 1.0f;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -115,7 +116,8 @@ private:
 			archive
 			(
 				CEREAL_NVP( hpDrawPos	),
-				CEREAL_NVP( hpDrawColor	)
+				CEREAL_NVP( hpDrawColor	),
+				CEREAL_NVP( hpDrawScale	)
 			);
 		}
 		if ( 9 <= version )

@@ -1582,8 +1582,10 @@ void SceneGame::UseImGui()
 
 		if ( pBossContainer ) { pBossContainer->ShowImGuiNode( u8"ボスの現在", stageNumber ); }
 		Boss::Parameter::Update( u8"ボスのパラメータ" );
+		ImGui::Text( "" );
 
 		Meter::Parameter::Update( u8"メータのパラメータ" );
+		ImGui::Text( "" );
 
 		ImGui::TreePop();
 	}

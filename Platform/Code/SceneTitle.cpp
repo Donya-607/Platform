@@ -202,7 +202,7 @@ void SceneTitle::Draw( float elapsedTime )
 
 	{
 		sprTitleLogo.pos.x = Common::HalfScreenWidthF();
-		sprTitleLogo.pos.y = 480.0f;
+		sprTitleLogo.pos.y = Common::HalfScreenHeightF();
 		sprTitleLogo.alpha = 1.0f;
 		sprTitleLogo.Draw();
 	}

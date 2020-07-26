@@ -86,10 +86,11 @@ namespace Meter
 	{
 		current = std::max( 0.0f, std::min( maxAmount, amount ) );
 	}
-	void Drawer::SetDrawOption( const Donya::Vector2 &ssPos, const Donya::Vector3 &color )
+	void Drawer::SetDrawOption( const Donya::Vector2 &ssPos, const Donya::Vector3 &color, const Donya::Vector2 &scale )
 	{
 		sprite.pos		= ssPos;
 		sprite.color	= color;
+		sprite.scale	= scale;
 	}
 	void Drawer::DrawGauge( float drawDepth ) const
 	{

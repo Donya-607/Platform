@@ -38,7 +38,7 @@ namespace Meter
 		void Draw( float drawDepth = 0.0f ) const;
 	public:
 		void SetCurrent( float currentAmount );
-		void SetDrawOption( const Donya::Vector2 &ssPosLeftTop, const Donya::Vector3 &drawBlendColor );
+		void SetDrawOption( const Donya::Vector2 &ssPosLeftTop, const Donya::Vector3 &drawBlendColor, const Donya::Vector2 &drawScale );
 	private:
 		void DrawGauge( float drawDepth ) const;
 		void DrawAmount( float drawDepth ) const;

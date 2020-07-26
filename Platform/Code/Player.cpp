@@ -330,6 +330,7 @@ void PlayerParam::ShowImGuiNode()
 	{
 		ImGui::DragFloat2( u8"ÇgÇoï`âÊà íuÅiç∂è„ç¿ïWÅj",	&hpDrawPos.x	);
 		ImGui::ColorEdit3( u8"ÇgÇoï`âÊêF",				&hpDrawColor.x	);
+		ImGui::DragFloat ( u8"ÇgÇoï`âÊÉXÉPÅ[Éã",			&hpDrawScale	);
 
 		ImGui::TreePop();
 	}
@@ -1245,7 +1246,7 @@ void Player::Init( const PlayerInitializer &initializer )
 
 	const float gaugeAmount = scast<float>( data.maxHP );
 	hpDrawer.Init( gaugeAmount, gaugeAmount );
-	hpDrawer.SetDrawOption( data.hpDrawPos, data.hpDrawColor );
+	hpDrawer.SetDrawOption( data.hpDrawPos, data.hpDrawColor, data.hpDrawScale );
 	
 	UpdateOrientation( initializer.ShouldLookingRight() );
 
@@ -1280,7 +1281,7 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 			ApplyExceptPosition( &hurtBox,	data.hurtBox );
 		}
 
-		hpDrawer.SetDrawOption( data.hpDrawPos, data.hpDrawColor );
+		hpDrawer.SetDrawOption( data.hpDrawPos, data.hpDrawColor, data.hpDrawScale );
 	}
 #endif // USE_IMGUI
 
