@@ -76,7 +76,7 @@ namespace Meter
 		sprite.origin	= { 0.0f, 0.0f };
 		sprite.color	= { 1.0f, 1.0f, 1.0f };
 	}
-	void Drawer::Update() {}
+	void Drawer::Update( float elapsedTime ) {}
 	void Drawer::Draw( float drawDepth ) const
 	{
 		DrawGauge( drawDepth );
@@ -102,10 +102,13 @@ namespace Meter
 	void Drawer::DrawAmount( float drawDepth ) const
 	{
 		const auto &data = Parameter::GetMeter();
-		sprite.texPos  = data.gaugeTexOrigin;
-		sprite.texSize = data.gaugeTexSize;
+		sprite.texPos  = data.amountTexOrigin;
+		sprite.texSize = data.amountTexSize;
 		
+		const auto oldPos = sprite.pos;
+		sprite.pos += data.amountPosOffset;
 		sprite.DrawPart( drawDepth );
+		sprite.pos = oldPos;
 	}
 
 #if USE_IMGUI
@@ -113,6 +116,7 @@ namespace Meter
 	{
 		ImGui::DragFloat2( u8"ゲージ・テクスチャ原点",			&gaugeTexOrigin.x	);
 		ImGui::DragFloat2( u8"ゲージ・切り取りサイズ（全体）",		&gaugeTexSize.x		);
+		ImGui::DragFloat2( u8"めもり・描画位置オフセット",			&amountPosOffset.x	);
 		ImGui::DragFloat2( u8"めもり・テクスチャ原点",			&amountTexOrigin.x	);
 		ImGui::DragFloat2( u8"めもり・切り取りサイズ（全体）",		&amountTexSize.x	);
 	}

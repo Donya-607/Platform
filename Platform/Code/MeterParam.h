@@ -10,6 +10,7 @@ namespace Meter
 	public:
 		Donya::Vector2 gaugeTexOrigin	{  0.0f,  0.0f };
 		Donya::Vector2 gaugeTexSize		{ 32.0f, 32.0f };
+		Donya::Vector2 amountPosOffset	{  0.0f,  0.0f };
 		Donya::Vector2 amountTexOrigin	{  0.0f,  0.0f };
 		Donya::Vector2 amountTexSize	{ 32.0f, 32.0f };
 	private:
@@ -21,6 +22,7 @@ namespace Meter
 			(
 				CEREAL_NVP( gaugeTexOrigin	),
 				CEREAL_NVP( gaugeTexSize	),
+				CEREAL_NVP( amountPosOffset	),
 				CEREAL_NVP( amountTexOrigin	),
 				CEREAL_NVP( amountTexSize	)
 			);

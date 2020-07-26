@@ -287,22 +287,6 @@ void Player::UpdateParameter( const std::string &nodeCaption )
 }
 void PlayerParam::ShowImGuiNode()
 {
-	ImGui::DragInt  ( u8"最大体力",				&maxHP						);
-	ImGui::DragInt  ( u8"最大残機数",			&maxRemainCount				);
-	ImGui::DragInt  ( u8"初期残機数",			&initialRemainCount			);
-	ImGui::DragFloat( u8"移動速度",				&moveSpeed,			0.01f	);
-	ImGui::DragFloat( u8"スライディング速度",		&slideMoveSpeed,	0.01f	);
-	ImGui::DragFloat( u8"スライディング秒数",		&slideMoveSeconds,	0.01f	);
-	ImGui::DragFloat( u8"ジャンプ力",			&jumpStrength,		0.01f	);
-	ImGui::DragFloat( u8"重力",					&gravity,			0.01f	);
-	ImGui::SliderFloat( u8"重力抵抗力",			&gravityResistance,	0.0f, 1.0f );
-	ImGui::DragFloat( u8"重力抵抗可能秒数",		&resistableSeconds,	0.01f	);
-	ImGui::DragFloat( u8"最高落下速度",			&maxFallSpeed,		0.01f	);
-	ImGui::DragFloat( u8"のけぞる秒数",			&knockBackSeconds,	0.01f	);
-	ImGui::DragFloat( u8"のけぞり速度",			&knockBackSpeed,	0.01f	);
-	ImGui::DragFloat( u8"無敵秒数",				&invincibleSeconds,	0.01f	);
-	ImGui::DragFloat( u8"無敵中点滅間隔（秒）",	&flushingInterval,	0.01f	);
-
 	constexpr size_t levelCount = scast<size_t>( Player::ShotLevel::LevelCount );
 	if ( chargeSeconds.size() != levelCount )
 	{
@@ -342,29 +326,58 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::TreePop();
 	}
 
+	if ( ImGui::TreeNode( u8"メータ設定" ) )
+	{
+		ImGui::DragFloat2( u8"ＨＰ描画位置（左上座標）",	&hpDrawPos.x	);
+		ImGui::ColorEdit3( u8"ＨＰ描画色",				&hpDrawColor.x	);
+
+		ImGui::TreePop();
+	}
+
 	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定", &hitBox  );
 	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定", &hurtBox );
 	ImGui::Helper::ShowAABBNode( u8"スライド中・地形との当たり判定", &slideHitBox  );
 	ImGui::Helper::ShowAABBNode( u8"スライド中・攻撃との喰らい判定", &slideHurtBox );
 
-	auto MakePositive	= []( float *v )
+	if ( ImGui::TreeNode( u8"汎用設定" ) )
 	{
-		*v = std::max( 0.001f, *v );
-	};
-	maxHP				= std::max( 1, maxHP				);
-	maxRemainCount		= std::max( 1, maxRemainCount		);
-	initialRemainCount	= std::max( 1, initialRemainCount	);
-	MakePositive( &moveSpeed			);
-	MakePositive( &slideMoveSpeed		);
-	MakePositive( &slideMoveSeconds		);
-	MakePositive( &jumpStrength			);
-	MakePositive( &gravity				);
-	MakePositive( &resistableSeconds	);
-	MakePositive( &maxFallSpeed			);
-	MakePositive( &knockBackSeconds		);
-	MakePositive( &knockBackSpeed		);
-	MakePositive( &invincibleSeconds	);
-	MakePositive( &flushingInterval		);
+		ImGui::DragInt  ( u8"最大体力",				&maxHP						);
+		ImGui::DragInt  ( u8"最大残機数",			&maxRemainCount				);
+		ImGui::DragInt  ( u8"初期残機数",			&initialRemainCount			);
+		ImGui::DragFloat( u8"移動速度",				&moveSpeed,			0.01f	);
+		ImGui::DragFloat( u8"スライディング速度",		&slideMoveSpeed,	0.01f	);
+		ImGui::DragFloat( u8"スライディング秒数",		&slideMoveSeconds,	0.01f	);
+		ImGui::DragFloat( u8"ジャンプ力",			&jumpStrength,		0.01f	);
+		ImGui::DragFloat( u8"重力",					&gravity,			0.01f	);
+		ImGui::SliderFloat( u8"重力抵抗力",			&gravityResistance,	0.0f, 1.0f );
+		ImGui::DragFloat( u8"重力抵抗可能秒数",		&resistableSeconds,	0.01f	);
+		ImGui::DragFloat( u8"最高落下速度",			&maxFallSpeed,		0.01f	);
+		ImGui::DragFloat( u8"のけぞる秒数",			&knockBackSeconds,	0.01f	);
+		ImGui::DragFloat( u8"のけぞり速度",			&knockBackSpeed,	0.01f	);
+		ImGui::DragFloat( u8"無敵秒数",				&invincibleSeconds,	0.01f	);
+		ImGui::DragFloat( u8"無敵中点滅間隔（秒）",	&flushingInterval,	0.01f	);
+
+		auto MakePositive	= []( float *v )
+		{
+			*v = std::max( 0.001f, *v );
+		};
+		maxHP				= std::max( 1, maxHP				);
+		maxRemainCount		= std::max( 1, maxRemainCount		);
+		initialRemainCount	= std::max( 1, initialRemainCount	);
+		MakePositive( &moveSpeed			);
+		MakePositive( &slideMoveSpeed		);
+		MakePositive( &slideMoveSeconds		);
+		MakePositive( &jumpStrength			);
+		MakePositive( &gravity				);
+		MakePositive( &resistableSeconds	);
+		MakePositive( &maxFallSpeed			);
+		MakePositive( &knockBackSeconds		);
+		MakePositive( &knockBackSpeed		);
+		MakePositive( &invincibleSeconds	);
+		MakePositive( &flushingInterval		);
+		
+		ImGui::TreePop();
+	}
 }
 #endif // USE_IMGUI
 
@@ -1229,6 +1242,10 @@ void Player::Init( const PlayerInitializer &initializer )
 	currentHP			= data.maxHP;
 	prevSlidingStatus	= false;
 	onGround			= false;
+
+	const float gaugeAmount = scast<float>( data.maxHP );
+	hpDrawer.Init( gaugeAmount, gaugeAmount );
+	hpDrawer.SetDrawOption( data.hpDrawPos, data.hpDrawColor );
 	
 	UpdateOrientation( initializer.ShouldLookingRight() );
 
@@ -1262,6 +1279,8 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 			ApplyExceptPosition( &body,		data.hitBox  );
 			ApplyExceptPosition( &hurtBox,	data.hurtBox );
 		}
+
+		hpDrawer.SetDrawOption( data.hpDrawPos, data.hpDrawColor );
 	}
 #endif // USE_IMGUI
 
@@ -1280,6 +1299,9 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 	ApplyReceivedDamageIfHas( elapsedTime, terrain );
 
 	hurtBox.exist = !invincibleTimer.NowWorking();
+
+	hpDrawer.SetCurrent( scast<float>( currentHP ) );
+	hpDrawer.Update( elapsedTime );
 
 	pMover->Update( *this, elapsedTime, input, terrain );
 	if ( pMover->ShouldChangeMover( *this ) )
@@ -1382,6 +1404,10 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 		}
 	}
 #endif // DEBUG_MODE
+}
+void Player::DrawMeter( float drawDepth ) const
+{
+	hpDrawer.Draw( drawDepth );
 }
 bool Player::NowMiss() const
 {

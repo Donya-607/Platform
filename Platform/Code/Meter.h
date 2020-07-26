@@ -34,7 +34,7 @@ namespace Meter
 		mutable UIObject sprite;
 	public:
 		void Init( float maxAmount, float initialAmount );
-		void Update();
+		void Update( float elapsedTime );
 		void Draw( float drawDepth = 0.0f ) const;
 	public:
 		void SetCurrent( float currentAmount );

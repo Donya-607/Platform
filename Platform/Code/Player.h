@@ -14,6 +14,7 @@
 #include "CSVLoader.h"
 #include "Damage.h"
 #include "Map.h"
+#include "Meter.h"
 #include "ModelHelper.h"
 #include "ObjectBase.h"
 #include "Parameter.h"
@@ -295,6 +296,7 @@ private:
 	MotionManager				motionManager;
 	ShotManager					shotManager;
 	Flusher						invincibleTimer;
+	Meter::Drawer				hpDrawer;
 	std::unique_ptr<MoverBase>	pMover					= nullptr;
 	std::weak_ptr<const Tile>	pTargetLadder{};		// It only used for initialization of Player::GrabLadder as reference
 	int							currentHP				= 1;
@@ -318,6 +320,7 @@ public:
 
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
+	void DrawMeter( float drawDepth = 0.0f ) const;
 public:
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;

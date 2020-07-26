@@ -41,6 +41,8 @@ public:
 	Donya::Collision::Box3F	ladderGrabArea;	// It using for considering to continue to grab the ladder
 	Bullet::FireDesc		fireParam;
 	std::vector<float>		chargeSeconds;	// It size() == Player::ShotLevel::LevelCount
+	Donya::Vector2			hpDrawPos;		// Left-Top pos, Screen space
+	Donya::Vector3			hpDrawColor;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -110,6 +112,14 @@ private:
 		}
 		if ( 8 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( hpDrawPos	),
+				CEREAL_NVP( hpDrawColor	)
+			);
+		}
+		if ( 9 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -118,4 +128,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 7 )
+CEREAL_CLASS_VERSION( PlayerParam, 8 )

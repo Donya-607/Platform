@@ -453,6 +453,8 @@ void SceneGame::Draw( float elapsedTime )
 	}
 #endif // DEBUG_MODE
 
+	if ( pPlayer ) { pPlayer->DrawMeter(); }
+
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
