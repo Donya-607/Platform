@@ -33,6 +33,11 @@ namespace StageFormat
 			const int index = id - BossStart;
 			return "Boss" + Donya::MakeArraySuffix( index );
 		}
+		if ( ItemStart <= id && id <= ItemLast )
+		{
+			const int index = id - ItemStart;
+			return "Item" + Donya::MakeArraySuffix( index );
+		}
 
 		_ASSERT_EXPR( 0, L"Error: Unexpected ID!" );
 		return "ERROR_ID";

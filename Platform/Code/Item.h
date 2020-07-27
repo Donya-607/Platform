@@ -14,8 +14,8 @@ namespace Item
 	enum class Kind
 	{
 		ExtraLife,
-		LifeEnergy_Small,
 		LifeEnergy_Big,
+		LifeEnergy_Small,
 
 		KindCount
 	};
@@ -39,6 +39,7 @@ namespace Item
 		#endif // USE_IMGUI
 		}
 	}
+
 
 	bool LoadResource();
 
@@ -81,6 +82,7 @@ namespace Item
 		Donya::Vector3			velocity;	// Z element is almost unused.
 		Donya::Quaternion		orientation;
 		float					aliveTimer = 0.0f;
+		bool					wantRemove = false;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -110,6 +112,7 @@ namespace Item
 		Kind					GetKind()			const;
 		InitializeParam			GetInitializer()	const;
 	private:
+		float GetGravity() const;
 		void AssignMyBody( const Donya::Vector3 &wsPos );
 		Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:
@@ -162,7 +165,6 @@ namespace Item
 		const Item *GetInstanceOrNullptr( size_t instanceIndex ) const;
 	private:
 		void RemoveItems();
-		void AppendItem( Kind appendKind, const InitializeParam &parameter );
 	#if USE_IMGUI
 	public:
 		void RemakeByCSV( const CSVLoader &loadedData );

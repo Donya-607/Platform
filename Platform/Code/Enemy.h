@@ -193,8 +193,8 @@ namespace Enemy
 		std::shared_ptr<const Base> GetInstanceOrNullptr( size_t instanceIndex ) const;
 	private:
 		void RemoveEnemies();
-		void AppendEnemy( Kind appendKind, const InitializeParam &parameter );
 	#if USE_IMGUI
+		void AppendEnemy( Kind appendKind, const InitializeParam &parameter );
 	public:
 		void RemakeByCSV( const CSVLoader &loadedData );
 		void SaveEnemies( int stageNumber, bool fromBinary );

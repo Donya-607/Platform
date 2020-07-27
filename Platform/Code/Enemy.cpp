@@ -468,6 +468,26 @@ namespace Enemy
 		enemyPtrs.erase( itr, enemyPtrs.end() );
 	}
 #if USE_IMGUI
+	void Admin::AppendEnemy( Kind kind, const InitializeParam &parameter )
+	{
+		std::shared_ptr<Base> instance = nullptr;
+
+		switch ( kind )
+		{
+		case Kind::Terry:	instance = std::make_shared<Enemy::Terry>();	break;
+		default: break;
+		}
+
+		if ( !instance )
+		{
+			_ASSERT_EXPR( 0, L"Error: That enemy kind is invalid!" );
+			return;
+		}
+		// else
+
+		instance->Init( parameter );
+		enemyPtrs.emplace_back( std::move( instance ) );
+	}
 	void Admin::RemakeByCSV( const CSVLoader &loadedData )
 	{
 		auto IsEnemyID	= []( int id )
@@ -522,26 +542,6 @@ namespace Enemy
 				Append( data[r][c], r, c );
 			}
 		}
-	}
-	void Admin::AppendEnemy( Kind kind, const InitializeParam &parameter )
-	{
-		std::shared_ptr<Base> instance = nullptr;
-
-		switch ( kind )
-		{
-		case Kind::Terry:	instance = std::make_shared<Enemy::Terry>();	break;
-		default: break;
-		}
-
-		if ( !instance )
-		{
-			_ASSERT_EXPR( 0, L"Error: That enemy kind is invalid!" );
-			return;
-		}
-		// else
-
-		instance->Init( parameter );
-		enemyPtrs.emplace_back( std::move( instance ) );
 	}
 	void Admin::SaveEnemies( int stageNumber, bool fromBinary )
 	{

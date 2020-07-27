@@ -17,14 +17,17 @@ namespace StageFormat
 		Ladder			= 5,
 		Needle			= 6,
 
-		RoomStart		= 8,				// [RoomStart <= N <= RoomLast] is room identifier
-		RoomLast		= RoomStart + 15,	// [RoomStart <= N <= RoomLast] is room identifier
+		RoomStart		= 8,					// [RoomStart <= N <= RoomLast] is room identifier
+		RoomLast		= RoomStart + 7 + 8 + 8,// [RoomStart <= N <= RoomLast] is room identifier
 
-		EnemyStart		= RoomLast + 1,		// [EnemyStart <= N <= EnemyLast] is enemy identifier
-		EnemyLast		= EnemyStart + 7,	// [EnemyStart <= N <= EnemyLast] is enemy identifier
+		EnemyStart		= RoomLast + 1,			// [EnemyStart <= N <= EnemyLast] is enemy identifier
+		EnemyLast		= EnemyStart + 7 + 8,	// [EnemyStart <= N <= EnemyLast] is enemy identifier
 		
-		BossStart		= EnemyLast + 1,	// [BossStart <= N <= BossLast] is boss identifier
-		BossLast		= BossStart + 7,	// [BossStart <= N <= BossLast] is boss identifier
+		BossStart		= EnemyLast + 1,		// [BossStart <= N <= BossLast] is boss identifier
+		BossLast		= BossStart + 7,		// [BossStart <= N <= BossLast] is boss identifier
+
+		ItemStart		= BossLast + 1,			// [ItemStart <= N <= ItemLast] is item identifier
+		ItemLast		= ItemStart + 7,		// [ItemStart <= N <= ItemLast] is item identifier
 
 		IdentifierCount
 	};
