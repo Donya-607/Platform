@@ -344,8 +344,10 @@ namespace Item
 		if ( !pData ) { return; }
 		// else
 
+		body.pos			= wsPos;
 		body.offset			= pData->body.offset;
 		body.size			= pData->body.size;
+		catchArea.pos		= wsPos;
 		catchArea.offset	= pData->catchArea.offset;
 		catchArea.size		= pData->catchArea.size;
 	}
@@ -526,7 +528,7 @@ namespace Item
 			// else
 
 			InitializeParam init;
-			init.kind			= scast<Kind>( id );
+			init.kind			= scast<Kind>( id - StageFormat::ItemStart ); // Convert to zero-based
 			init.aliveSecond	= -1.0f; // Specify to living as infinitely
 			init.wsPos			= Map::ToWorldPos( row, column );
 			Item tmp{};
