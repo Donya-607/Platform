@@ -101,7 +101,7 @@ namespace Item
 	public:
 		void Init( const InitializeParam &parameter );
 		void Uninit();
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
+		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox );
 		void PhysicUpdate( float elapsedTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
@@ -150,7 +150,7 @@ namespace Item
 		static constexpr const char *ID = "Item";
 	public:
 		void Uninit();
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
+		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox );
 		void PhysicUpdate( float elapsedTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;

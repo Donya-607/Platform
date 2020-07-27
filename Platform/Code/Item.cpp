@@ -204,7 +204,7 @@ namespace Item
 		wantRemove		= false;
 	}
 	void Item::Uninit() {}
-	void Item::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void Item::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
 	{
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
@@ -391,14 +391,14 @@ namespace Item
 			it.Uninit();
 		}
 	}
-	void Admin::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void Admin::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
 	{
 		GenerateRequestedFires();
 		generateRequests.clear();
 
 		for ( auto &it : items )
 		{
-			it.Update( elapsedTime, wsTargetPos, wsScreen );
+			it.Update( elapsedTime, wsScreen );
 		}
 	}
 	void Admin::PhysicUpdate( float elapsedTime, const Map &terrain )

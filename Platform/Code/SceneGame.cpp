@@ -289,6 +289,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
 
 	BossUpdate( deltaTimeForMove, playerPos );
+	
+	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
 
 	// PhysicUpdates
 	{
@@ -359,6 +361,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 		Bullet::Admin::Get().PhysicUpdate( deltaTimeForMove );
 		Enemy::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
+		Item::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
 
 		if ( pBossContainer ) { pBossContainer->PhysicUpdate( deltaTimeForMove, mapRef ); }
 	}
@@ -433,6 +436,7 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->ActivateShaderNormalStatic();
 		Enemy::Admin::Get().Draw( pRenderer.get() );
 		if ( pMap ) { pMap->Draw( pRenderer.get() ); }
+		Item::Admin::Get().Draw( pRenderer.get() );
 		pRenderer->DeactivateShaderNormalStatic();
 	}
 	pRenderer->DeactivateConstantScene();
@@ -450,6 +454,7 @@ void SceneGame::Draw( float elapsedTime )
 		if ( pMap			) { pMap->DrawHitBoxes( pRenderer.get(), VP );			}
 		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		Enemy ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
+		Item  ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		if ( pHouse			) { pHouse->DrawHitBoxes( pRenderer.get(), VP );		}
 	}
 #endif // DEBUG_MODE
@@ -1410,6 +1415,17 @@ void SceneGame::UseImGui()
 				Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ false );
 			}
 		};
+		auto ApplyToItem	= [&]( const CSVLoader &loadedData )
+		{
+			Item::Admin::Get().ClearInstances();
+			Item::Admin::Get().RemakeByCSV( loadedData );
+
+			if ( thenSave )
+			{
+				Item::Admin::Get().SaveItems( stageNumber, /* fromBinary = */ true );
+				Item::Admin::Get().SaveItems( stageNumber, /* fromBinary = */ false );
+			}
+		};
 		auto ApplyToMap		= [&]( const CSVLoader &loadedData )
 		{
 			if ( !pMap ) { return; }
@@ -1460,6 +1476,7 @@ void SceneGame::UseImGui()
 			static BufferType bufferBoss		{ "Boss"					};
 			static BufferType bufferClear		{ "Clear"					};
 			static BufferType bufferEnemy		{ "Enemy"					};
+			static BufferType bufferItem		{ "Item"					};
 			static BufferType bufferMap			{ "Map"						};
 			static BufferType bufferRoom		{ "Room"					};
 			static BufferType bufferExtension	{ ".csv"					};
@@ -1491,6 +1508,7 @@ void SceneGame::UseImGui()
 				ProcessOf( bufferBoss,	ApplyToBoss		);
 				ProcessOf( bufferClear,	ApplyToClear	);
 				ProcessOf( bufferEnemy,	ApplyToEnemy	);
+				ProcessOf( bufferItem,	ApplyToItem		);
 				ProcessOf( bufferMap,	ApplyToMap		);
 				ProcessOf( bufferMap,	ApplyToPlayer	);
 				ProcessOf( bufferRoom,	ApplyToRoom		);
@@ -1501,6 +1519,7 @@ void SceneGame::UseImGui()
 			ImGui::InputText( u8"識別子・ボス",			bufferBoss.data(),		bufferSize );
 			ImGui::InputText( u8"識別子・クリアイベント",	bufferClear.data(),		bufferSize );
 			ImGui::InputText( u8"識別子・敵",			bufferEnemy.data(),		bufferSize );
+			ImGui::InputText( u8"識別子・アイテム",		bufferItem.data(),		bufferSize );
 			ImGui::InputText( u8"識別子・マップ＆自機",	bufferMap.data(),		bufferSize );
 			ImGui::InputText( u8"識別子・ルーム",			bufferRoom.data(),		bufferSize );
 			ImGui::InputText( u8"拡張子",				bufferExtension.data(),	bufferSize );
@@ -1513,6 +1532,7 @@ void SceneGame::UseImGui()
 			static bool applyBoss	= false;
 			static bool applyClear	= false;
 			static bool applyEnemy	= false;
+			static bool applyItem	= false;
 			static bool applyMap	= true;
 			static bool applyPlayer	= true;
 			static bool applyRoom	= false;
@@ -1520,6 +1540,7 @@ void SceneGame::UseImGui()
 			ImGui::Checkbox( u8"ボスに適用",				&applyBoss		);
 			ImGui::Checkbox( u8"クリアイベントに適用",	&applyClear		);
 			ImGui::Checkbox( u8"敵に適用",				&applyEnemy		);
+			ImGui::Checkbox( u8"アイテムに適用",			&applyItem		);
 			ImGui::Checkbox( u8"マップに適用",			&applyMap		); ImGui::SameLine();
 			ImGui::Checkbox( u8"自機に適用",				&applyPlayer	);
 			ImGui::Checkbox( u8"ルームに適用",			&applyRoom		);
@@ -1535,6 +1556,7 @@ void SceneGame::UseImGui()
 					if ( applyBoss		) { ApplyToBoss		( loader ); }
 					if ( applyClear		) { ApplyToClear	( loader ); }
 					if ( applyEnemy		) { ApplyToEnemy	( loader ); }
+					if ( applyItem		) { ApplyToItem		( loader ); }
 					if ( applyMap		) { ApplyToMap		( loader );	}
 					if ( applyPlayer	) { ApplyToPlayer	( loader );	}
 					if ( applyRoom		) { ApplyToRoom		( loader );	}
