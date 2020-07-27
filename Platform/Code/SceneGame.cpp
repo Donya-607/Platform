@@ -1616,6 +1616,10 @@ void SceneGame::UseImGui()
 		Boss::Parameter::Update( u8"ボスのパラメータ" );
 		ImGui::Text( "" );
 
+		Item::Admin::Get().ShowImGuiNode( u8"アイテムの現在", stageNumber );
+		Item::Parameter::Update( u8"アイテムのパラメータ" );
+		ImGui::Text( "" );
+
 		Meter::Parameter::Update( u8"メータのパラメータ" );
 		ImGui::Text( "" );
 

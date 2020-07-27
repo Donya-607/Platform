@@ -20,7 +20,7 @@ void Room::Init( int assignID, const Donya::Vector3 &wsMin, const Donya::Vector3
 void Room::Uninit() {}
 void Room::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) const
 {
-	constexpr float maxSize = 1.0f;
+	constexpr float maxSize = 0.2f;
 	Donya::Vector4x4 W;
 	W._11 = area.size.x * 2.0f;
 	W._22 = area.size.y * 2.0f;
