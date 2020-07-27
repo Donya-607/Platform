@@ -67,6 +67,7 @@ namespace Item
 		General extraLife;
 		Energy  lifeEnergyBig;
 		Energy  lifeEnergySmall;
+		std::vector<int> dropPercents; // Also contain the percent of do not drop. size() == Item::Kind::KindCount + 1
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -81,6 +82,10 @@ namespace Item
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( dropPercents ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -90,5 +95,6 @@ namespace Item
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Item::ItemParam,			0 )
+CEREAL_CLASS_VERSION( Item::ItemParam,			1 )
 CEREAL_CLASS_VERSION( Item::ItemParam::General,	0 )
+CEREAL_CLASS_VERSION( Item::ItemParam::Energy,	0 )

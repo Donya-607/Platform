@@ -20,6 +20,11 @@ namespace Item
 		KindCount
 	};
 
+	/// <summary>
+	/// Returns an Item Kind(contain KindCount) as randomly.
+	/// </summary>
+	static Kind LotteryDropKind();
+
 	struct ItemParam;
 	namespace Parameter
 	{

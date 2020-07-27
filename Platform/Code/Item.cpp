@@ -1,5 +1,9 @@
 #include "Item.h"
 
+#include <numeric>			// Use std::accumulate
+
+#include "Donya/Random.h"
+
 #include "Common.h"			// Use IsShowCollision()
 #include "FilePath.h"
 #include "ItemParam.h"
@@ -84,6 +88,38 @@ namespace Item
 
 			return modelNames[scast<size_t>( kind )];
 		}
+	}
+
+	Kind LotteryDropKind()
+	{
+		constexpr Kind dontDrop = Kind::KindCount;
+
+		const auto &percents = Parameter::GetItem().dropPercents;
+
+		const int randomLimit = std::accumulate( percents.cbegin(), percents.cend(), 0 );
+		if ( randomLimit <= 0 ) { return dontDrop; }
+		// else
+
+		const int random = Donya::Random::GenerateInt( randomLimit );
+
+		const size_t count = percents.size();
+		size_t chosen = count;
+
+		int border = 0;
+		for ( size_t i = 0; i < count; ++i )
+		{
+			border += percents[i];
+			if ( random < border )
+			{
+				chosen = i;
+				break;
+			}
+		}
+
+		if ( kindCount <= chosen ) { return dontDrop; }
+		// else
+
+		return scast<Kind>( chosen );
 	}
 
 	namespace Parameter
@@ -200,6 +236,25 @@ namespace Item
 		extraLife.ShowImGuiNode			( u8"‚P‚t‚o"			);
 		lifeEnergyBig.ShowImGuiNode		( u8"‚g‚o‰ñ•œE‘å"	);
 		lifeEnergySmall.ShowImGuiNode	( u8"‚g‚o‰ñ•œE¬"	);
+
+		constexpr size_t dropCount = kindCount + 1;
+		if ( dropPercents.size() != dropCount ) { dropPercents.resize( dropCount ); }
+		if ( ImGui::TreeNode( u8"ƒhƒƒbƒv—¦‚Ìİ’è" ) )
+		{
+			std::string caption{};
+			for ( size_t i = 0; i < kindCount; ++i )
+			{
+				caption = GetKindName( scast<Kind>( i ) );
+				ImGui::DragInt( caption.c_str(), &dropPercents[i] );
+				dropPercents[i] = std::max( 1, dropPercents[i] );
+			}
+
+			auto &emptyPercent = dropPercents.back();
+			ImGui::DragInt( u8"ƒhƒƒbƒv‚µ‚È‚¢Šm—¦", &emptyPercent );
+			emptyPercent = std::max( 1, emptyPercent );
+
+			ImGui::TreePop();
+		}
 	}
 #endif // USE_IMGUI
 
