@@ -82,7 +82,7 @@ namespace Item
 		Donya::Vector3			velocity;	// Z element is almost unused.
 		Donya::Quaternion		orientation;
 		float					aliveTimer = 0.0f;
-		bool					wantRemove = false;
+		mutable bool			wantRemove = false;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -111,6 +111,8 @@ namespace Item
 		Donya::Collision::Box3F	GetCatchArea()		const;
 		Kind					GetKind()			const;
 		InitializeParam			GetInitializer()	const;
+	public:
+		void WasCaught() const;
 	private:
 		float GetGravity() const;
 		void AssignMyBody( const Donya::Vector3 &wsPos );

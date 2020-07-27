@@ -117,6 +117,7 @@ private:
 	void	Collision_BulletVSPlayer();
 	void	Collision_BossVSPlayer();
 	void	Collision_EnemyVSPlayer();
+	void	Collision_PlayerVSItem();
 
 	void	ClearBackGround() const;
 	void	StartFade( Scene::Type nextSceneType );

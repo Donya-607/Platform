@@ -75,6 +75,7 @@ public:
 		static int  Get();
 		static void Set( int newCount );
 		static void Decrement();
+		static void Increment();
 	};
 private:
 	static ParamOperator<PlayerParam> paramInstance;
@@ -321,6 +322,8 @@ public:
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
 	void DrawMeter( float drawDepth = 0.0f ) const;
+public:
+	void RecoverHP( int recovery );
 public:
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;

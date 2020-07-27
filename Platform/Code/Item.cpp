@@ -185,6 +185,16 @@ namespace Item
 
 		if ( useTreeNode ) { ImGui::TreePop(); }
 	}
+	void ItemParam::Energy::ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode )
+	{
+		if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		ImGui::DragInt( u8"‰ñ•œ—Ê", &recoveryAmount );
+		general.ShowImGuiNode( "", /* useTreeNode = */ false );
+
+		if ( useTreeNode ) { ImGui::TreePop(); }
+	}
 	void ItemParam::ShowImGuiNode()
 	{
 		extraLife.ShowImGuiNode			( u8"‚P‚t‚o"			);
@@ -214,6 +224,8 @@ namespace Item
 	#endif // USE_IMGUI
 
 		aliveTimer += elapsedTime;
+
+		velocity.y -= GetGravity() * elapsedTime;
 	}
 	void Item::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
@@ -314,6 +326,10 @@ namespace Item
 	{
 		return initializer;
 	}
+	void Item::WasCaught() const
+	{
+		wantRemove = true;
+	}
 	namespace
 	{
 		const ItemParam::General *GetGeneralOrNull( Kind kind )
@@ -323,8 +339,8 @@ namespace Item
 			switch ( kind )
 			{
 			case Kind::ExtraLife:			return &data.extraLife;
-			case Kind::LifeEnergy_Big:		return &data.lifeEnergyBig;
-			case Kind::LifeEnergy_Small:	return &data.lifeEnergySmall;
+			case Kind::LifeEnergy_Big:		return &data.lifeEnergyBig.general;
+			case Kind::LifeEnergy_Small:	return &data.lifeEnergySmall.general;
 			default: break;
 			}
 
@@ -402,6 +418,8 @@ namespace Item
 		{
 			it.Update( elapsedTime, wsScreen );
 		}
+
+		RemoveItemsIfNeeds();
 	}
 	void Admin::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{

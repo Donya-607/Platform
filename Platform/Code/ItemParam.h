@@ -37,10 +37,36 @@ namespace Item
 			void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true );
 		#endif // USE_IMGUI
 		};
+		struct Energy
+		{
+		public:
+			int		recoveryAmount = 1;
+			General	general;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( recoveryAmount	),
+					CEREAL_NVP( general			)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		public:
+		#if USE_IMGUI
+			void ShowImGuiNode( const std::string &nodeCaption, bool useTreeNode = true );
+		#endif // USE_IMGUI
+		};
 	public:
 		General extraLife;
-		General lifeEnergyBig;
-		General lifeEnergySmall;
+		Energy  lifeEnergyBig;
+		Energy  lifeEnergySmall;
 	private:
 		friend class cereal::access;
 		template<class Archive>

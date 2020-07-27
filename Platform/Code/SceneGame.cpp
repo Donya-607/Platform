@@ -25,6 +25,7 @@
 #include "Fader.h"
 #include "FilePath.h"
 #include "Item.h"
+#include "ItemParam.h"				// Use a recovery amount
 #include "Meter.h"
 #include "Music.h"
 #include "Parameter.h"
@@ -386,6 +387,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		}
 	}
 
+	Collision_PlayerVSItem();
 	Collision_BulletVSBoss();
 	Collision_BulletVSEnemy();
 	Collision_BulletVSPlayer();
@@ -1149,6 +1151,61 @@ void SceneGame::Collision_EnemyVSPlayer()
 		if ( Donya::Collision::IsHit( other, playerBody ) )
 		{
 			pPlayer->GiveDamage( pEnemy->GetTouchDamage(), other );
+		}
+	}
+}
+void SceneGame::Collision_PlayerVSItem()
+{
+	if ( !pPlayer || pPlayer->NowMiss() ) { return; }
+	// else
+
+	const auto playerBody = pPlayer->GetHurtBox();
+
+	auto &itemAdmin = Item::Admin::Get();
+	const size_t itemCount = itemAdmin.GetInstanceCount();
+
+	auto CatchItem = [&]( const Item::Item *pItem )
+	{
+		if ( !pItem ) { return; }
+		// else
+
+		const auto &itemParameter = Item::Parameter::GetItem();
+
+		const auto itemKind = pItem->GetKind();
+
+		pItem->WasCaught();
+
+		// TODO: Play catch SE
+
+		switch ( itemKind )
+		{
+		case Item::Kind::ExtraLife:
+			Player::Remaining::Increment();
+			Donya::Sound::Play( Music::DEBUG_Strong );
+			return;
+		case Item::Kind::LifeEnergy_Big:
+			pPlayer->RecoverHP( itemParameter.lifeEnergyBig.recoveryAmount );
+			Donya::Sound::Play( Music::DEBUG_Weak );
+			return;
+		case Item::Kind::LifeEnergy_Small:
+			pPlayer->RecoverHP( itemParameter.lifeEnergySmall.recoveryAmount );
+			Donya::Sound::Play( Music::DEBUG_Weak );
+			return;
+		default: return;
+		}
+	};
+
+	Donya::Collision::Box3F other;
+	for ( size_t i = 0; i < itemCount; ++i )
+	{
+		const Item::Item *pItem = itemAdmin.GetInstanceOrNullptr( i );
+		if ( !pItem ) { continue; }
+		// else
+
+		other = pItem->GetHitBox();
+		if ( Donya::Collision::IsHit( other, playerBody ) )
+		{
+			CatchItem( pItem );
 		}
 	}
 }

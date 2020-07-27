@@ -269,6 +269,11 @@ void Player::Remaining::Set( int v )
 	count = std::min( maxCount, v );
 }
 void Player::Remaining::Decrement() { count--; }
+void Player::Remaining::Increment()
+{
+	const auto &maxCount = Parameter().Get().maxRemainCount;
+	count = std::min( maxCount, count + 1 );
+}
 
 ParamOperator<PlayerParam> Player::paramInstance{ "Player" };
 bool Player::LoadResource()
@@ -1410,6 +1415,11 @@ void Player::DrawMeter( float drawDepth ) const
 {
 	hpDrawer.Draw( drawDepth );
 }
+void Player::RecoverHP( int recovery )
+{
+	currentHP += recovery;
+	currentHP =  std::min( Parameter().Get().maxHP, currentHP );
+}
 bool Player::NowMiss() const
 {
 	return ( !pMover ) ? true : ( pMover->NowMiss( *this ) ) ? true : false;
@@ -1744,11 +1754,15 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
+	int remaining = Remaining::Get();
+	ImGui::SliderInt	( u8"残機数",						&remaining, 0, Parameter().Get().maxHP );
+	Remaining::Set( remaining );
+
 	ImGui::DragInt		( u8"現在の体力",					&currentHP );
 	ImGui::Text			( u8"現在のステート：%s",				pMover->GetMoverName().c_str() );
 
-	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );
 	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
+	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );
 	ImGui::DragFloat	( u8"ジャンプを入力し続けている秒数",	&keepJumpSecond, 0.01f );
 	ImGui::Checkbox		( u8"ジャンプ入力を離したか",			&wasReleasedJumpInput );
 	ImGui::Checkbox		( u8"地上にいるか",					&onGround );
