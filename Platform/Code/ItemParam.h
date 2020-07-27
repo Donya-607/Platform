@@ -64,10 +64,11 @@ namespace Item
 		#endif // USE_IMGUI
 		};
 	public:
-		General extraLife;
-		Energy  lifeEnergyBig;
-		Energy  lifeEnergySmall;
-		std::vector<int> dropPercents; // Also contain the percent of do not drop. size() == Item::Kind::KindCount + 1
+		General				extraLife;
+		Energy				lifeEnergyBig;
+		Energy				lifeEnergySmall;
+		float				disappearSecond = 1.0f;	// It using for drop item
+		std::vector<int>	dropPercents;			// Also contain the percent of do not drop. size() == Item::Kind::KindCount + 1
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -82,7 +83,11 @@ namespace Item
 
 			if ( 1 <= version )
 			{
-				archive( CEREAL_NVP( dropPercents ) );
+				archive
+				(
+					CEREAL_NVP( disappearSecond	),
+					CEREAL_NVP( dropPercents	)
+				);
 			}
 			if ( 2 <= version )
 			{

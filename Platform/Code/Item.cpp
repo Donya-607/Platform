@@ -237,6 +237,9 @@ namespace Item
 		lifeEnergyBig.ShowImGuiNode		( u8"ＨＰ回復・大"	);
 		lifeEnergySmall.ShowImGuiNode	( u8"ＨＰ回復・小"	);
 
+		ImGui::DragFloat( u8"ドロップしたものが消える秒数", &disappearSecond, 0.01f );
+		disappearSecond = std::max( 0.001f, disappearSecond );
+
 		constexpr size_t dropCount = kindCount + 1;
 		if ( dropPercents.size() != dropCount ) { dropPercents.resize( dropCount ); }
 		if ( ImGui::TreeNode( u8"ドロップ率の設定" ) )
