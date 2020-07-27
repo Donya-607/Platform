@@ -393,6 +393,9 @@ namespace Item
 	}
 	void Admin::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
+		GenerateRequestedFires();
+		generateRequests.clear();
+
 		for ( auto &it : items )
 		{
 			it.Update( elapsedTime, wsTargetPos, wsScreen );
@@ -433,6 +436,10 @@ namespace Item
 		}
 		items.clear();
 	}
+	void Admin::RequestGeneration( const InitializeParam &initializer )
+	{
+		generateRequests.emplace_back( initializer );
+	}
 	bool Admin::LoadItems( int stageNumber, bool fromBinary )
 	{
 		ClearInstances();
@@ -464,7 +471,16 @@ namespace Item
 		// else
 		return &items[instanceIndex];
 	}
-	void Admin::RemoveItems()
+	void Admin::GenerateRequestedFires()
+	{
+		for ( const auto &it : generateRequests )
+		{
+			Item tmp{};
+			tmp.Init( it );
+			items.emplace_back( std::move( tmp ) );
+		}
+	}
+	void Admin::RemoveItemsIfNeeds()
 	{
 		auto itr = std::remove_if
 		(
@@ -510,9 +526,9 @@ namespace Item
 			// else
 
 			InitializeParam init;
-			init.kind		= scast<Kind>( id );
+			init.kind			= scast<Kind>( id );
 			init.aliveSecond	= -1.0f; // Specify to living as infinitely
-			init.wsPos		= Map::ToWorldPos( row, column );
+			init.wsPos			= Map::ToWorldPos( row, column );
 			Item tmp{};
 			tmp.Init( init );
 			items.emplace_back( std::move( tmp ) );

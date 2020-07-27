@@ -132,7 +132,8 @@ namespace Item
 	{
 		friend Donya::Singleton<Admin>;
 	private:
-		std::vector<Item> items;
+		std::vector<Item>				items;
+		std::vector<InitializeParam>	generateRequests;
 	private:
 		Admin() = default;
 	private:
@@ -155,6 +156,7 @@ namespace Item
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
 		void ClearInstances();
+		void RequestGeneration( const InitializeParam &initializer );
 		bool LoadItems( int stageNumber, bool fromBinary );
 	public:
 		size_t GetInstanceCount() const;
@@ -164,7 +166,8 @@ namespace Item
 		/// </summary>
 		const Item *GetInstanceOrNullptr( size_t instanceIndex ) const;
 	private:
-		void RemoveItems();
+		void GenerateRequestedFires();
+		void RemoveItemsIfNeeds();
 	#if USE_IMGUI
 	public:
 		void RemakeByCSV( const CSVLoader &loadedData );
