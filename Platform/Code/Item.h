@@ -119,6 +119,9 @@ namespace Item
 	public:
 		void WasCaught() const;
 	private:
+		bool OnOutSideScreen( const Donya::Collision::Box3F &wsScreenHitBox );
+		void UpdateRemoveCondition( const Donya::Collision::Box3F &wsScreenHitBox );
+	private:
 		float GetGravity() const;
 		void AssignMyBody( const Donya::Vector3 &wsPos );
 		Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;

@@ -284,6 +284,8 @@ namespace Item
 		aliveTimer += elapsedTime;
 
 		velocity.y -= GetGravity() * elapsedTime;
+
+		UpdateRemoveCondition( wsScreen );
 	}
 	void Item::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
@@ -387,6 +389,22 @@ namespace Item
 	void Item::WasCaught() const
 	{
 		wantRemove = true;
+	}
+	bool Item::OnOutSideScreen( const Donya::Collision::Box3F &wsScreen )
+	{
+		return !Donya::Collision::IsHit( catchArea, wsScreen, /* considerExistFlag = */ false );
+	}
+	void Item::UpdateRemoveCondition( const Donya::Collision::Box3F &wsScreen )
+	{
+		if ( wantRemove ) { return; }
+		// else
+
+		const float &aliveLimit		= initializer.aliveSecond;
+		const bool  willDisappear	= ( 0.0f <= aliveLimit && aliveLimit <= aliveTimer );
+		if ( willDisappear || OnOutSideScreen( wsScreen ) )
+		{
+			wantRemove = true;
+		}
 	}
 	namespace
 	{
