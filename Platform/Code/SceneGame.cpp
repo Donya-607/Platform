@@ -1584,13 +1584,13 @@ void SceneGame::UseImGui()
 					}
 				};
 
-				ProcessOf( bufferBoss,	ApplyToBoss		);
+				ProcessOf( bufferMap,	ApplyToMap		);
+				ProcessOf( bufferRoom,	ApplyToRoom		);
 				ProcessOf( bufferClear,	ApplyToClear	);
+				ProcessOf( bufferMap,	ApplyToPlayer	);
+				ProcessOf( bufferBoss,	ApplyToBoss		);
 				ProcessOf( bufferEnemy,	ApplyToEnemy	);
 				ProcessOf( bufferItem,	ApplyToItem		);
-				ProcessOf( bufferMap,	ApplyToMap		);
-				ProcessOf( bufferMap,	ApplyToPlayer	);
-				ProcessOf( bufferRoom,	ApplyToRoom		);
 			}
 
 			ImGui::InputInt ( u8"読み込むステージ番号",	&readStageNumber );
