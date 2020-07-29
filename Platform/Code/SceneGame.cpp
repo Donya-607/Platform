@@ -1546,8 +1546,9 @@ void SceneGame::UseImGui()
 			using  BufferType = std::array<char, bufferSizeWithNull>;
 
 			// These default value are my prefer
+			static int readStageNumber = 1;
 			static BufferType bufferDirectory	{ "./../../EdittedData/"	};
-			static BufferType bufferPrefix		{ "PlatformMap_"			};
+			static BufferType bufferPrefix		{ "Stage"					};
 			static BufferType bufferBoss		{ "Boss"					};
 			static BufferType bufferClear		{ "Clear"					};
 			static BufferType bufferEnemy		{ "Enemy"					};
@@ -1563,12 +1564,15 @@ void SceneGame::UseImGui()
 				const std::string fileDirectory	= bufferDirectory.data();
 				const std::string filePrefix	= bufferPrefix.data();
 				const std::string fileExtension	= bufferExtension.data();
+				const std::string strStageNo	= ( readStageNumber < 10 ) ? "0" + std::to_string( readStageNumber ) : std::to_string( readStageNumber );
+				constexpr const char noSuffix = '_';
 				std::string	filePath{};
 				CSVLoader	loader{};
 				auto ProcessOf = [&]( const BufferType &bufferIdentify, const std::function<void( const CSVLoader & )> &ApplyToXXX )
 				{
 					filePath =	bufferDirectory.data() +
-								filePrefix + bufferIdentify.data() +
+								filePrefix + strStageNo + noSuffix +
+								bufferIdentify.data() +
 								bufferExtension.data();
 
 					loader.Clear();
@@ -1589,8 +1593,9 @@ void SceneGame::UseImGui()
 				ProcessOf( bufferRoom,	ApplyToRoom		);
 			}
 
-			ImGui::InputText( u8"ディレクトリ",			bufferDirectory.data(),	bufferSize );
+			ImGui::InputInt ( u8"読み込むステージ番号",	&readStageNumber );
 			ImGui::InputText( u8"接頭辞",				bufferPrefix.data(),	bufferSize );
+			ImGui::InputText( u8"ディレクトリ",			bufferDirectory.data(),	bufferSize );
 			ImGui::InputText( u8"識別子・ボス",			bufferBoss.data(),		bufferSize );
 			ImGui::InputText( u8"識別子・クリアイベント",	bufferClear.data(),		bufferSize );
 			ImGui::InputText( u8"識別子・敵",			bufferEnemy.data(),		bufferSize );
