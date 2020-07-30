@@ -1,4 +1,4 @@
-#include "Terry.h"
+#include "Togehero.h"
 
 #include "../Parameter.h"
 
@@ -6,28 +6,28 @@ namespace Enemy
 {
 	namespace Parameter
 	{
-		static ParamOperator<TerryParam> terryParam{ "Terry" };
-		const TerryParam &GetTerry()
+		static ParamOperator<TogeheroParam> togeheroParam{ "Togehero" };
+		const TogeheroParam &GetTogehero()
 		{
-			return terryParam.Get();
+			return togeheroParam.Get();
 		}
 
 		namespace Impl
 		{
-			void LoadTerry()
+			void LoadTogehero()
 			{
-				terryParam.LoadParameter();
+				togeheroParam.LoadParameter();
 			}
 		#if USE_IMGUI
-			void UpdateTerry( const std::string &nodeCaption )
+			void UpdateTogehero( const std::string &nodeCaption )
 			{
-				terryParam.ShowImGuiNode( nodeCaption );
+				togeheroParam.ShowImGuiNode( nodeCaption );
 			}
 		#endif // USE_IMGUI
 		}
 	}
 
-	void Terry::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void Togehero::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		Base::Update( elapsedTime, wsTargetPos, wsScreen );
 
@@ -41,7 +41,7 @@ namespace Enemy
 			}
 		}
 
-		const auto &data = Parameter::GetTerry();
+		const auto &data = Parameter::GetTogehero();
 
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
@@ -69,18 +69,18 @@ namespace Enemy
 			orientation.RotateBy( rotation );
 		}
 	}
-	Kind Terry::GetKind() const { return Kind::Terry; }
-	Definition::Damage Terry::GetTouchDamage() const
+	Kind Togehero::GetKind() const { return Kind::Togehero; }
+	Definition::Damage Togehero::GetTouchDamage() const
 	{
-		return Parameter::GetTerry().touchDamage;
+		return Parameter::GetTogehero().touchDamage;
 	}
-	int  Terry::GetInitialHP() const
+	int  Togehero::GetInitialHP() const
 	{
-		return Parameter::GetTerry().hp;
+		return Parameter::GetTogehero().hp;
 	}
-	void Terry::AssignMyBody( const Donya::Vector3 &wsPos )
+	void Togehero::AssignMyBody( const Donya::Vector3 &wsPos )
 	{
-		const auto &data = Parameter::GetTerry();
+		const auto &data = Parameter::GetTogehero();
 		body.pos		= wsPos;
 		body.offset		= data.hitBoxOffset;
 		body.size		= data.hitBoxSize;
@@ -89,7 +89,7 @@ namespace Enemy
 		hurtBox.size	= data.hurtBoxSize;
 	}
 #if USE_IMGUI
-	bool Terry::ShowImGuiNode( const std::string &nodeCaption )
+	bool Togehero::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return false; }
 		// else
@@ -106,7 +106,7 @@ namespace Enemy
 		ImGui::TreePop();
 		return true;
 	}
-	void TerryParam::ShowImGuiNode()
+	void TogeheroParam::ShowImGuiNode()
 	{
 		ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f	);
 		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f	);

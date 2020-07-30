@@ -5,7 +5,7 @@
 
 namespace Enemy
 {
-	class Terry : public Base
+	class Togehero : public Base
 	{
 	private:
 		friend class cereal::access;
@@ -38,7 +38,7 @@ namespace Enemy
 	#endif // USE_IMGUI
 	};
 
-	struct TerryParam
+	struct TogeheroParam
 	{
 	public:
 		Donya::Vector3 hitBoxOffset	{ 0.0f, 0.0f, 0.0f };
@@ -85,7 +85,7 @@ namespace Enemy
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Enemy::Terry, 0 )
-CEREAL_REGISTER_TYPE( Enemy::Terry )
-CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Terry )
-CEREAL_CLASS_VERSION( Enemy::TerryParam, 1 )
+CEREAL_CLASS_VERSION( Enemy::Togehero, 0 )
+CEREAL_REGISTER_TYPE( Enemy::Togehero )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Togehero )
+CEREAL_CLASS_VERSION( Enemy::TogeheroParam, 1 )

@@ -7,7 +7,7 @@
 #endif // USE_IMGUI
 
 #include "Common.h"
-#include "Enemies/Terry.h"
+#include "Enemies/Togehero.h"
 #include "FilePath.h"
 #include "ModelHelper.h"
 #if USE_IMGUI
@@ -24,7 +24,7 @@ namespace Enemy
 		constexpr const char *modelFolderName = "Enemy/";
 		constexpr std::array<const char *, kindCount> modelNames
 		{
-			"Terry",
+			"Togehero",
 		};
 
 		static std::array<std::unique_ptr<ModelHelper::StaticSet>, kindCount> modelPtrs{ nullptr };
@@ -98,7 +98,7 @@ namespace Enemy
 	{
 		void Load()
 		{
-			Impl::LoadTerry();
+			Impl::LoadTogehero();
 		}
 
 	#if USE_IMGUI
@@ -107,7 +107,7 @@ namespace Enemy
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
 
-			Impl::UpdateTerry( u8"Terry" );
+			Impl::UpdateTogehero( u8"Togehero" );
 
 			ImGui::TreePop();
 		}
@@ -484,7 +484,7 @@ namespace Enemy
 
 		switch ( kind )
 		{
-		case Kind::Terry:	instance = std::make_shared<Enemy::Terry>();	break;
+		case Kind::Togehero:	instance = std::make_shared<Enemy::Togehero>();	break;
 		default: break;
 		}
 

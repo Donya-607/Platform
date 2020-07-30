@@ -22,26 +22,26 @@ namespace Enemy
 {
 	enum class Kind
 	{
-		Terry,		// Aerial type
+		Togehero,		// Aerial type
 
 		KindCount
 	};
 
-	struct TerryParam;
+	struct TogeheroParam;
 	namespace Parameter
 	{
 		void Load();
 
-		const TerryParam &GetTerry();
+		const TogeheroParam &GetTogehero();
 
 	#if USE_IMGUI
 		void Update( const std::string &nodeCaption );
 	#endif // USE_IMGUI
 		namespace Impl
 		{
-			void LoadTerry();
+			void LoadTogehero();
 		#if USE_IMGUI
-			void UpdateTerry( const std::string &nodeCaption );
+			void UpdateTogehero( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}
 	}
