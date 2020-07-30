@@ -46,10 +46,10 @@ namespace Enemy
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
 		{
-			body.offset		= data.hitBoxOffset;
-			body.size		= data.hitBoxSize;
-			hurtBox.offset	= data.hurtBoxOffset;
-			hurtBox.size	= data.hurtBoxSize;
+			body.offset		= data.basic.hitBoxOffset;
+			body.size		= data.basic.hitBoxSize;
+			hurtBox.offset	= data.basic.hurtBoxOffset;
+			hurtBox.size	= data.basic.hurtBoxSize;
 		}
 	#endif // USE_IMGUI
 
@@ -72,15 +72,15 @@ namespace Enemy
 	Kind Togehero::GetKind() const { return Kind::Togehero; }
 	Definition::Damage Togehero::GetTouchDamage() const
 	{
-		return Parameter::GetTogehero().touchDamage;
+		return Parameter::GetTogehero().basic.touchDamage;
 	}
 	int  Togehero::GetInitialHP() const
 	{
-		return Parameter::GetTogehero().hp;
+		return Parameter::GetTogehero().basic.hp;
 	}
 	void Togehero::AssignMyBody( const Donya::Vector3 &wsPos )
 	{
-		const auto &data = Parameter::GetTogehero();
+		const auto &data = Parameter::GetTogehero().basic;
 		body.pos		= wsPos;
 		body.offset		= data.hitBoxOffset;
 		body.size		= data.hitBoxSize;
@@ -108,22 +108,9 @@ namespace Enemy
 	}
 	void TogeheroParam::ShowImGuiNode()
 	{
-		ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f	);
-		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f	);
-		ImGui::DragFloat3( u8"喰らい判定・オフセット",			&hurtBoxOffset.x,	0.01f	);
-		ImGui::DragFloat3( u8"喰らい判定・サイズ（半分を指定）",	&hurtBoxSize.x,		0.01f	);
-		ImGui::DragFloat ( u8"移動速度",							&moveSpeed,			0.1f	);
-		ImGui::DragFloat ( u8"回転速度[degree/s]",				&rotateSpeed,		1.0f	);
-		ImGui::DragInt   ( u8"初期ＨＰ",							&hp							);
-		touchDamage.ShowImGuiNode( u8"接触ダメージ設定" );
-		hitBoxSize.x	= std::max( 0.0f,	hitBoxSize.x	);
-		hitBoxSize.y	= std::max( 0.0f,	hitBoxSize.y	);
-		hitBoxSize.z	= std::max( 0.0f,	hitBoxSize.z	);
-		hurtBoxSize.x	= std::max( 0.0f,	hurtBoxSize.x	);
-		hurtBoxSize.y	= std::max( 0.0f,	hurtBoxSize.y	);
-		hurtBoxSize.z	= std::max( 0.0f,	hurtBoxSize.z	);
-		moveSpeed		= std::max( 0.001f,	moveSpeed		);
-		hp				= std::max( 1,		hp				);
+		basic.ShowImGuiNode( u8"汎用設定" );
+		ImGui::DragFloat( u8"移動速度",				&moveSpeed,		0.1f	);
+		ImGui::DragFloat( u8"回転速度[degree/s]",	&rotateSpeed,	1.0f	);
 	}
 #endif // USE_IMGUI
 }

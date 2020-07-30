@@ -41,21 +41,31 @@ namespace Enemy
 	struct TogeheroParam
 	{
 	public:
-		Donya::Vector3 hitBoxOffset	{ 0.0f, 0.0f, 0.0f };
-		Donya::Vector3 hurtBoxOffset{ 0.0f, 0.0f, 0.0f };
-		Donya::Vector3 hitBoxSize	{ 1.0f, 1.0f, 1.0f };
-		Donya::Vector3 hurtBoxSize	{ 1.0f, 1.0f, 1.0f };
-
-		float	moveSpeed	= 1.0f;		// [m/s]
-		float	rotateSpeed	= 360.0f;	// [degree/s]
-		int		hp			= 1;
-
-		Definition::Damage touchDamage;
+		BasicParam	basic;
+		float		moveSpeed	= 1.0f;		// [m/s]
+		float		rotateSpeed	= 360.0f;	// [degree/s]
 	private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
+			if ( 2 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( basic		),
+					CEREAL_NVP( moveSpeed	),
+					CEREAL_NVP( rotateSpeed	)
+				);
+			}
+			if ( 3 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+			return;
+			// else
+
+			/*
 			archive
 			(
 				CEREAL_NVP( hitBoxOffset	),
@@ -74,10 +84,7 @@ namespace Enemy
 					CEREAL_NVP( touchDamage	)
 				);
 			}
-			if ( 2 <= version )
-			{
-				// archive( CEREAL_NVP( x ) );
-			}
+			*/
 		}
 	public:
 	#if USE_IMGUI
@@ -88,4 +95,4 @@ namespace Enemy
 CEREAL_CLASS_VERSION( Enemy::Togehero, 0 )
 CEREAL_REGISTER_TYPE( Enemy::Togehero )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Togehero )
-CEREAL_CLASS_VERSION( Enemy::TogeheroParam, 1 )
+CEREAL_CLASS_VERSION( Enemy::TogeheroParam, 2 )

@@ -24,6 +24,7 @@ namespace Enemy
 		constexpr const char *modelFolderName = "Enemy/";
 		constexpr std::array<const char *, kindCount> modelNames
 		{
+			"SuperBallMachine",
 			"Togehero",
 		};
 
@@ -128,6 +129,27 @@ namespace Enemy
 
 		ImGui::DragFloat3( u8"ワールド座標",	&wsPos.x, 0.01f );
 		ImGui::Checkbox  ( u8"右向きか",		&lookingRight );
+
+		ImGui::TreePop();
+	}
+	void BasicParam::ShowImGuiNode( const std::string &nodeCaption )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		touchDamage.ShowImGuiNode( u8"接触ダメージ設定" );
+		ImGui::DragInt   ( u8"初期ＨＰ",							&hp							);
+		ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f	);
+		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f	);
+		ImGui::DragFloat3( u8"喰らい判定・オフセット",			&hurtBoxOffset.x,	0.01f	);
+		ImGui::DragFloat3( u8"喰らい判定・サイズ（半分を指定）",	&hurtBoxSize.x,		0.01f	);
+		hp				= std::max( 1,		hp				);
+		hitBoxSize.x	= std::max( 0.0f,	hitBoxSize.x	);
+		hitBoxSize.y	= std::max( 0.0f,	hitBoxSize.y	);
+		hitBoxSize.z	= std::max( 0.0f,	hitBoxSize.z	);
+		hurtBoxSize.x	= std::max( 0.0f,	hurtBoxSize.x	);
+		hurtBoxSize.y	= std::max( 0.0f,	hurtBoxSize.y	);
+		hurtBoxSize.z	= std::max( 0.0f,	hurtBoxSize.z	);
 
 		ImGui::TreePop();
 	}
@@ -484,7 +506,13 @@ namespace Enemy
 
 		switch ( kind )
 		{
-		case Kind::Togehero:	instance = std::make_shared<Enemy::Togehero>();	break;
+		case Kind::SuperBallMachine:return;// instance = std::make_shared<Enemy::Togehero>();	break;
+		case Kind::Togehero:		instance = std::make_shared<Enemy::Togehero>();	break;
+		// case Kind::SkeletonJoe:		instance = std::make_shared<Enemy::>();	break;
+		// case Kind::ShieldAttacker:	instance = std::make_shared<Enemy::>();	break;
+		// case Kind::Battonton:		instance = std::make_shared<Enemy::>();	break;
+		// case Kind::SkullMet:		instance = std::make_shared<Enemy::>();	break;
+		// case Kind::Imorm:			instance = std::make_shared<Enemy::>();	break;
 		default: break;
 		}
 

@@ -22,8 +22,14 @@ namespace Enemy
 {
 	enum class Kind
 	{
-		Togehero,		// Aerial type
-
+		SuperBallMachine,
+		Togehero,
+		// SkeletonJoe,
+		// ShieldAttacker,
+		// Battonton,
+		// SkullMet,
+		// Imorm,
+		
 		KindCount
 	};
 
@@ -203,9 +209,49 @@ namespace Enemy
 		void ShowInstanceNode( size_t instanceIndex );
 	#endif // USE_IMGUI
 	};
+
+
+	/// <summary>
+	/// The basically parameter used for level design
+	/// </summary>
+	struct BasicParam
+	{
+	public:
+		int					hp				= 1;
+		Definition::Damage	touchDamage;
+		Donya::Vector3		hitBoxOffset	{ 0.0f, 0.0f, 0.0f };
+		Donya::Vector3		hitBoxSize		{ 1.0f, 1.0f, 1.0f };
+		Donya::Vector3		hurtBoxOffset	{ 0.0f, 0.0f, 0.0f };
+		Donya::Vector3		hurtBoxSize		{ 1.0f, 1.0f, 1.0f };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( hp				),
+				CEREAL_NVP( touchDamage		),
+				CEREAL_NVP( hitBoxOffset	),
+				CEREAL_NVP( hurtBoxOffset	),
+				CEREAL_NVP( hitBoxSize		),
+				CEREAL_NVP( hurtBoxSize		)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const std::string &nodeCaption );
+	#endif // USE_IMGUI
+	};
 }
 CEREAL_CLASS_VERSION( Enemy::InitializeParam,	0 )
 CEREAL_CLASS_VERSION( Enemy::Base,				0 )
 CEREAL_REGISTER_TYPE( Enemy::Base )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Actor, Enemy::Base )
 CEREAL_CLASS_VERSION( Enemy::Admin,				0 )
+CEREAL_CLASS_VERSION( Enemy::BasicParam,		0 )
