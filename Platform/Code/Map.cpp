@@ -307,7 +307,7 @@ void Map::Draw( RenderingHelper *pRenderer ) const
 #if DEBUG_MODE
 #include "Donya\Keyboard.h"
 #endif // DEBUG_MODE
-void Map::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
+void Map::DrawHitBoxes( const Donya::Collision::Box3F &wsScreen, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 {
 #if DEBUG_MODE
 	static bool dontDraw = false;
@@ -318,12 +318,21 @@ void Map::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matV
 	if ( dontDraw ) { return; }
 #endif // DEBUG_MODE
 
+	constexpr float withinRangeAllowanceMagni = 1.5f;
 
 	ForEach
 	(
 		[&]( const ElementType &pElement )
 		{
-			if ( pElement ) { pElement->DrawHitBox( pRenderer, matVP ); }
+			if ( !pElement ) { return; }
+			// else
+
+			Donya::Collision::Box3F wsTileAABB = pElement->GetHitBox();
+			wsTileAABB.size *= withinRangeAllowanceMagni;
+			if ( !Donya::Collision::IsHit( wsTileAABB, wsScreen ) ) { return; }
+			// else
+
+			pElement->DrawHitBox( pRenderer, matVP );
 		}
 	);
 }

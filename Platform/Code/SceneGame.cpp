@@ -450,14 +450,14 @@ void SceneGame::Draw( float elapsedTime )
 	// Object's hit/hurt boxes
 	if ( Common::IsShowCollision() )
 	{
-		if ( pPlayer		) { pPlayer->DrawHitBox( pRenderer.get(), VP );			}
-		if ( pBossContainer	) { pBossContainer->DrawHitBoxes( pRenderer.get(), VP );}
-		if ( pClearEvent	) { pClearEvent->DrawHitBoxes( pRenderer.get(), VP );	}
-		if ( pMap			) { pMap->DrawHitBoxes( pRenderer.get(), VP );			}
+		if ( pPlayer		) { pPlayer->DrawHitBox( pRenderer.get(), VP );					}
+		if ( pBossContainer	) { pBossContainer->DrawHitBoxes( pRenderer.get(), VP );		}
+		if ( pClearEvent	) { pClearEvent->DrawHitBoxes( pRenderer.get(), VP );			}
+		if ( pMap			) { pMap->DrawHitBoxes( currentScreen, pRenderer.get(), VP );	}
 		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		Enemy ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		Item  ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		if ( pHouse			) { pHouse->DrawHitBoxes( pRenderer.get(), VP );		}
+		if ( pHouse			) { pHouse->DrawHitBoxes( pRenderer.get(), VP );				}
 	}
 #endif // DEBUG_MODE
 
@@ -1564,7 +1564,7 @@ void SceneGame::UseImGui()
 				const std::string fileDirectory	= bufferDirectory.data();
 				const std::string filePrefix	= bufferPrefix.data();
 				const std::string fileExtension	= bufferExtension.data();
-				const std::string strStageNo	= ( readStageNumber < 10 ) ? "0" + std::to_string( readStageNumber ) : std::to_string( readStageNumber );
+				const std::string strStageNo	= ( 0 <= readStageNumber && readStageNumber < 10 ) ? "0" + std::to_string( readStageNumber ) : std::to_string( readStageNumber );
 				constexpr const char noSuffix = '_';
 				std::string	filePath{};
 				CSVLoader	loader{};

@@ -122,7 +122,7 @@ public:
 	void Uninit();
 	void Update( float elapsedTime );
 	void Draw( RenderingHelper *pRenderer ) const;
-	void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
+	void DrawHitBoxes( const Donya::Collision::Box3F &wsScreenHitBox, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
 	/// <summary>
 	/// Returns tiles forming as: [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
