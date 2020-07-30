@@ -88,7 +88,7 @@ bool Tile::ShowImGuiNode( const std::string &nodeCaption )
 namespace
 {
 #if DEBUG_MODE
-	constexpr bool IOFromBinaryFile = false;
+	constexpr bool IOFromBinaryFile = true;
 #else
 	constexpr bool IOFromBinaryFile = true;
 #endif // DEBUG_MODE

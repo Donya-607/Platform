@@ -1755,7 +1755,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	// else
 
 	int remaining = Remaining::Get();
-	ImGui::SliderInt	( u8"残機数",						&remaining, 0, Parameter().Get().maxHP );
+	ImGui::SliderInt	( u8"残機数",						&remaining, 0, Parameter().Get().maxRemainCount );
 	Remaining::Set( remaining );
 
 	ImGui::DragInt		( u8"現在の体力",					&currentHP );
