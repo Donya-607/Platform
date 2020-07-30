@@ -569,11 +569,42 @@ void SceneGame::InitStage( int stageNo )
 
 	bool result = true;
 
+	/*
+	The dependencies of initializations:
+	Enemies:		[Map]				- depends on the map for decide the initial state
+	Map:			[CurrentScreen]		- depends on an area of current screen the camera projects
+	CurrentScreen:	[Camera]			- depends on the view and projection matrix of the camera
+	Camera:			[Player]			- depends on the player position
+	Player - it is free(currently)
+	CurrentRoomID	[House]
+	House - it is free
+	*/
+
+	// Initialize a dependent objects
+
+	PlayerInit();
+
+	// The calculation of camera position depends on the player's position
+	CameraInit();
+	// The calculation of screen space uses camera's view and projection matrix, so must calc it after CameraInit().
+	currentScreen = CalcCurrentScreenPlane();
+
 	pMap = std::make_unique<Map>();
 	pMap->Init( stageNo );
 
+	auto &enemyAdmin = Enemy::Admin::Get();
+	enemyAdmin.ClearInstances();
+	enemyAdmin.LoadEnemies( stageNo, currentScreen, IOFromBinary );
+#if DEBUG_MODE
+	enemyAdmin.SaveEnemies( stageNo, true );
+#endif // DEBUG_MODE
+
 	pHouse = std::make_unique<House>();
 	pHouse->Init( stageNo );
+
+	currentRoomID = pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
+
+	// Initialize a non-dependent objects
 
 	pClearEvent = std::make_unique<ClearEvent>();
 	pClearEvent->Init( stageNo );
@@ -584,14 +615,6 @@ void SceneGame::InitStage( int stageNo )
 	pBossContainer->SaveBosses( stageNo, true );
 #endif // DEBUG_MODE
 
-	PlayerInit();
-
-	currentRoomID = pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
-
-	CameraInit();
-	// The calculation of screen space uses camera's view and projection matrix, so I must calc after CameraInit().
-	currentScreen = CalcCurrentScreenPlane();
-
 	Bullet::Admin::Get().ClearInstances();
 
 	auto &itemAdmin = Item::Admin::Get();
@@ -599,13 +622,6 @@ void SceneGame::InitStage( int stageNo )
 	itemAdmin.LoadItems( stageNo, IOFromBinary );
 #if DEBUG_MODE
 	itemAdmin.SaveItems( stageNo, true );
-#endif // DEBUG_MODE
-
-	auto &enemyAdmin = Enemy::Admin::Get();
-	enemyAdmin.ClearInstances();
-	enemyAdmin.LoadEnemies( stageNo, IOFromBinary );
-#if DEBUG_MODE
-	enemyAdmin.SaveEnemies( stageNo, true );
 #endif // DEBUG_MODE
 }
 void SceneGame::UninitStage()
@@ -1482,7 +1498,7 @@ void SceneGame::UseImGui()
 		auto ApplyToEnemy	= [&]( const CSVLoader &loadedData )
 		{
 			Enemy::Admin::Get().ClearInstances();
-			Enemy::Admin::Get().RemakeByCSV( loadedData );
+			Enemy::Admin::Get().RemakeByCSV( loadedData, currentScreen );
 
 			if ( thenSave )
 			{
@@ -1688,7 +1704,7 @@ void SceneGame::UseImGui()
 		Bullet::Parameter::Update( u8"íeÇÃÉpÉâÉÅÅ[É^" );
 		ImGui::Text( "" );
 
-		Enemy::Admin::Get().ShowImGuiNode( u8"ìGÇÃåªç›", stageNumber );
+		Enemy::Admin::Get().ShowImGuiNode( u8"ìGÇÃåªç›", stageNumber, currentScreen );
 		Enemy::Parameter::Update( u8"ìGÇÃÉpÉâÉÅÅ[É^" );
 		ImGui::Text( "" );
 

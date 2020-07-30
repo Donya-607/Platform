@@ -113,7 +113,7 @@ namespace Enemy
 			}
 		}
 	public:
-		virtual void Init( const InitializeParam &parameter );
+		virtual void Init( const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreenHitBox );
 		virtual void Uninit();
 		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		virtual void PhysicUpdate( float elapsedTime, const Map &terrain );
@@ -186,7 +186,7 @@ namespace Enemy
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
 		void ClearInstances();
-		bool LoadEnemies( int stageNumber, bool fromBinary );
+		bool LoadEnemies( int stageNumber, const Donya::Collision::Box3F &wsScreenHitBox, bool fromBinary );
 	public:
 		size_t GetInstanceCount() const;
 		bool IsOutOfRange( size_t instanceIndex ) const;
@@ -194,12 +194,12 @@ namespace Enemy
 	private:
 		void RemoveEnemies();
 	#if USE_IMGUI
-		void AppendEnemy( Kind appendKind, const InitializeParam &parameter );
+		void AppendEnemy( Kind appendKind, const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreenHitBox );
 	public:
-		void RemakeByCSV( const CSVLoader &loadedData );
+		void RemakeByCSV( const CSVLoader &loadedData, const Donya::Collision::Box3F &wsScreenHitBox );
 		void SaveEnemies( int stageNumber, bool fromBinary );
 	public:
-		void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
+		void ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Donya::Collision::Box3F &wsScreenHitBox );
 		void ShowInstanceNode( size_t instanceIndex );
 	#endif // USE_IMGUI
 	};

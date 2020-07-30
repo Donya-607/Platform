@@ -133,7 +133,7 @@ namespace Enemy
 	}
 #endif // USE_IMGUI
 
-	void Base::Init( const InitializeParam &parameter )
+	void Base::Init( const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreen )
 	{
 		initializer		= parameter;
 		AssignMyBody( parameter.wsPos );
@@ -152,6 +152,13 @@ namespace Enemy
 		);
 
 		pReceivedDamage.reset();
+
+		UpdateOutSideState( wsScreen );
+		onOutSidePrevious = onOutSideCurrent;
+		if ( onOutSideCurrent )
+		{
+			BeginWaitIfActive();
+		}
 	}
 	void Base::Uninit()
 	{
@@ -317,10 +324,13 @@ namespace Enemy
 	void Base::RespawnIfSpawnable()
 	{
 		if ( !NowWaiting() ) { return; }
-		if ( onOutSideCurrent || !onOutSidePrevious ) { return;  }
+		if ( onOutSideCurrent || !onOutSidePrevious ) { return; }
 		// else
 		waitForRespawn = false;
-		Init( GetInitializer() );
+
+		// The "wsScreenHitBox" will be used for consideration to go to wait.
+		// So I make to do not wait as certainly by passing my body.
+		Init( GetInitializer(), GetHitBox() );
 	}
 	void Base::ApplyReceivedDamageIfHas()
 	{
@@ -424,7 +434,7 @@ namespace Enemy
 		}
 		enemyPtrs.clear();
 	}
-	bool Admin::LoadEnemies( int stageNumber, bool fromBinary )
+	bool Admin::LoadEnemies( int stageNumber, const Donya::Collision::Box3F &wsScreen, bool fromBinary )
 	{
 		ClearInstances();
 
@@ -436,7 +446,7 @@ namespace Enemy
 		// I should call Init()
 		for ( auto &pIt : enemyPtrs )
 		{
-			if ( pIt ) { pIt->Init( pIt->GetInitializer() ); }
+			if ( pIt ) { pIt->Init( pIt->GetInitializer(), wsScreen ); }
 		}
 
 		return succeeded;
@@ -468,7 +478,7 @@ namespace Enemy
 		enemyPtrs.erase( itr, enemyPtrs.end() );
 	}
 #if USE_IMGUI
-	void Admin::AppendEnemy( Kind kind, const InitializeParam &parameter )
+	void Admin::AppendEnemy( Kind kind, const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreen )
 	{
 		std::shared_ptr<Base> instance = nullptr;
 
@@ -485,10 +495,10 @@ namespace Enemy
 		}
 		// else
 
-		instance->Init( parameter );
+		instance->Init( parameter, wsScreen );
 		enemyPtrs.emplace_back( std::move( instance ) );
 	}
-	void Admin::RemakeByCSV( const CSVLoader &loadedData )
+	void Admin::RemakeByCSV( const CSVLoader &loadedData, const Donya::Collision::Box3F &wsScreen )
 	{
 		auto IsEnemyID	= []( int id )
 		{
@@ -523,7 +533,8 @@ namespace Enemy
 			InitializeParam tmp;
 			tmp.lookingRight	= true;
 			tmp.wsPos			= Map::ToWorldPos( row, column );
-			AppendEnemy( Kind::Terry, tmp );
+			const Kind kind = scast<Kind>( id - StageFormat::EnemyStart );
+			AppendEnemy( kind, tmp, wsScreen );
 		};
 
 		for ( auto &pIt : enemyPtrs )
@@ -553,7 +564,7 @@ namespace Enemy
 
 		Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
 	}
-	void Admin::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
+	void Admin::ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Donya::Collision::Box3F &wsScreen )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
@@ -579,11 +590,11 @@ namespace Enemy
 		}
 		else if ( result == Op::LoadBinary )
 		{
-			LoadEnemies( stageNo, true );
+			LoadEnemies( stageNo, wsScreen, true );
 		}
 		else if ( result == Op::LoadJson )
 		{
-			LoadEnemies( stageNo, false );
+			LoadEnemies( stageNo, wsScreen, false );
 		}
 
 		ImGui::TreePop();
