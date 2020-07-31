@@ -34,6 +34,7 @@ namespace Bullet
 	struct GeneralParam;
 	struct SkullBusterParam;
 	struct SkullShieldParam;
+	struct SuperBallParam;
 	namespace Parameter
 	{
 		void Load();
@@ -46,6 +47,7 @@ namespace Bullet
 		const GeneralParam		&GetGeneral();
 		const SkullBusterParam	&GetSkullBuster();
 		const SkullShieldParam	&GetSkullShield();
+		const SuperBallParam	&GetSuperBall();
 
 		namespace Impl
 		{
@@ -53,11 +55,13 @@ namespace Bullet
 			void LoadGeneral();
 			void LoadSkullBuster();
 			void LoadSkullShield();
+			void LoadSuperBall();
 		#if USE_IMGUI
 			void UpdateBuster( const std::string &nodeCaption );
 			void UpdateGeneral( const std::string &nodeCaption );
 			void UpdateSkullBuster( const std::string &nodeCaption );
 			void UpdateSkullShield( const std::string &nodeCaption );
+			void UpdateSuperBall( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}
 	}

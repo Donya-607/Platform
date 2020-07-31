@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Bullet.h"
+#include "../BulletParam.h"
 
 namespace Bullet
 {
@@ -21,9 +22,9 @@ namespace Bullet
 	struct SuperBallParam
 	{
 	public:
-		Donya::Vector3		hitBoxOffset{ 0.0f, 0.0f, 0.0f };
-		Donya::Vector3		hitBoxSize  { 1.0f, 1.0f, 1.0f };
-		Definition::Damage	damage;
+		BasicParam	basic;
+		int			accelerateCount		= 3;
+		float		acceleratePercent	= 1.1f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -31,9 +32,9 @@ namespace Bullet
 		{
 			archive
 			(
-				CEREAL_NVP( hitBoxOffset	),
-				CEREAL_NVP( hitBoxSize		),
-				CEREAL_NVP( damage			)
+				CEREAL_NVP( basic				),
+				CEREAL_NVP( accelerateCount		),
+				CEREAL_NVP( acceleratePercent	),
 			);
 
 			if ( 1 <= version )

@@ -7,6 +7,7 @@
 #include "BulletParam.h"
 #include "Bullets/Buster.h"
 #include "Bullets/SkullBullet.h"
+#include "Bullets/SuperBall.h"
 #include "Common.h"				// Use IsShowCollision()
 #include "FilePath.h"
 #include "ModelHelper.h"
@@ -102,6 +103,7 @@ namespace Bullet
 			Impl::LoadGeneral();
 			Impl::LoadSkullBuster();
 			Impl::LoadSkullShield();
+			Impl::LoadSuperBall();
 		}
 
 	#if USE_IMGUI
@@ -110,10 +112,11 @@ namespace Bullet
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
 
-			Impl::UpdateGeneral( u8"General" );
-			Impl::UpdateBuster( u8"Buster" );
-			Impl::UpdateSkullBuster( u8"SkullBuster" );
-			Impl::UpdateSkullShield( u8"SkullShield" );
+			Impl::UpdateGeneral		( u8"General" );
+			Impl::UpdateBuster		( u8"Buster" );
+			Impl::UpdateSkullBuster	( u8"SkullBuster" );
+			Impl::UpdateSkullShield	( u8"SkullShield" );
+			Impl::UpdateSuperBall	( u8"SuperBall" );
 
 			ImGui::TreePop();
 		}
