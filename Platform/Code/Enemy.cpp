@@ -193,9 +193,36 @@ namespace Enemy
 		hurtBox.pos		= initializer.wsPos;
 		body.exist		= false;
 		hurtBox.exist	= false;
+		body.ignoreList.clear();
+		hurtBox.ignoreList.clear();
+
+		pReceivedDamage.reset();
 	}
 	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
+		// Update wait/alive state
+
+		UpdateOutSideState( wsScreen );
+		const bool nowWaiting = NowWaiting();
+		const bool onOutSide  = OnOutSide();
+		if ( nowWaiting != onOutSide )
+		{
+			if ( !nowWaiting && onOutSide )
+			{
+				BeginWaitIfActive();
+			}
+			else // if ( nowWaiting && !onOutSide )
+			{
+				RespawnIfSpawnable();
+			}
+
+			return;
+		}
+		// else
+
+
+		// Normal update processes
+
 		hurtBox.UpdateIgnoreList( elapsedTime );
 
 		ApplyReceivedDamageIfHas();

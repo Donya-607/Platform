@@ -30,18 +30,8 @@ namespace Enemy
 	void SuperBallMachine::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		Base::Update( elapsedTime, wsTargetPos, wsScreen );
-
-		UpdateOutSideState( wsScreen );
-		if ( NowWaiting() )
-		{
-			RespawnIfSpawnable();
-			if ( NowWaiting() ) // Still inactive
-			{
-				return;
-			}
-		}
-
-		const auto &data = Parameter::GetSuperBallMachine();
+		if ( NowWaiting() ) { return; }
+		// else
 
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately

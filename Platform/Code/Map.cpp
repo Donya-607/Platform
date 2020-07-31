@@ -304,22 +304,8 @@ void Map::Draw( RenderingHelper *pRenderer ) const
 {
 	// TODO: Drawing a stage model
 }
-#if DEBUG_MODE
-#include "Donya\Keyboard.h"
-#endif // DEBUG_MODE
 void Map::DrawHitBoxes( const Donya::Collision::Box3F &wsScreen, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 {
-#if DEBUG_MODE
-	static bool dontDraw = false;
-	if ( Donya::Keyboard::Press( VK_MENU ) && Donya::Keyboard::Trigger( 'F' ) )
-	{
-		dontDraw = !dontDraw;
-	}
-	if ( dontDraw ) { return; }
-#endif // DEBUG_MODE
-
-	constexpr float withinRangeAllowanceMagni = 1.5f;
-
 	ForEach
 	(
 		[&]( const ElementType &pElement )
@@ -327,9 +313,7 @@ void Map::DrawHitBoxes( const Donya::Collision::Box3F &wsScreen, RenderingHelper
 			if ( !pElement ) { return; }
 			// else
 
-			Donya::Collision::Box3F wsTileAABB = pElement->GetHitBox();
-			wsTileAABB.size *= withinRangeAllowanceMagni;
-			if ( !Donya::Collision::IsHit( wsTileAABB, wsScreen ) ) { return; }
+			if ( !Donya::Collision::IsHit( pElement->GetHitBox(), wsScreen ) ) { return; }
 			// else
 
 			pElement->DrawHitBox( pRenderer, matVP );

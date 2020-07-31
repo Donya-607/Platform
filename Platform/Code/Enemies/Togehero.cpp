@@ -30,18 +30,8 @@ namespace Enemy
 	void Togehero::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		Base::Update( elapsedTime, wsTargetPos, wsScreen );
-
-		UpdateOutSideState( wsScreen );
-		if ( NowWaiting() )
-		{
-			RespawnIfSpawnable();
-			if ( NowWaiting() ) // Still inactive
-			{
-				return;
-			}
-		}
-
-		const auto &data = Parameter::GetTogehero();
+		if ( NowWaiting() ) { return; }
+		// else
 
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
@@ -49,6 +39,8 @@ namespace Enemy
 			AssignMyBody( body.pos );
 		}
 	#endif // USE_IMGUI
+
+		const auto &data = Parameter::GetTogehero();
 
 		// Move
 		{
