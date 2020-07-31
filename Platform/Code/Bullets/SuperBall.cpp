@@ -29,7 +29,57 @@ namespace Bullet
 	}
 
 
+	void SuperBall::Init( const FireDesc &parameter )
+	{
+		Base::Init( parameter );
+
+		accelCount = 0;
+	}
 	void SuperBall::Uninit() {} // No op
+	void SuperBall::PhysicUpdate( float elapsedTime, const Map &terrain )
+	{
+		const auto &data = Parameter::GetSuperBall();
+		Donya::Vector3 acceleratedVelocity = velocity;
+		for ( int i = 0; i < accelCount; ++i )
+		{
+			acceleratedVelocity *= data.acceleratePercent;
+		}
+
+		// Use an Actor's collision method
+		Actor mover;
+		mover.body = GetHitBox();
+
+		const auto movement		= acceleratedVelocity * elapsedTime;
+		const auto aroundTiles	= terrain.GetPlaceTiles( mover.body, movement );
+		const auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, mover.body );
+
+		bool wasCollided  = false;
+		int  collideIndex = -1;
+		auto IsCollided = []( int collideIndex )
+		{
+			return ( collideIndex != -1 ) ? true : false;
+		};
+
+		constexpr int dimensionCount = 3; // X,Y,Z
+		for ( int i = 0; i < dimensionCount; ++i )
+		{
+			collideIndex = Actor::MoveAxis( &mover, i, movement[i], aroundSolids );
+			if ( IsCollided( collideIndex ) )
+			{
+				velocity[i] *= -1.0f;
+				wasCollided =  true;
+			}
+		}
+
+		if ( wasCollided )
+		{
+			accelCount++;
+			accelCount = std::min( data.accelerateCount, accelCount );
+		}
+
+		body.pos		= mover.body.pos;
+		hitSphere.pos	= body.pos;
+	}
 	Kind SuperBall::GetKind() const
 	{
 		return Kind::SuperBall;

@@ -14,6 +14,7 @@
 #include "Donya/Vector.h"
 
 #include "Damage.h"
+#include "Map.h"
 #include "ModelHelper.h"
 #include "ObjectBase.h"
 #include "Renderer.h"
@@ -147,7 +148,7 @@ namespace Bullet
 		virtual void Init( const FireDesc &parameter );
 		virtual void Uninit() = 0;
 		virtual void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox );
-		virtual void PhysicUpdate( float elapsedTime );
+		virtual void PhysicUpdate( float elapsedTime, const Map &terrain );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
@@ -204,7 +205,7 @@ namespace Bullet
 		Admin() = default;
 	public:
 		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox );
-		void PhysicUpdate( float elasedTime );
+		void PhysicUpdate( float elasedTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:

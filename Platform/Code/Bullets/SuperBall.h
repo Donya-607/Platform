@@ -10,8 +10,12 @@ namespace Bullet
 	/// </summary>
 	class SuperBall final : public Base
 	{
+	private:
+		int accelCount = 0;
 	public:
+		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
+		void PhysicUpdate( float elapsedTime, const Map &terrain ) override;
 	public:
 		Kind GetKind() const override;
 	private:

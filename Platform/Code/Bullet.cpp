@@ -276,7 +276,7 @@ namespace Bullet
 			wantRemove = true;
 		}
 	}
-	void Base::PhysicUpdate( float elapsedTime )
+	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
 		const auto movement = velocity * elapsedTime;
 		Solid::Move( movement, {}, {} );
@@ -534,7 +534,7 @@ namespace Bullet
 
 		RemoveInstancesIfNeeds();
 	}
-	void Admin::PhysicUpdate( float elapsedTime )
+	void Admin::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
 		// TODO: Should detect a remove sign and erase that in here?
 
@@ -543,7 +543,7 @@ namespace Bullet
 			if ( !pIt ) { continue; }
 			// else
 
-			pIt->PhysicUpdate( elapsedTime );
+			pIt->PhysicUpdate( elapsedTime, terrain );
 
 			if ( pIt->ShouldRemove() )
 			{

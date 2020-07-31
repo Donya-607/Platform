@@ -360,7 +360,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 			}
 		}
 
-		Bullet::Admin::Get().PhysicUpdate( deltaTimeForMove );
+		Bullet::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
 		Enemy::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
 		Item::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
 
