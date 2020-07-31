@@ -46,10 +46,7 @@ namespace Enemy
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
 		{
-			body.offset		= data.basic.hitBoxOffset;
-			body.size		= data.basic.hitBoxSize;
-			hurtBox.offset	= data.basic.hurtBoxOffset;
-			hurtBox.size	= data.basic.hurtBoxSize;
+			AssignMyBody( body.pos );
 		}
 	#endif // USE_IMGUI
 

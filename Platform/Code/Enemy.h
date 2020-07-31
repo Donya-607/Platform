@@ -33,20 +33,24 @@ namespace Enemy
 		KindCount
 	};
 
+	struct SuperBallMachineParam;
 	struct TogeheroParam;
 	namespace Parameter
 	{
 		void Load();
 
-		const TogeheroParam &GetTogehero();
+		const SuperBallMachineParam	&GetSuperBallMachine();
+		const TogeheroParam			&GetTogehero();
 
 	#if USE_IMGUI
 		void Update( const std::string &nodeCaption );
 	#endif // USE_IMGUI
 		namespace Impl
 		{
+			void LoadSuperBallMachine();
 			void LoadTogehero();
 		#if USE_IMGUI
+			void UpdateSuperBallMachine( const std::string &nodeCaption );
 			void UpdateTogehero( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}

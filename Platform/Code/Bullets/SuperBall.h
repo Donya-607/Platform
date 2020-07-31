@@ -34,7 +34,7 @@ namespace Bullet
 			(
 				CEREAL_NVP( basic				),
 				CEREAL_NVP( accelerateCount		),
-				CEREAL_NVP( acceleratePercent	),
+				CEREAL_NVP( acceleratePercent	)
 			);
 
 			if ( 1 <= version )
