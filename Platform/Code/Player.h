@@ -327,7 +327,7 @@ public:
 public:
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;
-	using				 Actor::GetHitBox;
+	Donya::Collision::Box3F		GetHitBox()			const override;
 	Donya::Collision::Box3F		GetHurtBox()		const;
 	Donya::Quaternion			GetOrientation()	const;
 	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F	&collidingHitBox ) const;

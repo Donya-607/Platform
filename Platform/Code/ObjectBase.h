@@ -219,8 +219,8 @@ public:
 	/// </summary>
 	void Move( const Donya::Vector3	&movement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box3F> &solids );
 public:
-	Donya::Vector3			GetPosition()	const;
-	Donya::Collision::Box3F	GetHitBox()		const;
+	virtual Donya::Vector3			GetPosition()	const;
+	virtual Donya::Collision::Box3F	GetHitBox()		const;
 public:
 	/// <summary>
 	/// A drawing origin will be regarded as a center. Returns drawing result.

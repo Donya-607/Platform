@@ -1428,6 +1428,10 @@ bool Player::NowGrabbingLadder() const
 {
 	return ( pMover && pMover->NowGrabbingLadder( *this ) ) ? true : false;
 }
+Donya::Collision::Box3F	Player::GetHitBox() const
+{
+	return Actor::GetHitBox();
+}
 Donya::Collision::Box3F	Player::GetHurtBox() const
 {
 	return hurtBox;
