@@ -48,6 +48,7 @@ namespace Enemy
 		AssignMyBody( body.pos );
 	#endif // USE_IMGUI
 
+		ShotIfNeeded( elapsedTime, wsTargetPos );
 	}
 	Kind SuperBallMachine::GetKind() const { return Kind::SuperBallMachine; }
 	Definition::Damage SuperBallMachine::GetTouchDamage() const
@@ -68,6 +69,47 @@ namespace Enemy
 		hurtBox.offset	= data.hurtBoxOffset;
 		hurtBox.size	= data.hurtBoxSize;
 	}
+	void SuperBallMachine::ShotIfNeeded( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	{
+		const auto &data = Parameter::GetSuperBallMachine();
+
+		intervalTimer += elapsedTime;
+
+		// Judging to shotable
+
+		if ( intervalTimer < data.fireIntervalSecond ) { return; }
+		// else
+
+		Donya::Collision::Box3F capturingArea{};
+		capturingArea.pos  = GetPosition();
+		capturingArea.size = data.capturingArea;
+		if ( !Donya::Collision::IsHit( wsTargetPos, capturingArea, /* considerExistFlag = */ false ) ) { return; }
+		// else
+
+		// Shot here
+
+		intervalTimer = 0.0f;
+
+		Bullet::FireDesc desc = data.fireDesc;
+		
+		float lookingSign = 1.0f;
+		{
+			const Donya::Vector3 front = orientation.LocalFront();
+			const float dot = Donya::Dot( front, Donya::Vector3::Right() );
+			lookingSign = Donya::SignBitF( dot );
+		}
+		desc.position.x		*= lookingSign;
+		desc.position		+= GetPosition();
+		desc.owner			=  hurtBox.id;
+		
+		const float shotRadian			= ToRadian( data.fireDegree );
+		const float shotRadianLeftVer	= ToRadian( 180.0f ) - shotRadian;
+		desc.direction.x	= cosf( ( Donya::SignBit( lookingSign ) == -1 ) ? shotRadianLeftVer : shotRadian );
+		desc.direction.y	= sinf( shotRadian );
+		desc.direction.z	= 0.0f;
+
+		Bullet::Admin::Get().RequestFire( desc );
+	}
 #if USE_IMGUI
 	bool SuperBallMachine::ShowImGuiNode( const std::string &nodeCaption )
 	{
@@ -76,12 +118,12 @@ namespace Enemy
 
 		Base::ShowImGuiNode( u8"Šî’ê•”•ª" );
 
-		ImGui::TextDisabled( u8"”h¶•”•ª" );
-		// if ( ImGui::TreeNode( u8"”h¶•”•ª" ) )
-		// {
-		// 
-		// 	ImGui::TreePop();
-		// }
+		if ( ImGui::TreeNode( u8"”h¶•”•ª" ) )
+		{
+			ImGui::DragFloat( u8"•b”ƒ^ƒCƒ}E”­ŽËŠÔŠu", &intervalTimer, 0.01f );
+
+			ImGui::TreePop();
+		}
 
 		ImGui::TreePop();
 		return true;
@@ -91,7 +133,7 @@ namespace Enemy
 		basic.ShowImGuiNode( u8"”Ä—pÝ’è" );
 		fireDesc.ShowImGuiNode( u8"”­ŽË’eÝ’è" );
 
-		ImGui::DragFloat3( u8"õ“G”ÍˆÍ",						&capturingArea.x,		0.01f	);
+		ImGui::DragFloat3( u8"õ“G”ÍˆÍi”¼Œaj",				&capturingArea.x,		0.01f	);
 		ImGui::DragFloat ( u8"”­ŽËŠÔŠui•bj",				&fireIntervalSecond,	0.1f	);
 		ImGui::DragFloat ( u8"”­ŽËŠp“xiDegreeE‰EŒü‚«Žžj",	&fireDegree,			0.1f	);
 

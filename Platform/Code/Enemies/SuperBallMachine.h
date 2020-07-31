@@ -9,6 +9,8 @@ namespace Enemy
 	class SuperBallMachine : public Base
 	{
 	private:
+		float intervalTimer = 0.0f;
+	private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
@@ -30,6 +32,8 @@ namespace Enemy
 	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
+	private:
+		void ShotIfNeeded( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 	public:
 	#if USE_IMGUI
 		/// <summary>
@@ -43,7 +47,7 @@ namespace Enemy
 	{
 	public:
 		BasicParam			basic;
-		Donya::Vector3		capturingArea{ 1.0f, 1.0f, 0.0f }; // Relative area. Machine will capture a target is there in this
+		Donya::Vector3		capturingArea{ 1.0f, 1.0f, 0.0f }; // Relative area, half size. Machine will capture a target is there in this
 		float				fireIntervalSecond	= 1.0f;
 		float				fireDegree			= 45.0f;	// XY axis. Right side angle. If you using it when left side, use as: "180 - reflectDegree"
 		Bullet::FireDesc	fireDesc;
