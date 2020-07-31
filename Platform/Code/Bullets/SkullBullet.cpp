@@ -6,8 +6,8 @@ namespace Bullet
 {
 	namespace Parameter
 	{
-		static ParamOperator<SkullBusterParam> skullBusterParam{ "SkullBuster" };
-		static ParamOperator<SkullShieldParam> skullShieldParam{ "SkullShield" };
+		static ParamOperator<SkullBusterParam> skullBusterParam{ "SkullBuster", "Bullet/" };
+		static ParamOperator<SkullShieldParam> skullShieldParam{ "SkullShield", "Bullet/" };
 
 		const SkullBusterParam &GetSkullBuster()
 		{

@@ -11,7 +11,7 @@ namespace Boss
 {
 	namespace Parameter
 	{
-		static ParamOperator<SkullParam> skullParam{ "Skull" };
+		static ParamOperator<SkullParam> skullParam{ "Skull", "Boss/" };
 		const  SkullParam &GetSkull()
 		{
 			return skullParam.Get();

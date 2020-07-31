@@ -7,6 +7,7 @@
 #endif // USE_IMGUI
 
 #include "Common.h"
+#include "Enemies/SuperBallMachine.h"
 #include "Enemies/Togehero.h"
 #include "FilePath.h"
 #include "ModelHelper.h"
@@ -108,7 +109,8 @@ namespace Enemy
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
 
-			Impl::UpdateTogehero( u8"Togehero" );
+			Impl::UpdateTogehero		( u8"Togehero" );
+			Impl::UpdateSuperBallMachine( u8"SuperBallMachine" );
 
 			ImGui::TreePop();
 		}
@@ -506,8 +508,8 @@ namespace Enemy
 
 		switch ( kind )
 		{
-		case Kind::SuperBallMachine:return;// instance = std::make_shared<Enemy::Togehero>();	break;
-		case Kind::Togehero:		instance = std::make_shared<Enemy::Togehero>();	break;
+		case Kind::SuperBallMachine:instance = std::make_shared<Enemy::SuperBallMachine>();	break;
+		case Kind::Togehero:		instance = std::make_shared<Enemy::Togehero>();			break;
 		// case Kind::SkeletonJoe:		instance = std::make_shared<Enemy::>();	break;
 		// case Kind::ShieldAttacker:	instance = std::make_shared<Enemy::>();	break;
 		// case Kind::Battonton:		instance = std::make_shared<Enemy::>();	break;

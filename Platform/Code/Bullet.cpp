@@ -122,7 +122,7 @@ namespace Bullet
 		}
 	#endif // USE_IMGUI
 
-		static ParamOperator<GeneralParam> generalParam{ "General" };
+		static ParamOperator<GeneralParam> generalParam{ "General", "Bullet/" };
 		const GeneralParam &GetGeneral()
 		{
 			return generalParam.Get();

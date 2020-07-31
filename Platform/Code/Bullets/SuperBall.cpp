@@ -6,7 +6,7 @@ namespace Bullet
 {
 	namespace Parameter
 	{
-		static ParamOperator<SuperBallParam> skullBusterParam{ "SuperBall" };
+		static ParamOperator<SuperBallParam> skullBusterParam{ "SuperBall", "Bullet/" };
 
 		const SuperBallParam &GetSuperBall()
 		{

@@ -6,7 +6,7 @@ namespace Bullet
 {
 	namespace Parameter
 	{
-		static ParamOperator<BusterParam> busterParam{ "Buster" };
+		static ParamOperator<BusterParam> busterParam{ "Buster", "Bullet/" };
 
 		const BusterParam &GetBuster()
 		{

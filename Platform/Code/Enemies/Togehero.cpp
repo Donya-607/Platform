@@ -6,7 +6,7 @@ namespace Enemy
 {
 	namespace Parameter
 	{
-		static ParamOperator<TogeheroParam> togeheroParam{ "Togehero" };
+		static ParamOperator<TogeheroParam> togeheroParam{ "Togehero", "Enemy/" };
 		const TogeheroParam &GetTogehero()
 		{
 			return togeheroParam.Get();

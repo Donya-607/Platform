@@ -6,7 +6,7 @@ namespace Enemy
 {
 	namespace Parameter
 	{
-		static ParamOperator<SuperBallMachineParam> superBallMachineParam{ "SuperBallMachine" };
+		static ParamOperator<SuperBallMachineParam> superBallMachineParam{ "SuperBallMachine", "Enemy/" };
 		const SuperBallMachineParam &GetSuperBallMachine()
 		{
 			return superBallMachineParam.Get();

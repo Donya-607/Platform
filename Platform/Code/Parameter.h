@@ -34,14 +34,23 @@ template<typename ParameterClass>
 class ParamOperator
 {
 private:
-	const char *identifier = "UNINITIALIZED";
+	const char *objectName = "UNINITIALIZED";
+	const char *folderName = "UNINITIALIZED";
 	ParameterClass param{};
 public:
 	/// <summary>
-	/// "objectIdentifier" will used as output file name.
+	/// "objectIdentifier" will used as identifier of class, and output file name.
 	/// </summary>
 	ParamOperator( const char *objectIdentifier )
-		: identifier( objectIdentifier ), param()
+		: objectName( objectIdentifier ), folderName( "" ), param()
+	{}
+	/// <summary>
+	/// "objectIdentifier" will be used as the identifier of class, and output file name.
+	/// "folderName" will be used as the relative directory of an output file, it must end by '/'.
+	/// It will output as: "ABC/folderName/objectIdentifier" .bin or .json
+	/// </summary>
+	ParamOperator( const char *objectIdentifier, const char *folderName )
+		: objectName( objectIdentifier ), folderName( folderName ), param()
 	{}
 	ParamOperator( const ParamOperator &  ) = delete;
 	ParamOperator(       ParamOperator && ) = delete;
@@ -77,25 +86,29 @@ public:
 		param = assignment;
 	}
 private:
+	std::string MakeFolderName() const
+	{
+		return std::string{ folderName } + objectName;
+	}
 	void LoadBinary()
 	{
 		constexpr bool fromBinary = true;
-		Donya::Serializer::Load( param, MakeParameterPathBinary( identifier ).c_str(), identifier, fromBinary );
+		Donya::Serializer::Load( param, MakeParameterPathBinary( MakeFolderName() ).c_str(), objectName, fromBinary );
 	}
 	void LoadJson()
 	{
 		constexpr bool fromBinary = false;
-		Donya::Serializer::Load( param, MakeParameterPathJson( identifier ).c_str(), identifier, fromBinary );
+		Donya::Serializer::Load( param, MakeParameterPathJson( MakeFolderName() ).c_str(), objectName, fromBinary );
 	}
 	void SaveBinary()
 	{
 		constexpr bool fromBinary = true;
-		Donya::Serializer::Save( param, MakeParameterPathBinary( identifier ).c_str(), identifier, fromBinary );
+		Donya::Serializer::Save( param, MakeParameterPathBinary( MakeFolderName() ).c_str(), objectName, fromBinary );
 	}
 	void SaveJson()
 	{
 		constexpr bool fromBinary = false;
-		Donya::Serializer::Save( param, MakeParameterPathJson( identifier ).c_str(), identifier, fromBinary );
+		Donya::Serializer::Save( param, MakeParameterPathJson( MakeFolderName() ).c_str(), objectName, fromBinary );
 	}
 #if USE_IMGUI
 private:
