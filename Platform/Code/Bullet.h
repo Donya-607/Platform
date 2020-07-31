@@ -25,6 +25,7 @@ namespace Bullet
 		Buster,
 		SkullBuster,
 		SkullShield,
+		SuperBall,
 
 		KindCount
 	};

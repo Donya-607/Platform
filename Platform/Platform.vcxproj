@@ -219,6 +219,7 @@
     <ClInclude Include="Code\BulletParam.h" />
     <ClInclude Include="Code\Bullets\Buster.h" />
     <ClInclude Include="Code\Bullets\SkullBullet.h" />
+    <ClInclude Include="Code\Bullets\SuperBall.h" />
     <ClInclude Include="Code\ClearEvent.h" />
     <ClInclude Include="Code\Common.h" />
     <ClInclude Include="Code\CSVLoader.h" />

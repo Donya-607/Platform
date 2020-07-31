@@ -45,7 +45,7 @@ namespace Enemy
 		BasicParam			basic;
 		Donya::Vector3		capturingArea{ 1.0f, 1.0f, 0.0f }; // Relative area. Machine will capture a target is there in this
 		float				fireIntervalSecond	= 1.0f;
-		float				fireDegree			= 45.0f; // 0.0f <= X <= 90.0f. This angle as work in right side case
+		float				fireDegree			= 45.0f;	// XY axis. Right side angle. If you using it when left side, use as: "180 - reflectDegree"
 		Bullet::FireDesc	fireDesc;
 	private:
 		friend class cereal::access;

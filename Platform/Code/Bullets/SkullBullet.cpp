@@ -49,11 +49,11 @@ namespace Bullet
 	}
 	Definition::Damage SkullBuster::GetDamageParameter() const
 	{
-		return Parameter::GetSkullBuster().damage;
+		return Parameter::GetSkullBuster().basic.damage;
 	}
 	void SkullBuster::AssignBodyParameter( const Donya::Vector3 &wsPos )
 	{
-		const auto &data = Parameter::GetSkullBuster();
+		const auto &data = Parameter::GetSkullBuster().basic;
 		body.pos	= wsPos;
 		body.offset	= data.hitBoxOffset;
 		body.size	= data.hitBoxSize;
@@ -61,12 +61,7 @@ namespace Bullet
 #if USE_IMGUI
 	void SkullBusterParam::ShowImGuiNode()
 	{
-		ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f );
-		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f );
-		hitBoxSize.x = std::max( 0.0f, hitBoxSize.x );
-		hitBoxSize.y = std::max( 0.0f, hitBoxSize.y );
-		hitBoxSize.z = std::max( 0.0f, hitBoxSize.z );
-		damage.ShowImGuiNode( u8"基本ダメージ設定" );
+		basic.ShowImGuiNode( u8"汎用設定" );
 	}
 #endif // USE_IMGUI
 
@@ -125,14 +120,14 @@ namespace Bullet
 	}
 	Definition::Damage SkullShield::GetDamageParameter() const
 	{
-		return Parameter::GetSkullShield().damage;
+		return Parameter::GetSkullShield().basic.damage;
 	}
 	void SkullShield::AssignBodyParameter( const Donya::Vector3 &wsPos )
 	{
-		const auto &data	= Parameter::GetSkullShield();
+		const auto &data	= Parameter::GetSkullShield().basic;
 		hitSphere.pos		= wsPos;
 		hitSphere.offset	= data.hitBoxOffset;
-		hitSphere.radius	= data.hitBoxRadius;
+		hitSphere.radius	= data.hitBoxSize.x;
 
 		// Only enable sphere hit box
 		hitSphere.exist	= true;
@@ -142,12 +137,9 @@ namespace Bullet
 #if USE_IMGUI
 	void SkullShieldParam::ShowImGuiNode()
 	{
+		basic.ShowImGuiNode( u8"汎用設定" );
 		ImGui::DragFloat ( u8"回転角度(degree)",			&rotateDegree,		1.0f );
 		ImGui::DragFloat ( u8"パーツ位置の半径",			&drawPartOffset,	0.01f );
-		ImGui::DragFloat3( u8"当たり判定・オフセット",	&hitBoxOffset.x,	0.01f );
-		ImGui::DragFloat ( u8"当たり判定・半径",			&hitBoxRadius,		0.01f );
-		hitBoxRadius = std::max( 0.0f, hitBoxRadius );
-		damage.ShowImGuiNode( u8"基本ダメージ設定" );
 	}
 #endif // USE_IMGUI
 }

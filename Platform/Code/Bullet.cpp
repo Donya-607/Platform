@@ -24,6 +24,7 @@ namespace Bullet
 			"Buster",
 			"SkullBuster",
 			"SkullShield",
+			"SuperBall",
 		};
 
 		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
@@ -151,6 +152,8 @@ namespace Bullet
 		{
 		case Kind::Buster:		return "Buster";
 		case Kind::SkullBuster:	return "SkullBuster";
+		case Kind::SkullShield:	return "SkullShield";
+		case Kind::SuperBall:	return "SuperBall";
 		default: break;
 		}
 
@@ -218,6 +221,22 @@ namespace Bullet
 		ImGui::DragFloat( u8"反射後の速度",		&reflectSpeed,  0.01f );
 		ImGui::DragFloat( u8"反射角度(degree)",	&reflectDegree, 1.0f  );
 		reflectSpeed  = std::max( 0.1f, reflectSpeed  );
+	}
+	void BasicParam::ShowImGuiNode( const std::string &nodeCaption )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		damage.ShowImGuiNode( u8"基本ダメージ設定" );
+		ImGui::DragFloat3( u8"当たり判定・オフセット",				&hitBoxOffset.x,	0.01f );
+		ImGui::DragFloat3( u8"当たり判定・AABBサイズ（半分を指定）",	&hitBoxSize.x,		0.01f );
+		ImGui::DragFloat ( u8"当たり判定・Sphere半径",				&hitBoxSize.x,		0.01f );
+		ImGui::Text( u8"（Sphereの場合はＸ成分が半径として使用されます）" );
+		hitBoxSize.x = std::max( 0.0f, hitBoxSize.x );
+		hitBoxSize.y = std::max( 0.0f, hitBoxSize.y );
+		hitBoxSize.z = std::max( 0.0f, hitBoxSize.z );
+
+		ImGui::TreePop();
 	}
 #endif // USE_IMGUI
 
@@ -592,6 +611,7 @@ namespace Bullet
 			case Kind::Buster:		tmp = std::make_shared<Buster>();		break;
 			case Kind::SkullBuster:	tmp = std::make_shared<SkullBuster>();	break;
 			case Kind::SkullShield:	tmp = std::make_shared<SkullShield>();	break;
+			case Kind::SuperBall:	tmp = std::make_shared<SuperBall>();	break;
 			default: _ASSERT_EXPR( 0, L"Error: Unexpected bullet kind!" );	return;
 			}
 
