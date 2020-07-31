@@ -101,6 +101,7 @@ namespace Enemy
 		void Load()
 		{
 			Impl::LoadTogehero();
+			Impl::LoadSuperBallMachine();
 		}
 
 	#if USE_IMGUI
@@ -160,7 +161,8 @@ namespace Enemy
 	void Base::Init( const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreen )
 	{
 		initializer		= parameter;
-		AssignMyBody( parameter.wsPos );
+
+		AssignMyBody( initializer.wsPos );
 		body.exist		= true;
 		hurtBox.exist	= true;
 		hurtBox.id		= Donya::Collision::GetUniqueID();
