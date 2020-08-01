@@ -202,7 +202,7 @@ namespace Enemy
 		bool IsOutOfRange( size_t instanceIndex ) const;
 		std::shared_ptr<const Base> GetInstanceOrNullptr( size_t instanceIndex ) const;
 	private:
-		void RemoveEnemies();
+		void RemoveEnemiesIfNeeded();
 	#if USE_IMGUI
 		void AppendEnemy( Kind appendKind, const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreenHitBox );
 	public:

@@ -25,6 +25,7 @@ namespace Enemy
 			}
 		}
 	public:
+		void Uninit() override;
 		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
 		Kind GetKind() const override;
@@ -51,6 +52,7 @@ namespace Enemy
 		float				fireIntervalSecond	= 1.0f;
 		float				fireDegree			= 45.0f;	// XY axis. Right side angle. If you using it when left side, use as: "180 - reflectDegree"
 		Bullet::FireDesc	fireDesc;
+		float				gravity				= 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -67,6 +69,10 @@ namespace Enemy
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( gravity ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -79,4 +85,4 @@ namespace Enemy
 CEREAL_CLASS_VERSION( Enemy::SuperBallMachine, 0 )
 CEREAL_REGISTER_TYPE( Enemy::SuperBallMachine )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::SuperBallMachine )
-CEREAL_CLASS_VERSION( Enemy::SuperBallMachineParam, 2 )
+CEREAL_CLASS_VERSION( Enemy::SuperBallMachineParam, 1 )

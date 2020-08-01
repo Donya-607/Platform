@@ -376,6 +376,10 @@ namespace Enemy
 		// else
 		waitForRespawn = true;
 		Uninit();
+
+		// Prevent doing respawn as immediately if the waiting is occurred by leave outside
+		onOutSidePrevious = false;
+		onOutSideCurrent  = false;
 	}
 	void Base::RespawnIfSpawnable()
 	{
@@ -454,6 +458,8 @@ namespace Enemy
 		{
 			if ( pIt ) { pIt->Update( elapsedTime, wsTargetPos, wsScreen ); }
 		}
+
+		RemoveEnemiesIfNeeded();
 	}
 	void Admin::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
@@ -521,7 +527,7 @@ namespace Enemy
 		// else
 		return enemyPtrs[instanceIndex];
 	}
-	void Admin::RemoveEnemies()
+	void Admin::RemoveEnemiesIfNeeded()
 	{
 		auto itr = std::remove_if
 		(

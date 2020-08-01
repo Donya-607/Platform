@@ -27,6 +27,11 @@ namespace Enemy
 		}
 	}
 
+	void SuperBallMachine::Uninit()
+	{
+		Base::Uninit();
+		intervalTimer = 0.0f;
+	}
 	void SuperBallMachine::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		Base::Update( elapsedTime, wsTargetPos, wsScreen );
@@ -39,6 +44,8 @@ namespace Enemy
 	#endif // USE_IMGUI
 
 		ShotIfNeeded( elapsedTime, wsTargetPos );
+
+		velocity.y -= Parameter::GetSuperBallMachine().gravity * elapsedTime;
 	}
 	Kind SuperBallMachine::GetKind() const { return Kind::SuperBallMachine; }
 	Definition::Damage SuperBallMachine::GetTouchDamage() const
@@ -124,8 +131,9 @@ namespace Enemy
 		fireDesc.ShowImGuiNode( u8"発射弾設定" );
 
 		ImGui::DragFloat3( u8"索敵範囲（半径）",				&capturingArea.x,		0.01f	);
-		ImGui::DragFloat ( u8"発射間隔（秒）",				&fireIntervalSecond,	0.1f	);
+		ImGui::DragFloat ( u8"発射間隔（秒）",				&fireIntervalSecond,	0.01f	);
 		ImGui::DragFloat ( u8"発射角度（Degree・右向き時）",	&fireDegree,			0.1f	);
+		ImGui::DragFloat ( u8"重力",							&gravity,				0.01f	);
 
 		capturingArea.x		= std::max( 0.01f, capturingArea.x		);
 		capturingArea.y		= std::max( 0.01f, capturingArea.y		);
