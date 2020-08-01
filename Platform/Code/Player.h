@@ -290,10 +290,10 @@ private:
 	#endif // USE_IMGUI
 	};
 private:
-	using Actor::body;						// VS a terrain
+	using				 Actor::body;		// VS a terrain
 	Donya::Collision::Box3F		hurtBox;	// VS an attack
+	using				 Actor::orientation;
 	Donya::Vector3				velocity;	// Z element is almost unused.
-	Donya::Quaternion			orientation;
 	MotionManager				motionManager;
 	ShotManager					shotManager;
 	Flusher						invincibleTimer;
@@ -327,7 +327,6 @@ public:
 public:
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;
-	Donya::Collision::Box3F		GetHitBox()			const override;
 	Donya::Collision::Box3F		GetHurtBox()		const;
 	Donya::Quaternion			GetOrientation()	const;
 	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F	&collidingHitBox ) const;

@@ -600,12 +600,12 @@ void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, con
 
 	// Clamp into room
 	{
-		const float outsideLengthL = roomLeftBorder - inst.body.Min().x;
+		const float outsideLengthL = roomLeftBorder - inst.body.Min( inst.orientation ).x;
 		if ( 0.0f < outsideLengthL )
 		{
 			inst.body.pos.x += outsideLengthL;
 		}
-		const float outsideLengthR = inst.body.Max().x - roomRightBorder;
+		const float outsideLengthR = inst.body.Max( inst.orientation ).x - roomRightBorder;
 		if ( 0.0f < outsideLengthR )
 		{
 			inst.body.pos.x -= outsideLengthR;
@@ -899,6 +899,7 @@ void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, f
 		inst.hurtBox.pos = inst.body.pos;
 	}
 #else
+	// TODO: Prevent to fall into a tight hole
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 #endif // Prevent to fall into a tight hole
 
@@ -979,8 +980,8 @@ void Player::GrabLadder::Init( Player &inst )
 			}
 
 			constexpr float margin = 0.001f; // Make as: the Max/Min pos != limitTopY/limitDownY
-			const float adjustToDown	= std::max( 0.0f, ( grabArea.Max().y - limitTopY  ) + margin );
-			const float adjustToUp		= std::max( 0.0f, ( limitDownY - grabArea.Min().y ) + margin );
+			const float adjustToDown	= std::max( 0.0f, ( grabArea.Max( inst.orientation ).y - limitTopY  ) + margin );
+			const float adjustToUp		= std::max( 0.0f, ( limitDownY - grabArea.Min( inst.orientation ).y ) + margin );
 			inst.body.pos.y -= adjustToDown;
 			inst.body.pos.y += adjustToUp;
 		}
@@ -1234,6 +1235,8 @@ std::function<void()> Player::Miss::GetChangeStateMethod( Player &inst ) const
 
 void Player::Init( const PlayerInitializer &initializer )
 {
+	UpdateOrientation( initializer.ShouldLookingRight() );
+
 	const auto &data	= Parameter().Get();
 	body				= data.hitBox;
 	hurtBox				= data.hurtBox;
@@ -1253,8 +1256,6 @@ void Player::Init( const PlayerInitializer &initializer )
 	hpDrawer.Init( gaugeAmount, gaugeAmount );
 	hpDrawer.SetDrawOption( data.hpDrawPos, data.hpDrawColor, data.hpDrawScale );
 	
-	UpdateOrientation( initializer.ShouldLookingRight() );
-
 	AssignMover<Normal>();
 }
 void Player::Uninit()
@@ -1428,13 +1429,11 @@ bool Player::NowGrabbingLadder() const
 {
 	return ( pMover && pMover->NowGrabbingLadder( *this ) ) ? true : false;
 }
-Donya::Collision::Box3F	Player::GetHitBox() const
-{
-	return Actor::GetHitBox();
-}
 Donya::Collision::Box3F	Player::GetHurtBox() const
 {
-	return hurtBox;
+	Donya::Collision::Box3F tmp = hurtBox;
+	tmp.offset = orientation.RotateVector( tmp.offset );
+	return tmp;
 }
 Donya::Quaternion		Player::GetOrientation() const
 {
@@ -1442,7 +1441,7 @@ Donya::Quaternion		Player::GetOrientation() const
 }
 void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F &collidingHitBox ) const
 {
-	const auto myCenter		= body.WorldPosition();
+	const auto myCenter		= body.WorldPosition( orientation );
 	const auto otherMax		= collidingHitBox.Max();
 	const auto otherMin		= collidingHitBox.Min();
 	const float distLeft	= otherMin.x - myCenter.x;
@@ -1451,7 +1450,7 @@ void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collisio
 }
 void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collision::Sphere3F &collidingHitBox ) const
 {
-	const auto myCenter		= body.WorldPosition();
+	const auto myCenter		= body.WorldPosition( orientation );
 	const auto otherCenter	= collidingHitBox.WorldPosition();
 	const auto otherLeft	= otherCenter.x - collidingHitBox.radius;
 	const auto otherRight	= otherCenter.x + collidingHitBox.radius;
@@ -1557,10 +1556,13 @@ void Player::ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain )
 void Player::AssignBodyInfo( Donya::Collision::Box3F *p, bool useHurtBox ) const
 {
 	p->pos			= ( useHurtBox ) ? hurtBox.pos			: body.pos;
+	p->offset		= ( useHurtBox ) ? hurtBox.offset		: body.offset;
 	p->id			= ( useHurtBox ) ? hurtBox.id			: body.id;
 	p->ownerID		= ( useHurtBox ) ? hurtBox.ownerID		: body.ownerID;
 	p->ignoreList	= ( useHurtBox ) ? hurtBox.ignoreList	: body.ignoreList;
 	p->exist		= ( useHurtBox ) ? hurtBox.exist		: body.exist;
+
+	p->offset = orientation.RotateVector( p->offset );
 }
 Donya::Collision::Box3F Player::GetNormalBody ( bool ofHurtBox ) const
 {

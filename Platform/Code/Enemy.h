@@ -88,10 +88,10 @@ namespace Enemy
 	private: // Seralize values
 		InitializeParam initializer;
 	protected:
-		using Actor::body;					// VS a terrain
+		using			 Actor::body;		// VS a terrain
 		Donya::Collision::Box3F	hurtBox;	// VS an attack
+		using			 Actor::orientation;
 		Donya::Vector3			velocity;
-		Donya::Quaternion		orientation;
 		int						hp					= 1;	// Alive if this is greater than 0(if 0 < hp)
 		bool					wantRemove			= false;
 		bool					waitForRespawn		= false;

@@ -376,7 +376,9 @@ namespace Item
 	}
 	Donya::Collision::Box3F	Item::GetCatchArea() const
 	{
-		return catchArea;
+		Donya::Collision::Box3F tmp = catchArea;
+		tmp.offset = orientation.RotateVector( tmp.offset );
+		return tmp;
 	}
 	Kind					Item::GetKind() const
 	{

@@ -333,7 +333,9 @@ namespace Enemy
 	}
 	Donya::Collision::Box3F	Base::GetHurtBox() const
 	{
-		return hurtBox;
+		Donya::Collision::Box3F tmp = hurtBox;
+		tmp.offset = orientation.RotateVector( tmp.offset );
+		return tmp;
 	}
 	InitializeParam Base::GetInitializer() const
 	{

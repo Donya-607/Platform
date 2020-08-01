@@ -940,8 +940,10 @@ namespace
 		if ( playerCollisionID == Donya::Collision::invalidID ) { return false; }
 		// else
 
-		const auto bulletBody = pBullet->GetHitBox();
-		return ( bulletBody.ownerID == playerCollisionID ) ? true : false;
+		const auto bulletAABB	= pBullet->GetHitBox();
+		const auto bulletSphere	= pBullet->GetHitBox();
+		const auto activeOwnerID= ( bulletSphere.exist ) ? bulletSphere.ownerID : bulletAABB.ownerID;
+		return ( activeOwnerID == playerCollisionID ) ? true : false;
 	}
 	bool IsEnemyBullet( const Donya::Collision::IDType playerCollisionID, const std::shared_ptr<const Bullet::Base> &pBullet )
 	{

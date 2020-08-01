@@ -82,10 +82,10 @@ namespace Item
 	private: // Serialize members
 		InitializeParam initializer;
 	private:
-		using Actor::body;					// VS a terrain
+		using			 Actor::body;		// VS a terrain
 		Donya::Collision::Box3F	catchArea;	// VS the player
+		using			 Actor::orientation;
 		Donya::Vector3			velocity;	// Z element is almost unused.
-		Donya::Quaternion		orientation;
 		float					aliveTimer = 0.0f;
 		mutable bool			wantRemove = false;
 	private:

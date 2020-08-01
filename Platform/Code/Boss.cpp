@@ -256,7 +256,9 @@ namespace Boss
 	}
 	Donya::Collision::Box3F	Base::GetHurtBox() const
 	{
-		return hurtBox;
+		Donya::Collision::Box3F tmp = hurtBox;
+		tmp.offset = orientation.RotateVector( tmp.offset );
+		return tmp;
 	}
 	Donya::Vector3 Base::GetVelocity() const
 	{
@@ -384,7 +386,7 @@ namespace Boss
 			// if the top(head) position places under the one block size.
 
 			const float border	= roomArea.Max().y - Tile::unitWholeSize;
-			const float topPos	= body.Max().y;
+			const float topPos	= body.Max( orientation ).y;
 			if ( topPos < border )
 			{
 				body.exist		= true;

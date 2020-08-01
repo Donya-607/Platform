@@ -86,6 +86,13 @@ namespace Donya
 				T WorldPosition() const { return pos + offset; }
 				T Min() const { return WorldPosition() - size; }
 				T Max() const { return WorldPosition() + size; }
+
+				T WorldPosition( const Donya::Quaternion &orientation ) const
+				{ return pos + orientation.RotateVector( offset ); }
+				T Min( const Donya::Quaternion &orientation ) const
+				{ return WorldPosition( orientation ) - size; }
+				T Max( const Donya::Quaternion &orientation ) const
+				{ return WorldPosition( orientation ) + size; }
 			public:
 				void UpdateIgnoreList( float elapsedTime )
 				{
@@ -154,7 +161,10 @@ namespace Donya
 					: pos( pos ), offset(), radius( radius ), exist( exist ), id( invalidID ), ownerID( invalidID ), ignoreList()
 				{}
 			public:
-				CoordT WorldPosition() const { return pos + offset; }
+				CoordT WorldPosition() const
+				{ return pos + offset; }
+				CoordT WorldPosition( const Donya::Quaternion &orientation ) const
+				{ return pos + orientation.RotateVector( offset ); }
 			public:
 				void UpdateIgnoreList( float elapsedTime )
 				{

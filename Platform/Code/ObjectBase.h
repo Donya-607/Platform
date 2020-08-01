@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Donya/Collision.h"
+#include "Donya/Quaternion.h"
 #include "Donya/Serializer.h"
 #include "Donya/Vector.h"
 
@@ -87,6 +88,7 @@ public:
 	static int MoveAxis( Actor *pTarget, int moveDimension, float movement, const std::vector<Donya::Collision::Box3F> &solids );
 public:
 	Donya::Collision::Box3F	body;
+	Donya::Quaternion orientation;
 public:
 	Actor() = default;
 	Actor( const Actor &  ) = default;
@@ -101,6 +103,10 @@ private:
 	{
 		archive( CEREAL_NVP( body ) );
 		if ( 1 <= version )
+		{
+			archive( CEREAL_NVP( orientation ) );
+		}
+		if ( 2 <= version )
 		{
 			// archive();
 		}
@@ -133,7 +139,7 @@ public:
 	/// </summary>
 	virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const;
 };
-CEREAL_CLASS_VERSION( Actor, 0 );
+CEREAL_CLASS_VERSION( Actor, 1 );
 
 
 /// <summary>
@@ -195,6 +201,7 @@ class Solid
 {
 public:
 	Donya::Collision::Box3F body;
+	Donya::Quaternion orientation;
 public:
 	Solid() = default;
 	Solid( const Solid &  ) = default;
@@ -208,7 +215,10 @@ private:
 	void serialize( Archive &archive, std::uint32_t version )
 	{
 		archive( CEREAL_NVP( body ) );
-		if ( 1 <= version )
+		{
+			archive( CEREAL_NVP( orientation ) );
+		}
+		if ( 2 <= version )
 		{
 			// archive();
 		}
@@ -227,4 +237,4 @@ public:
 	/// </summary>
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const;
 };
-CEREAL_CLASS_VERSION( Solid, 0 );
+CEREAL_CLASS_VERSION( Solid, 1 );
