@@ -928,6 +928,25 @@ int  SceneGame::CalcCurrentRoomID() const
 	return (  newID == Room::invalidID ) ? currentRoomID : newID;
 }
 
+namespace
+{
+	Donya::Collision::IDType ExtractPlayerID( const std::unique_ptr<Player> &pPlayer )
+	{
+		return ( pPlayer ) ? pPlayer->GetHurtBox().id : Donya::Collision::invalidID;
+	}
+	bool IsPlayerBullet( const Donya::Collision::IDType playerCollisionID, const std::shared_ptr<const Bullet::Base> &pBullet )
+	{
+		if ( playerCollisionID == Donya::Collision::invalidID ) { return false; }
+		// else
+
+		const auto bulletBody = pBullet->GetHitBox();
+		return ( bulletBody.ownerID == playerCollisionID ) ? true : false;
+	}
+	bool IsEnemyBullet( const Donya::Collision::IDType playerCollisionID, const std::shared_ptr<const Bullet::Base> &pBullet )
+	{
+		return !IsPlayerBullet( playerCollisionID, pBullet );
+	}
+}
 void SceneGame::Collision_BulletVSBoss()
 {
 	if ( !pBossContainer || !isThereBoss ) { return; }
@@ -961,10 +980,15 @@ void SceneGame::Collision_BulletVSBoss()
 		}
 	};
 
+	const auto playerID = ExtractPlayerID( pPlayer );
+
 	for ( size_t i = 0; i < bulletCount; ++i )
 	{
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pBullet ) { continue; }
+		// else
+
+		if ( IsEnemyBullet( playerID, pBullet ) ) { continue; }
 		// else
 
 		// The bullet's hit box is only either AABB or Sphere is valid
@@ -1084,10 +1108,15 @@ void SceneGame::Collision_BulletVSEnemy()
 		return result;
 	};
 
+	const auto playerID = ExtractPlayerID( pPlayer );
+
 	for ( size_t i = 0; i < bulletCount; ++i )
 	{
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pBullet ) { continue; }
+		// else
+
+		if ( IsEnemyBullet( playerID, pBullet ) ) { continue; }
 		// else
 
 		otherAABB	= pBullet->GetHitBox();
@@ -1121,11 +1150,16 @@ void SceneGame::Collision_BulletVSPlayer()
 	Donya::Collision::Box3F		bulletAABB;
 	Donya::Collision::Sphere3F	bulletSphere;
 
+	const auto playerID = ExtractPlayerID( pPlayer );
+
 	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
 	for ( size_t i = 0; i < bulletCount; ++i )
 	{
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pBullet ) { continue; }
+		// else
+
+		if ( IsPlayerBullet( playerID, pBullet ) ) { continue; }
 		// else
 
 		bulletAABB = pBullet->GetHitBox();
