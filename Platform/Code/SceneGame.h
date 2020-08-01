@@ -112,6 +112,7 @@ private:
 
 	int		CalcCurrentRoomID() const;
 
+	void	Collision_BulletVSBullet();
 	void	Collision_BulletVSBoss();
 	void	Collision_BulletVSEnemy();
 	void	Collision_BulletVSPlayer();

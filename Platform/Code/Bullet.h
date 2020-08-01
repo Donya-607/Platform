@@ -152,6 +152,7 @@ namespace Bullet
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
+		virtual bool Destructible() const;
 		virtual bool ShouldRemove() const;
 		virtual bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
 		virtual void CollidedToObject( bool otherIsBroken ) const;

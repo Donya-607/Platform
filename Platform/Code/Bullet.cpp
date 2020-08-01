@@ -349,6 +349,10 @@ namespace Bullet
 		}
 	#endif // DEBUG_MODE
 	}
+	bool Base::Destructible() const
+	{
+		return false; // a derived class may returns true
+	}
 	bool Base::ShouldRemove() const
 	{
 		return wantRemove;

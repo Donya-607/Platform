@@ -388,6 +388,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 
 	Collision_PlayerVSItem();
+	Collision_BulletVSBullet();
 	Collision_BulletVSBoss();
 	Collision_BulletVSEnemy();
 	Collision_BulletVSPlayer();
@@ -945,6 +946,81 @@ namespace
 	bool IsEnemyBullet( const Donya::Collision::IDType playerCollisionID, const std::shared_ptr<const Bullet::Base> &pBullet )
 	{
 		return !IsPlayerBullet( playerCollisionID, pBullet );
+	}
+}
+void SceneGame::Collision_BulletVSBullet()
+{
+	auto &bulletAdmin = Bullet::Admin::Get();
+	const size_t bulletCount = bulletAdmin.GetInstanceCount();
+
+	std::shared_ptr<const Bullet::Base> pA = nullptr;
+	std::shared_ptr<const Bullet::Base> pB = nullptr;
+	auto HitProcess = [&]()
+	{
+		if ( !pA || !pB ) { return; }
+		// else
+
+		const bool destructibleA = pA->Destructible();
+		const bool destructibleB = pB->Destructible();
+		pA->CollidedToObject( destructibleB );
+		pB->CollidedToObject( destructibleA );
+
+		// TODO: Consider to protect
+		// TODO: Play hit SE
+	};
+
+	const auto playerID = ExtractPlayerID( pPlayer );
+
+	for ( size_t i = 0; i < bulletCount; ++i )
+	{
+		pA = bulletAdmin.GetInstanceOrNullptr( i );
+		if ( !pA ) { continue; }
+		// else
+
+		const auto aabbA   = pA->GetHitBox();
+		const auto sphereA = pA->GetHitSphere();
+
+		const bool ownerA  = IsPlayerBullet( playerID, pA );
+
+		for ( size_t j = i + 1; j < bulletCount; ++j )
+		{
+			pB = bulletAdmin.GetInstanceOrNullptr( j );
+			if ( !pB ) { continue; }
+			// else
+
+			// Do collide if either one of bullet is destructible
+			if ( !pA->Destructible() && !pB->Destructible() ) { continue; }
+
+			const bool ownerB = IsPlayerBullet( playerID, pB );
+			if ( ownerA == ownerB ) { continue; }
+			// else
+
+			if ( aabbA.exist )
+			{
+				if ( Donya::Collision::IsHit( aabbA, pB->GetHitBox() ) )
+				{
+					HitProcess(); continue;
+				}
+				// else
+				if ( Donya::Collision::IsHit( aabbA, pB->GetHitSphere() ) )
+				{
+					HitProcess(); continue;
+				}
+			}
+			else
+			if ( sphereA.exist )
+			{
+				if ( Donya::Collision::IsHit( sphereA, pB->GetHitBox() ) )
+				{
+					HitProcess(); continue;
+				}
+				// else
+				if ( Donya::Collision::IsHit( sphereA, pB->GetHitSphere() ) )
+				{
+					HitProcess(); continue;
+				}
+			}
+		}
 	}
 }
 void SceneGame::Collision_BulletVSBoss()

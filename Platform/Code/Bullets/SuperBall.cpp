@@ -80,6 +80,10 @@ namespace Bullet
 		body.pos		= mover.body.pos;
 		hitSphere.pos	= body.pos;
 	}
+	bool SuperBall::Destructible() const
+	{
+		return true;
+	}
 	Kind SuperBall::GetKind() const
 	{
 		return Kind::SuperBall;

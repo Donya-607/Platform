@@ -17,6 +17,7 @@ namespace Bullet
 		void Uninit() override;
 		void PhysicUpdate( float elapsedTime, const Map &terrain ) override;
 	public:
+		bool Destructible() const override;
 		Kind GetKind() const override;
 	private:
 		Definition::Damage GetDamageParameter() const override;
