@@ -631,7 +631,7 @@ void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const
 
 		inst.velocity.y = 0.0f;
 	}
-	else if ( !IsZero( movement.y ) ) // Should not change if the movement is none
+	else if ( 0.001f < fabsf( movement.y ) ) // Should not change if the movement is none
 	{
 		inst.onGround = false;
 	}
@@ -746,7 +746,7 @@ void Player::Slide::Init( Player &inst )
 	if ( IsZero( slideSign ) ) { slideSign = 1.0f; } // Fail safe
 
 	inst.velocity.x = Parameter().Get().slideMoveSpeed * slideSign;
-//	inst.velocity.y = 0.0f; // We must not erase the Y velocity for keeping a landing by gravity continuously.
+	inst.velocity.y = 0.0f;
 	inst.velocity.z = 0.0f;
 	inst.UpdateOrientation( /* lookingRight = */ ( slideSign < 0.0f ) ? false : true );
 }
@@ -1374,7 +1374,8 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 	constexpr Donya::Vector4 bodyColor{ 0.0f, 1.0f, 0.3f, 0.6f };
 	constexpr Donya::Vector4 hurtColor{ 0.0f, 0.3f, 1.0f, 0.6f };
 	constexpr Donya::Vector4 laddColor{ 1.0f, 0.3f, 0.0f, 0.6f };
-	const auto  &hurt		= hurtBox;
+	const auto  body		= GetHitBox();
+	const auto  hurt		= GetHurtBox();
 	const auto  ladd		= GetLadderGrabArea();
 	const float bodyNear	= body.WorldPosition().z - body.size.z;
 	const float hurtNear	= hurt.WorldPosition().z - hurt.size.z;
@@ -1553,23 +1554,21 @@ void Player::ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain )
 
 	pReceivedDamage.reset();
 }
-void Player::AssignBodyInfo( Donya::Collision::Box3F *p, bool useHurtBox ) const
+void Player::AssignCurrentBodyInfo( Donya::Collision::Box3F *p, bool useHurtBox ) const
 {
 	p->pos			= ( useHurtBox ) ? hurtBox.pos			: body.pos;
-	p->offset		= ( useHurtBox ) ? hurtBox.offset		: body.offset;
 	p->id			= ( useHurtBox ) ? hurtBox.id			: body.id;
 	p->ownerID		= ( useHurtBox ) ? hurtBox.ownerID		: body.ownerID;
 	p->ignoreList	= ( useHurtBox ) ? hurtBox.ignoreList	: body.ignoreList;
 	p->exist		= ( useHurtBox ) ? hurtBox.exist		: body.exist;
-
-	p->offset = orientation.RotateVector( p->offset );
 }
 Donya::Collision::Box3F Player::GetNormalBody ( bool ofHurtBox ) const
 {
 	const auto &data = Parameter().Get();
 
 	Donya::Collision::Box3F tmp = ( ofHurtBox ) ? data.hurtBox : data.hitBox;
-	AssignBodyInfo( &tmp, ofHurtBox );
+	AssignCurrentBodyInfo( &tmp, ofHurtBox );
+	tmp.offset = orientation.RotateVector( tmp.offset );
 	return tmp;
 }
 Donya::Collision::Box3F Player::GetSlidingBody( bool ofHurtBox ) const
@@ -1577,7 +1576,8 @@ Donya::Collision::Box3F Player::GetSlidingBody( bool ofHurtBox ) const
 	const auto &data = Parameter().Get();
 
 	Donya::Collision::Box3F tmp = ( ofHurtBox ) ? data.slideHurtBox : data.slideHitBox;
-	AssignBodyInfo( &tmp, ofHurtBox );
+	AssignCurrentBodyInfo( &tmp, ofHurtBox );
+	tmp.offset = orientation.RotateVector( tmp.offset );
 	return tmp;
 }
 Donya::Collision::Box3F Player::GetLadderGrabArea() const
@@ -1585,7 +1585,8 @@ Donya::Collision::Box3F Player::GetLadderGrabArea() const
 	const auto &data = Parameter().Get();
 
 	Donya::Collision::Box3F tmp = data.ladderGrabArea;
-	AssignBodyInfo( &tmp, /* useHurtBoxInfo = */ false );
+	AssignCurrentBodyInfo( &tmp, /* useHurtBoxInfo = */ false );
+	tmp.offset = orientation.RotateVector( tmp.offset );
 	return tmp;
 }
 std::vector<Donya::Collision::Box3F> Player::FetchAroundSolids( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const

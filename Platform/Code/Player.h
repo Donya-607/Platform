@@ -359,7 +359,7 @@ private:
 		pMover->Init( *this );
 	}
 private:
-	void AssignBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
+	void AssignCurrentBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
 	Donya::Collision::Box3F GetNormalBody ( bool ofHurtBox ) const;
 	Donya::Collision::Box3F GetSlidingBody( bool ofHurtBox ) const;
 	Donya::Collision::Box3F GetLadderGrabArea() const;

@@ -311,7 +311,8 @@ namespace Enemy
 	
 		constexpr Donya::Vector4 bodyColor{ 0.0f, 1.0f, 0.3f, 0.6f };
 		constexpr Donya::Vector4 hurtColor{ 0.0f, 0.3f, 1.0f, 0.6f };
-		const auto  &hurt		= hurtBox;
+		const auto  body		= GetHitBox();
+		const auto  hurt		= GetHurtBox();
 		const float bodyNear	= body.WorldPosition().z - body.size.z;
 		const float hurtNear	= hurt.WorldPosition().z - hurt.size.z;
 		// Drawing the far box first
