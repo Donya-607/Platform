@@ -1719,6 +1719,8 @@ void SceneGame::UseImGui()
 				ProcessOf( bufferBoss,	ApplyToBoss		);
 				ProcessOf( bufferEnemy,	ApplyToEnemy	);
 				ProcessOf( bufferItem,	ApplyToItem		);
+
+				if ( pMap ) { pMap->ReloadModel( readStageNumber ); }
 			}
 
 			ImGui::InputInt ( u8"読み込むステージ番号",	&readStageNumber );
@@ -1769,6 +1771,13 @@ void SceneGame::UseImGui()
 					if ( applyPlayer	) { ApplyToPlayer	( loader );	}
 					if ( applyRoom		) { ApplyToRoom		( loader );	}
 				}
+			}
+
+			static int loadMapNumber = 0;
+			ImGui::InputInt( u8"マップモデルに適用するステージ番号", &loadMapNumber );
+			if ( ImGui::Button( u8"マップモデルを読み込む" ) && pMap )
+			{
+				pMap->ReloadModel( loadMapNumber );
 			}
 
 			ImGui::TreePop();

@@ -232,13 +232,52 @@ std::vector<Donya::Collision::Box3F> Map::ToAABBKillAreas( const std::vector<std
 
 	return results;
 }
+namespace
+{
+	constexpr const char *modelPrefix	= "Map/Stage";
+	constexpr const char *modelName		= "World";
+	bool LoadStageModel( std::unique_ptr<ModelHelper::StaticSet> *pTarget, int stageNumber )
+	{
+		if ( !pTarget ) { return false; }
+		// else
+
+		auto &ptr = *pTarget;
+		ptr.reset();
+
+		const std::string folderName	= modelPrefix + Donya::MakeArraySuffix( stageNumber ) + "/";
+		const std::string filePath		= MakeModelPath( folderName + modelName );
+		if ( !Donya::IsExistFile( filePath ) )
+		{
+			const std::string msg = "Error: Model of Stage[" + std::to_string( stageNumber ) + "] is not found.\n";
+			Donya::OutputDebugStr( msg.c_str() );
+			return false;
+		}
+		// else
+
+		ptr = std::make_unique<ModelHelper::StaticSet>();
+		const bool result = ModelHelper::Load( filePath, ptr.get() );;
+		if ( !result )
+		{
+			ptr.reset(); // Make not loaded state
+
+			const std::string msg = "Failed: Loading Map model: " + filePath;
+			Donya::OutputDebugStr( msg.c_str() );
+			return false;
+		}
+		// else
+
+		return true;
+	}
+}
 bool Map::Init( int stageNumber )
 {
-	bool succeeded = true;
-	succeeded = LoadMap( stageNumber, IOFromBinaryFile );
+	bool succeeded = true, result = true;
 
-	pModel = std::make_unique<ModelHelper::StaticSet>();
-	// TODO: ステージ番号に対応したステージモデルを読み込む。なければアサートorメッセージボックス。ゲームを落としたくはない。
+	result = LoadMap( stageNumber, IOFromBinaryFile );
+	if ( !result ) { succeeded = false; }
+
+	result = LoadStageModel( &pModel, stageNumber );
+	if ( !result ) { succeeded = false; }
 
 #if DEBUG_MODE
 	// If a user was changed only a json file, the user wanna apply the changes to binary file also.
@@ -278,6 +317,8 @@ bool Map::Init( int stageNumber )
 }
 void Map::Uninit()
 {
+	pModel.reset();
+
 	ForEach
 	(
 		[]( ElementType &pElement )
@@ -306,7 +347,18 @@ void Map::Update( float elapsedTime )
 }
 void Map::Draw( RenderingHelper *pRenderer ) const
 {
-	// TODO: Drawing a stage model
+	if ( !pModel || !pRenderer ) { return; }
+	// else
+
+	Donya::Model::Constants::PerModel::Common modelConstant{};
+	modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+	modelConstant.worldMatrix	= Donya::Vector4x4::Identity();
+	pRenderer->UpdateConstant( modelConstant );
+	pRenderer->ActivateConstantModel();
+
+	pRenderer->Render( pModel->model, pModel->pose );
+
+	pRenderer->DeactivateConstantModel();
 }
 void Map::DrawHitBoxes( const Donya::Collision::Box3F &wsScreen, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 {
@@ -416,6 +468,21 @@ bool Map::LoadMap( int stageNumber, bool fromBinary )
 	return Donya::Serializer::Load( *this, filePath.c_str(), ID, fromBinary );
 }
 #if USE_IMGUI
+void Map::ReloadModel( int loadStageNumber )
+{
+	const bool loadResult = LoadStageModel( &pModel, loadStageNumber );
+	if ( !loadResult )
+	{
+		std::string msg = u8"マップの読み込みに失敗しました。\n";
+		msg += u8"ステージ番号：[" + std::to_string( loadStageNumber ) + u8"]";
+		Donya::ShowMessageBox
+		(
+			msg,
+			"Loading stage is failed",
+			MB_ICONEXCLAMATION | MB_OK
+		);
+	}
+}
 void Map::RemakeByCSV( const CSVLoader &loadedData )
 {
 	auto IsTileID	= []( int id )

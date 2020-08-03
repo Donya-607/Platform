@@ -176,6 +176,7 @@ private:
 	bool LoadMap( int stageNumber, bool fromBinary );
 #if USE_IMGUI
 public:
+	void ReloadModel( int loadStageNumber );
 	void RemakeByCSV( const CSVLoader &loadedData );
 	void SaveMap( int stageNumber, bool fromBinary );
 public:

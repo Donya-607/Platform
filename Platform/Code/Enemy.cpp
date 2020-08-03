@@ -277,7 +277,7 @@ namespace Enemy
 
 		Donya::Model::Constants::PerModel::Common modelConstant{};
 		modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-		modelConstant.worldMatrix	= W;;
+		modelConstant.worldMatrix	= W;
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();
 
