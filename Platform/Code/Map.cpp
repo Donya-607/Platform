@@ -234,7 +234,11 @@ std::vector<Donya::Collision::Box3F> Map::ToAABBKillAreas( const std::vector<std
 }
 bool Map::Init( int stageNumber )
 {
-	const bool succeeded = LoadMap( stageNumber, IOFromBinaryFile );
+	bool succeeded = true;
+	succeeded = LoadMap( stageNumber, IOFromBinaryFile );
+
+	pModel = std::make_unique<ModelHelper::StaticSet>();
+	// TODO: ステージ番号に対応したステージモデルを読み込む。なければアサートorメッセージボックス。ゲームを落としたくはない。
 
 #if DEBUG_MODE
 	// If a user was changed only a json file, the user wanna apply the changes to binary file also.

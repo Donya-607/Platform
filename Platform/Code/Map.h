@@ -14,6 +14,7 @@
 #include "Donya/Vector.h"
 
 #include "CSVLoader.h"
+#include "ModelHelper.h"
 #include "ObjectBase.h"
 #include "StageFormat.h"
 
@@ -105,6 +106,8 @@ public:
 private: // shared_ptr<> make be able to copy
 	using ElementType = std::shared_ptr<Tile>;
 	std::vector<std::vector<ElementType>> tilePtrs; // [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
+private:
+	std::unique_ptr<ModelHelper::StaticSet> pModel = nullptr;
 private:
 	friend class cereal::access;
 	template<class Archive>
