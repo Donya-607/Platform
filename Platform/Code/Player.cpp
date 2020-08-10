@@ -389,7 +389,7 @@ void PlayerParam::ShowImGuiNode()
 
 void Player::MotionManager::Init()
 {
-	prevKind = currKind = MotionKind::Jump;
+	prevKind = currKind = MotionKind::Jump_Fall;
 
 	model.Initialize( GetModelOrNullptr() );
 	AssignPose( currKind );
@@ -453,8 +453,9 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 	case MotionKind::Idle:		return true;
 	case MotionKind::Run:		return true;
 	case MotionKind::Slide:		return true;
-	case MotionKind::Jump:		return false;
-	case MotionKind::KnockBack:	return true;
+	case MotionKind::Jump_Rise:	return false;
+	case MotionKind::Jump_Fall:	return false;
+	case MotionKind::KnockBack:	return false;
 	case MotionKind::GrabLadder:return true;
 	default: break;
 	}
@@ -479,7 +480,13 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 	const bool nowMoving = IsZero( inst.velocity.x ) ? false : true;
 	const bool onGround  = inst.onGround;
 	
-	if ( !onGround ) { return MotionKind::Jump;	}
+	if ( !onGround )
+	{
+		return	( Donya::SignBit( inst.velocity.y ) == 1 )
+				? MotionKind::Jump_Rise
+				: MotionKind::Jump_Fall;
+	}
+	// else
 	if ( nowMoving ) { return MotionKind::Run;	}
 	// else
 	return MotionKind::Idle;

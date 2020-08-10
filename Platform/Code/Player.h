@@ -97,7 +97,8 @@ public:
 		Idle = 0,
 		Run,
 		Slide,
-		Jump,
+		Jump_Rise,
+		Jump_Fall,
 		KnockBack,
 		GrabLadder,
 
@@ -115,8 +116,8 @@ private:
 	class MotionManager
 	{
 	private:
-		MotionKind prevKind = MotionKind::Jump;
-		MotionKind currKind = MotionKind::Jump;
+		MotionKind prevKind = MotionKind::Jump_Fall;
+		MotionKind currKind = MotionKind::Jump_Fall;
 		ModelHelper::SkinningOperator model;
 	public:
 		void Init();
