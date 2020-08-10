@@ -25,7 +25,8 @@ namespace
 		"Idle",
 		"Run",
 		"Slide",
-		"Jump",
+		"Jump_Rise",
+		"Jump_Fall",
 		"KnockBack",
 		"GrabLadder",
 	};
@@ -292,6 +293,26 @@ void Player::UpdateParameter( const std::string &nodeCaption )
 }
 void PlayerParam::ShowImGuiNode()
 {
+	constexpr size_t motionCount = scast<size_t>( Player::MotionKind::MotionCount );
+	if ( animePlaySpeeds.size() != motionCount )
+	{
+		animePlaySpeeds.resize( motionCount, 1.0f );
+	}
+	if ( ImGui::TreeNode( u8"アニメーション関係" ) )
+	{
+		if ( ImGui::TreeNode( u8"再生速度" ) )
+		{
+			for ( size_t i = 0; i < motionCount; ++i )
+			{
+				ImGui::DragFloat( KIND_NAMES[i], &animePlaySpeeds[i], 0.01f );
+			}
+
+			ImGui::TreePop();
+		}
+
+		ImGui::TreePop();
+	}
+
 	constexpr size_t levelCount = scast<size_t>( Player::ShotLevel::LevelCount );
 	if ( chargeSeconds.size() != levelCount )
 	{
@@ -407,7 +428,12 @@ void Player::MotionManager::Update( Player &inst, float elapsedTime )
 	? model.animator.EnableLoop()
 	: model.animator.DisableLoop();
 
-	model.animator.Update( elapsedTime );
+	const auto   &data = Parameter().Get();
+	const size_t currentMotionIndex	= scast<size_t>( ToMotionIndex( currKind ) );
+	const size_t playSpeedCount		= data.animePlaySpeeds.size();
+	const float  motionAcceleration = ( playSpeedCount <= currentMotionIndex ) ? 1.0f : data.animePlaySpeeds[currentMotionIndex];
+
+	model.animator.Update( elapsedTime * motionAcceleration );
 	AssignPose( currKind );
 }
 void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &W ) const

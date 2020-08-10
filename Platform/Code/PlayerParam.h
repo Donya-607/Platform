@@ -44,6 +44,7 @@ public:
 	Donya::Vector2			hpDrawPos;		// Left-Top pos, Screen space
 	Donya::Vector3			hpDrawColor;
 	float					hpDrawScale = 1.0f;
+	std::vector<float>		animePlaySpeeds;// It size() == Player::MotionKind::MotionCount
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -122,6 +123,10 @@ private:
 		}
 		if ( 9 <= version )
 		{
+			archive( CEREAL_NVP( animePlaySpeeds ) );
+		}
+		if ( 10 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -130,4 +135,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 8 )
+CEREAL_CLASS_VERSION( PlayerParam, 9 )
