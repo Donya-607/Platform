@@ -122,12 +122,13 @@ private:
 
 		Donya::Model::Pose		shotPose;
 		Donya::Model::Animator	shotAnimator;
-		bool					shouldShotPose = false;
+		bool					shouldPoseShot = false;
 	public:
 		void Init();
 		void Update( Player &instance, float elapsedTime, bool stopAnimation = false );
 		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW ) const;
 	private:
+		void UpdateShotMotion( Player &instance, float elapsedTime );
 		void ExploreBone( std::vector<size_t> *pTargetBoneIndices, const std::vector<Donya::Model::Animation::Node> &exploreSkeletal, const std::string &searchBoneRootName );
 	private:
 		int  ToMotionIndex( MotionKind kind ) const;

@@ -4,6 +4,9 @@
 
 #include "Donya.h"		// Use for GetWindowCaption()
 
+#undef max
+#undef min
+
 namespace Donya
 {
 	static bool isAllowShowingImGui = true;
@@ -123,9 +126,13 @@ namespace ImGui
 			constexpr size_t bufferSize			= 256U;
 			constexpr size_t bufferSizeWithNull	= bufferSize + 1;
 			using  BufferType = std::array<char, bufferSizeWithNull>;
-			static std::unordered_map<const std::string, BufferType> identifierMap;
+			static std::unordered_map<std::string, BufferType> identifierMap;
 
 			auto &buffer = identifierMap[bufferId];
+			if ( std::strlen( buffer.data() ) == 0 )
+			{
+				strncpy_s( buffer.data(), bufferSize, p->c_str(), std::min( bufferSize, p->size() ) );
+			}
 
 			if ( *p == buffer.data() )
 			{
@@ -137,7 +144,7 @@ namespace ImGui
 			}
 			ImGui::SameLine();
 
-			ImGui::InputText( u8"", buffer.data(), bufferSize );
+			ImGui::InputText( ( "##" + bufferId ).c_str(), buffer.data(), bufferSize );
 
 			ImGui::TreePop();
 		}

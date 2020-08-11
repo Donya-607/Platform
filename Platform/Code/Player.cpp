@@ -431,7 +431,7 @@ void PlayerParam::ShotMotion::ShowImGuiNode( const std::string &nodeCaption )
 			(
 				u8"ルートボーン名" + Donya::MakeArraySuffix( i ),
 				nodeCaption + u8"ApplyBoneName" + std::to_string( i ),
-				&motionName
+				&applyRootBoneNames[i]
 			);
 		}
 
@@ -453,14 +453,7 @@ void Player::MotionManager::Init()
 
 	shotAnimator.ResetTimer();
 	shotAnimator.DisableLoop();
-
-	assert( model.pResource );
-	const auto &holder = model.pResource->motionHolder;
-	const size_t index = holder.FindMotionIndex( "Slide" );
-	const auto &motion = holder.GetMotion( index );
-	shotAnimator.SetRepeatRange( motion );
-	shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
-	shouldShotPose = false;
+	shouldPoseShot = false;
 }
 void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAnimation )
 {
@@ -478,61 +471,14 @@ void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAn
 	if ( !stopAnimation )
 	{
 		const auto &data = Parameter().Get();
-		const size_t currentMotionIndex = scast<size_t>( ToMotionIndex( currKind ) );
-		const size_t playSpeedCount = data.animePlaySpeeds.size();
-		const float  motionAcceleration = ( playSpeedCount <= currentMotionIndex ) ? 1.0f : data.animePlaySpeeds[currentMotionIndex];
+		const size_t currentMotionIndex	= scast<size_t>( ToMotionIndex( currKind ) );
+		const size_t playSpeedCount		= data.animePlaySpeeds.size();
+		const float  motionAcceleration	= ( playSpeedCount <= currentMotionIndex ) ? 1.0f : data.animePlaySpeeds[currentMotionIndex];
 		model.animator.Update( elapsedTime * motionAcceleration );
 	}
 	AssignPose( currKind );
 
-	if ( shotAnimator.WasEnded() )
-	{
-		shouldShotPose = false;
-	}
-	if ( inst.shotManager.IsShotRequested() && inst.NowShotable() )
-	{
-		shouldShotPose = true;
-		shotAnimator.ResetTimer();
-	}
-	if ( shouldShotPose )
-	{
-		shotAnimator.Update( fabsf( elapsedTime ) * Parameter().Get().animePlaySpeeds[scast<size_t>(MotionKind::Slide)] );
-
-		const auto &holder = model.pResource->motionHolder;
-		const size_t index = holder.FindMotionIndex( "Slide" );
-		const auto &motion = holder.GetMotion( index );
-		shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
-		
-		std::vector<Donya::Model::Animation::Node> normalPose = model.pose.GetCurrentPose();
-		const size_t nodeCount = normalPose.size();
-
-		if ( shotPose.HasCompatibleWith( normalPose ) )
-		{
-			std::vector<size_t> applyBoneIndices{};
-			constexpr const char *applyRootName = "Arm_L";
-			ExploreBone( &applyBoneIndices, normalPose, applyRootName );
-
-			const auto &destPose = shotPose.GetCurrentPose();
-			for ( auto &i : applyBoneIndices )
-			{
-				// normalPose[i] = destPose[i];
-
-				normalPose[i].bone  = destPose[i].bone;
-				normalPose[i].local = destPose[i].local;
-				if ( normalPose[i].bone.parentIndex == -1 )
-				{
-					normalPose[i].global = normalPose[i].local;
-				}
-				else
-				{
-					const auto &parent = normalPose[normalPose[i].bone.parentIndex];
-					normalPose[i].global = normalPose[i].local * parent.global;
-				}
-			}
-
-			model.pose.AssignSkeletal( normalPose );
-		}
-	}
+	UpdateShotMotion( inst, elapsedTime );
 }
 void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &W ) const
 {
@@ -554,6 +500,69 @@ void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vecto
 
 	pRenderer->DeactivateConstantModel();
 }
+void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
+{
+	if ( shotAnimator.WasEnded() )
+	{
+		shouldPoseShot = false;
+	}
+
+	if ( inst.shotManager.IsShotRequested() && inst.NowShotable() )
+	{
+		shouldPoseShot = true;
+		shotAnimator.ResetTimer();
+	}
+
+	if ( !shouldPoseShot || !model.pResource ) { return; }
+	// else
+
+	const auto &data	= Parameter().Get();
+	const auto &holder	= model.pResource->motionHolder;
+
+	const size_t motionIndex = holder.FindMotionIndex( data.leftArmMotion.motionName );
+	if ( holder.GetMotionCount() <= motionIndex )
+	{
+		shouldPoseShot = false;
+		return;
+	}
+	// else
+
+	const auto &motion	= holder.GetMotion( motionIndex );
+	shotAnimator.SetRepeatRange( motion );
+
+	const size_t motionKindIndex	= scast<size_t>( MotionKind::Shot );
+	const float  motionAcceleration = ( data.animePlaySpeeds.size() <= motionKindIndex ) ? 1.0f : data.animePlaySpeeds[motionKindIndex];
+	shotAnimator.Update( fabsf( elapsedTime ) * motionAcceleration );
+
+	shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
+
+	std::vector<Donya::Model::Animation::Node> normalPose = model.pose.GetCurrentPose();
+	assert( shotPose.HasCompatibleWith( normalPose ) );
+
+	std::vector<size_t> applyBoneIndices{};
+	for ( const auto &rootName : data.leftArmMotion.applyRootBoneNames )
+	{
+		ExploreBone( &applyBoneIndices, normalPose, rootName );
+	}
+
+	const auto &destPose = shotPose.GetCurrentPose();
+	for ( auto &i : applyBoneIndices )
+	{
+		normalPose[i].bone  = destPose[i].bone;
+		normalPose[i].local = destPose[i].local;
+		if ( normalPose[i].bone.parentIndex == -1 )
+		{
+			normalPose[i].global = normalPose[i].local;
+		}
+		else
+		{
+			const auto &parent = normalPose[normalPose[i].bone.parentIndex];
+			normalPose[i].global = normalPose[i].local * parent.global;
+		}
+	}
+
+	model.pose.AssignSkeletal( normalPose );
+}
 void Player::MotionManager::ExploreBone( std::vector<size_t> *pIndices, const std::vector<Donya::Model::Animation::Node> &skeletal, const std::string &searchName )
 {
 	if ( !pIndices || searchName.empty() ) { return; }
@@ -563,10 +572,14 @@ void Player::MotionManager::ExploreBone( std::vector<size_t> *pIndices, const st
 	for ( size_t i = 0; i < nodeCount; ++i )
 	{
 		const auto &bone = skeletal[i].bone;
+
+		// Register to apply target
 		if ( bone.name == searchName )
 		{
 			pIndices->emplace_back( i );
 		}
+
+		// Explore the children of searchName
 		if ( bone.parentName == searchName )
 		{
 			ExploreBone( pIndices, skeletal, bone.name );
