@@ -58,6 +58,8 @@ namespace ImGui
 	namespace Helper
 	{
 		void ShowEaseParam	( const std::string &nodeCaption, Donya::Easing::Kind *pKind, Donya::Easing::Type *pType );
+		
+		void ShowStringNode	( const std::string &nodeCaption, const std::string &bufferIdentifier, std::string *pString );
 
 		void ShowAABBNode	( const std::string &nodeCaption, Donya::Collision::Box3F *pBox );
 		void ShowSphereNode	( const std::string &nodeCaption, Donya::Collision::Sphere3F *pSphere );

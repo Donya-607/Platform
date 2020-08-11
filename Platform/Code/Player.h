@@ -100,6 +100,7 @@ public:
 		Jump_Fall,
 		KnockBack,
 		GrabLadder,
+		Shot,
 
 		MotionCount
 	};

@@ -29,6 +29,7 @@ namespace
 		"Jump_Fall",
 		"KnockBack",
 		"GrabLadder",
+		"Shot",
 	};
 
 	static std::shared_ptr<ModelHelper::SkinningSet> pModel{};
@@ -309,6 +310,14 @@ void PlayerParam::ShowImGuiNode()
 
 			ImGui::TreePop();
 		}
+		
+		if ( ImGui::TreeNode( u8"ショットモーション設定" ) )
+		{
+			leftArmMotion .ShowImGuiNode( u8"左腕" );
+			rightArmMotion.ShowImGuiNode( u8"右腕" );
+
+			ImGui::TreePop();
+		}
 
 		ImGui::TreePop();
 	}
@@ -320,9 +329,6 @@ void PlayerParam::ShowImGuiNode()
 	}
 	if ( ImGui::TreeNode( u8"ショット設定" ) )
 	{
-		fireParam.ShowImGuiNode( u8"発射情報" );
-		ImGui::DragInt( u8"画面内に出せる弾数",	&maxBusterCount );
-
 		if ( ImGui::TreeNode( u8"チャージ秒数設定" ) )
 		{
 			ImGui::DragFloat( u8"通常", &chargeSeconds[scast<int>( Player::ShotLevel::Normal )], 0.1f );
@@ -333,6 +339,9 @@ void PlayerParam::ShowImGuiNode()
 
 			ImGui::TreePop();
 		}
+
+		fireParam.ShowImGuiNode( u8"発射情報" );
+		ImGui::DragInt( u8"画面内に出せる弾数",	&maxBusterCount );
 
 		maxBusterCount = std::max( 1, maxBusterCount );
 
@@ -405,6 +414,33 @@ void PlayerParam::ShowImGuiNode()
 		
 		ImGui::TreePop();
 	}
+}
+void PlayerParam::ShotMotion::ShowImGuiNode( const std::string &nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	if ( ImGui::TreeNode( u8"適用ボーンの設定" ) )
+	{
+		ImGui::Helper::ResizeByButton( &applyRootBoneNames );
+
+		const size_t count = applyRootBoneNames.size();
+		for ( size_t i = 0; i < count; ++i )
+		{
+			ImGui::Helper::ShowStringNode
+			(
+				u8"ルートボーン名" + Donya::MakeArraySuffix( i ),
+				nodeCaption + u8"ApplyBoneName" + std::to_string( i ),
+				&motionName
+			);
+		}
+
+		ImGui::TreePop();
+	}
+
+	ImGui::Helper::ShowStringNode( u8"モーション名", nodeCaption + "MotionName", &motionName );
+
+	ImGui::TreePop();
 }
 #endif // USE_IMGUI
 

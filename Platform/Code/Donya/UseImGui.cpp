@@ -1,6 +1,8 @@
 #include "UseImGui.h"
 
-#include "Donya.h"		// Use for GetWindowCaption().
+#include <unordered_map>// Use at ShowStringNode()
+
+#include "Donya.h"		// Use for GetWindowCaption()
 
 namespace Donya
 {
@@ -110,6 +112,32 @@ namespace ImGui
 
 			*pKind = scast<Easing::Kind>( intKind );
 			*pType = scast<Easing::Type>( intType );
+
+			ImGui::TreePop();
+		}
+		void ShowStringNode	( const std::string &nodeCaption, const std::string &bufferId, std::string *p )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			constexpr size_t bufferSize			= 256U;
+			constexpr size_t bufferSizeWithNull	= bufferSize + 1;
+			using  BufferType = std::array<char, bufferSizeWithNull>;
+			static std::unordered_map<const std::string, BufferType> identifierMap;
+
+			auto &buffer = identifierMap[bufferId];
+
+			if ( *p == buffer.data() )
+			{
+				ImGui::TextDisabled( u8"適用" );
+			}
+			else if ( ImGui::Button( u8"適用" ) )
+			{
+				*p = buffer.data();
+			}
+			ImGui::SameLine();
+
+			ImGui::InputText( u8"", buffer.data(), bufferSize );
 
 			ImGui::TreePop();
 		}

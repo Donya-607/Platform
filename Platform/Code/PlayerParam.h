@@ -45,6 +45,35 @@ public:
 	Donya::Vector3			hpDrawColor;
 	float					hpDrawScale = 1.0f;
 	std::vector<float>		animePlaySpeeds;// It size() == Player::MotionKind::MotionCount
+
+	struct ShotMotion
+	{
+	public:
+		std::string				motionName;
+		std::vector<std::string>applyRootBoneNames;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( motionName			),
+				CEREAL_NVP( applyRootBoneNames	)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const std::string &nodeCaption );
+	#endif // USE_IMGUI
+	};
+	ShotMotion leftArmMotion;
+	ShotMotion rightArmMotion;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -127,6 +156,14 @@ private:
 		}
 		if ( 10 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( leftArmMotion  ),
+				CEREAL_NVP( rightArmMotion )
+			);
+		}
+		if ( 11 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -135,4 +172,5 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 9 )
+CEREAL_CLASS_VERSION( PlayerParam, 10 )
+CEREAL_CLASS_VERSION( PlayerParam::ShotMotion, 0 )
