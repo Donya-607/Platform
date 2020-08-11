@@ -414,8 +414,19 @@ void Player::MotionManager::Init()
 
 	model.Initialize( GetModelOrNullptr() );
 	AssignPose( currKind );
+
+	shotAnimator.ResetTimer();
+	shotAnimator.DisableLoop();
+
+	assert( model.pResource );
+	const auto &holder = model.pResource->motionHolder;
+	const size_t index = holder.FindMotionIndex( "Slide" );
+	const auto &motion = holder.GetMotion( index );
+	shotAnimator.SetRepeatRange( motion );
+	shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
+	shouldShotPose = false;
 }
-void Player::MotionManager::Update( Player &inst, float elapsedTime )
+void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAnimation )
 {
 	prevKind = currKind;
 	currKind = CalcNowKind( inst, elapsedTime );
@@ -428,13 +439,64 @@ void Player::MotionManager::Update( Player &inst, float elapsedTime )
 	? model.animator.EnableLoop()
 	: model.animator.DisableLoop();
 
-	const auto   &data = Parameter().Get();
-	const size_t currentMotionIndex	= scast<size_t>( ToMotionIndex( currKind ) );
-	const size_t playSpeedCount		= data.animePlaySpeeds.size();
-	const float  motionAcceleration = ( playSpeedCount <= currentMotionIndex ) ? 1.0f : data.animePlaySpeeds[currentMotionIndex];
-
-	model.animator.Update( elapsedTime * motionAcceleration );
+	if ( !stopAnimation )
+	{
+		const auto &data = Parameter().Get();
+		const size_t currentMotionIndex = scast<size_t>( ToMotionIndex( currKind ) );
+		const size_t playSpeedCount = data.animePlaySpeeds.size();
+		const float  motionAcceleration = ( playSpeedCount <= currentMotionIndex ) ? 1.0f : data.animePlaySpeeds[currentMotionIndex];
+		model.animator.Update( elapsedTime * motionAcceleration );
+	}
 	AssignPose( currKind );
+
+	if ( shotAnimator.WasEnded() )
+	{
+		shouldShotPose = false;
+	}
+	if ( inst.shotManager.IsShotRequested() && inst.NowShotable() )
+	{
+		shouldShotPose = true;
+		shotAnimator.ResetTimer();
+	}
+	if ( shouldShotPose )
+	{
+		shotAnimator.Update( fabsf( elapsedTime ) * Parameter().Get().animePlaySpeeds[scast<size_t>(MotionKind::Slide)] );
+
+		const auto &holder = model.pResource->motionHolder;
+		const size_t index = holder.FindMotionIndex( "Slide" );
+		const auto &motion = holder.GetMotion( index );
+		shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
+		
+		std::vector<Donya::Model::Animation::Node> normalPose = model.pose.GetCurrentPose();
+		const size_t nodeCount = normalPose.size();
+
+		if ( shotPose.HasCompatibleWith( normalPose ) )
+		{
+			std::vector<size_t> applyBoneIndices{};
+			constexpr const char *applyRootName = "Arm_L";
+			ExploreBone( &applyBoneIndices, normalPose, applyRootName );
+
+			const auto &destPose = shotPose.GetCurrentPose();
+			for ( auto &i : applyBoneIndices )
+			{
+				// normalPose[i] = destPose[i];
+
+				normalPose[i].bone  = destPose[i].bone;
+				normalPose[i].local = destPose[i].local;
+				if ( normalPose[i].bone.parentIndex == -1 )
+				{
+					normalPose[i].global = normalPose[i].local;
+				}
+				else
+				{
+					const auto &parent = normalPose[normalPose[i].bone.parentIndex];
+					normalPose[i].global = normalPose[i].local * parent.global;
+				}
+			}
+
+			model.pose.AssignSkeletal( normalPose );
+		}
+	}
 }
 void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &W ) const
 {
@@ -455,6 +517,25 @@ void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vecto
 	pRenderer->Render( model.pResource->model, model.pose );
 
 	pRenderer->DeactivateConstantModel();
+}
+void Player::MotionManager::ExploreBone( std::vector<size_t> *pIndices, const std::vector<Donya::Model::Animation::Node> &skeletal, const std::string &searchName )
+{
+	if ( !pIndices || searchName.empty() ) { return; }
+	// else
+
+	const size_t nodeCount = skeletal.size();
+	for ( size_t i = 0; i < nodeCount; ++i )
+	{
+		const auto &bone = skeletal[i].bone;
+		if ( bone.name == searchName )
+		{
+			pIndices->emplace_back( i );
+		}
+		if ( bone.parentName == searchName )
+		{
+			ExploreBone( pIndices, skeletal, bone.name );
+		}
+	}
 }
 int  Player::MotionManager::ToMotionIndex( MotionKind kind ) const
 {
@@ -620,9 +701,9 @@ void Player::MoverBase::Init( Player &inst )
 {
 	AssignBodyParameter( inst );
 }
-void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime )
+void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime, bool stopAnimation )
 {
-	inst.motionManager.Update( inst, elapsedTime );
+	inst.motionManager.Update( inst, elapsedTime, stopAnimation );
 }
 void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1080,7 +1161,9 @@ void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, c
 
 	releaseWay = JudgeWhetherToRelease( inst, elapsedTime, input, terrain );
 
-	MotionUpdate( inst, elapsedTime * Donya::SignBitF( inst.velocity.y ) );
+	const bool pause = IsZero( inst.velocity.y );
+	const float sign = Donya::SignBitF( inst.velocity.y );
+	MotionUpdate( inst, ( pause ) ? elapsedTime : elapsedTime * sign, pause );
 }
 void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {

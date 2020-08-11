@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "Donya/ModelMotion.h"
-#include "Donya/ModelPolygon.h"
 #include "Donya/ModelPose.h"
 #include "Donya/Quaternion.h"
 #include "Donya/Serializer.h"
@@ -119,10 +118,16 @@ private:
 		MotionKind prevKind = MotionKind::Jump_Fall;
 		MotionKind currKind = MotionKind::Jump_Fall;
 		ModelHelper::SkinningOperator model;
+
+		Donya::Model::Pose		shotPose;
+		Donya::Model::Animator	shotAnimator;
+		bool					shouldShotPose = false;
 	public:
 		void Init();
-		void Update( Player &instance, float elapsedTime );
+		void Update( Player &instance, float elapsedTime, bool stopAnimation = false );
 		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW ) const;
+	private:
+		void ExploreBone( std::vector<size_t> *pTargetBoneIndices, const std::vector<Donya::Model::Animation::Node> &exploreSkeletal, const std::string &searchBoneRootName );
 	private:
 		int  ToMotionIndex( MotionKind kind ) const;
 		void AssignPose( MotionKind kind );
@@ -181,7 +186,7 @@ private:
 	protected:
 		virtual void AssignBodyParameter( Player &instance );
 	protected:
-		void MotionUpdate( Player &instance, float elapsedTime );
+		void MotionUpdate( Player &instance, float elapsedTime, bool stopAnimation = false );
 		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
 		void MoveOnlyVertical( Player &instance, float elapsedTime, const Map &terrain );
 	};
