@@ -101,6 +101,8 @@ public:
 		KnockBack,
 		GrabLadder,
 		Shot,
+		LadderShotLeft,
+		LadderShotRight,
 
 		MotionCount
 	};

@@ -32,6 +32,8 @@ namespace
 		"KnockBack",
 		"GrabLadder",
 		"Shot",
+		"LadderShotLeft",
+		"LadderShotRight",
 	};
 
 	static std::shared_ptr<ModelHelper::SkinningSet> pModel{};
