@@ -248,7 +248,6 @@ private:
 	private:
 		ReleaseWay releaseWay	= ReleaseWay::None;
 		float	shotLagSecond	= 0.0f;
-		float	lookingSign		= 1.0f;
 		Donya::Collision::Box3F	grabArea;
 	public:
 		void Init( Player &instance ) override;
@@ -310,8 +309,9 @@ private:
 	Flusher						invincibleTimer;
 	Meter::Drawer				hpDrawer;
 	std::unique_ptr<MoverBase>	pMover					= nullptr;
-	std::weak_ptr<const Tile>	pTargetLadder{};		// It only used for initialization of Player::GrabLadder as reference
+	std::weak_ptr<const Tile>	pTargetLadder{};				// It only used for initialization of Player::GrabLadder as reference
 	int							currentHP				= 1;
+	float						lookingSign				= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
 	float						keepJumpSecond			= 0.0f;
 	bool						wasReleasedJumpInput	= false;
 	bool						prevSlidingStatus		= false;

@@ -494,9 +494,23 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 	if ( !shouldPoseShot ) { return; }
 	// else
 
-	// TODO: ‚Í‚µ‚²‚©‚Ç‚¤‚©‚Å•ªŠò‚·‚é
-	// TODO: ‚Í‚µ‚²‚Å‚Þ‚¢‚Ä‚¢‚éŒü‚«‚É‚æ‚Á‚Ä•ªŠò‚·‚é
-	ApplyPartMotion( inst, elapsedTime, MotionKind::Shot, Parameter().Get().normalLeftArm );
+	const auto &data = Parameter().Get();
+
+	if ( inst.pMover && inst.pMover->NowGrabbingLadder( inst ) )
+	{
+		if ( inst.lookingSign < 0.0f )
+		{
+			ApplyPartMotion( inst, elapsedTime, MotionKind::LadderShotLeft, data.ladderLeftArm );
+		}
+		else
+		{
+			ApplyPartMotion( inst, elapsedTime, MotionKind::LadderShotRight, data.ladderRightArm );
+		}
+	}
+	else
+	{
+		ApplyPartMotion( inst, elapsedTime, MotionKind::Shot, data.normalLeftArm );
+	}
 }
 void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, MotionKind useMotionKind, const ModelHelper::PartApply &partData )
 {
@@ -1123,8 +1137,8 @@ void Player::GrabLadder::Init( Player &inst )
 
 	releaseWay		= ReleaseWay::None;
 	shotLagSecond	= 0.0f;
-	lookingSign		= Donya::SignBitF( inst.orientation.LocalFront().x );
-	if ( IsZero( lookingSign ) ) { lookingSign = 1.0f; } // Fail safe
+	inst.lookingSign= inst.lookingSign * -1.0f; // Indicates implicitly the direction that the player should advance
+	if ( IsZero( inst.lookingSign ) ) { inst.lookingSign = 1.0f; } // Fail safe
 
 	inst.velocity	= 0.0f;
 	LookToFront( inst );
@@ -1192,7 +1206,7 @@ void Player::GrabLadder::Uninit( Player &inst )
 	
 	inst.velocity = 0.0f;
 	inst.pTargetLadder.reset();
-	inst.UpdateOrientation( /* lookingRight = */ ( lookingSign < 0.0f ) ? false : true );
+	inst.UpdateOrientation( /* lookingRight = */ ( inst.lookingSign < 0.0f ) ? false : true );
 
 	if ( releaseWay == ReleaseWay::Climb )
 	{
@@ -1239,8 +1253,8 @@ void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, c
 
 	releaseWay = JudgeWhetherToRelease( inst, elapsedTime, input, terrain );
 
-	const bool pause = IsZero( inst.velocity.y );
-	const float sign = Donya::SignBitF( inst.velocity.y );
+	const bool  pause = IsZero( inst.velocity.y );
+	const float sign  = Donya::SignBitF( inst.velocity.y );
 	MotionUpdate( inst, ( pause ) ? elapsedTime : elapsedTime * sign, pause );
 }
 void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
@@ -1287,13 +1301,10 @@ void Player::GrabLadder::ShotProcess( Player &inst, float elapsedTime, Input inp
 	const int sideInputSign = Donya::SignBit( input.moveVelocity.x );
 	if ( sideInputSign != 0 )
 	{
-		lookingSign = scast<float>( sideInputSign );
+		inst.lookingSign = scast<float>( sideInputSign );
 	}
 
-	// Update the orientation temporarily for decide the shot direction
-	inst.UpdateOrientation( /* lookingRight = */ ( lookingSign < 0.0f ) ? false : true );
 	inst.ShotIfRequested( elapsedTime, input );
-	LookToFront( inst );
 }
 Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player &inst, float elapsedTime, Input input, const Map &terrain ) const
 {
@@ -1429,7 +1440,9 @@ std::function<void()> Player::Miss::GetChangeStateMethod( Player &inst ) const
 
 void Player::Init( const PlayerInitializer &initializer )
 {
-	UpdateOrientation( initializer.ShouldLookingRight() );
+	const bool shouldLookingToRight = initializer.ShouldLookingRight();
+	UpdateOrientation( shouldLookingToRight );
+	lookingSign = ( shouldLookingToRight ) ? 1.0f : -1.0f;
 
 	const auto &data	= Parameter().Get();
 	body				= data.hitBox;
@@ -1827,8 +1840,9 @@ void Player::MoveHorizontal( float elapsedTime, Input input )
 
 	if ( !IsZero( velocity.x * elapsedTime ) ) // The "elapsedTime" prevents to rotate when pauses a game time
 	{
-		const bool lookRight = ( 0.0f < velocity.x ) ? true : false;
-		UpdateOrientation( lookRight );
+		lookingSign = Donya::SignBitF( velocity.x );
+
+		UpdateOrientation( /* lookingRight = */ ( lookingSign < 0.0f ) ? false : true );
 	}
 }
 void Player::MoveVertical  ( float elapsedTime, Input input )
@@ -1844,8 +1858,9 @@ void Player::MoveVertical  ( float elapsedTime, Input input )
 }
 bool Player::NowShotable() const
 {
+	const bool nowSliding  = ( pMover && pMover->NowSliding( *this ) );
 	const bool generatable = ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
-	return ( generatable ) ? true : false;
+	return ( generatable && !nowSliding ) ? true : false;
 }
 void Player::ShotIfRequested( float elapsedTime, Input input )
 {
@@ -1855,14 +1870,15 @@ void Player::ShotIfRequested( float elapsedTime, Input input )
 
 	const auto &data = Parameter().Get();
 
-	const Donya::Vector3 front = orientation.LocalFront();
-	const float dot = Donya::Dot( front, Donya::Vector3::Right() );
-	const float lookingSign = Donya::SignBitF( dot );
+	const Donya::Quaternion lookingRotation = Donya::Quaternion::Make
+	(
+		Donya::Vector3::Up(), ToRadian( 90.0f ) * lookingSign
+	);
 
 	Bullet::FireDesc desc = data.fireParam;
-	desc.direction	=  Donya::Vector3::Right() * lookingSign;
-	desc.position.x	*= lookingSign;
-	desc.position	+= GetPosition();
+	desc.direction	=  ( lookingSign < 0.0f ) ? -Donya::Vector3::Right() : Donya::Vector3::Right();
+	desc.position	=  lookingRotation.RotateVector( desc.position ); // Rotate the local space offset
+	desc.position	+= GetPosition(); // Convert to world space
 	desc.owner		=  hurtBox.id;
 
 	const ShotLevel level = shotManager.ChargeLevel();
@@ -1977,8 +1993,9 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::DragFloat3	( u8"‘¬“x",							&velocity.x,	0.01f );
 
 	Donya::Vector3 front = orientation.LocalFront();
-	ImGui::SliderFloat3	( u8"‘O•ûŒü",						&front.x, -1.0f, 1.0f );
+	ImGui::SliderFloat3	( u8"‘O•ûŒü",						&front.x,		-1.0f, 1.0f );
 	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), front.Unit(), Donya::Quaternion::Freeze::Up );
+	ImGui::SliderFloat	( u8"Œü‚¢‚Ä‚¢‚é‚w•ûŒü",				&lookingSign,	-1.0f, 1.0f );
 
 	ImGui::TreePop();
 }
