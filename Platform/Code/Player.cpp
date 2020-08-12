@@ -1,5 +1,7 @@
 #include "Player.h"
 
+#include <algorithm>		// Use std::find()
+
 #include "Donya/Loader.h"
 #include "Donya/Sound.h"
 #include "Donya/Template.h"	// Use AppendVector()
@@ -548,16 +550,39 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 	const auto &destPose = shotPose.GetCurrentPose();
 	for ( auto &i : applyBoneIndices )
 	{
-		normalPose[i].bone  = destPose[i].bone;
-		normalPose[i].local = destPose[i].local;
-		if ( normalPose[i].bone.parentIndex == -1 )
+		auto &node = normalPose[i];
+		auto &dest = destPose[i];
+
+		node.bone  = dest.bone;
+		node.local = dest.local;
+
+		// If the current node is the root bone of apply targets
+		const auto found = std::find( data.leftArmMotion.applyRootBoneNames.begin(), data.leftArmMotion.applyRootBoneNames.end(), node.bone.name );
+		if ( found != data.leftArmMotion.applyRootBoneNames.end() )
 		{
-			normalPose[i].global = normalPose[i].local;
+			const auto &d = dest.global;
+			const auto &n = node.global;
+
+			Donya::Vector4x4 blend;
+			// Apply destination's orientation(and scale)
+			blend._11 = d._11;	blend._12 = d._12;	blend._13 = d._13;
+			blend._21 = d._21;	blend._22 = d._22;	blend._23 = d._23;
+			blend._31 = d._31;	blend._32 = d._32;	blend._33 = d._33;
+			// Apply normal translation
+			// blend._41 = n._41;	blend._42 = n._42;	blend._43 = n._43;
+			blend._41 = d._41;	blend._42 = n._42;	blend._43 = d._43;
+			
+			node.global = blend;
 		}
 		else
 		{
-			const auto &parent = normalPose[normalPose[i].bone.parentIndex];
-			normalPose[i].global = normalPose[i].local * parent.global;
+			const Donya::Vector4x4 parentGlobal =
+			( node.bone.parentIndex != -1 )
+			? normalPose[node.bone.parentIndex].global
+			: Donya::Vector4x4::Identity();
+
+			node.global = dest.local * parentGlobal;
+			// it.global = it.local * parentBone.global;
 		}
 	}
 
@@ -569,22 +594,28 @@ void Player::MotionManager::ExploreBone( std::vector<size_t> *pIndices, const st
 	// else
 
 	const size_t nodeCount = skeletal.size();
+
+	// Register to apply target
 	for ( size_t i = 0; i < nodeCount; ++i )
 	{
 		const auto &bone = skeletal[i].bone;
-
-		// Register to apply target
 		if ( bone.name == searchName )
 		{
 			pIndices->emplace_back( i );
 		}
-
-		// Explore the children of searchName
+	}
+	
+	// Explore the children of searchName
+	for ( size_t i = 0; i < nodeCount; ++i )
+	{
+		const auto &bone = skeletal[i].bone;
 		if ( bone.parentName == searchName )
 		{
 			ExploreBone( pIndices, skeletal, bone.name );
 		}
 	}
+
+	// Make the pIndices will contain the searchName as first and the children as second, by explore recursively after the registration.
 }
 int  Player::MotionManager::ToMotionIndex( MotionKind kind ) const
 {
