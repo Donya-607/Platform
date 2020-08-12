@@ -4,10 +4,16 @@
 #include <string>
 #include <vector>
 
+#undef max
+#undef min
+#include <cereal/types/vector.hpp>
+
 #include "Donya/Model.h"
 #include "Donya/ModelCommon.h"
 #include "Donya/ModelMotion.h"
 #include "Donya/ModelPose.h"
+#include "Donya/Serializer.h"
+#include "Donya/UseImGui.h"		// Use USE_IMGUI macro
 
 namespace ModelHelper
 {
@@ -55,4 +61,35 @@ namespace ModelHelper
 	/// Returns true if the load process was succeed.
 	/// </summary>
 	bool Load( const std::string &filePath, SkinningSet *pOut );
+
+	struct PartApply
+	{
+	public:
+		std::string				motionName;
+		std::vector<std::string>applyRootBoneNames;
+		Donya::Vector3			rootTranslationBlendPercent; // [0.0f:Current Motion][1.0f:Destination Motion]
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( motionName					),
+				CEREAL_NVP( applyRootBoneNames			),
+				CEREAL_NVP( rootTranslationBlendPercent	)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const std::string &nodeCaption );
+	#endif // USE_IMGUI
+	};
 }
+CEREAL_CLASS_VERSION( ModelHelper::PartApply, 0 )
+

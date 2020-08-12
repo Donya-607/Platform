@@ -315,8 +315,9 @@ void PlayerParam::ShowImGuiNode()
 		
 		if ( ImGui::TreeNode( u8"ショットモーション設定" ) )
 		{
-			leftArmMotion .ShowImGuiNode( u8"左腕" );
-			rightArmMotion.ShowImGuiNode( u8"右腕" );
+			normalLeftArm .ShowImGuiNode( u8"通常" );
+			ladderLeftArm .ShowImGuiNode( u8"はしご・左向き" );
+			ladderRightArm.ShowImGuiNode( u8"はしご・右向き" );
 
 			ImGui::TreePop();
 		}
@@ -417,33 +418,6 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::TreePop();
 	}
 }
-void PlayerParam::ShotMotion::ShowImGuiNode( const std::string &nodeCaption )
-{
-	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
-	// else
-
-	if ( ImGui::TreeNode( u8"適用ボーンの設定" ) )
-	{
-		ImGui::Helper::ResizeByButton( &applyRootBoneNames );
-
-		const size_t count = applyRootBoneNames.size();
-		for ( size_t i = 0; i < count; ++i )
-		{
-			ImGui::Helper::ShowStringNode
-			(
-				u8"ルートボーン名" + Donya::MakeArraySuffix( i ),
-				nodeCaption + u8"ApplyBoneName" + std::to_string( i ),
-				&applyRootBoneNames[i]
-			);
-		}
-
-		ImGui::TreePop();
-	}
-
-	ImGui::Helper::ShowStringNode( u8"モーション名", nodeCaption + "MotionName", &motionName );
-
-	ImGui::TreePop();
-}
 #endif // USE_IMGUI
 
 void Player::MotionManager::Init()
@@ -515,13 +489,22 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 		shotAnimator.ResetTimer();
 	}
 
-	if ( !shouldPoseShot || !model.pResource ) { return; }
+	if ( !shouldPoseShot ) { return; }
+	// else
+
+	// TODO: はしごかどうかで分岐する
+	// TODO: はしごでむいている向きによって分岐する
+	ApplyPartMotion( inst, elapsedTime, MotionKind::Shot, Parameter().Get().normalLeftArm );
+}
+void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, MotionKind useMotionKind, const ModelHelper::PartApply &partData )
+{
+	if ( !model.pResource ) { return; }
 	// else
 
 	const auto &data	= Parameter().Get();
 	const auto &holder	= model.pResource->motionHolder;
 
-	const size_t motionIndex = holder.FindMotionIndex( data.leftArmMotion.motionName );
+	const size_t motionIndex = holder.FindMotionIndex( partData.motionName );
 	if ( holder.GetMotionCount() <= motionIndex )
 	{
 		shouldPoseShot = false;
@@ -529,23 +512,37 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 	}
 	// else
 
-	const auto &motion	= holder.GetMotion( motionIndex );
-	shotAnimator.SetRepeatRange( motion );
+	// Update "shotAnimator" and "shotPose" by "motionIndex"
+	{
+		const auto &motion	= holder.GetMotion( motionIndex );
+		shotAnimator.SetRepeatRange( motion );
 
-	const size_t motionKindIndex	= scast<size_t>( MotionKind::Shot );
-	const float  motionAcceleration = ( data.animePlaySpeeds.size() <= motionKindIndex ) ? 1.0f : data.animePlaySpeeds[motionKindIndex];
-	shotAnimator.Update( fabsf( elapsedTime ) * motionAcceleration );
+		const size_t motionKindIndex	= scast<size_t>( useMotionKind );
+		const float  motionAcceleration = ( data.animePlaySpeeds.size() <= motionKindIndex ) ? 1.0f : data.animePlaySpeeds[motionKindIndex];
+		shotAnimator.Update( fabsf( elapsedTime ) * motionAcceleration );
 
-	shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
+		shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
+	}
 
 	std::vector<Donya::Model::Animation::Node> normalPose = model.pose.GetCurrentPose();
 	assert( shotPose.HasCompatibleWith( normalPose ) );
 
 	std::vector<size_t> applyBoneIndices{};
-	for ( const auto &rootName : data.leftArmMotion.applyRootBoneNames )
+	for ( const auto &rootName : partData.applyRootBoneNames )
 	{
-		ExploreBone( &applyBoneIndices, normalPose, rootName );
+		ExplorePartBone( &applyBoneIndices, normalPose, rootName );
 	}
+
+	auto IsTargetRootName = [&partData]( const std::string &boneName )
+	{
+		const auto found = std::find
+		(
+			partData.applyRootBoneNames.begin(),
+			partData.applyRootBoneNames.end(),
+			boneName
+		);
+		return ( found != partData.applyRootBoneNames.end() ) ? true : false;
+	};
 
 	const auto &destPose = shotPose.GetCurrentPose();
 	for ( auto &i : applyBoneIndices )
@@ -557,20 +554,20 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 		node.local = dest.local;
 
 		// If the current node is the root bone of apply targets
-		const auto found = std::find( data.leftArmMotion.applyRootBoneNames.begin(), data.leftArmMotion.applyRootBoneNames.end(), node.bone.name );
-		if ( found != data.leftArmMotion.applyRootBoneNames.end() )
+		if ( IsTargetRootName( node.bone.name ) )
 		{
 			const auto &d = dest.global;
 			const auto &n = node.global;
 
 			Donya::Vector4x4 blend;
 			// Apply destination's orientation(and scale)
-			blend._11 = d._11;	blend._12 = d._12;	blend._13 = d._13;
-			blend._21 = d._21;	blend._22 = d._22;	blend._23 = d._23;
-			blend._31 = d._31;	blend._32 = d._32;	blend._33 = d._33;
-			// Apply normal translation
-			// blend._41 = n._41;	blend._42 = n._42;	blend._43 = n._43;
-			blend._41 = d._41;	blend._42 = n._42;	blend._43 = d._43;
+			blend._11 = d._11;		blend._12 = d._12;		blend._13 = d._13;
+			blend._21 = d._21;		blend._22 = d._22;		blend._23 = d._23;
+			blend._31 = d._31;		blend._32 = d._32;		blend._33 = d._33;
+			// Blend the translations
+			blend._41 = Donya::Lerp( n._41, d._41, partData.rootTranslationBlendPercent.x );
+			blend._42 = Donya::Lerp( n._42, d._42, partData.rootTranslationBlendPercent.y );
+			blend._43 = Donya::Lerp( n._43, d._43, partData.rootTranslationBlendPercent.z );
 			
 			node.global = blend;
 		}
@@ -582,13 +579,12 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 			: Donya::Vector4x4::Identity();
 
 			node.global = dest.local * parentGlobal;
-			// it.global = it.local * parentBone.global;
 		}
 	}
 
 	model.pose.AssignSkeletal( normalPose );
 }
-void Player::MotionManager::ExploreBone( std::vector<size_t> *pIndices, const std::vector<Donya::Model::Animation::Node> &skeletal, const std::string &searchName )
+void Player::MotionManager::ExplorePartBone( std::vector<size_t> *pIndices, const std::vector<Donya::Model::Animation::Node> &skeletal, const std::string &searchName )
 {
 	if ( !pIndices || searchName.empty() ) { return; }
 	// else
@@ -611,7 +607,7 @@ void Player::MotionManager::ExploreBone( std::vector<size_t> *pIndices, const st
 		const auto &bone = skeletal[i].bone;
 		if ( bone.parentName == searchName )
 		{
-			ExploreBone( pIndices, skeletal, bone.name );
+			ExplorePartBone( pIndices, skeletal, bone.name );
 		}
 	}
 

@@ -12,6 +12,7 @@
 #include "Donya/UseImGui.h"		// use US_IMGUI macro
 
 #include "Bullet.h"				// Use Bullet::FireDesc
+#include "ModelHelper.h"		// Use PartApply
 
 struct PlayerParam
 {
@@ -46,34 +47,9 @@ public:
 	float					hpDrawScale = 1.0f;
 	std::vector<float>		animePlaySpeeds;// It size() == Player::MotionKind::MotionCount
 
-	struct ShotMotion
-	{
-	public:
-		std::string				motionName;
-		std::vector<std::string>applyRootBoneNames;
-	private:
-		friend class cereal::access;
-		template<class Archive>
-		void serialize( Archive &archive, std::uint32_t version )
-		{
-			archive
-			(
-				CEREAL_NVP( motionName			),
-				CEREAL_NVP( applyRootBoneNames	)
-			);
-
-			if ( 1 <= version )
-			{
-				// archive( CEREAL_NVP( x ) );
-			}
-		}
-	public:
-	#if USE_IMGUI
-		void ShowImGuiNode( const std::string &nodeCaption );
-	#endif // USE_IMGUI
-	};
-	ShotMotion leftArmMotion;
-	ShotMotion rightArmMotion;
+	ModelHelper::PartApply normalLeftArm;
+	ModelHelper::PartApply ladderLeftArm;
+	ModelHelper::PartApply ladderRightArm;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -158,8 +134,9 @@ private:
 		{
 			archive
 			(
-				CEREAL_NVP( leftArmMotion  ),
-				CEREAL_NVP( rightArmMotion )
+				CEREAL_NVP( normalLeftArm  ),
+				CEREAL_NVP( ladderLeftArm  ),
+				CEREAL_NVP( ladderRightArm )
 			);
 		}
 		if ( 11 <= version )
@@ -173,4 +150,3 @@ public:
 #endif // USE_IMGUI
 };
 CEREAL_CLASS_VERSION( PlayerParam, 10 )
-CEREAL_CLASS_VERSION( PlayerParam::ShotMotion, 0 )

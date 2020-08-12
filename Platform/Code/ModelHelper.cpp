@@ -81,4 +81,37 @@ namespace ModelHelper
 
 		return pOut->model.WasInitializeSucceeded();
 	}
+
+#if USE_IMGUI
+	void PartApply::ShowImGuiNode( const std::string &nodeCaption )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		if ( ImGui::TreeNode( u8"適用ボーンの設定" ) )
+		{
+			ImGui::Helper::ResizeByButton( &applyRootBoneNames );
+
+			const size_t count = applyRootBoneNames.size();
+			for ( size_t i = 0; i < count; ++i )
+			{
+				ImGui::Helper::ShowStringNode
+				(
+					u8"ルートボーン名" + Donya::MakeArraySuffix( i ),
+					nodeCaption + u8"ApplyBoneName" + std::to_string( i ),
+					&applyRootBoneNames[i]
+				);
+			}
+
+			ImGui::TreePop();
+		}
+
+		ImGui::Helper::ShowStringNode( u8"モーション名", nodeCaption + "MotionName", &motionName );
+
+		ImGui::SliderFloat3( u8"平行移動に使用する割合", &rootTranslationBlendPercent.x, 0.0f, 1.0f );
+		ImGui::Text( u8"現在モーション[0.0f] <- -> [1.0f]遷移先モーション" );
+
+		ImGui::TreePop();
+	}
+#endif // USE_IMGUI
 }
