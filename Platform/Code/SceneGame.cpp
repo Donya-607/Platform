@@ -1734,6 +1734,8 @@ void SceneGame::UseImGui()
 			ImGui::InputText( u8"識別子・ルーム",			bufferRoom.data(),		bufferSize );
 			ImGui::InputText( u8"拡張子",				bufferExtension.data(),	bufferSize );
 
+			currentRoomID = CalcCurrentRoomID();
+
 			ImGui::TreePop();
 		}
 
@@ -1768,8 +1770,8 @@ void SceneGame::UseImGui()
 					if ( applyEnemy		) { ApplyToEnemy	( loader ); }
 					if ( applyItem		) { ApplyToItem		( loader ); }
 					if ( applyMap		) { ApplyToMap		( loader );	}
-					if ( applyPlayer	) { ApplyToPlayer	( loader );	}
-					if ( applyRoom		) { ApplyToRoom		( loader );	}
+					if ( applyPlayer	) { ApplyToPlayer	( loader );	currentRoomID = CalcCurrentRoomID(); }
+					if ( applyRoom		) { ApplyToRoom		( loader );	currentRoomID = CalcCurrentRoomID(); }
 				}
 			}
 
