@@ -5,6 +5,7 @@
 #include "../Donya/Random.h"
 
 #include "../Bullets/SkullBullet.h"
+#include "../Common.h"		// Use LargestDeltaTime()
 #include "../Parameter.h"
 
 namespace Boss
@@ -172,6 +173,8 @@ namespace Boss
 	}
 	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
+		inst.Fall( elapsedTime );
+
 		if ( nextState != Destination::None ) { return; }
 		// else
 
@@ -262,6 +265,8 @@ namespace Boss
 	}
 	void Skull::Shot::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
+		inst.Fall( elapsedTime );
+
 		timer += elapsedTime;
 
 		const auto &data = Parameter::GetSkull();
@@ -421,7 +426,7 @@ namespace Boss
 	}
 	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
-		inst.velocity.y -= inst.GetGravity() * elapsedTime;
+		inst.Fall( elapsedTime );
 	}
 	void Skull::Jump::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
 	{
@@ -487,6 +492,8 @@ namespace Boss
 	}
 	void Skull::Shield::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
+		inst.Fall( elapsedTime );
+
 		const auto &data = Parameter::GetSkull();
 
 		timer += elapsedTime;
@@ -579,19 +586,40 @@ namespace Boss
 
 	void Skull::Run::Init( Skull &inst )
 	{
-		inst.velocity.x = Parameter::GetSkull().runSpeed * GetCurrentDirectionSign( inst );
-		inst.velocity.y = 0.0f;
+		const float &runSpeed = Parameter::GetSkull().runSpeed;
+
+		inst.velocity.x	= runSpeed * GetCurrentDirectionSign( inst );
+		inst.velocity.y	= 0.0f;
 		inst.motionManager.ChangeMotion( inst, MotionKind::Run );
 
-		timer		= 0.0f;
+		// t[s] = displacement[m] / speed[m/s]
+		// But the speed here is [m], so the arrivalTime will be none unit.
+		const float distance = fabsf( inst.aimingPos.x - inst.body.WorldPosition().x );
+		arrivalTime	= ( IsZero( runSpeed ) ) ? 0.0f : distance / fabsf( runSpeed );
+
+		runTimer	= 0.0f;
+		waitTimer	= 0.0f;
 		wasArrived	= false;
 		initialPos	= inst.body.WorldPosition();
 	}
-	void Skull::Run::Update( Skull &instance, float elapsedTime, const Input &input )
+	void Skull::Run::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
+		inst.Fall( elapsedTime );
+
 		if ( wasArrived )
 		{
-			timer += elapsedTime;
+			waitTimer += elapsedTime;
+		}
+		else
+		{
+			runTimer += elapsedTime;
+
+			// Invalid compare between none-unit and [s].
+			// But it works as almost I want.
+			if ( arrivalTime <= runTimer )
+			{
+				wasArrived = true;
+			}
 		}
 	}
 	void Skull::Run::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
@@ -600,18 +628,20 @@ namespace Boss
 		MoverBase::PhysicUpdate( inst, elapsedTime, terrain );
 		const int nowSign  = GetCurrentDirectionSign(  inst );
 
-		if ( nowSign != prevSign || nowSign == 0 )
+		const bool nowArrived = ( nowSign != prevSign || nowSign == 0 );
+		if ( !wasArrived && nowArrived )
 		{
 			wasArrived = true;
 			inst.body.pos.x  = inst.aimingPos.x;
 			inst.hurtBox.pos = inst.body.pos;
+			inst.velocity.x  = 0.0f;
 
 			inst.motionManager.ChangeMotion( inst, MotionKind::Idle );
 		}
 	}
 	bool Skull::Run::ShouldChangeMover( const Skull &inst ) const
 	{
-		return ( Parameter::GetSkull().runEndLagSecond <= timer );
+		return ( Parameter::GetSkull().runEndLagSecond <= waitTimer );
 	}
 	std::function<void()> Skull::Run::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -740,6 +770,10 @@ namespace Boss
 	{
 		previousBehaviors.back()  = previousBehaviors.front();
 		previousBehaviors.front() = behavior;
+	}
+	void Skull::Fall( float elapsedTime )
+	{
+		velocity.y -= GetGravity() * elapsedTime;
 	}
 
 #if USE_IMGUI

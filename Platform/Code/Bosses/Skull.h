@@ -145,7 +145,9 @@ namespace Boss
 		class Run : public MoverBase
 		{
 		private:
-			float	timer		= 0.0f;
+			float	runTimer	= 0.0f;
+			float	waitTimer	= 0.0f;
+			float	arrivalTime	= 1.0f;
 			bool	wasArrived	= false;
 			Donya::Vector3 initialPos;
 		public:
@@ -216,6 +218,8 @@ namespace Boss
 			pMover = std::make_unique<Mover>();
 			pMover->Init( *this );
 		}
+	private:
+		void Fall( float elapsedTime );
 	public:
 	#if USE_IMGUI
 		/// <summary>
