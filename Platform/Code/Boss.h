@@ -103,6 +103,7 @@ namespace Boss
 		int								hp			= 1;	// Alive if this is greater than 0(if 0 < hp)
 		bool							isDead		= false;
 		bool							wantRemove	= false;
+		bool							onGround	= false;
 		mutable std::unique_ptr<Definition::Damage> pReceivedDamage	= nullptr; // Will be made at GiveDamage()
 	public:
 		Base() = default;

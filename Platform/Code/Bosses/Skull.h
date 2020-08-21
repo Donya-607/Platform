@@ -11,6 +11,38 @@ namespace Boss
 {
 	class Skull : public Base
 	{
+	public:
+		enum class MotionKind
+		{
+			Idle = 0,
+			Shot_Ready,
+			Shot_Recoil,
+			Shot_End,
+			Jump,
+			Shield_Ready,
+			Shield_Expand,
+			Run,
+
+			MotionCount
+		};
+	private:
+		class MotionManager
+		{
+		private:
+			MotionKind prevKind = MotionKind::Jump;
+			MotionKind currKind = MotionKind::Jump;
+		public:
+			void Init( Skull &instance );
+			void Update( Skull &instance, float elapsedTime );
+		public:
+			void ChangeMotion( Skull &instance, MotionKind nextMotionKind, bool resetTimerIfSameMotion = false );
+			bool WasCurrentMotionEnded( const Skull &instance ) const;
+			MotionKind CurrentMotionKind() const { return currKind; }
+		private:
+			int  ToMotionIndex( MotionKind kind ) const;
+			bool AssignPose( Skull &instance, MotionKind kind );
+			bool ShouldEnableLoop( MotionKind kind ) const;
+		};
 	private:
 		class MoverBase
 		{
@@ -82,8 +114,6 @@ namespace Boss
 		};
 		class Jump : public MoverBase
 		{
-		private:
-			bool wasLanding = false;
 		public:
 			void Init( Skull &instance ) override;
 			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
@@ -141,6 +171,7 @@ namespace Boss
 		Input							previousInput;
 		std::array<Behavior, 2>			previousBehaviors{ Behavior::None }; // Contains: [0:One previous], [1:Two previous]
 		Donya::Vector3					aimingPos;		// Used for store the target pos of some timing
+		MotionManager					motionManager;
 		std::unique_ptr<MoverBase>		pMover  = nullptr;
 		std::unique_ptr<Bullet::Base>	pShield = nullptr;
 	private:
@@ -207,7 +238,7 @@ namespace Boss
 		int					shotFireCount			= 3;
 		Bullet::FireDesc	shotDesc;
 
-		float				jumpDegree				= 60.0f; // 0.0f <= degree <= 90.0f
+		float				jumpDegree				= 60.0f;	// 0.0f <= degree <= 90.0f
 		float				jumpVerticalHeight		= 1.0f;
 		std::vector<float>	jumpDestLengths;
 
@@ -237,7 +268,7 @@ namespace Boss
 		float				shieldEndLagSecond		= 1.0f;
 		
 		float				runSpeed				= 1.0f;
-		float				runDestTakeDist			= 1.0f; // Destination = target-pos - runDestTakeDist
+		float				runDestTakeDist			= 1.0f;		// Destination = target-pos - runDestTakeDist
 		float				runEndLagSecond			= 1.0f;
 		
 		Definition::Damage	touchDamage;
@@ -245,6 +276,8 @@ namespace Boss
 		Donya::Vector3		hurtBoxOffset			{ 0.0f, 0.0f, 0.0f };
 		Donya::Vector3		hitBoxSize				{ 1.0f, 1.0f, 1.0f };
 		Donya::Vector3		hurtBoxSize				{ 1.0f, 1.0f, 1.0f };
+
+		std::vector<float>	animePlaySpeeds;					// It size() == Skull::MotionKind::MotionCount
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -302,6 +335,10 @@ namespace Boss
 			}
 			if ( 6 <= version )
 			{
+				archive( CEREAL_NVP( animePlaySpeeds ) );
+			}
+			if ( 7 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -314,4 +351,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 5 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 6 )

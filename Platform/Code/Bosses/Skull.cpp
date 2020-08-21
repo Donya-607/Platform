@@ -32,6 +32,103 @@ namespace Boss
 		}
 	}
 
+	namespace
+	{
+		constexpr size_t motionCount = scast<size_t>( Skull::MotionKind::MotionCount );
+		constexpr const char *GetMotionName( Skull::MotionKind kind )
+		{
+			switch ( kind )
+			{
+			case Skull::MotionKind::Idle:			return u8"Idle";
+			case Skull::MotionKind::Shot_Ready:		return u8"Shot_Ready";
+			case Skull::MotionKind::Shot_Recoil:	return u8"Shot_Recoil";
+			case Skull::MotionKind::Shot_End:		return u8"Shot_End";
+			case Skull::MotionKind::Jump:			return u8"Jump";
+			case Skull::MotionKind::Shield_Ready:	return u8"Shield_Ready";
+			case Skull::MotionKind::Shield_Expand:	return u8"Shield_Expand";
+			case Skull::MotionKind::Run:			return u8"Run";
+			default: break;
+			}
+
+			return "ERROR_KIND";
+		}
+	}
+
+	void Skull::MotionManager::Init( Skull &inst )
+	{
+		prevKind = currKind = MotionKind::Jump;
+
+		AssignPose( inst, currKind );
+	}
+	void Skull::MotionManager::Update( Skull &inst, float elapsedTime )
+	{
+		const auto &data = Parameter::GetSkull();
+		const size_t currentMotionIndex	= scast<size_t>( ToMotionIndex( currKind ) );
+		const size_t playSpeedCount		= data.animePlaySpeeds.size();
+		const float  motionAcceleration	= ( playSpeedCount <= currentMotionIndex ) ? 1.0f : data.animePlaySpeeds[currentMotionIndex];
+		inst.model.animator.Update( elapsedTime * motionAcceleration );
+		
+		AssignPose( inst, currKind );
+	}
+	void Skull::MotionManager::ChangeMotion( Skull &inst, MotionKind nextKind, bool resetTimerIfSameMotion )
+	{
+		const bool wasAssigned = AssignPose( inst, nextKind );
+		if ( !wasAssigned ) { return; }
+		// else
+
+		prevKind = currKind;
+		currKind = nextKind;
+		if ( currKind != prevKind || resetTimerIfSameMotion )
+		{
+			inst.model.animator.ResetTimer();
+		}
+	
+		ShouldEnableLoop( currKind )
+		? inst.model.animator.EnableLoop()
+		: inst.model.animator.DisableLoop();
+	}
+	bool Skull::MotionManager::WasCurrentMotionEnded( const Skull &inst ) const
+	{
+		return inst.model.animator.WasEnded();
+	}
+	int  Skull::MotionManager::ToMotionIndex( MotionKind kind ) const
+	{
+		return scast<int>( kind );
+	}
+	bool Skull::MotionManager::AssignPose( Skull &inst, MotionKind kind )
+	{
+		const int motionIndex = ToMotionIndex( kind );
+		if ( !inst.model.IsAssignableIndex( motionIndex ) )
+		{
+			_ASSERT_EXPR( 0, L"Error: Specified motion index out of range!" );
+			return false;
+		}
+		// else
+
+		inst.model.AssignMotion( motionIndex );
+		return true;
+	}
+	bool Skull::MotionManager::ShouldEnableLoop( MotionKind kind ) const
+	{
+		switch ( kind )
+		{
+		case Skull::MotionKind::Idle:			return true;
+		case Skull::MotionKind::Shot_Ready:		return false;
+		case Skull::MotionKind::Shot_Recoil:	return false;
+		case Skull::MotionKind::Shot_End:		return false;
+		case Skull::MotionKind::Jump:			return true;
+		case Skull::MotionKind::Shield_Ready:	return true;
+		case Skull::MotionKind::Shield_Expand:	return false;
+		case Skull::MotionKind::Run:			return true;
+		default: break;
+		}
+
+		_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
+		return false;
+	}
+
+#pragma region Mover
+
 	void Skull::MoverBase::Init( Skull &inst ) {}
 	void Skull::MoverBase::Uninit( Skull &inst ) {}
 	void Skull::MoverBase::Update( Skull &inst, float elapsedTime, const Input &input ) {}
@@ -70,6 +167,8 @@ namespace Boss
 	void Skull::DetectTargetAction::Init( Skull &inst )
 	{
 		inst.velocity = 0.0f;
+
+		inst.motionManager.ChangeMotion( inst, MotionKind::Idle );
 	}
 	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
@@ -154,6 +253,7 @@ namespace Boss
 	void Skull::Shot::Init( Skull &inst )
 	{
 		inst.velocity	= 0.0f;
+		inst.motionManager.ChangeMotion( inst, MotionKind::Shot_Ready );
 
 		timer			= 0.0f;
 		interval		= Parameter::GetSkull().shotFireIntervalSecond; // Make to fire immediately when begin-lag is finished.
@@ -171,6 +271,7 @@ namespace Boss
 			if ( data.shotEndLagSecond <= timer )
 			{
 				wasFinished = true;
+				inst.motionManager.ChangeMotion( inst, MotionKind::Shot_End );
 			}
 			return;
 		}
@@ -194,7 +295,8 @@ namespace Boss
 	}
 	bool Skull::Shot::ShouldChangeMover( const Skull &inst ) const
 	{
-		return wasFinished;
+		// Wait until the Shot_End motion is ended
+		return ( wasFinished && inst.motionManager.WasCurrentMotionEnded( inst ) );
 	}
 	std::function<void()> Skull::Shot::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -240,6 +342,8 @@ namespace Boss
 		desc.direction.y = sinf( ToRadian( resultDegree ) );
 
 		Bullet::Admin::Get().RequestFire( desc );
+
+		inst.motionManager.ChangeMotion( inst, MotionKind::Shot_Recoil, /* resetTimerIfSameMotion = */ true );
 	}
 
 	void Skull::Jump::Init( Skull &inst )
@@ -309,10 +413,11 @@ namespace Boss
 			speed = sqrtf( numerator / ( denominator + EPSILON ) );
 		}
 
-		inst.velocity.x = cos * speed * Donya::SignBitF( horizontalDiff.x );
-		inst.velocity.y = sin * speed;
-		inst.velocity.z = 0.0f;
-		wasLanding = false;
+		inst.velocity.x	= cos * speed * Donya::SignBitF( horizontalDiff.x );
+		inst.velocity.y	= sin * speed;
+		inst.velocity.z	= 0.0f;
+		inst.onGround	= false;
+		inst.motionManager.ChangeMotion( inst, MotionKind::Jump );
 	}
 	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
@@ -328,18 +433,11 @@ namespace Boss
 		inst.MoveOnlyX( elapsedTime, aroundSolids );
 		inst.MoveOnlyZ( elapsedTime, aroundSolids );
 
-		const int collideIndex = inst.MoveOnlyY( elapsedTime, aroundSolids );
-		if ( collideIndex != -1 ) // If collide to any
-		{
-			if ( inst.velocity.y <= 0.0f )
-			{
-				wasLanding = true;
-			}
-		}
+		inst.MoveOnlyY( elapsedTime, aroundSolids );
 	}
 	bool Skull::Jump::ShouldChangeMover( const Skull &inst ) const
 	{
-		return wasLanding;
+		return inst.onGround;
 	}
 	std::function<void()> Skull::Jump::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -355,6 +453,7 @@ namespace Boss
 	void Skull::Shield::Init( Skull &inst )
 	{
 		inst.velocity	= 0.0f;
+		inst.motionManager.ChangeMotion( inst, MotionKind::Shield_Ready );
 		ReleaseShieldIfHas( inst );
 
 		nowProtected	= false;
@@ -394,6 +493,9 @@ namespace Boss
 
 		if ( data.shieldBeginLagSecond <= timer && timer < protectSecond )
 		{
+			if ( !nowProtected )
+			{ inst.motionManager.ChangeMotion( inst, MotionKind::Shield_Expand ); }
+
 			nowProtected = true;
 			GenerateShieldIfNull( inst );
 		}
@@ -401,6 +503,14 @@ namespace Boss
 		{
 			nowProtected = false;
 			ReleaseShieldIfHas( inst );
+		}
+
+		if ( inst.motionManager.CurrentMotionKind() == MotionKind::Shield_Expand )
+		{
+			if ( inst.motionManager.WasCurrentMotionEnded( inst ) )
+			{
+				inst.motionManager.ChangeMotion( inst, MotionKind::Idle );
+			}
 		}
 
 		// Calculate the destination of Run state
@@ -471,6 +581,7 @@ namespace Boss
 	{
 		inst.velocity.x = Parameter::GetSkull().runSpeed * GetCurrentDirectionSign( inst );
 		inst.velocity.y = 0.0f;
+		inst.motionManager.ChangeMotion( inst, MotionKind::Run );
 
 		timer		= 0.0f;
 		wasArrived	= false;
@@ -494,6 +605,8 @@ namespace Boss
 			wasArrived = true;
 			inst.body.pos.x  = inst.aimingPos.x;
 			inst.hurtBox.pos = inst.body.pos;
+
+			inst.motionManager.ChangeMotion( inst, MotionKind::Idle );
 		}
 	}
 	bool Skull::Run::ShouldChangeMover( const Skull &inst ) const
@@ -515,12 +628,16 @@ namespace Boss
 		return Donya::SignBit( inst.aimingPos.x - inst.body.WorldPosition().x );
 	}
 
+// region Mover
+#pragma endregion
 
 	void Skull::Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea )
 	{
 		Base::Init( parameter, roomID, wsRoomArea );
 
 		previousBehaviors.fill( Behavior::None );
+
+		motionManager.Init( *this );
 
 		AssignMover<AppearPerformance>();
 	}
@@ -559,8 +676,7 @@ namespace Boss
 		const bool lookingRight = ( 0.0f <= ( input.wsTargetPos - body.WorldPosition() ).x ) ? true : false;
 		UpdateOrientation( lookingRight );
 		
-		// TODO: Set a current motion index
-		UpdateMotionIfCan( elapsedTime, NULL );
+		motionManager.Update( *this, elapsedTime );
 
 		previousInput = input;
 	}
@@ -652,6 +768,30 @@ namespace Boss
 			ImGui::DragFloat ( u8"重力",		&gravity,	0.01f	);
 			hp		= std::max( 1,		hp		);
 			gravity	= std::max( 0.001f, gravity	);
+
+			ImGui::TreePop();
+		}
+
+		if ( animePlaySpeeds.size() != motionCount )
+		{
+			animePlaySpeeds.resize( motionCount, 1.0f );
+		}
+		if ( ImGui::TreeNode( u8"アニメーション関連" ) )
+		{
+			if ( ImGui::TreeNode( u8"再生速度の設定" ) )
+			{
+				std::string caption;
+				for ( size_t i = 0; i < motionCount; ++i )
+				{
+					ImGui::DragFloat
+					(
+						GetMotionName( scast<Skull::MotionKind>( i ) ),
+						&animePlaySpeeds[i], 0.01f
+					);
+				}
+				
+				ImGui::TreePop();
+			}
 
 			ImGui::TreePop();
 		}

@@ -146,6 +146,7 @@ namespace Boss
 		hp				= GetInitialHP();
 		isDead			= false;
 		wantRemove		= false;
+		onGround		= false;
 		const float rotateSign = ( initializer.lookingRight ) ? 1.0f : -1.0f;
 		orientation		= Donya::Quaternion::Make
 		(
@@ -191,7 +192,7 @@ namespace Boss
 
 		Donya::Model::Constants::PerModel::Common modelConstant{};
 		modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-		modelConstant.worldMatrix	= W;;
+		modelConstant.worldMatrix	= W;
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();
 
@@ -338,20 +339,17 @@ namespace Boss
 		if ( collideIndex != -1 ) // If collided to any
 		{
 			// Consider as landing
-			// if ( velocity.y <= 0.0f )
-			// {
-			// 	if ( !onGround )
-			// 	{
-			// 		onGround = true;
-			// 	}
-			// }
+			if ( velocity.y <= 0.0f )
+			{
+				onGround = true;
+			}
 
 			velocity.y = 0.0f;
 		}
-		// else
-		// {
-		// 	onGround = false;
-		// }
+		else
+		{
+			onGround = false;
+		}
 
 		hurtBox.pos = body.pos; // We must apply world position to hurt box also.
 		return collideIndex;
