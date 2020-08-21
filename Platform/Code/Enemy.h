@@ -88,15 +88,16 @@ namespace Enemy
 	private: // Seralize values
 		InitializeParam initializer;
 	protected:
-		using			 Actor::body;		// VS a terrain
-		Donya::Collision::Box3F	hurtBox;	// VS an attack
-		using			 Actor::orientation;
-		Donya::Vector3			velocity;
-		int						hp					= 1;	// Alive if this is greater than 0(if 0 < hp)
-		bool					wantRemove			= false;
-		bool					waitForRespawn		= false;
-		bool					onOutSidePrevious	= true;	// Used for judging to respawn
-		bool					onOutSideCurrent	= true;	// Used for judging to respawn
+		ModelHelper::SkinningOperator	model;
+		using					 Actor::body;		// VS a terrain
+		Donya::Collision::Box3F			hurtBox;	// VS an attack
+		using					 Actor::orientation;
+		Donya::Vector3					velocity;
+		int								hp					= 1;	// Alive if this is greater than 0(if 0 < hp)
+		bool							wantRemove			= false;
+		bool							waitForRespawn		= false;
+		bool							onOutSidePrevious	= true;	// Used for judging to respawn
+		bool							onOutSideCurrent	= true;	// Used for judging to respawn
 		// shared_ptr<> make be able to copy
 		mutable std::shared_ptr<Definition::Damage> pReceivedDamage	= nullptr; // Will be made at GiveDamage()
 	public:
@@ -143,6 +144,7 @@ namespace Enemy
 		/// </summary>
 		virtual bool				WillDie()			const;
 	protected:
+		void UpdateMotionIfCan( float elapsedTime, int motionIndex );
 		void UpdateOutSideState( const Donya::Collision::Box3F &wsScreenHitBox );
 		bool OnOutSide() const;
 		bool NowWaiting() const;

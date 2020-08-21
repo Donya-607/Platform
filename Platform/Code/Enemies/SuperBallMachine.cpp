@@ -46,6 +46,8 @@ namespace Enemy
 		ShotIfNeeded( elapsedTime, wsTargetPos );
 
 		velocity.y -= Parameter::GetSuperBallMachine().gravity * elapsedTime;
+
+		UpdateMotionIfCan( elapsedTime, 0 );
 	}
 	Kind SuperBallMachine::GetKind() const { return Kind::SuperBallMachine; }
 	Definition::Damage SuperBallMachine::GetTouchDamage() const

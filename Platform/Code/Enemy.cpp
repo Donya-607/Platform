@@ -29,7 +29,7 @@ namespace Enemy
 			"Togehero",
 		};
 
-		static std::array<std::unique_ptr<ModelHelper::StaticSet>, kindCount> modelPtrs{ nullptr };
+		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
 
 		bool LoadModels()
 		{
@@ -52,7 +52,7 @@ namespace Enemy
 				}
 				// else
 
-				modelPtrs[i] = std::make_unique<ModelHelper::StaticSet>();
+				modelPtrs[i] = std::make_shared<ModelHelper::SkinningSet>();
 				const bool result = ModelHelper::Load( filePath, modelPtrs[i].get() );
 				if ( !result )
 				{
@@ -72,7 +72,7 @@ namespace Enemy
 		{
 			return ( kindCount <= scast<size_t>( kind ) );
 		}
-		const ModelHelper::StaticSet *GetModelPtrOrNullptr( Kind kind )
+		std::shared_ptr<ModelHelper::SkinningSet> GetModelPtrOrNullptr( Kind kind )
 		{
 			if ( IsOutOfRange( kind ) ) { return nullptr; }
 			// else
@@ -85,7 +85,7 @@ namespace Enemy
 			}
 			// else
 
-			return ptr.get();
+			return ptr;
 		}
 		constexpr const char *GetModelName( Kind kind )
 		{
@@ -162,6 +162,8 @@ namespace Enemy
 	{
 		initializer		= parameter;
 
+		model.Initialize( GetModelPtrOrNullptr( GetKind() ) );
+		model.AssignMotion( 0 );
 		AssignMyBody( initializer.wsPos );
 		body.exist		= true;
 		hurtBox.exist	= true;
@@ -262,15 +264,10 @@ namespace Enemy
 	}
 	void Base::Draw( RenderingHelper *pRenderer ) const
 	{
-		if ( !pRenderer   ) { return; }
-		if ( NowWaiting() ) { return; }
+		if ( !pRenderer			) { return; }
+		if ( !model.pResource	) { return; }
+		if ( NowWaiting()		) { return; }
 		// else
-
-		const ModelHelper::StaticSet *pModelSet = GetModelPtrOrNullptr( GetKind() );
-		if ( !pModelSet ) { return; }
-		// else
-
-		const auto model = *pModelSet;
 
 		const Donya::Vector3 &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
 		const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
@@ -281,7 +278,7 @@ namespace Enemy
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();
 
-		pRenderer->Render( model.model, model.pose );
+		pRenderer->Render( model.pResource->model, model.pose );
 
 		pRenderer->DeactivateConstantModel();
 	}
@@ -356,6 +353,13 @@ namespace Enemy
 		if ( !pReceivedDamage ) { return false; }
 
 		return ( hp - pReceivedDamage->amount <= 0 );
+	}
+	void Base::UpdateMotionIfCan( float elapsedTime, int motionIndex )
+	{
+		if ( !model.IsAssignableIndex( motionIndex ) ) { return; }
+		// else
+
+		model.UpdateMotion( elapsedTime, motionIndex );
 	}
 	void Base::UpdateOutSideState( const Donya::Collision::Box3F &wsScreen )
 	{

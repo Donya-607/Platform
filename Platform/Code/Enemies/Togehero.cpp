@@ -1,6 +1,7 @@
 #include "Togehero.h"
 
 #include "../Parameter.h"
+#include "../Donya/Keyboard.h"
 
 namespace Enemy
 {
@@ -57,6 +58,15 @@ namespace Enemy
 			const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( data.rotateSpeed ) );
 			orientation.RotateBy( rotation );
 		}
+
+		UpdateMotionIfCan( elapsedTime, 0 );
+
+	#if DEBUG_MODE
+		if ( Donya::Keyboard::Trigger( VK_SPACE ) )
+		{
+			model.pose.UpdateTransformMatrices();
+		}
+	#endif // DEBUG_MODE
 	}
 	Kind Togehero::GetKind() const { return Kind::Togehero; }
 	Definition::Damage Togehero::GetTouchDamage() const

@@ -35,9 +35,9 @@ namespace ModelHelper
 		// else
 
 		const auto &motion = pResource->motionHolder.GetMotion( motionIndex );
-		pose.AssignSkeletal( animator.CalcCurrentPose( motion ) );
 
 		animator.SetRepeatRange( motion );
+		pose.AssignSkeletal( animator.CalcCurrentPose( motion ) );
 	}
 	void SkinningOperator::UpdateMotion( float elapsedTime, int motionIndex )
 	{

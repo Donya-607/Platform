@@ -434,10 +434,10 @@ void SceneGame::Draw( float elapsedTime )
 		Bullet::Admin::Get().Draw( pRenderer.get() );
 		if ( pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
 		if ( pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
+		Enemy::Admin::Get().Draw( pRenderer.get() );
 		pRenderer->DeactivateShaderNormalSkinning();
 
 		pRenderer->ActivateShaderNormalStatic();
-		Enemy::Admin::Get().Draw( pRenderer.get() );
 		if ( pMap ) { pMap->Draw( pRenderer.get() ); }
 		Item::Admin::Get().Draw( pRenderer.get() );
 		pRenderer->DeactivateShaderNormalStatic();
