@@ -710,7 +710,8 @@ namespace Boss
 			ChangeState();
 		}
 
-		const bool lookingRight = ( 0.0f <= ( input.wsTargetPos - body.WorldPosition( orientation ) ).x ) ? true : false;
+		// The orientation is not consider because judge by center position
+		const bool lookingRight = ( 0.0f <= ( input.wsTargetPos - body.WorldPosition() ).x ) ? true : false;
 		UpdateOrientation( lookingRight );
 		
 		motionManager.Update( *this, elapsedTime );
