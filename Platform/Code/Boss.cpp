@@ -383,12 +383,11 @@ namespace Boss
 		// Re-activate the collision
 		if ( !body.exist )
 		{
-			// For now, I regard as the body is there within the room
-			// if the top(head) position places under the one block size.
+			// I wanna ignore the collision until the body has been arrived to initial coordinate.
 
-			const float border	= roomArea.Max().y - Tile::unitWholeSize;
-			const float topPos	= body.Max( orientation ).y;
-			if ( topPos < border )
+			const float destination	= initializer.wsPos.y;
+			const float nowCenter	= body.WorldPosition( orientation ).y;
+			if ( nowCenter < destination )
 			{
 				body.exist		= true;
 				hurtBox.exist	= true;
