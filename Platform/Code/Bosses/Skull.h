@@ -139,6 +139,7 @@ namespace Boss
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
 		private:
+			Donya::Vector3 CalcCurrentShieldPosition( Skull &instance ) const;
 			void GenerateShieldIfNull( Skull &instance );
 			void ReleaseShieldIfHas( Skull &instance );
 		};
@@ -270,6 +271,7 @@ namespace Boss
 		std::vector<RandomElement> shieldProtectSeconds;
 		float				shieldBeginLagSecond	= 1.0f;
 		float				shieldEndLagSecond		= 1.0f;
+		Donya::Vector3		shieldPosOffset			{ 0.0f, 0.0f, 0.0f };
 		
 		float				runSpeed				= 1.0f;
 		float				runDestTakeDist			= 1.0f;		// Destination = target-pos - runDestTakeDist
@@ -343,6 +345,10 @@ namespace Boss
 			}
 			if ( 7 <= version )
 			{
+				archive( CEREAL_NVP( shieldPosOffset ) );
+			}
+			if ( 8 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -355,4 +361,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 6 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 7 )

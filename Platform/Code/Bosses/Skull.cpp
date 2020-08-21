@@ -321,7 +321,7 @@ namespace Boss
 		desc.kind			=  data.shotDesc.kind;
 		desc.initialSpeed	=  data.shotDesc.initialSpeed;
 		desc.position		=  inst.orientation.RotateVector( data.shotDesc.position );
-		desc.position		+= inst.body.WorldPosition(); // Local space to World space
+		desc.position		+= inst.body.WorldPosition( inst.orientation ); // Local space to World space
 		desc.owner			=  inst.hurtBox.id;
 
 		desc.direction				= ( input.wsTargetPos - desc.position ).Unit();
@@ -355,7 +355,7 @@ namespace Boss
 	{
 		const auto &data = Parameter::GetSkull();
 
-		const Donya::Vector2 horizontalDiff	= ( inst.aimingPos - inst.body.WorldPosition() ).XZ();
+		const Donya::Vector2 horizontalDiff	= ( inst.aimingPos - inst.body.WorldPosition( inst.orientation ) ).XZ();
 		const float actualLength			= horizontalDiff.Length();
 		const auto &locations				= data.jumpDestLengths;
 		
@@ -522,7 +522,7 @@ namespace Boss
 
 		// Calculate the destination of Run state
 		{
-			const Donya::Vector3 myselfPos = inst.body.WorldPosition();
+			const Donya::Vector3 myselfPos = inst.body.WorldPosition( inst.orientation );
 			const int toTargetSign = Donya::SignBit( input.wsTargetPos.x - myselfPos.x );
 		
 			Donya::Vector3 destination = input.wsTargetPos;
@@ -544,7 +544,7 @@ namespace Boss
 		if ( inst.pShield )
 		{
 			inst.pShield->Update( elapsedTime, inst.roomArea );
-			inst.pShield->SetWorldPosition( inst.body.WorldPosition() );
+			inst.pShield->SetWorldPosition( CalcCurrentShieldPosition( inst ) );
 		}
 	}
 	bool Skull::Shield::ShouldChangeMover( const Skull &inst ) const
@@ -561,6 +561,13 @@ namespace Boss
 		return u8"ÉVÅ[ÉãÉh";
 	}
 #endif // USE_IMGUI
+	Donya::Vector3 Skull::Shield::CalcCurrentShieldPosition( Skull &inst ) const
+	{
+		Donya::Vector3 tmp;
+		tmp =  inst.orientation.RotateVector( Parameter::GetSkull().shieldPosOffset );
+		tmp += inst.body.WorldPosition( inst.orientation ); // Local space to World space
+		return tmp;
+	}
 	void Skull::Shield::GenerateShieldIfNull( Skull &inst )
 	{
 		if ( inst.pShield ) { return; }
@@ -570,7 +577,7 @@ namespace Boss
 		desc.kind			= Bullet::Kind::SkullShield;
 		desc.initialSpeed	= 0.0f;
 		desc.direction		= Donya::Vector3::Zero();
-		desc.position		= inst.body.WorldPosition();
+		desc.position		= CalcCurrentShieldPosition( inst );
 		
 		inst.pShield = std::make_unique<Bullet::SkullShield>();
 		inst.pShield->Init( desc );
@@ -594,13 +601,13 @@ namespace Boss
 
 		// t[s] = displacement[m] / speed[m/s]
 		// But the speed here is [m], so the arrivalTime will be none unit.
-		const float distance = fabsf( inst.aimingPos.x - inst.body.WorldPosition().x );
+		const float distance = fabsf( inst.aimingPos.x - inst.body.WorldPosition( inst.orientation ).x );
 		arrivalTime	= ( IsZero( runSpeed ) ) ? 0.0f : distance / fabsf( runSpeed );
 
 		runTimer	= 0.0f;
 		waitTimer	= 0.0f;
 		wasArrived	= false;
-		initialPos	= inst.body.WorldPosition();
+		initialPos	= inst.body.WorldPosition( inst.orientation );
 	}
 	void Skull::Run::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
@@ -655,7 +662,7 @@ namespace Boss
 #endif // USE_IMGUI
 	int  Skull::Run::GetCurrentDirectionSign( const Skull &inst ) const
 	{
-		return Donya::SignBit( inst.aimingPos.x - inst.body.WorldPosition().x );
+		return Donya::SignBit( inst.aimingPos.x - inst.body.WorldPosition( inst.orientation ).x );
 	}
 
 // region Mover
@@ -703,7 +710,7 @@ namespace Boss
 			ChangeState();
 		}
 
-		const bool lookingRight = ( 0.0f <= ( input.wsTargetPos - body.WorldPosition() ).x ) ? true : false;
+		const bool lookingRight = ( 0.0f <= ( input.wsTargetPos - body.WorldPosition( orientation ) ).x ) ? true : false;
 		UpdateOrientation( lookingRight );
 		
 		motionManager.Update( *this, elapsedTime );
@@ -881,10 +888,11 @@ namespace Boss
 
 		if ( ImGui::TreeNode( u8"ÉVÅ[ÉãÉhä÷òA" ) )
 		{
-			ImGui::DragFloat( u8"ìWäJÇ‹Ç≈ÇÃïbêî", &shieldBeginLagSecond,	0.01f );
-			ImGui::DragFloat( u8"ìWäJå„åÑÇÃïbêî", &shieldEndLagSecond,	0.01f );
-			shieldBeginLagSecond	= std::max( 0.0f, shieldBeginLagSecond	);
-			shieldEndLagSecond		= std::max( 0.0f, shieldEndLagSecond	);
+			ImGui::DragFloat3( u8"ê∂ê¨à íuÉIÉtÉZÉbÉg",	&shieldPosOffset.x,		0.01f );
+			ImGui::DragFloat ( u8"ìWäJÇ‹Ç≈ÇÃïbêî",		&shieldBeginLagSecond,	0.01f );
+			ImGui::DragFloat ( u8"ìWäJå„åÑÇÃïbêî",		&shieldEndLagSecond,	0.01f );
+			shieldBeginLagSecond	= std::max( 0.0f,	shieldBeginLagSecond	);
+			shieldEndLagSecond		= std::max( 0.0f,	shieldEndLagSecond		);
 
 			if ( ImGui::TreeNode( u8"ìWäJéûä‘ÇÃê›íË" ) )
 			{
