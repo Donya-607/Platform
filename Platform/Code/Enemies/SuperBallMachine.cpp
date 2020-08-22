@@ -27,6 +27,15 @@ namespace Enemy
 		}
 	}
 
+	void SuperBallMachine::Init( const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreenHitBox )
+	{
+		Base::Init( parameter, wsScreenHitBox );
+
+		currentMotion = MotionKind::Ready;
+		intervalTimer = 0.0f;
+
+		ChangeMotion( MotionKind::Ready );
+	}
 	void SuperBallMachine::Uninit()
 	{
 		Base::Uninit();
@@ -43,11 +52,17 @@ namespace Enemy
 		AssignMyBody( body.pos );
 	#endif // USE_IMGUI
 
-		ShotIfNeeded( elapsedTime, wsTargetPos );
-
 		velocity.y -= Parameter::GetSuperBallMachine().gravity * elapsedTime;
 
-		UpdateMotionIfCan( elapsedTime, 0 );
+		if ( currentMotion == MotionKind::Fire && model.animator.WasEnded() )
+		{
+			ChangeMotion( MotionKind::Ready );
+		}
+
+		ShotIfNeeded( elapsedTime, wsTargetPos );
+
+		const int intMotionKind = scast<int>( currentMotion );
+		UpdateMotionIfCan( elapsedTime, intMotionKind );
 	}
 	Kind SuperBallMachine::GetKind() const { return Kind::SuperBallMachine; }
 	Definition::Damage SuperBallMachine::GetTouchDamage() const
@@ -67,6 +82,25 @@ namespace Enemy
 		hurtBox.pos		= wsPos;
 		hurtBox.offset	= data.hurtBoxOffset;
 		hurtBox.size	= data.hurtBoxSize;
+	}
+	void SuperBallMachine::ChangeMotion( MotionKind nextKind )
+	{
+		if ( nextKind != MotionKind::Ready && nextKind != MotionKind::Fire )
+		{
+			_ASSERT_EXPR( 0, L"Error: Unexpected motion kind!" );
+			return;
+		}
+		// else
+
+		currentMotion = nextKind;
+
+		model.animator.ResetTimer();
+
+		( nextKind == MotionKind::Fire )
+		? model.animator.DisableLoop()
+		: model.animator.EnableLoop();
+
+		model.AssignMotion( scast<int>( nextKind ) );
 	}
 	void SuperBallMachine::ShotIfNeeded( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
@@ -112,6 +146,7 @@ namespace Enemy
 		desc.direction.z	= 0.0f;
 
 		Bullet::Admin::Get().RequestFire( desc );
+		ChangeMotion( MotionKind::Fire );
 	}
 #if USE_IMGUI
 	bool SuperBallMachine::ShowImGuiNode( const std::string &nodeCaption )

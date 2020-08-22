@@ -8,8 +8,15 @@ namespace Enemy
 {
 	class SuperBallMachine : public Base
 	{
+	public:
+		enum class MotionKind
+		{
+			Ready = 0,
+			Fire
+		};
 	private:
-		float intervalTimer = 0.0f;
+		MotionKind	currentMotion = MotionKind::Ready;
+		float		intervalTimer = 0.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -25,6 +32,7 @@ namespace Enemy
 			}
 		}
 	public:
+		void Init( const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 		void Uninit() override;
 		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
@@ -34,6 +42,7 @@ namespace Enemy
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
 	private:
+		void ChangeMotion( MotionKind nextKind );
 		void ShotIfNeeded( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 	public:
 	#if USE_IMGUI
