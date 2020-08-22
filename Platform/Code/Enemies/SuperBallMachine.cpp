@@ -89,17 +89,21 @@ namespace Enemy
 
 		intervalTimer = 0.0f;
 
-		Bullet::FireDesc desc = data.fireDesc;
-		
 		float lookingSign = 1.0f;
 		{
 			const Donya::Vector3 front = orientation.LocalFront();
 			const float dot = Donya::Dot( front, Donya::Vector3::Right() );
 			lookingSign = Donya::SignBitF( dot );
 		}
-		desc.position.x		*= lookingSign;
-		desc.position		+= GetPosition();
-		desc.owner			=  hurtBox.id;
+		const Donya::Quaternion lookingRotation = Donya::Quaternion::Make
+		(
+			Donya::Vector3::Up(), ToRadian( 90.0f ) * lookingSign
+		);
+
+		Bullet::FireDesc desc = data.fireDesc;
+		desc.position	=  lookingRotation.RotateVector( desc.position ); // Rotate the local space offset
+		desc.position	+= GetPosition(); // Convert to world space
+		desc.owner		=  hurtBox.id;
 		
 		const float shotRadian			= ToRadian( data.fireDegree );
 		const float shotRadianLeftVer	= ToRadian( 180.0f ) - shotRadian;
