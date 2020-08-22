@@ -148,6 +148,35 @@ namespace ImGui
 
 			ImGui::TreePop();
 		}
+		void ShowLightNode				( const std::string &nodeCaption, Donya::Model::Constants::PerScene::Light				*p, bool useTreeNode )
+		{
+			if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ImGui::ColorEdit4( u8"ディフューズ・色",	&p->diffuseColor.x	);
+			ImGui::ColorEdit3( u8"スペキュラ・色",	&p->specularColor.x	);
+			ImGui::DragFloat ( u8"スペキュラ・強度",	&p->specularColor.w, 0.01f );
+			p->specularColor.w = std::max( 0.0f, p->specularColor.w );
+
+			if ( useTreeNode ) { ImGui::TreePop(); }
+		}
+		void ShowDirectionalLightNode	( const std::string &nodeCaption, Donya::Model::Constants::PerScene::DirectionalLight	*p, bool useTreeNode )
+		{
+			if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ShowLightNode( "", &p->light, /* useTreeNode = */ false );
+			ImGui::SliderFloat4( u8"方向", &p->direction.x, -1.0f, 1.0f );
+			if ( ImGui::Button( u8"方向を正規化" ) )
+			{
+				const Donya::Vector3 unit3D = p->direction.XYZ().Unit();
+				p->direction.x = unit3D.x;
+				p->direction.y = unit3D.y;
+				p->direction.z = unit3D.z;
+			}
+
+			if ( useTreeNode ) { ImGui::TreePop(); }
+		}
 		void ShowAABBNode	( const std::string &nodeCaption, Donya::Collision::Box3F *p )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }

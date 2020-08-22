@@ -16,6 +16,7 @@
 #include "Common.h"
 #include "Fader.h"
 #include "FilePath.h"
+#include "ModelHelper.h"			// Use serialize methods
 #include "Music.h"
 #include "Parameter.h"
 
@@ -44,12 +45,14 @@ namespace
 			(
 				CEREAL_NVP( camera.slerpFactor			),
 				CEREAL_NVP( camera.offsetPos			),
-				CEREAL_NVP( camera.offsetFocus			),
-				CEREAL_NVP( directionalLight.color		),
-				CEREAL_NVP( directionalLight.direction	)
+				CEREAL_NVP( camera.offsetFocus			)
 			);
 
 			if ( 1 <= version )
+			{
+				archive( CEREAL_NVP( directionalLight ) );
+			}
+			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -67,13 +70,7 @@ namespace
 				ImGui::TreePop();
 			}
 
-			if ( ImGui::TreeNode( u8"•½sŒõ" ) )
-			{
-				ImGui::ColorEdit4( u8"F",		&directionalLight.color.x );
-				ImGui::SliderFloat4( u8"•ûŒü",	&directionalLight.direction.x, -1.0f, 1.0f );
-
-				ImGui::TreePop();
-			}
+			ImGui::Helper::ShowDirectionalLightNode( u8"•½sŒõ", &directionalLight );
 		}
 	#endif // USE_IMGUI
 	};
@@ -84,7 +81,7 @@ namespace
 		return sceneParam.Get();
 	}
 }
-CEREAL_CLASS_VERSION( Member, 0 )
+CEREAL_CLASS_VERSION( Member, 1 )
 
 void SceneTitle::Init()
 {

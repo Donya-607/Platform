@@ -47,29 +47,37 @@ float3 NormalizedHalfLambert( float3 diffuseColor, float3 nwsNormal, float3 nwsT
 	return diffuseColor * HalfLambert( nwsNormal, nwsToLightVec ) * ( 1.0f / PI );
 }
 
-// Calculate specular.
+// Calculate specular factor.
 // Argument.nwsNormal : The normal of normalized world space.
 // Argument.nwsToLightVec : The light vector of normalized world space. this vector is "position -> light".
 // Argument.nwsToEyeVec : The eye vector of normalized world space. this vector is "position -> eye".
-// Returns : Specular factor. 0.0f ~ 1.0f.
-float Phong( float3 nwsNormal, float3 nwsToLightVec, float3 nwsToEyeVec )
+// Argument.shininess : The specular power. Must be greater than zero.
+// Argument.intensity : The specular's intensity. Must be greater than zero.
+// Returns : Specular factor.
+float Phong( float3 nwsNormal, float3 nwsToLightVec, float3 nwsToEyeVec, float shininess, float intensity )
 {
-	// float3 nwsProjection = ( dot( nwsNormal, nwsToLightVec ) * nwsNormal );
-	// float3 nwsReflection = nwsToLightVec + ( nwsToLightVec - ( nwsProjection * 2.0f ) );
-	float3 nwsReflection  = normalize( reflect( -nwsToLightVec, nwsNormal ) );
-	float  specularFactor = max( 0.0f, dot( nwsToEyeVec, nwsReflection ) );
-	return specularFactor;
+#if 1 // USE_REFLECT
+	float3 nwsReflection	= normalize( reflect( -nwsToLightVec, nwsNormal ) );
+	float  specularFactor	= max( 0.0f, dot( nwsReflection, nwsToEyeVec ) );
+#else
+	float3 nwsProjection	= nwsNormal * dot( nwsNormal, nwsToLightVec );
+	float3 nwsReflection	= ( nwsProjection * 2.0f ) - nwsToLightVec;
+	float  specularFactor	= max( 0.0f, dot( nwsReflection, nwsToEyeVec ) );
+#endif // USE_REFLECT
+	return max( 0.0f, pow( specularFactor, shininess ) * intensity );
 }
-// Calculate specular by half vector.
+// Calculate specular factor by half vector.
 // Argument.nwsNormal : The normal of normalized world space.
 // Argument.nwsToLightVec : The light vector of normalized world space. this vector is "position -> light".
 // Argument.nwsToEyeVec : The eye vector of normalized world space. this vector is "position -> eye".
-// Argument.specularPower : The specular's factor. will be power to return value.
-// Returns : Specular factor. 0.0f ~ 1.0f.
-float BlinnPhong( float3 nwsNormal, float3 nwsToLightVec, float3 nwsToEyeVec, float specularPower )
+// Argument.shininess : The specular power. Must be greater than zero.
+// Argument.intensity : The specular's intensity. Must be greater than zero.
+// Returns : Specular factor.
+float BlinnPhong( float3 nwsNormal, float3 nwsToLightVec, float3 nwsToEyeVec, float shininess, float intensity )
 {
-	float3 nwsHalfVec = normalize( nwsToEyeVec + nwsToLightVec );
-	return pow( dot( nwsHalfVec, nwsNormal ), specularPower );
+	float3 nwsHalfVec		= normalize( nwsToEyeVec + nwsToLightVec );
+	float  specularFactor	= max( 0.0f, dot( nwsHalfVec, nwsNormal ) );
+	return max( 0.0f, pow( specularFactor, shininess ) * intensity );
 }
 
 // Calculate fog effect.

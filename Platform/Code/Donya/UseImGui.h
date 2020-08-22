@@ -52,6 +52,7 @@ namespace ImGui
 }
 #include "Collision.h"
 #include "Easing.h"
+#include "ModelCommon.h"
 #include "Quaternion.h"
 namespace ImGui
 {
@@ -60,6 +61,9 @@ namespace ImGui
 		void ShowEaseParam	( const std::string &nodeCaption, Donya::Easing::Kind *pKind, Donya::Easing::Type *pType );
 		
 		void ShowStringNode	( const std::string &nodeCaption, const std::string &bufferIdentifier, std::string *pString );
+		
+		void ShowLightNode				( const std::string &nodeCaption, Donya::Model::Constants::PerScene::Light				*pLight, bool useTreeNode = true );
+		void ShowDirectionalLightNode	( const std::string &nodeCaption, Donya::Model::Constants::PerScene::DirectionalLight	*pLight, bool useTreeNode = true );
 
 		void ShowAABBNode	( const std::string &nodeCaption, Donya::Collision::Box3F *pBox );
 		void ShowSphereNode	( const std::string &nodeCaption, Donya::Collision::Sphere3F *pSphere );

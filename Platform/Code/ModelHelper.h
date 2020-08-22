@@ -6,6 +6,7 @@
 
 #undef max
 #undef min
+#include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 
 #include "Donya/Model.h"
@@ -93,3 +94,46 @@ namespace ModelHelper
 }
 CEREAL_CLASS_VERSION( ModelHelper::PartApply, 0 )
 
+
+namespace Donya
+{
+namespace Model
+{
+namespace Constants
+{
+namespace PerScene
+{
+	template<class Archive>
+	void serialize( Archive &archive, Light &var, std::uint32_t version )
+	{
+		archive
+		(
+			cereal::make_nvp( "diffuseColor",	var.diffuseColor	),
+			cereal::make_nvp( "specularColor",	var.specularColor	)
+		);
+
+		if ( 1 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
+	template<class Archive>
+	void serialize( Archive &archive, DirectionalLight &var, std::uint32_t version )
+	{
+		archive
+		(
+			cereal::make_nvp( "light",		var.light		),
+			cereal::make_nvp( "direction",	var.direction	)
+		);
+
+		if ( 1 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
+}
+}
+}
+}
+CEREAL_CLASS_VERSION( Donya::Model::Constants::PerScene::Light,				0 )
+CEREAL_CLASS_VERSION( Donya::Model::Constants::PerScene::DirectionalLight,	0 )

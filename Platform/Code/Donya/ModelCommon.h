@@ -298,10 +298,16 @@ namespace Donya
 			/// </summary>
 			namespace PerScene
 			{
+				struct Light
+				{
+					Donya::Vector4	diffuseColor;	// The W component is an intensity, so should be greater than zero.
+					Donya::Vector4	specularColor;	// The W component is an intensity, so should be greater than zero.
+				};
 				struct DirectionalLight
 				{
-					Donya::Vector4 color;		// Will be used as:color.xyz * color.w.
-					Donya::Vector4 direction;
+					Light			light;
+					Donya::Vector4	direction;
+
 				};
 				/// <summary>
 				/// The everything model types is using this structure's member.
@@ -365,7 +371,7 @@ namespace Donya
 				{
 					Donya::Vector4 ambient;
 					Donya::Vector4 diffuse;
-					Donya::Vector4 specular;
+					Donya::Vector4 specular; // The W component is a shininess, so should be greater than zero.
 				};
 			}
 		}

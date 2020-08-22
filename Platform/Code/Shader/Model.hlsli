@@ -6,9 +6,14 @@ struct VS_OUT
 	float2		texCoord	: TEXCOORD0;
 };
 
+struct Light
+{
+	float4		diffuseColor;	// W is Intensity
+	float4		specularColor;	// W is Intensity
+};
 struct DirectionalLight
 {
-	float4		color;
+	Light		light;
 	float4		direction;
 };
 cbuffer CBPerScene : register( b0 )

@@ -27,6 +27,7 @@
 #include "Item.h"
 #include "ItemParam.h"				// Use a recovery amount
 #include "Meter.h"
+#include "ModelHelper.h"			// Use serialize methods
 #include "Music.h"
 #include "Parameter.h"
 #include "PlayerParam.h"
@@ -72,9 +73,7 @@ namespace
 				CEREAL_NVP( camera.slerpFactor			),
 				CEREAL_NVP( camera.fovDegree			),
 				CEREAL_NVP( camera.offsetPos			),
-				CEREAL_NVP( camera.offsetFocus			),
-				CEREAL_NVP( directionalLight.color		),
-				CEREAL_NVP( directionalLight.direction	)
+				CEREAL_NVP( camera.offsetFocus			)
 			);
 
 			if ( 1 <= version )
@@ -86,6 +85,10 @@ namespace
 				archive( CEREAL_NVP( scrollTakeSecond ) );
 			}
 			if ( 3 <= version )
+			{
+				archive( CEREAL_NVP( directionalLight ) );
+			}
+			if ( 4 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -104,13 +107,7 @@ namespace
 				ImGui::TreePop();
 			}
 			
-			if ( ImGui::TreeNode( u8"平行光" ) )
-			{
-				ImGui::ColorEdit4  ( u8"色",		&directionalLight.color.x );
-				ImGui::SliderFloat4( u8"方向",	&directionalLight.direction.x, -1.0f, 1.0f );
-				
-				ImGui::TreePop();
-			}
+			ImGui::Helper::ShowDirectionalLightNode( u8"平行光", &directionalLight );
 
 			if ( ImGui::TreeNode( u8"秒数関連" ) )
 			{
@@ -157,7 +154,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam, 2 )
+CEREAL_CLASS_VERSION( SceneParam, 3 )
 
 void SceneGame::Init()
 {
