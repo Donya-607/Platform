@@ -59,7 +59,7 @@ namespace Enemy
 			orientation.RotateBy( rotation );
 		}
 
-		UpdateMotionIfCan( elapsedTime, 0 );
+		UpdateMotionIfCan( elapsedTime * data.animePlaySpeed, 0 );
 
 	#if DEBUG_MODE
 		if ( Donya::Keyboard::Trigger( VK_SPACE ) )
@@ -108,8 +108,9 @@ namespace Enemy
 	void TogeheroParam::ShowImGuiNode()
 	{
 		basic.ShowImGuiNode( u8"汎用設定" );
-		ImGui::DragFloat( u8"移動速度",				&moveSpeed,		0.1f	);
-		ImGui::DragFloat( u8"回転速度[degree/s]",	&rotateSpeed,	1.0f	);
+		ImGui::DragFloat( u8"移動速度",				&moveSpeed,			0.1f	);
+		ImGui::DragFloat( u8"回転速度[degree/s]",	&rotateSpeed,		1.0f	);
+		ImGui::DragFloat( u8"モーション再生速度",		&animePlaySpeed,	0.01f	);
 	}
 #endif // USE_IMGUI
 }

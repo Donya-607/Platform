@@ -1,5 +1,9 @@
 #pragma once
 
+#undef max
+#undef min
+#include <cereal/types/vector.hpp>
+
 #include "../Bullet.h"
 #include "../Damage.h"
 #include "../Enemy.h"
@@ -12,7 +16,9 @@ namespace Enemy
 		enum class MotionKind
 		{
 			Ready = 0,
-			Fire
+			Fire,
+
+			MotionCount
 		};
 	private:
 		MotionKind	currentMotion = MotionKind::Ready;
@@ -57,11 +63,12 @@ namespace Enemy
 	{
 	public:
 		BasicParam			basic;
-		Donya::Vector3		capturingArea{ 1.0f, 1.0f, 0.0f }; // Relative area, half size. Machine will capture a target is there in this
+		Donya::Vector3		capturingArea{ 1.0f, 1.0f, 0.0f };	// Relative area, half size. Machine will capture a target is there in this
 		float				fireIntervalSecond	= 1.0f;
-		float				fireDegree			= 45.0f;	// XY axis. Right side angle. If you using it when left side, use as: "180 - reflectDegree"
+		float				fireDegree			= 45.0f;		// XY axis. Right side angle. If you using it when left side, use as: "180 - reflectDegree"
 		Bullet::FireDesc	fireDesc;
 		float				gravity				= 1.0f;
+		std::vector<float>	animePlaySpeeds;					// size() == SuperBallMachine::MotionKind::MotionCount
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -82,6 +89,10 @@ namespace Enemy
 			}
 			if ( 2 <= version )
 			{
+				archive( CEREAL_NVP( animePlaySpeeds ) );
+			}
+			if ( 3 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -94,4 +105,4 @@ namespace Enemy
 CEREAL_CLASS_VERSION( Enemy::SuperBallMachine, 0 )
 CEREAL_REGISTER_TYPE( Enemy::SuperBallMachine )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::SuperBallMachine )
-CEREAL_CLASS_VERSION( Enemy::SuperBallMachineParam, 1 )
+CEREAL_CLASS_VERSION( Enemy::SuperBallMachineParam, 2 )

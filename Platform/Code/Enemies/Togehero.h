@@ -42,8 +42,9 @@ namespace Enemy
 	{
 	public:
 		BasicParam	basic;
-		float		moveSpeed	= 1.0f;		// [m/s]
-		float		rotateSpeed	= 360.0f;	// [degree/s]
+		float		moveSpeed		= 1.0f;		// [m/s]
+		float		rotateSpeed		= 360.0f;	// [degree/s]
+		float		animePlaySpeed	= 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -59,6 +60,10 @@ namespace Enemy
 				);
 			}
 			if ( 3 <= version )
+			{
+				archive( CEREAL_NVP( animePlaySpeed ) );
+			}
+			if ( 4 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -95,4 +100,4 @@ namespace Enemy
 CEREAL_CLASS_VERSION( Enemy::Togehero, 0 )
 CEREAL_REGISTER_TYPE( Enemy::Togehero )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Togehero )
-CEREAL_CLASS_VERSION( Enemy::TogeheroParam, 2 )
+CEREAL_CLASS_VERSION( Enemy::TogeheroParam, 3 )

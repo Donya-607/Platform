@@ -27,6 +27,22 @@ namespace Enemy
 		}
 	}
 
+	namespace
+	{
+		constexpr size_t motionCount = scast<size_t>( SuperBallMachine::MotionKind::MotionCount );
+		constexpr const char *GetMotionName( SuperBallMachine::MotionKind kind )
+		{
+			switch ( kind )
+			{
+			case SuperBallMachine::MotionKind::Ready:	return u8"Ready";
+			case SuperBallMachine::MotionKind::Fire:	return u8"Fire";
+			default: break;
+			}
+
+			return "ERROR_KIND";
+		}
+	}
+
 	void SuperBallMachine::Init( const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
 		Base::Init( parameter, wsScreenHitBox );
@@ -61,8 +77,11 @@ namespace Enemy
 
 		ShotIfNeeded( elapsedTime, wsTargetPos );
 
-		const int intMotionKind = scast<int>( currentMotion );
-		UpdateMotionIfCan( elapsedTime, intMotionKind );
+		const auto   &playSpeeds		= Parameter::GetSuperBallMachine().animePlaySpeeds;
+		const size_t currentMotionIndex	= scast<size_t>( currentMotion );
+		const size_t playSpeedCount		= playSpeeds.size();
+		const float  motionAcceleration	= ( playSpeedCount <= currentMotionIndex ) ? 1.0f : playSpeeds[currentMotionIndex];
+		UpdateMotionIfCan( elapsedTime * motionAcceleration, currentMotionIndex );
 	}
 	Kind SuperBallMachine::GetKind() const { return Kind::SuperBallMachine; }
 	Definition::Damage SuperBallMachine::GetTouchDamage() const
@@ -170,6 +189,24 @@ namespace Enemy
 	{
 		basic.ShowImGuiNode( u8"îƒópê›íË" );
 		fireDesc.ShowImGuiNode( u8"î≠éÀíeê›íË" );
+
+		if ( animePlaySpeeds.size() != motionCount )
+		{
+			animePlaySpeeds.resize( motionCount, 1.0f );
+		}
+		if ( ImGui::TreeNode( u8"ÉÇÅ[ÉVÉáÉìçƒê∂ë¨ìx" ) )
+		{
+			for ( size_t i = 0; i < motionCount; ++i )
+			{
+				ImGui::DragFloat
+				(
+					GetMotionName( scast<SuperBallMachine::MotionKind>( i ) ),
+					&animePlaySpeeds[i], 0.01f
+				);
+			}
+
+			ImGui::TreePop();
+		}
 
 		ImGui::DragFloat3( u8"çıìGîÕàÕÅiîºåaÅj",				&capturingArea.x,		0.01f	);
 		ImGui::DragFloat ( u8"î≠éÀä‘äuÅiïbÅj",				&fireIntervalSecond,	0.01f	);
