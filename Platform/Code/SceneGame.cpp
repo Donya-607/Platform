@@ -1324,15 +1324,21 @@ void SceneGame::Collision_PlayerVSItem()
 		{
 		case Item::Kind::ExtraLife:
 			Player::Remaining::Increment();
+		#if DEBUG_MODE
 			Donya::Sound::Play( Music::DEBUG_Strong );
+		#endif // DEBUG_MODE
 			return;
 		case Item::Kind::LifeEnergy_Big:
 			pPlayer->RecoverHP( itemParameter.lifeEnergyBig.recoveryAmount );
+		#if DEBUG_MODE
 			Donya::Sound::Play( Music::DEBUG_Weak );
+		#endif // DEBUG_MODE
 			return;
 		case Item::Kind::LifeEnergy_Small:
 			pPlayer->RecoverHP( itemParameter.lifeEnergySmall.recoveryAmount );
+		#if DEBUG_MODE
 			Donya::Sound::Play( Music::DEBUG_Weak );
+		#endif // DEBUG_MODE
 			return;
 		default: return;
 		}
