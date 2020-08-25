@@ -321,7 +321,7 @@ namespace Boss
 		desc.kind			=  data.shotDesc.kind;
 		desc.initialSpeed	=  data.shotDesc.initialSpeed;
 		desc.position		=  inst.orientation.RotateVector( data.shotDesc.position );
-		desc.position		+= inst.body.WorldPosition( inst.orientation ); // Local space to World space
+		desc.position		+= inst.body.WorldPosition(); // Local space to World space
 		desc.owner			=  inst.hurtBox.id;
 
 		desc.direction				= ( input.wsTargetPos - desc.position ).Unit();
@@ -355,7 +355,7 @@ namespace Boss
 	{
 		const auto &data = Parameter::GetSkull();
 
-		const Donya::Vector2 horizontalDiff	= ( inst.aimingPos - inst.body.WorldPosition( inst.orientation ) ).XZ();
+		const Donya::Vector2 horizontalDiff	= ( inst.aimingPos - inst.body.WorldPosition() ).XZ();
 		const float actualLength			= horizontalDiff.Length();
 		const auto &locations				= data.jumpDestLengths;
 		
@@ -522,7 +522,7 @@ namespace Boss
 
 		// Calculate the destination of Run state
 		{
-			const Donya::Vector3 myselfPos = inst.body.WorldPosition( inst.orientation );
+			const Donya::Vector3 myselfPos = inst.body.WorldPosition();
 			const int toTargetSign = Donya::SignBit( input.wsTargetPos.x - myselfPos.x );
 		
 			Donya::Vector3 destination = input.wsTargetPos;
@@ -565,7 +565,7 @@ namespace Boss
 	{
 		Donya::Vector3 tmp;
 		tmp =  inst.orientation.RotateVector( Parameter::GetSkull().shieldPosOffset );
-		tmp += inst.body.WorldPosition( inst.orientation ); // Local space to World space
+		tmp += inst.body.WorldPosition(); // Local space to World space
 		return tmp;
 	}
 	void Skull::Shield::GenerateShieldIfNull( Skull &inst )
@@ -601,13 +601,13 @@ namespace Boss
 
 		// t[s] = displacement[m] / speed[m/s]
 		// But the speed here is [m], so the arrivalTime will be none unit.
-		const float distance = fabsf( inst.aimingPos.x - inst.body.WorldPosition( inst.orientation ).x );
+		const float distance = fabsf( inst.aimingPos.x - inst.body.WorldPosition().x );
 		arrivalTime	= ( IsZero( runSpeed ) ) ? 0.0f : distance / fabsf( runSpeed );
 
 		runTimer	= 0.0f;
 		waitTimer	= 0.0f;
 		wasArrived	= false;
-		initialPos	= inst.body.WorldPosition( inst.orientation );
+		initialPos	= inst.body.WorldPosition( );
 	}
 	void Skull::Run::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
@@ -662,7 +662,7 @@ namespace Boss
 #endif // USE_IMGUI
 	int  Skull::Run::GetCurrentDirectionSign( const Skull &inst ) const
 	{
-		return Donya::SignBit( inst.aimingPos.x - inst.body.WorldPosition( inst.orientation ).x );
+		return Donya::SignBit( inst.aimingPos.x - inst.body.WorldPosition().x );
 	}
 
 // region Mover
@@ -710,8 +710,8 @@ namespace Boss
 			ChangeState();
 		}
 
-		// The orientation is not consider because judge by center position
-		const bool lookingRight = ( 0.0f <= ( input.wsTargetPos - body.WorldPosition() ).x ) ? true : false;
+		// The offset is not consider because judge by center position
+		const bool lookingRight = ( 0.0f <= ( input.wsTargetPos - body.pos ).x ) ? true : false;
 		UpdateOrientation( lookingRight );
 		
 		motionManager.Update( *this, elapsedTime );
@@ -773,6 +773,9 @@ namespace Boss
 		hurtBox.pos		= wsPos;
 		hurtBox.offset	= data.hurtBoxOffset;
 		hurtBox.size	= data.hurtBoxSize;
+
+		body.offset		= orientation.RotateVector( body.offset		);
+		hurtBox.offset	= orientation.RotateVector( hurtBox.offset	);
 	}
 	void Skull::RegisterPreviousBehavior( Behavior behavior )
 	{

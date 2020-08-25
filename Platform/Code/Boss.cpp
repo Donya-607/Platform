@@ -384,7 +384,7 @@ namespace Boss
 			// I wanna ignore the collision until the body has been arrived to initial coordinate.
 
 			const float destination	= initializer.wsPos.y;
-			const float nowCenter	= body.WorldPosition( orientation ).y;
+			const float nowCenter	= body.WorldPosition().y;
 			if ( nowCenter < destination )
 			{
 				body.exist		= true;
