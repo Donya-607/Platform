@@ -1494,6 +1494,9 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 			ApplyExceptPosition( &hurtBox,	data.hurtBox );
 		}
 
+		body.offset		= orientation.RotateVector( body.offset		);
+		hurtBox.offset	= orientation.RotateVector( hurtBox.offset	);
+
 		hpDrawer.SetDrawOption( data.hpDrawPos, data.hpDrawColor, data.hpDrawScale );
 	}
 #endif // USE_IMGUI

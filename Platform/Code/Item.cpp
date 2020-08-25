@@ -302,7 +302,7 @@ namespace Item
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
 		{
-			AssignMyBody( GetPosition() );
+			AssignMyBody( body.pos );
 		}
 	#endif // USE_IMGUI
 
