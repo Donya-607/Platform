@@ -1361,7 +1361,8 @@ void Player::KnockBack::Init( Player &inst )
 	if ( !inst.prevSlidingStatus )
 	{
 		const float impulseSign = ( knockedFromRight ) ? -1.0f : 1.0f;
-		inst.velocity.x = Parameter().Get().knockBackSpeed * impulseSign;
+		inst.velocity.x  = Parameter().Get().knockBackSpeed * impulseSign;
+		inst.lookingSign = -impulseSign;
 	}
 	
 	timer = 0.0f;
