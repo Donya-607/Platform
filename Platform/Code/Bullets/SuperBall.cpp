@@ -36,6 +36,13 @@ namespace Bullet
 		accelCount = 0;
 	}
 	void SuperBall::Uninit() {} // No op
+	void SuperBall::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
+	{
+		Base::Update( elapsedTime, wsScreenHitBox );
+
+		const auto &data = Parameter::GetSuperBall();
+		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
+	}
 	void SuperBall::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
 		const auto &data = Parameter::GetSuperBall();

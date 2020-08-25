@@ -1,6 +1,14 @@
 #pragma once
 
+#include <vector>
+
+#undef max
+#undef min
+#include <cereal/types/vector.hpp>
+
 #include "../Bullet.h"
+#include "../BulletParam.h"
+#include "../Player.h"		// Use Player::ShotLevel
 
 namespace Bullet
 {
@@ -14,9 +22,12 @@ namespace Bullet
 		static int livingCount;
 	public:
 		static int GetLivingCount();
+	private:
+		Player::ShotLevel chargeLevel;
 	public:
 		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
+		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
 		Kind GetKind() const override;
 	private:
@@ -31,14 +42,42 @@ namespace Bullet
 	struct BusterParam
 	{
 	public:
-		Donya::Vector3		hitBoxOffset{ 0.0f, 0.0f, 0.0f };
-		Donya::Vector3		hitBoxSize  { 1.0f, 1.0f, 1.0f };
-		Definition::Damage	damage;
+		struct PerLevel
+		{
+			BasicParam	basic;
+			float		accelRate = 1.0f; // Multiplies the fired speed
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( basic		),
+					CEREAL_NVP( accelRate	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+	public:
+		std::vector<PerLevel> params; // size() == Player::ShotLevel::LevelCount
 	private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
+			if ( 2 <= version )
+			{
+				archive( CEREAL_NVP( params ) );
+			}
+
+			return;
+
+			/*
 			archive
 			(
 				CEREAL_NVP( hitBoxOffset ),
@@ -49,10 +88,7 @@ namespace Bullet
 			{
 				archive( CEREAL_NVP( damage ) );
 			}
-			if ( 2 <= version )
-			{
-				// archive( CEREAL_NVP( x ) );
-			}
+			*/
 		}
 	public:
 	#if USE_IMGUI
@@ -60,4 +96,5 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::BusterParam, 1 )
+CEREAL_CLASS_VERSION( Bullet::BusterParam,				2 )
+CEREAL_CLASS_VERSION( Bullet::BusterParam::PerLevel,	0 )

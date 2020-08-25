@@ -12,6 +12,7 @@ namespace Bullet
 	{
 	public:
 		void Uninit() override;
+		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
 		Kind GetKind() const override;
 	private:

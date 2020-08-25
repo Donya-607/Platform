@@ -246,6 +246,7 @@ namespace Bullet
 	void Base::Init( const FireDesc &parameter )
 	{
 		model.Initialize( GetModelPtrOrNullptr( GetKind() ) );
+		model.AssignMotion( 0 );
 		
 		InitBody( parameter );
 
@@ -260,6 +261,16 @@ namespace Bullet
 	}
 	void Base::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
 	{
+	#if USE_IMGUI
+		// Apply for be able to see an adjustment immediately
+		{
+			const bool useAABB		= ( !hitSphere.exist	);
+			const bool useSphere	= ( !body.exist			);
+			if ( useAABB	) { AssignBodyParameter( body.pos		); }
+			if ( useSphere	) { AssignBodyParameter( hitSphere.pos	); }
+		}
+	#endif // USE_IMGUI
+
 		body.UpdateIgnoreList( elapsedTime );
 
 		if ( wasCollided )
@@ -483,6 +494,8 @@ namespace Bullet
 	}
 	void Base::UpdateMotionIfCan( float elapsedTime, int motionIndex )
 	{
+		if ( wasProtected != ProtectedInfo::None ) { return; }
+		// else
 		if ( !model.IsAssignableIndex( motionIndex ) ) { return; }
 		// else
 

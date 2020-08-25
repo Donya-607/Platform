@@ -43,6 +43,13 @@ namespace Bullet
 
 
 	void SkullBuster::Uninit() {} // No op
+	void SkullBuster::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
+	{
+		Base::Update( elapsedTime, wsScreenHitBox );
+
+		const auto &data = Parameter::GetSkullBuster();
+		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
+	}
 	Kind SkullBuster::GetKind() const
 	{
 		return Kind::SkullBuster;
@@ -78,6 +85,9 @@ namespace Bullet
 		Base::Update( elapsedTime, wsScreenHitBox );
 
 		currentDegree += Parameter::GetSkullShield().rotateDegree * elapsedTime;
+
+		const auto &data = Parameter::GetSkullShield();
+		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
 	}
 	void SkullShield::Draw( RenderingHelper *pRenderer ) const
 	{

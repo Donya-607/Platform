@@ -28,6 +28,37 @@ namespace Bullet
 		}
 	}
 
+	namespace
+	{
+		constexpr size_t chargeLevelCount = scast<size_t>( Player::ShotLevel::LevelCount );
+		constexpr const char *GetChargeLevelName( Player::ShotLevel level )
+		{
+			switch ( level )
+			{
+			case Player::ShotLevel::Normal:		return "0_Normal";
+			case Player::ShotLevel::Tough:		return "1_Tough"; 
+			case Player::ShotLevel::Strong:		return "2_Strong";
+			default: break;
+			}
+
+			return "ERROR_LEVEL";
+		}
+
+		const BusterParam::PerLevel *GetParamLevelOrNullptr( Player::ShotLevel level )
+		{
+			const size_t index = scast<size_t>( level );
+			if ( chargeLevelCount <= index )
+			{
+				_ASSERT_EXPR( 0, L"Error: Passed level is out of range!" );
+				return nullptr;
+			}
+			// else
+
+			const auto &data = Parameter::GetBuster();
+			return &data.params[index];
+		}
+	}
+
 	int  Buster::livingCount = 0;
 	int  Buster::GetLivingCount()
 	{
@@ -35,13 +66,49 @@ namespace Bullet
 	}
 	void Buster::Init( const FireDesc &parameter )
 	{
-		Base::Init( parameter );
-
 		livingCount++;
+
+		using Level = Player::ShotLevel;
+
+		if ( parameter.pAdditionalDamage )
+		{
+			// The Player attaches the charged damage to "pAdditionalDamage->amount"
+			// by casting from Player::ShotLevel(Level) to int,
+			// so it process is inverse conversion.
+
+			const int currentLevel = std::min
+			(
+				scast<int>( chargeLevelCount - 1 ),
+				std::max( 0, parameter.pAdditionalDamage->amount )
+			);
+			chargeLevel = scast<Level>( currentLevel );
+		}
+		else
+		{
+			chargeLevel = Level::Normal;
+		}
+
+		FireDesc adjusted  = parameter;
+
+		const auto *pLevel = GetParamLevelOrNullptr( chargeLevel );
+		if ( pLevel )
+		{
+			adjusted.initialSpeed *= pLevel->accelRate;
+		}
+
+		Base::Init( adjusted );
 	}
 	void Buster::Uninit()
 	{
 		livingCount--;
+	}
+	void Buster::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
+	{
+		Base::Update( elapsedTime, wsScreenHitBox );
+
+		const auto *pLevel = GetParamLevelOrNullptr( chargeLevel );
+		const float animePlaySpeed = ( pLevel ) ? pLevel->basic.animePlaySpeed : 1.0f;
+		UpdateMotionIfCan( elapsedTime * animePlaySpeed, scast<int>( chargeLevel ) );
 	}
 	Kind Buster::GetKind() const
 	{
@@ -49,14 +116,24 @@ namespace Bullet
 	}
 	Definition::Damage Buster::GetDamageParameter() const
 	{
-		return Parameter::GetBuster().damage;
+		const auto *pLevel = GetParamLevelOrNullptr( chargeLevel );
+		if ( !pLevel )
+		{
+			Definition::Damage empty{};
+			empty.amount	= 0;
+			empty.type		= Definition::Damage::Type::None;
+			return empty;
+		}
+		// else
+
+		return pLevel->basic.damage;
 	}
 	void Buster::AssignBodyParameter( const Donya::Vector3 &wsPos )
 	{
-		const auto &data = Parameter::GetBuster();
+		const auto *pLevel = GetParamLevelOrNullptr( chargeLevel );
 		body.pos	= wsPos;
-		body.offset	= data.hitBoxOffset;
-		body.size	= data.hitBoxSize;
+		body.offset	= ( pLevel ) ? orientation.RotateVector( pLevel->basic.hitBoxOffset	)	: Donya::Vector3::Zero();
+		body.size	= ( pLevel ) ? orientation.RotateVector( pLevel->basic.hitBoxSize	)	: Donya::Vector3::Zero();
 	}
 #if USE_IMGUI
 	void Buster::ShowImGuiNode( const std::string &nodeCaption )
@@ -79,12 +156,26 @@ namespace Bullet
 	}
 	void BusterParam::ShowImGuiNode()
 	{
-		ImGui::DragFloat3( u8"当たり判定・オフセット",			&hitBoxOffset.x,	0.01f );
-		ImGui::DragFloat3( u8"当たり判定・サイズ（半分を指定）",	&hitBoxSize.x,		0.01f );
-		hitBoxSize.x = std::max( 0.0f, hitBoxSize.x );
-		hitBoxSize.y = std::max( 0.0f, hitBoxSize.y );
-		hitBoxSize.z = std::max( 0.0f, hitBoxSize.z );
-		damage.ShowImGuiNode( u8"基本ダメージ設定" );
+		if ( params.size() != chargeLevelCount )
+		{
+			params.resize( chargeLevelCount );
+		}
+
+		using Level = Player::ShotLevel;
+		for ( size_t i = 0; i < chargeLevelCount; ++i )
+		{
+			if ( !ImGui::TreeNode( GetChargeLevelName( scast<Level>( i ) ) ) ) { continue; }
+			// else
+
+			auto &elem = params[i];
+			ImGui::Text( u8"（ダメージ量は生成時に +%d されます）", i );
+			elem.basic.ShowImGuiNode( u8"汎用設定" );
+
+			ImGui::DragFloat( u8"速度倍率", &elem.accelRate, 0.01f );
+			ImGui::Text( u8"（生成時の速度に掛け算されます）" );
+
+			ImGui::TreePop();
+		}
 	}
 #endif // USE_IMGUI
 }

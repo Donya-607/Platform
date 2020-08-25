@@ -108,11 +108,11 @@ public:
 	};
 	enum class ShotLevel
 	{
-		Normal,	// 1 damage.
-		Tough,	// 2 damage, Pierce.
-		Strong,	// 3 damage, Pierce.
+		Normal = 0,	// 1 damage.
+		Tough,		// 2 damage, Pierce.
+		Strong,		// 3 damage, Pierce.
 
-		LevelCount // Invalid
+		LevelCount	// Invalid
 	};
 private:
 	class MotionManager

@@ -47,6 +47,7 @@ namespace Bullet
 		Donya::Vector3		hitBoxOffset{ 0.0f, 0.0f, 0.0f };
 		Donya::Vector3		hitBoxSize	{ 1.0f, 1.0f, 1.0f }; // If it is used for a sphere as radius, the radius is as the X component.
 		Definition::Damage	damage;
+		float				animePlaySpeed = 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -61,6 +62,10 @@ namespace Bullet
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( animePlaySpeed ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -71,4 +76,4 @@ namespace Bullet
 	};
 }
 CEREAL_CLASS_VERSION( Bullet::GeneralParam,	0 )
-CEREAL_CLASS_VERSION( Bullet::BasicParam,	0 )
+CEREAL_CLASS_VERSION( Bullet::BasicParam,	1 )
