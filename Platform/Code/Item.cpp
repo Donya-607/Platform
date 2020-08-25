@@ -400,9 +400,7 @@ namespace Item
 	}
 	Donya::Collision::Box3F	Item::GetCatchArea() const
 	{
-		Donya::Collision::Box3F tmp = catchArea;
-		tmp.offset = orientation.RotateVector( tmp.offset );
-		return tmp;
+		return catchArea;
 	}
 	Kind					Item::GetKind() const
 	{
@@ -450,6 +448,9 @@ namespace Item
 		catchArea.pos		= wsPos;
 		catchArea.offset	= pData->catchArea.offset;
 		catchArea.size		= pData->catchArea.size;
+
+		body.offset			= orientation.RotateVector( body.offset			);
+		catchArea.offset	= orientation.RotateVector( catchArea.offset	);
 	}
 	Donya::Vector4x4 Item::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 	{
