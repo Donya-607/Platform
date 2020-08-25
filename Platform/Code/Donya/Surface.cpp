@@ -1,5 +1,7 @@
 #include "Surface.h"
 
+#include <array>
+
 #include "Donya.h" // Use for getting a default device and immediate-context, call a setting default render-targets function.
 
 #undef max
@@ -18,6 +20,48 @@ namespace Donya
 		if ( *ppImmediateContext != nullptr ) { return; }
 		// else
 		*ppImmediateContext = Donya::GetImmediateContext();
+	}
+
+	void Surface::SetRenderTargets( const std::vector<Surface> &surfaces, ID3D11DeviceContext *pImmediateContext )
+	{
+		if ( surfaces.empty() ) { return; }
+		// else
+
+		SetDefaultIfNull( &pImmediateContext );
+
+		constexpr size_t availableCount = scast<size_t>( D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT );
+		const size_t surfaceCount = std::min( availableCount, surfaces.size() );
+		std::vector<ID3D11RenderTargetView *> rtvPtrs{ surfaceCount };
+		for ( size_t i = 0; i < surfaceCount; ++i )
+		{
+			rtvPtrs[i] = surfaces[i].GetRenderTargetView().Get();
+		}
+
+		ComPtr<ID3D11DepthStencilView> pDSV = surfaces.front().GetDepthStencilView();
+		pImmediateContext->OMSetRenderTargets( surfaceCount, rtvPtrs.data(), pDSV.Get() );
+	}
+	void Surface::ResetRenderTargets( size_t resetCount, ID3D11DeviceContext *pImmediateContext )
+	{
+		SetDefaultIfNull( &pImmediateContext );
+
+		constexpr size_t maxSlot = scast<size_t>( D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT );
+		resetCount = std::min( maxSlot, resetCount );
+
+		std::vector<ID3D11RenderTargetView *> nullRTVs{ resetCount };
+		for ( auto &it : nullRTVs )
+		{
+			it = nullptr;
+		}
+
+		ID3D11DepthStencilView *nullDSV = nullptr;
+		pImmediateContext->OMSetRenderTargets( resetCount, nullRTVs.data(), nullDSV );
+
+		// Activate the library's default views for fail-safe.
+		ResetRenderTarget();
+	}
+	void Surface::ResetRenderTarget()
+	{
+		Donya::SetDefaultRenderTargets();
 	}
 
 	bool Surface::Init( int wholeWidth, int wholeHeight, DXGI_FORMAT rtFormat, bool needRTSRV, DXGI_FORMAT dsFormat, bool needDSSRV, ID3D11Device *pDevice )
@@ -181,7 +225,7 @@ namespace Donya
 		return true;
 	}
 
-	bool Surface::IsEnable() const
+	bool Surface::IsInitialized() const
 	{
 		return wasCreated;
 	}
@@ -194,6 +238,14 @@ namespace Donya
 	{
 		return GetSurfaceSize().Float();
 	}
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> Surface::GetRenderTargetView() const
+	{
+		return pRTV;
+	}
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> Surface::GetDepthStencilView() const
+	{
+		return pDSV;
+	}
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Surface::GetRenderTargetShaderResource() const
 	{
 		return pRTSRV;
@@ -203,19 +255,10 @@ namespace Donya
 		return pDSSRV;
 	}
 
-	void Surface::SetTarget( const Donya::Vector2 &ssLTPos, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::SetRenderTarget( ID3D11DeviceContext *pImmediateContext ) const
 	{
 		SetDefaultIfNull( &pImmediateContext );
-
-		viewport.TopLeftX = ssLTPos.x;
-		viewport.TopLeftY = ssLTPos.y;
-
-		pImmediateContext->RSSetViewports( 1U, &viewport );
 		pImmediateContext->OMSetRenderTargets( 1U, pRTV.GetAddressOf(), pDSV.Get() );
-	}
-	void Surface::ResetTarget() const
-	{
-		Donya::SetDefaultRenderTargets();
 	}
 
 	void Surface::Clear( const Donya::Vector4 clearColor, ID3D11DeviceContext *pImmediateContext ) const
@@ -286,6 +329,16 @@ namespace Donya
 
 		ID3D11ShaderResourceView *pNullSRV = nullptr;
 		pImmediateContext->PSSetShaderResources( slot, 1U, &pNullSRV );
+	}
+
+	void Surface::SetViewport( const Donya::Vector2 &ssLTPos, ID3D11DeviceContext *pImmediateContext ) const
+	{
+		SetDefaultIfNull( &pImmediateContext );
+
+		viewport.TopLeftX = ssLTPos.x;
+		viewport.TopLeftY = ssLTPos.y;
+
+		pImmediateContext->RSSetViewports( 1U, &viewport );
 	}
 
 #if USE_IMGUI

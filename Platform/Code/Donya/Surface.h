@@ -2,18 +2,34 @@
 
 #include <d3d11.h>
 #include <wrl.h>
+#include <vector>
 
-#include "Color.h"		// Use to clear-color.
+#include "Color.h"		// Use for Clear()
 #include "UseImGui.h"
-#include "Vector.h"		// Use to clear-color, and specify the left-top position of viewport.
+#include "Vector.h"
 
 namespace Donya
 {
 	/// <summary>
-	/// The Surface class behave renderable texture. What like a wrapper of render-target.
+	/// The Surface class behave renderable texture. A frame-buffer. A render-target.
 	/// </summary>
 	class Surface
 	{
+	public:
+		/// <summary>
+		/// Set render-target views.You should call together a SetViewport().<para></para>
+		/// The viewport size and depth-stencil view will using first surface's.<para></para>
+		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// </summary>
+		static void SetRenderTargets( const std::vector<Surface> &surfaces, ID3D11DeviceContext *pImmediateContext = nullptr );
+		/// <summary>
+		/// Reset to null the render targets from zero slot to max slot.
+		/// </summary>
+		static void ResetRenderTargets( size_t resetCount, ID3D11DeviceContext *pImmediateContext = nullptr );
+		/// <summary>
+		/// Set a default render-target. This is same as call Donya::SetDefaultRenderTargets() fuction(at Donya.h).
+		/// </summary>
+		static void ResetRenderTarget();
 	private:
 		bool wasCreated{ false };
 		Donya::Int2 wholeSize{ -1, -1 };
@@ -35,7 +51,7 @@ namespace Donya
 		/// <summary>
 		/// Returns true if already initialized.
 		/// </summary>
-		bool IsEnable() const;
+		bool IsInitialized() const;
 	public:
 		/// <summary>
 		/// Returns whole-size of surface. That is same as passed size when creating.
@@ -45,6 +61,8 @@ namespace Donya
 		/// Returns whole-size of surface. That is same as passed size when creating(the type-conversion by static_cast).
 		/// </summary>
 		Donya::Vector2	GetSurfaceSizeF() const;
+		ComPtr<ID3D11RenderTargetView> GetRenderTargetView() const;
+		ComPtr<ID3D11DepthStencilView> GetDepthStencilView() const;
 		/// <summary>
 		/// Returns render-target's shader-resource view with the com-pointer.
 		/// </summary>
@@ -55,15 +73,10 @@ namespace Donya
 		ComPtr<ID3D11ShaderResourceView> GetDepthStencilShaderResource() const;
 	public:
 		/// <summary>
-		/// Set render-target to me.<para></para>
-		/// You can specify the setting position by use "ssLTPos"(screen-space, left-top).<para></para>
+		/// Set render-target to me.You should call together the SetViewport().<para></para>
 		/// If set nullptr to pImmediateContext, a default device will be used.
 		/// </summary>
-		void SetTarget( const Donya::Vector2 &ssLTPos = { 0.0f, 0.0f }, ID3D11DeviceContext * pImmediateContext = nullptr ) const;
-		/// <summary>
-		/// Set a default render-target. This is same as call Donya::SetDefaultRenderTargets() fuction(at Donya.h).
-		/// </summary>
-		void ResetTarget() const;
+		void SetRenderTarget( ID3D11DeviceContext *pImmediateContext = nullptr ) const;
 		/// <summary>
 		/// Clear render-target view, depth-stencil view.<para></para>
 		/// If set nullptr to pImmediateContext, a default device will be used.
@@ -120,6 +133,12 @@ namespace Donya
 		/// If set nullptr to pImmediateContext, a default device will be used.
 		/// </summary>
 		void ResetShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		/// <summary>
+		/// Set only the viewport. You should call this together when call SetRenderTarget().<para></para>
+		/// You can specify the setting position by use "ssLTPos"(screen-space, left-top).<para></para>
+		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// </summary>
+		void SetViewport( const Donya::Vector2 &ssLTPos = { 0.0f, 0.0f }, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
 	public:
 	#if USE_IMGUI
 		/// <summary>
