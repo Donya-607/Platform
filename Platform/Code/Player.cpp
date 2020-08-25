@@ -806,12 +806,12 @@ void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, con
 
 	// Clamp into room
 	{
-		const float outsideLengthL = roomLeftBorder - inst.body.Min( inst.orientation ).x;
+		const float outsideLengthL = roomLeftBorder - inst.body.Min().x;
 		if ( 0.0f < outsideLengthL )
 		{
 			inst.body.pos.x += outsideLengthL;
 		}
-		const float outsideLengthR = inst.body.Max( inst.orientation ).x - roomRightBorder;
+		const float outsideLengthR = inst.body.Max().x - roomRightBorder;
 		if ( 0.0f < outsideLengthR )
 		{
 			inst.body.pos.x -= outsideLengthR;
@@ -820,8 +820,6 @@ void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, con
 
 	// We must apply world position to hurt box also
 	inst.hurtBox.pos = inst.body.pos;
-
-	// inst.KillMeIfCollideToKillAreas( elapsedTime, terrain );
 }
 void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const Map &terrain )
 {
@@ -844,8 +842,6 @@ void Player::MoverBase::MoveOnlyVertical( Player &inst, float elapsedTime, const
 
 	// We must apply world position to hurt box also
 	inst.hurtBox.pos = inst.body.pos;
-
-	// inst.KillMeIfCollideToKillAreas( elapsedTime, terrain );
 }
 void Player::MoverBase::AssignBodyParameter( Player &inst )
 {
@@ -1186,8 +1182,8 @@ void Player::GrabLadder::Init( Player &inst )
 			}
 
 			constexpr float margin = 0.001f; // Make as: the Max/Min pos != limitTopY/limitDownY
-			const float adjustToDown	= std::max( 0.0f, ( grabArea.Max( inst.orientation ).y - limitTopY  ) + margin );
-			const float adjustToUp		= std::max( 0.0f, ( limitDownY - grabArea.Min( inst.orientation ).y ) + margin );
+			const float adjustToDown	= std::max( 0.0f, ( grabArea.Max().y - limitTopY  ) + margin );
+			const float adjustToUp		= std::max( 0.0f, ( limitDownY - grabArea.Min().y ) + margin );
 			inst.body.pos.y -= adjustToDown;
 			inst.body.pos.y += adjustToUp;
 		}
@@ -1652,7 +1648,7 @@ Donya::Quaternion		Player::GetOrientation() const
 }
 void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F &collidingHitBox ) const
 {
-	const auto myCenter		= body.WorldPosition( orientation );
+	const auto myCenter		= body.WorldPosition();
 	const auto otherMax		= collidingHitBox.Max();
 	const auto otherMin		= collidingHitBox.Min();
 	const float distLeft	= otherMin.x - myCenter.x;
@@ -1661,7 +1657,7 @@ void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collisio
 }
 void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collision::Sphere3F &collidingHitBox ) const
 {
-	const auto myCenter		= body.WorldPosition( orientation );
+	const auto myCenter		= body.WorldPosition();
 	const auto otherCenter	= collidingHitBox.WorldPosition();
 	const auto otherLeft	= otherCenter.x - collidingHitBox.radius;
 	const auto otherRight	= otherCenter.x + collidingHitBox.radius;

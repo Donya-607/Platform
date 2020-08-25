@@ -5,6 +5,21 @@
 #include "Donya/Sprite.h"	// Drawing a rectangle
 
 
+/*
+NOTE:
+The offset of body should be rotated by the orientation when calculation.
+But I do not rotate the offset.
+
+because a derived class may have an extra AABB class as another body(like hurt-box).
+So if I rotate the offset in here, I should also rotate an extra AABB class,
+but I don't know an extra, so a derived class must do that rotation.
+However, if a derived class only rotate an extra AABB, he will lose consistency.
+
+So I do not rotate the offset.
+( Therefore a derived class should rotate the offset all AABB class :-) )
+*/
+
+
 namespace
 {
 	template<typename Collision>
@@ -163,8 +178,8 @@ int Actor::MoveAxis( Actor *p, int axis, float movement, const std::vector<Donya
 
 	auto CalcPenetration	= [&p]( int axis, int moveSign, const Donya::Collision::Box3F &myself, const Donya::Collision::Box3F &other )
 	{
-		const float plusPenetration  = fabsf( ( myself.Max( p->orientation )[axis] ) - ( other.Min( p->orientation )[axis] ) );
-		const float minusPenetration = fabsf( ( myself.Min( p->orientation )[axis] ) - ( other.Max( p->orientation )[axis] ) );
+		const float plusPenetration  = fabsf( ( myself.Max()[axis] ) - ( other.Min()[axis] ) );
+		const float minusPenetration = fabsf( ( myself.Min()[axis] ) - ( other.Max()[axis] ) );
 		const float penetration
 					= ( moveSign < 0 ) ? minusPenetration
 					: ( moveSign > 0 ) ? plusPenetration
@@ -218,20 +233,18 @@ int Actor::MoveZ( float movement, const std::vector<Donya::Collision::Box3F> &so
 }
 bool Actor::IsRiding( const Donya::Collision::Box3F &onto, float checkLength ) const
 {
-	const float foot  = body.WorldPosition( orientation ).y - body.size.y;
-	const float floor = onto.WorldPosition( orientation ).y + onto.size.y;
+	const float foot  = body.WorldPosition().y - body.size.y;
+	const float floor = onto.WorldPosition().y + onto.size.y;
 
 	return ( floor <= foot && foot - checkLength <= floor );
 }
 Donya::Vector3 Actor::GetPosition() const
 {
-	return body.WorldPosition( orientation );
+	return body.WorldPosition();
 }
 Donya::Collision::Box3F Actor::GetHitBox() const
 {
-	Donya::Collision::Box3F tmp = body;
-	tmp.offset = orientation.RotateVector( tmp.offset );
-	return tmp;
+	return body;
 }
 void Actor::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
 {
@@ -421,10 +434,10 @@ void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor 
 			{
 				// Push the actor
 
-				const auto minAct = actorBody.Min( orientation );
-				const auto maxAct = actorBody.Max( orientation );
-				const auto minMe  = movedBody.Min( orientation );
-				const auto maxMe  = movedBody.Max( orientation );
+				const auto minAct = actorBody.Min();
+				const auto maxAct = actorBody.Max();
+				const auto minMe  = movedBody.Min();
+				const auto maxMe  = movedBody.Max();
 
 				const float pushAmount = ( 0.0f < movement )
 				? maxMe[axis] - minAct[axis]	// e.g. this.right - actor.left
@@ -452,13 +465,11 @@ void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor 
 }
 Donya::Vector3 Solid::GetPosition() const
 {
-	return body.WorldPosition( orientation );
+	return body.WorldPosition();
 }
 Donya::Collision::Box3F Solid::GetHitBox() const
 {
-	Donya::Collision::Box3F tmp = body;
-	tmp.offset = orientation.RotateVector( tmp.offset );
-	return tmp;
+	return body;
 }
 void Solid::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, const Donya::Vector4 &color ) const
 {

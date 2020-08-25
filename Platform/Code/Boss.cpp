@@ -329,7 +329,7 @@ namespace Boss
 	}
 	int  Base::MoveOnlyX( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
-		const int  collideIndex	= Actor::MoveX( velocity.x * elapsedTime, solids );
+		const int collideIndex	= Actor::MoveX( velocity.x * elapsedTime, solids );
 		hurtBox.pos = body.pos; // We must apply world position to hurt box also.
 		return collideIndex;
 	}

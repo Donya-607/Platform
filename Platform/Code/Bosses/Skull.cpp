@@ -631,9 +631,9 @@ namespace Boss
 	}
 	void Skull::Run::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
 	{
-		const int prevSign = GetCurrentDirectionSign(  inst );
+		const int prevSign = GetCurrentDirectionSign( inst );
 		MoverBase::PhysicUpdate( inst, elapsedTime, terrain );
-		const int nowSign  = GetCurrentDirectionSign(  inst );
+		const int nowSign  = GetCurrentDirectionSign( inst );
 
 		const bool nowArrived = ( nowSign != prevSign || nowSign == 0 );
 		if ( !wasArrived && nowArrived )
@@ -684,9 +684,9 @@ namespace Boss
 		// Apply for be able to see an adjustment immediately
 		{
 			const auto &data = Parameter::GetSkull();
-			body.offset		= data.hitBoxOffset;
+			body.offset		= orientation.RotateVector( data.hitBoxOffset  );
+			hurtBox.offset	= orientation.RotateVector( data.hurtBoxOffset );
 			body.size		= data.hitBoxSize;
-			hurtBox.offset	= data.hurtBoxOffset;
 			hurtBox.size	= data.hurtBoxSize;
 		}
 	#endif // USE_IMGUI
