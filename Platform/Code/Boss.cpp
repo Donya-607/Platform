@@ -258,9 +258,7 @@ namespace Boss
 	}
 	Donya::Collision::Box3F	Base::GetHurtBox() const
 	{
-		Donya::Collision::Box3F tmp = hurtBox;
-		tmp.offset = orientation.RotateVector( tmp.offset );
-		return tmp;
+		return hurtBox;
 	}
 	Donya::Vector3 Base::GetVelocity() const
 	{
@@ -313,6 +311,8 @@ namespace Boss
 		(
 			Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
 		);
+
+		AssignMyBody( body.pos );
 	}
 	void Base::UpdateMotionIfCan( float elapsedTime, int motionIndex )
 	{
