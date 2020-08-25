@@ -996,6 +996,8 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 	// If the jump was triggered in here, the "slideIsEnd" is also true.
 	inst.MoveVertical( elapsedTime, input );
 
+	inst.ShotIfRequested( elapsedTime, input );
+
 	MotionUpdate( inst, elapsedTime );
 }
 void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
@@ -1858,9 +1860,8 @@ void Player::MoveVertical  ( float elapsedTime, Input input )
 }
 bool Player::NowShotable() const
 {
-	const bool nowSliding  = ( pMover && pMover->NowSliding( *this ) );
 	const bool generatable = ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
-	return ( generatable && !nowSliding ) ? true : false;
+	return ( generatable ) ? true : false;
 }
 void Player::ShotIfRequested( float elapsedTime, Input input )
 {
