@@ -231,6 +231,7 @@ namespace Bullet
 		// else
 
 		damage.ShowImGuiNode( u8"基本ダメージ設定" );
+		ImGui::DragFloat ( u8"モーション再生速度",					&animePlaySpeed,	0.01f );
 		ImGui::DragFloat3( u8"当たり判定・オフセット",				&hitBoxOffset.x,	0.01f );
 		ImGui::DragFloat3( u8"当たり判定・AABBサイズ（半分を指定）",	&hitBoxSize.x,		0.01f );
 		ImGui::DragFloat ( u8"当たり判定・Sphere半径",				&hitBoxSize.x,		0.01f );
