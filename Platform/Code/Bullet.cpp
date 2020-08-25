@@ -532,7 +532,7 @@ namespace Bullet
 
 		ImGui::Helper::ShowAABBNode ( u8"‘Ì", &body );
 		ImGui::DragFloat3( u8"‘¬“x", &velocity.x, 0.1f );
-		ImGui::Helper::ShowFrontNode( "", &orientation );
+		ImGui::Helper::ShowFrontNode( "", &orientation, /* freezeUpAxis = */ false );
 
 		ImGui::TreePop();
 	}
