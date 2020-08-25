@@ -173,7 +173,6 @@
     <ClCompile Include="Code\Donya\Shader.cpp" />
     <ClCompile Include="Code\Donya\Sound.cpp" />
     <ClCompile Include="Code\Donya\Sprite.cpp" />
-    <ClCompile Include="Code\Donya\SpriteSheet.cpp" />
     <ClCompile Include="Code\Donya\Surface.cpp" />
     <ClCompile Include="Code\Donya\Useful.cpp" />
     <ClCompile Include="Code\Donya\UseImGui.cpp" />
@@ -262,7 +261,6 @@
     <ClInclude Include="Code\Donya\Shader.h" />
     <ClInclude Include="Code\Donya\Sound.h" />
     <ClInclude Include="Code\Donya\Sprite.h" />
-    <ClInclude Include="Code\Donya\SpriteSheet.h" />
     <ClInclude Include="Code\Donya\Surface.h" />
     <ClInclude Include="Code\Donya\Template.h" />
     <ClInclude Include="Code\Donya\Useful.h" />
