@@ -82,12 +82,13 @@ namespace Item
 	private: // Serialize members
 		InitializeParam initializer;
 	private:
-		using			 Actor::body;		// VS a terrain
-		Donya::Collision::Box3F	catchArea;	// VS the player
-		using			 Actor::orientation;
-		Donya::Vector3			velocity;	// Z element is almost unused.
-		float					aliveTimer = 0.0f;
-		mutable bool			wantRemove = false;
+		ModelHelper::SkinningOperator	model;
+		using					 Actor::body;		// VS a terrain
+		Donya::Collision::Box3F			catchArea;	// VS the player
+		using					 Actor::orientation;
+		Donya::Vector3					velocity;	// Z element is almost unused.
+		float							aliveTimer = 0.0f;
+		mutable bool					wantRemove = false;
 	private:
 		friend class cereal::access;
 		template<class Archive>

@@ -12,7 +12,8 @@ namespace Item
 		struct General
 		{
 		public:
-			float gravity = 1.0f;
+			float gravity			= 1.0f;
+			float animePlaySpeed	= 1.0f;
 			Donya::Collision::Box3F body;
 			Donya::Collision::Box3F catchArea;
 		private:
@@ -28,6 +29,10 @@ namespace Item
 				);
 
 				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( animePlaySpeed ) );
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -101,5 +106,5 @@ namespace Item
 	};
 }
 CEREAL_CLASS_VERSION( Item::ItemParam,			1 )
-CEREAL_CLASS_VERSION( Item::ItemParam::General,	0 )
+CEREAL_CLASS_VERSION( Item::ItemParam::General,	1 )
 CEREAL_CLASS_VERSION( Item::ItemParam::Energy,	0 )

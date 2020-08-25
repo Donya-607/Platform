@@ -427,17 +427,17 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		// The drawing priority is determined by the priority of the information.
 
+		pRenderer->ActivateShaderNormalStatic();
+		if ( pMap ) { pMap->Draw( pRenderer.get() ); }
+		pRenderer->DeactivateShaderNormalStatic();
+
 		pRenderer->ActivateShaderNormalSkinning();
 		Bullet::Admin::Get().Draw( pRenderer.get() );
 		if ( pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
 		if ( pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
 		Enemy::Admin::Get().Draw( pRenderer.get() );
-		pRenderer->DeactivateShaderNormalSkinning();
-
-		pRenderer->ActivateShaderNormalStatic();
-		if ( pMap ) { pMap->Draw( pRenderer.get() ); }
 		Item::Admin::Get().Draw( pRenderer.get() );
-		pRenderer->DeactivateShaderNormalStatic();
+		pRenderer->DeactivateShaderNormalSkinning();
 	}
 	pRenderer->DeactivateConstantScene();
 	pRenderer->DeactivateDepthStencilModel();

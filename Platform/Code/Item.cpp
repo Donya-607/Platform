@@ -23,7 +23,7 @@ namespace Item
 			"LifeEnergy_Small",
 		};
 
-		static std::array<std::unique_ptr<ModelHelper::StaticSet>, kindCount> modelPtrs{ nullptr };
+		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
 
 		bool LoadModels()
 		{
@@ -46,7 +46,7 @@ namespace Item
 				}
 				// else
 
-				modelPtrs[i] = std::make_unique<ModelHelper::StaticSet>();
+				modelPtrs[i] = std::make_shared<ModelHelper::SkinningSet>();
 				const bool result = ModelHelper::Load( filePath, modelPtrs[i].get() );
 				if ( !result )
 				{
@@ -66,7 +66,7 @@ namespace Item
 		{
 			return ( kindCount <= scast<size_t>( kind ) );
 		}
-		const ModelHelper::StaticSet *GetModelPtrOrNullptr( Kind kind )
+		std::shared_ptr<ModelHelper::SkinningSet> GetModelPtrOrNullptr( Kind kind )
 		{
 			if ( IsOutOfRange( kind ) ) { return nullptr; }
 			// else
@@ -79,7 +79,7 @@ namespace Item
 			}
 			// else
 
-			return ptr.get();
+			return ptr;
 		}
 		constexpr const char *GetModelName( Kind kind )
 		{
@@ -171,6 +171,8 @@ namespace Item
 #if USE_IMGUI
 	constexpr const char *GetKindName( Kind kind )
 	{
+		return GetModelName( kind );
+		/*
 		switch ( kind )
 		{
 		case Kind::ExtraLife:			return "ExtraLife";
@@ -181,6 +183,7 @@ namespace Item
 
 		_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
 		return "ERROR_KIND";
+		*/
 	}
 	void ShowKindNode( const std::string &nodeCaption, Kind *p )
 	{
@@ -215,9 +218,10 @@ namespace Item
 		if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		ImGui::DragFloat( u8"重力[m/s]", &gravity, 0.01f );
-		ImGui::Helper::ShowAABBNode( u8"地形との当たり判定",			&body );
-		ImGui::Helper::ShowAABBNode( u8"取得時に用いる当たり判定",		&catchArea );
+		ImGui::DragFloat( u8"重力[m/s]",				&gravity,			0.01f );
+		ImGui::DragFloat( u8"モーション再生速度",		&animePlaySpeed,	0.01f );
+		ImGui::Helper::ShowAABBNode( u8"地形との当たり判定",			&body		);
+		ImGui::Helper::ShowAABBNode( u8"取得時に用いる当たり判定",		&catchArea	);
 
 		if ( useTreeNode ) { ImGui::TreePop(); }
 	}
@@ -261,10 +265,31 @@ namespace Item
 	}
 #endif // USE_IMGUI
 
+	namespace
+	{
+		const ItemParam::General *GetGeneralOrNull( Kind kind )
+		{
+			const auto &data = Parameter::GetItem();
+
+			switch ( kind )
+			{
+			case Kind::ExtraLife:			return &data.extraLife;
+			case Kind::LifeEnergy_Big:		return &data.lifeEnergyBig.general;
+			case Kind::LifeEnergy_Small:	return &data.lifeEnergySmall.general;
+			default: break;
+			}
+
+			_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
+			return nullptr;
+		}
+	}
 
 	void Item::Init( const InitializeParam &parameter )
 	{
 		initializer		= parameter;
+
+		model.Initialize( GetModelPtrOrNullptr( GetKind() ) );
+		model.AssignMotion( 0 );
 		AssignMyBody( parameter.wsPos );
 		velocity		= 0.0f;
 		orientation		= Donya::Quaternion::Identity();
@@ -286,6 +311,10 @@ namespace Item
 		velocity.y -= GetGravity() * elapsedTime;
 
 		UpdateRemoveCondition( wsScreen );
+
+		const auto *pData = GetGeneralOrNull( GetKind() );
+		const float animePlaySpeed = ( pData ) ? pData->animePlaySpeed : 1.0f;
+		model.UpdateMotion( elapsedTime * animePlaySpeed, 0 );
 	}
 	void Item::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
@@ -306,14 +335,9 @@ namespace Item
 	}
 	void Item::Draw( RenderingHelper *pRenderer ) const
 	{
-		if ( !pRenderer ) { return; }
+		if ( !pRenderer			) { return; }
+		if ( !model.pResource	) { return; }
 		// else
-
-		const ModelHelper::StaticSet *pModelSet = GetModelPtrOrNullptr( GetKind() );
-		if ( !pModelSet ) { return; }
-		// else
-
-		const auto model = *pModelSet;
 
 		const Donya::Vector3 &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
 		const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
@@ -324,7 +348,7 @@ namespace Item
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();
 
-		pRenderer->Render( model.model, model.pose );
+		pRenderer->Render( model.pResource->model, model.pose );
 
 		pRenderer->DeactivateConstantModel();
 	}
@@ -406,24 +430,6 @@ namespace Item
 		if ( willDisappear || OnOutSideScreen( wsScreen ) )
 		{
 			wantRemove = true;
-		}
-	}
-	namespace
-	{
-		const ItemParam::General *GetGeneralOrNull( Kind kind )
-		{
-			const auto &data = Parameter::GetItem();
-
-			switch ( kind )
-			{
-			case Kind::ExtraLife:			return &data.extraLife;
-			case Kind::LifeEnergy_Big:		return &data.lifeEnergyBig.general;
-			case Kind::LifeEnergy_Small:	return &data.lifeEnergySmall.general;
-			default: break;
-			}
-
-			_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
-			return nullptr;
 		}
 	}
 	float Item::GetGravity() const
