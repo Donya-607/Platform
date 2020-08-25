@@ -101,6 +101,9 @@ namespace Enemy
 		hurtBox.pos		= wsPos;
 		hurtBox.offset	= data.hurtBoxOffset;
 		hurtBox.size	= data.hurtBoxSize;
+
+		body.offset		= orientation.RotateVector( body.offset		);
+		hurtBox.offset	= orientation.RotateVector( hurtBox.offset	);
 	}
 	void SuperBallMachine::ChangeMotion( MotionKind nextKind )
 	{

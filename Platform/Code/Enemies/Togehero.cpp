@@ -57,6 +57,9 @@ namespace Enemy
 		{
 			const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( data.rotateSpeed ) );
 			orientation.RotateBy( rotation );
+
+			body.offset		= orientation.RotateVector( data.basic.hitBoxOffset		);
+			hurtBox.offset	= orientation.RotateVector( data.basic.hurtBoxOffset	);
 		}
 
 		UpdateMotionIfCan( elapsedTime * data.animePlaySpeed, 0 );
@@ -86,6 +89,9 @@ namespace Enemy
 		hurtBox.pos		= wsPos;
 		hurtBox.offset	= data.hurtBoxOffset;
 		hurtBox.size	= data.hurtBoxSize;
+
+		body.offset		= orientation.RotateVector( body.offset		);
+		hurtBox.offset	= orientation.RotateVector( hurtBox.offset	);
 	}
 #if USE_IMGUI
 	bool Togehero::ShowImGuiNode( const std::string &nodeCaption )
