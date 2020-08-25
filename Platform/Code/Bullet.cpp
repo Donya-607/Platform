@@ -388,9 +388,9 @@ namespace Bullet
 	}
 	void Base::ProtectedBy( const Donya::Collision::Box3F &otherBody ) const
 	{
-		const auto myCenter		= ( hitSphere.exist ) ? hitSphere.WorldPosition( orientation ) : body.WorldPosition( orientation );
-		const auto otherMax		= otherBody.Max( orientation );
-		const auto otherMin		= otherBody.Min( orientation );
+		const auto myCenter		= ( hitSphere.exist ) ? hitSphere.WorldPosition() : body.WorldPosition();
+		const auto otherMax		= otherBody.Max();
+		const auto otherMin		= otherBody.Min();
 		const float distLeft	= otherMin.x - myCenter.x;
 		const float distRight	= otherMax.x - myCenter.x;
 		ProtectedByImpl( distLeft, distRight );
@@ -429,9 +429,7 @@ namespace Bullet
 	}
 	Donya::Collision::Sphere3F Base::GetHitSphere() const
 	{
-		Donya::Collision::Sphere3F tmp = hitSphere;
-		tmp.offset = orientation.RotateVector( tmp.offset );
-		return tmp;
+		return hitSphere;
 	}
 	Definition::Damage Base::GetDamage() const
 	{
