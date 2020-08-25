@@ -492,6 +492,11 @@ namespace Bullet
 		if ( direction.IsZero() ) { return; }
 		// else
 		orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), direction );
+		
+		const bool useAABB		= ( !hitSphere.exist	);
+		const bool useSphere	= ( !body.exist			);
+		if ( useAABB	) { AssignBodyParameter( body.pos		); }
+		if ( useSphere	) { AssignBodyParameter( hitSphere.pos	); }
 	}
 	void Base::UpdateMotionIfCan( float elapsedTime, int motionIndex )
 	{

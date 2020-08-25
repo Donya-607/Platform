@@ -82,6 +82,8 @@ namespace Bullet
 		{
 			accelCount++;
 			accelCount = std::min( data.accelerateCount, accelCount );
+
+			UpdateOrientation( velocity.Unit() );
 		}
 
 		body.pos		= mover.body.pos;
@@ -103,7 +105,7 @@ namespace Bullet
 	{
 		const auto &data = Parameter::GetSuperBall().basic;
 		body.pos	= wsPos;
-		body.offset	= data.hitBoxOffset;
+		body.offset	= orientation.RotateVector( data.hitBoxOffset );
 		body.size	= data.hitBoxSize;
 	}
 #if USE_IMGUI

@@ -62,7 +62,7 @@ namespace Bullet
 	{
 		const auto &data = Parameter::GetSkullBuster().basic;
 		body.pos	= wsPos;
-		body.offset	= data.hitBoxOffset;
+		body.offset	= orientation.RotateVector( data.hitBoxOffset );
 		body.size	= data.hitBoxSize;
 	}
 #if USE_IMGUI
@@ -136,7 +136,7 @@ namespace Bullet
 	{
 		const auto &data	= Parameter::GetSkullShield().basic;
 		hitSphere.pos		= wsPos;
-		hitSphere.offset	= data.hitBoxOffset;
+		hitSphere.offset	= orientation.RotateVector( data.hitBoxOffset );
 		hitSphere.radius	= data.hitBoxSize.x;
 
 		// Only enable sphere hit box
