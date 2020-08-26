@@ -147,17 +147,21 @@ namespace
 
 			if ( ImGui::TreeNode( u8"シャドウマップ関連" ) )
 			{
-				ImGui::ColorEdit3( u8"影の色",						&shadowMap.color.x,				0.01f );
+				ImGui::ColorEdit3( u8"影の色",						&shadowMap.color.x );
 				ImGui::DragFloat ( u8"アクネ用のバイアス",			&shadowMap.bias,				0.01f );
-				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&shadowMap.posOffset.x,			0.01f );
+				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&shadowMap.posOffset.x,			1.0f  );
 				ImGui::DragFloat3( u8"写す方向（単位ベクトル）",		&shadowMap.projectDirection.x,	0.01f );
-				ImGui::DragFloat3( u8"写す範囲ＸＹＺ",				&shadowMap.projectDistance.x,	0.01f );
-				ImGui::DragFloat ( u8"Z-Near",						&shadowMap.nearDistance,		0.01f );
+				ImGui::DragFloat3( u8"写す範囲ＸＹＺ",				&shadowMap.projectDistance.x,	1.0f  );
+				ImGui::DragFloat ( u8"Z-Near",						&shadowMap.nearDistance,		1.0f  );
 
-				if ( ImGui::Button( u8"写す方向を正規化" ) )
+				shadowMap.projectDistance.z = std::max( shadowMap.nearDistance + 1.0f, shadowMap.projectDistance.z );
+
+				static bool alwaysNormalize = false;
+				if ( ImGui::Button( u8"写す方向を正規化" ) || alwaysNormalize )
 				{
 					shadowMap.projectDirection.Normalize();
 				}
+				ImGui::Checkbox( u8"常に正規化する", &alwaysNormalize );
 
 				ImGui::TreePop();
 			}
@@ -494,7 +498,15 @@ void SceneGame::Draw( float elapsedTime )
 
 	if ( pShadowMap ) { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
 
-	auto DrawObjects = [&]( DrawTarget option, bool castShadow )
+	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector3 &eyePos, const Donya::Vector4x4 &viewProjectionMatrix )
+	{
+		Donya::Model::Constants::PerScene::Common constant{};
+		constant.directionalLight	= directionalLight;
+		constant.eyePosition		= Donya::Vector4{ eyePos, 1.0f };
+		constant.viewProjMatrix		= viewProjectionMatrix;
+		pRenderer->UpdateConstant( constant );
+	};
+	auto DrawObjects			= [&]( DrawTarget option, bool castShadow )
 	{
 		using Kind = DrawTarget;
 		auto Drawable = [&option]( Kind verify )
@@ -533,43 +545,49 @@ void SceneGame::Draw( float elapsedTime )
 	constexpr DrawTarget castShadowTarget = DrawTarget::All;
 	constexpr DrawTarget normalDrawTarget = DrawTarget::All;
 	
-	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
+	const Donya::Vector4x4 VP  = iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix();
+	const Donya::Vector4x4 LVP = CalcLightViewProjectionMatrix();
 	const auto &data = FetchParameter();
-
-	// Update scene constant
-	{
-		Donya::Model::Constants::PerScene::Common constant{};
-		constant.directionalLight	= data.directionalLight;
-		constant.eyePosition		= Donya::Vector4{ iCamera.GetPosition(), 1.0f };
-		constant.viewProjMatrix		= VP;
-		pRenderer->UpdateConstant( constant );
-	}
 
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
 	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
-	pRenderer->ActivateConstantScene();
 
+	// Update scene constant as light source
+	{
+		Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
+		tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
+		UpdateSceneConstant( tmpDirLight, lightCamera.GetPosition(), LVP );
+	}
 	// Make the shadow map
 	{
+		pRenderer->ActivateConstantScene();
+
 		pShadowMap->SetRenderTarget();
 		pShadowMap->SetViewport();
 
 		DrawObjects( castShadowTarget, /* castShadow = */ true );
 
 		Donya::Surface::ResetRenderTarget();
+
+		pRenderer->DeactivateConstantScene();
 	}
 
 	// Draw normal scene with shadow map
 	{
 		Donya::SetDefaultRenderTargets();
 
-		RenderingHelper::ShadowConstant constant{};
-		constant.lightProjMatrix	= VP;
-		constant.shadowColor		= Donya::Vector3{ 0.2f, 0.2f, 0.2f };
-		constant.shadowBias			= 0.03f;
-		pRenderer->UpdateConstant( constant );
+		UpdateSceneConstant( data.directionalLight, iCamera.GetPosition(), VP );
+		// Update shadow constant
+		{
+			RenderingHelper::ShadowConstant constant{};
+			constant.lightProjMatrix	= LVP;
+			constant.shadowColor		= data.shadowMap.color;
+			constant.shadowBias			= data.shadowMap.bias;
+			pRenderer->UpdateConstant( constant );
+		}
 
+		pRenderer->ActivateConstantScene();
 		pRenderer->ActivateConstantShadow();
 		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		pRenderer->ActivateShadowMap( *pShadowMap );
@@ -579,8 +597,8 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->DeactivateShadowMap( *pShadowMap );
 		pRenderer->DeactivateSamplerShadow();
 		pRenderer->DeactivateConstantShadow();
+		pRenderer->DeactivateConstantScene();
 	}
-	pRenderer->DeactivateConstantScene();
 	pRenderer->DeactivateSamplerModel();
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
