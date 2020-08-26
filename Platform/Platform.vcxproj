@@ -151,6 +151,7 @@
     <ClCompile Include="Code\Donya\Camera.cpp" />
     <ClCompile Include="Code\Donya\Collision.cpp" />
     <ClCompile Include="Code\Donya\Color.cpp" />
+    <ClCompile Include="Code\Donya\Displayer.cpp" />
     <ClCompile Include="Code\Donya\Donya.cpp" />
     <ClCompile Include="Code\Donya\GamepadXInput.cpp" />
     <ClCompile Include="Code\Donya\GeometricPrimitive.cpp" />
@@ -235,6 +236,7 @@
     <ClInclude Include="Code\Donya\Constant.h" />
     <ClInclude Include="Code\Donya\Counter.h" />
     <ClInclude Include="Code\Donya\Direct3DUtil.h" />
+    <ClInclude Include="Code\Donya\Displayer.h" />
     <ClInclude Include="Code\Donya\Donya.h" />
     <ClInclude Include="Code\Donya\Easing.h" />
     <ClInclude Include="Code\Donya\GamepadXInput.h" />
