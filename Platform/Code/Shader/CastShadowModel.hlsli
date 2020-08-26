@@ -1,11 +1,7 @@
 struct VS_OUT
 {
 	float4		svPos		: SV_POSITION;
-	float4		wsPos		: POSITION0;	// World space
-	float4		lssPosNDC	: POSITION1;	// Light-source space, NDC
-	float4		normal		: NORMAL;
-	float2		texCoord	: TEXCOORD0;
-	float2		shadowMapUV	: TEXCOORD1;
+	float4		lssPosNDC	: POSITION;		// Light-source space, NDC
 };
 
 struct Light

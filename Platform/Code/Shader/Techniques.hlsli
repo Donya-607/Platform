@@ -11,6 +11,32 @@ float4 LinearToSRGB( float4 colorLinear )
 	return pow( abs( colorLinear ), 1.0f / 2.2f );
 }
 
+// Using way is: https://en.wikipedia.org/wiki/Relative_luminance
+float CalcLuminance( float3 linearRGB )
+{
+	return
+	linearRGB.r * 0.2126f +
+	linearRGB.g * 0.7152f +
+	linearRGB.b * 0.0722f
+	;
+}
+
+// We consider as the origin of texCoord is left-top.
+float2 NDCToTexCoord( float2 NDCPos )
+{
+	/*
+	-1.0f * 0.5f + 0.5f = 0.0f
+	 0.0f * 0.5f + 0.5f = 0.5f
+	 1.0f * 0.5f + 0.5f = 1.0f
+	*/
+	
+	return float2
+	(
+		(  NDCPos.x * 0.5f ) + 0.5f,
+		( -NDCPos.y * 0.5f ) + 0.5f // Y-plus direction to be down
+	);
+}
+
 // Calculate diffuse reflection.
 // Argument.nwsNormal : The normal of normalized world space.
 // Argument.nwsToLightVec : The light vector of normalized world space. this vector is "position -> light".
@@ -78,6 +104,17 @@ float BlinnPhong( float3 nwsNormal, float3 nwsToLightVec, float3 nwsToEyeVec, fl
 	float3 nwsHalfVec		= normalize( nwsToEyeVec + nwsToLightVec );
 	float  specularFactor	= max( 0.0f, dot( nwsHalfVec, nwsNormal ) );
 	return max( 0.0f, pow( specularFactor, shininess ) * intensity );
+}
+
+// Calculate shadowing percent.
+// Argument.lsPixelDepth : Light-source space depth of current pixel.
+// Argument.lsShadowMapDepth : Light-source space nearest depth of stored.
+// Returns : Shadow factor. 0.0f ~ 1.0f.
+float CalcShadowFactor( float lsPixelDepth, float lsShadowMapDepth )
+{
+	float	shadowColor		= max ( lsPixelDepth, lsShadowMapDepth );
+	float	ignoreShadow	= step( lsPixelDepth, lsShadowMapDepth );
+	return	saturate( shadowColor + ignoreShadow );
 }
 
 // Calculate fog effect.

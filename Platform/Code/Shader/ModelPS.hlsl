@@ -3,32 +3,18 @@
 
 cbuffer CBPerSubset : register( b3 )
 {
-	float4	cbAmbient;
-	float4	cbDiffuse;
-	float4	cbSpecular; // W is Shininess
+	float4		cbAmbient;
+	float4		cbDiffuse;
+	float4		cbSpecular;		// W is Shininess
 };
 
-cbuffer CBForTransparency : register( b4 )
+cbuffer CBForShadow : register( b4 )
 {
-	float cbTransNear;
-	float cbTransFar;
-	float cbTransLowerAlpha;
-	float cbTransHeightThreshold;
+	row_major
+	float4x4	cbLightProj;	// View-Projection of light-source
+	float3		cbShadowColor;	// RGB
+	float		cbShadowBias;
 };
-
-float CalcTransparency( float3 pixelPos )
-{
-	float	distance		= length( pixelPos - cbEyePosition.xyz );
-	float	percent			= saturate( ( distance - cbTransNear ) / ( cbTransFar - cbTransNear ) );
-			clip( percent );
-			
-	float	biasedPercent	= cbTransLowerAlpha + ( percent * ( 1.0f - cbTransLowerAlpha ) );
-	
-	// I don't wanna transparentize if the pixel under the threshold.
-	float	isUnderThreshold= step( pixelPos.y, cbTransHeightThreshold );
-	
-	return	min( 1.0f, biasedPercent + isUnderThreshold );
-}
 
 float3 CalcLightInfluence( Light light, float3 nwsPixelToLightVec, float3 nwsPixelNormal, float3 nwsEyeVector )
 {
@@ -48,6 +34,8 @@ float3 CalcLightInfluence( Light light, float3 nwsPixelToLightVec, float3 nwsPix
 
 Texture2D		diffuseMap			: register( t0 );
 SamplerState	diffuseMapSampler	: register( s0 );
+Texture2D		shadowMap			: register( t1 );
+SamplerState	shadowMapSampler	: register( s1 );
 
 float4 main( VS_OUT pin ) : SV_TARGET
 {
@@ -63,10 +51,15 @@ float4 main( VS_OUT pin ) : SV_TARGET
 	float3	totalLight		= CalcLightInfluence( cbDirLight.light, nLightVec, pin.normal.rgb, nEyeVector.rgb );
 			totalLight		+= cbAmbient.rgb * cbAmbient.w;
 
-	float3	resultColor		= diffuseMapColor.rgb * totalLight;
-	float4	outputColor		= float4( resultColor, diffuseMapAlpha );
-			outputColor		= outputColor * cbDrawColor;
-			outputColor.a	= outputColor.a * CalcTransparency( pin.wsPos.xyz );
+	float3	resultColor		= diffuseMapColor.rgb * totalLight * cbDrawColor.rgb;
+	
+	float	pixelDepth		= pin.lssPosNDC.z - cbShadowBias;
+	float	shadowMapDepth	= shadowMap.Sample( shadowMapSampler, pin.shadowMapUV ).r;
+	float	shadowFactor	= CalcShadowFactor( pixelDepth, shadowMapDepth );
+	
+			resultColor		= lerp( cbShadowColor.rgb, resultColor, shadowFactor );
+	
+	float4	outputColor		= float4( resultColor, diffuseMapAlpha * cbDrawColor.a );
 
 	return	LinearToSRGB( outputColor );
 }
