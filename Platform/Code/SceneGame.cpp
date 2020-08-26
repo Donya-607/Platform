@@ -15,6 +15,7 @@
 #include "Donya/Useful.h"
 #include "Donya/Vector.h"
 #if DEBUG_MODE
+#include "Donya/GeometricPrimitive.h"
 #include "Donya/Mouse.h"
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
@@ -69,7 +70,7 @@ namespace
 			Donya::Vector3	color;			// RGB
 			float			bias = 0.03f;	// Ease an acne
 
-			Donya::Vector3	posOffset;		// From the player position
+			Donya::Vector3	posOffset;		// From the camera position
 			Donya::Vector3	projectDirection{  0.0f,  0.0f,  1.0f };
 			Donya::Vector3	projectDistance { 10.0f, 10.0f, 50.0f };// [m]
 			float			nearDistance = 1.0f;					// Z near is this. Z far is projectDistance.z.
@@ -149,11 +150,13 @@ namespace
 			{
 				ImGui::ColorEdit3( u8"影の色",						&shadowMap.color.x );
 				ImGui::DragFloat ( u8"アクネ用のバイアス",			&shadowMap.bias,				0.01f );
-				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&shadowMap.posOffset.x,			1.0f  );
+				ImGui::DragFloat3( u8"光源の座標（カメラからの相対）",	&shadowMap.posOffset.x,			1.0f  );
 				ImGui::DragFloat3( u8"写す方向（単位ベクトル）",		&shadowMap.projectDirection.x,	0.01f );
 				ImGui::DragFloat3( u8"写す範囲ＸＹＺ",				&shadowMap.projectDistance.x,	1.0f  );
 				ImGui::DragFloat ( u8"Z-Near",						&shadowMap.nearDistance,		1.0f  );
 
+				shadowMap.projectDistance.x = std::max( 0.1f, shadowMap.projectDistance.x );
+				shadowMap.projectDistance.y = std::max( 0.1f, shadowMap.projectDistance.y );
 				shadowMap.projectDistance.z = std::max( shadowMap.nearDistance + 1.0f, shadowMap.projectDistance.z );
 
 				static bool alwaysNormalize = false;
@@ -267,7 +270,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		if ( nowDebugMode )
 		{
 			iCamera.ChangeMode( Donya::ICamera::Mode::Satellite );
-			lightCamera.ChangeMode( Donya::ICamera::Mode::Satellite );
 		}
 		else
 		{
@@ -621,8 +623,16 @@ void SceneGame::Draw( float elapsedTime )
 	if ( pPlayer ) { pPlayer->DrawMeter(); }
 
 #if DEBUG_MODE
-	if ( Common::IsShowCollision() )
+	// if ( Common::IsShowCollision() )
 	{
+		static Donya::Geometric::Line line{ 512U };
+		static bool shouldInitializeLine = true;
+		if ( shouldInitializeLine )
+		{
+			shouldInitializeLine = false;
+			line.Init();
+		}
+
 		Donya::Model::Cube::Constant constant;
 		constant.matViewProj	= VP;
 		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 0.6f };
@@ -651,6 +661,24 @@ void SceneGame::Draw( float elapsedTime )
 			constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( color ), alpha };
 			DrawCube( currentScreen.WorldPosition(), Donya::Vector3{ scale, 0.2f } );
 		}
+
+		// Light source
+		if ( 1 )
+		{
+			const auto lightPos = lightCamera.GetPosition();
+
+			constexpr auto  color = Donya::Color::Code::DARK_GRAY;
+			constexpr float alpha = 1.0f;
+			constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( color ), alpha };
+			DrawCube( lightPos, Donya::Vector3{ 1.0f, 1.0f, 1.0f } );
+
+			constexpr Donya::Vector4 lineColor{ 0.3f, 1.0f, 0.3f, 1.0f };
+			constexpr float lineLength = 10.0f;
+			const auto lightDir = data.shadowMap.projectDirection.Unit();
+			line.Reserve( lightPos, lightPos + ( lightDir * lineLength ), lineColor );
+		}
+		
+		line.Flush( VP );
 	}
 #endif // DEBUG_MODE
 }
@@ -728,18 +756,23 @@ void SceneGame::InitStage( int stageNo )
 
 	/*
 	The dependencies of initializations:
+	CurrentRoomID	[House, Player]
+	House - it is free
 	Enemies:		[Map]				- depends on the map for decide the initial state
 	Map:			[CurrentScreen]		- depends on an area of current screen the camera projects
 	CurrentScreen:	[Camera]			- depends on the view and projection matrix of the camera
-	Camera:			[Player]			- depends on the player position
+	Camera:			[Player, House]		- depends on the player position(camera) and room position(light camera)
 	Player - it is free(currently)
-	CurrentRoomID	[House]
-	House - it is free
 	*/
 
 	// Initialize a dependent objects
 
+	pHouse = std::make_unique<House>();
+	pHouse->Init( stageNo );
+
 	PlayerInit();
+
+	currentRoomID = pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
 
 	// The calculation of camera position depends on the player's position
 	CameraInit();
@@ -755,11 +788,6 @@ void SceneGame::InitStage( int stageNo )
 #if DEBUG_MODE
 	enemyAdmin.SaveEnemies( stageNo, true );
 #endif // DEBUG_MODE
-
-	pHouse = std::make_unique<House>();
-	pHouse->Init( stageNo );
-
-	currentRoomID = pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
 
 	// Initialize a non-dependent objects
 
@@ -929,10 +957,18 @@ void SceneGame::AssignCameraPos()
 		focusPos = ClampFocusPoint( focusPos, currentRoomID );
 	}
 
-	iCamera.SetPosition  ( focusPos + data.camera.offsetPos   );
+	const Donya::Vector3 cameraPos = focusPos + data.camera.offsetPos;
+	iCamera.SetPosition  ( cameraPos );
 	iCamera.SetFocusPoint( focusPos + data.camera.offsetFocus );
 	
-	lightCamera.SetPosition( focusPos + data.shadowMap.posOffset );
+	const Room *pCurrentRoom = ( pHouse ) ? pHouse->FindRoomOrNullptr( currentRoomID ) : nullptr;
+	const Donya::Vector3 basePos
+	{
+		cameraPos.x,
+		( pCurrentRoom ) ? pCurrentRoom->GetArea().Max().y : cameraPos.y,
+		cameraPos.z,
+	};
+	lightCamera.SetPosition( basePos + data.shadowMap.posOffset );
 }
 void SceneGame::CameraUpdate( float elapsedTime )
 {
@@ -944,6 +980,15 @@ void SceneGame::CameraUpdate( float elapsedTime )
 		iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
 		iCamera.SetProjectionPerspective();
 
+		const auto cameraPos = previousCameraPos;
+		const Room *pCurrentRoom = ( pHouse ) ? pHouse->FindRoomOrNullptr( currentRoomID ) : nullptr;
+		const Donya::Vector3 basePos
+		{
+			cameraPos.x,
+			( pCurrentRoom ) ? pCurrentRoom->GetArea().Max().y : cameraPos.y,
+			cameraPos.z,
+		};
+		lightCamera.SetPosition( basePos + data.shadowMap.posOffset );
 		lightCamera.SetZRange( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
 		lightCamera.SetScreenSize( data.shadowMap.projectDistance.XY() );
 		lightCamera.SetProjectionOrthographic();
@@ -963,16 +1008,17 @@ void SceneGame::CameraUpdate( float elapsedTime )
 	input.SetNoOperation();
 	input.slerpPercent = data.camera.slerpFactor;
 
+	lightCamera.Update( input );
+
 #if !DEBUG_MODE
 	AssignCameraPos();
 	iCamera.Update( input );
-	lightCamera.Update( input );
 #else
 	if ( !nowDebugMode )
 	{
 		AssignCameraPos();
 		iCamera.Update( input );
-		lightCamera.Update( input );
+		previousCameraPos = iCamera.GetPosition();
 		return;
 	}
 	// else
@@ -992,7 +1038,6 @@ void SceneGame::CameraUpdate( float elapsedTime )
 	{
 		input.SetNoOperation();
 		iCamera.Update( input );
-		lightCamera.Update( input );
 		return;
 	}
 	// else
@@ -1038,7 +1083,8 @@ void SceneGame::CameraUpdate( float elapsedTime )
 	input.moveInLocalSpace	= true;
 
 	iCamera.Update( input );
-	lightCamera.Update( input );
+
+	input.SetNoOperation();
 
 #endif // !DEBUG_MODE
 }
@@ -1047,7 +1093,22 @@ Donya::Vector4x4 SceneGame::CalcLightViewProjectionMatrix() const
 {
 	const Donya::Vector3 lightPos = lightCamera.GetPosition();
 
-	Donya::Vector4x4 view = lightCamera.GetOrientation().Conjugate().MakeRotationMatrix();
+	const Donya::Vector3 lookDirection = FetchParameter().shadowMap.projectDirection.Unit();
+	Donya::Quaternion lookAt = Donya::Quaternion::LookAt
+	(
+		Donya::Quaternion::Identity(), lookDirection,
+		Donya::Quaternion::Freeze::Up
+	);
+	lookAt.RotateBy
+	(
+		Donya::Quaternion::Make
+		(
+			lookAt.LocalRight(),
+			atan2f( lookDirection.y, lookDirection.z )
+		)
+	);
+
+	Donya::Vector4x4 view = lookAt.Conjugate().MakeRotationMatrix();
 	view._41 = -lightPos.x;
 	view._42 = -lightPos.y;
 	view._43 = -lightPos.z;

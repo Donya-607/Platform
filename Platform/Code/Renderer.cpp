@@ -39,7 +39,7 @@ namespace Config
 		/* Mesh		*/	RegisterDesc::Make( 2, /* setVS = */ true,	/* setPS = */ false	),
 		/* Subset	*/	RegisterDesc::Make( 3, /* setVS = */ false,	/* setPS = */ true	),
 
-		/* Shadow	*/	RegisterDesc::Make( 4, /* setVS = */ false,	/* setPS = */ true	),
+		/* Shadow	*/	RegisterDesc::Make( 4, /* setVS = */ true,	/* setPS = */ true	),
 	};
 	static constexpr RegisterDesc textures[TextureName::TextureCount]
 	{

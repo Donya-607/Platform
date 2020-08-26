@@ -35,4 +35,11 @@ cbuffer CBPerModel : register( b1 )
 
 // cbuffer( b2 ) is there at VS
 // cbuffer( b3 ) is there at PS
-// cbuffer( b4 ) is there at PS
+
+cbuffer CBForShadow : register( b4 )
+{
+	row_major
+	float4x4	cbLightProj;	// View-Projection of light-source
+	float3		cbShadowColor;	// RGB
+	float		cbShadowBias;
+};

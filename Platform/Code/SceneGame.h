@@ -83,6 +83,7 @@ private:
 	bool	isReverseCameraRotX		= false;
 	bool	isReverseCameraRotY		= false;
 	const Room *pChosenRoom			= nullptr; // It used for ImGui
+	Donya::Vector3 previousCameraPos; // In not debugMode
 #endif // DEBUG_MODE
 public:
 	SceneGame() : Scene() {}

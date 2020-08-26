@@ -8,14 +8,6 @@ cbuffer CBPerSubset : register( b3 )
 	float4		cbSpecular;		// W is Shininess
 };
 
-cbuffer CBForShadow : register( b4 )
-{
-	row_major
-	float4x4	cbLightProj;	// View-Projection of light-source
-	float3		cbShadowColor;	// RGB
-	float		cbShadowBias;
-};
-
 float3 CalcLightInfluence( Light light, float3 nwsPixelToLightVec, float3 nwsPixelNormal, float3 nwsEyeVector )
 {
 	float	diffuseFactor	= HalfLambert( nwsPixelNormal, nwsPixelToLightVec );
