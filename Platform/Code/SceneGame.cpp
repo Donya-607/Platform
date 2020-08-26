@@ -404,8 +404,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 void SceneGame::Draw( float elapsedTime )
 {
-	// elapsedTime = 1.0f; // Disable
-
 	ClearBackGround();
 
 	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
@@ -420,9 +418,9 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->UpdateConstant( constant );
 	}
 
-	pRenderer->ActivateDepthStencilModel();
-	pRenderer->ActivateRasterizerModel();
-	pRenderer->ActivateSamplerModel();
+	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
+	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
+	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
 	pRenderer->ActivateConstantScene();
 	{
 		// The drawing priority is determined by the priority of the information.
@@ -440,9 +438,9 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->DeactivateShaderNormalSkinning();
 	}
 	pRenderer->DeactivateConstantScene();
-	pRenderer->DeactivateDepthStencilModel();
-	pRenderer->DeactivateRasterizerModel();
 	pRenderer->DeactivateSamplerModel();
+	Donya::Rasterizer::Deactivate();
+	Donya::DepthStencil::Deactivate();
 
 #if DEBUG_MODE
 	// Object's hit/hurt boxes

@@ -64,17 +64,7 @@ private:
 	public:
 		bool Create();
 	};
-	struct State
-	{
-		static constexpr int DEFAULT_ID = -1;
-		int DS	= DEFAULT_ID;
-		int RS	= DEFAULT_ID;
-		int PS	= DEFAULT_ID;
-	public:
-		bool Create();
-	};
 private:
-	State							state;
 	std::unique_ptr<CBuffer>		pCBuffer;
 	std::unique_ptr<ShaderSet>		pShader;
 	std::unique_ptr<Renderer>		pRenderer;
@@ -108,17 +98,13 @@ public:
 	void DeactivateShaderCube();	// For primitive.
 	void DeactivateShaderSphere();	// For primitive.
 public:
-	void ActivateDepthStencilModel();
 	void ActivateDepthStencilCube();
 	void ActivateDepthStencilSphere();
-	void ActivateRasterizerModel();
 	void ActivateRasterizerCube();
 	void ActivateRasterizerSphere();
-	void ActivateSamplerModel();
-	void DeactivateDepthStencilModel();
+	void ActivateSamplerModel( int samplerIdentifier );
 	void DeactivateDepthStencilCube();
 	void DeactivateDepthStencilSphere();
-	void DeactivateRasterizerModel();
 	void DeactivateRasterizerCube();
 	void DeactivateRasterizerSphere();
 	void DeactivateSamplerModel();

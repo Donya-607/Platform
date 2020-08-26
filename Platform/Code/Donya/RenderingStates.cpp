@@ -352,7 +352,7 @@ namespace Donya
 			if ( !result ) { succeeded = false; }
 
 
-			desc.Filter			= D3D11_FILTER_MIN_MAG_MIP_POINT;
+			desc.Filter			= D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 			desc.AddressU		= D3D11_TEXTURE_ADDRESS_BORDER;
 			desc.AddressV		= D3D11_TEXTURE_ADDRESS_BORDER;
 			desc.AddressW		= D3D11_TEXTURE_ADDRESS_BORDER;
@@ -360,6 +360,10 @@ namespace Donya
 			desc.BorderColor[1]	= 0.0f;
 			desc.BorderColor[2]	= 0.0f;
 			desc.BorderColor[3]	= 1.0f;
+			result = CreateState( scast<int>( Defined::Linear_Border_Black ), desc, pDevice );
+			if ( !result ) { succeeded = false; }
+
+			desc.Filter			= D3D11_FILTER_MIN_MAG_MIP_POINT;
 			result = CreateState( scast<int>( Defined::Point_Border_Black ), desc, pDevice );
 			if ( !result ) { succeeded = false; }
 			

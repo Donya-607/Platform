@@ -168,9 +168,9 @@ void SceneTitle::Draw( float elapsedTime )
 		// pRenderer->UpdateConstant( constant );
 	}
 	
-	pRenderer->ActivateDepthStencilModel();
-	pRenderer->ActivateRasterizerModel();
-	pRenderer->ActivateSamplerModel();
+	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
+	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
+	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
 	pRenderer->ActivateConstantScene();
 	// pRenderer->ActivateConstantTrans();
 	{
@@ -184,9 +184,9 @@ void SceneTitle::Draw( float elapsedTime )
 	}
 	// pRenderer->DeactivateConstantTrans();
 	pRenderer->DeactivateConstantScene();
-	pRenderer->DeactivateDepthStencilModel();
-	pRenderer->DeactivateRasterizerModel();
 	pRenderer->DeactivateSamplerModel();
+	Donya::Rasterizer::Deactivate();
+	Donya::DepthStencil::Deactivate();
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )

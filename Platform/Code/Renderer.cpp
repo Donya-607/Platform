@@ -5,47 +5,6 @@
 
 namespace
 {
-	static constexpr D3D11_DEPTH_STENCIL_DESC	DepthStencilDesc()
-	{
-		D3D11_DEPTH_STENCIL_DESC standard{};
-		standard.DepthEnable			= TRUE;
-		standard.DepthWriteMask			= D3D11_DEPTH_WRITE_MASK_ALL;
-		standard.DepthFunc				= D3D11_COMPARISON_LESS;
-		standard.StencilEnable			= FALSE;
-		return standard;
-	}
-	static constexpr D3D11_RASTERIZER_DESC		RasterizerDesc()
-	{
-		D3D11_RASTERIZER_DESC standard{};
-		standard.FillMode				= D3D11_FILL_SOLID;
-		standard.CullMode				= D3D11_CULL_BACK;
-		standard.FrontCounterClockwise	= TRUE;
-		standard.DepthBias				= 0;
-		standard.DepthBiasClamp			= 0;
-		standard.SlopeScaledDepthBias	= 0;
-		standard.DepthClipEnable		= TRUE;
-		standard.ScissorEnable			= FALSE;
-		standard.MultisampleEnable		= FALSE;
-		standard.AntialiasedLineEnable	= TRUE;
-		return standard;
-	}
-	static constexpr D3D11_SAMPLER_DESC			SamplerDesc()
-	{
-		D3D11_SAMPLER_DESC standard{};
-		/*
-		standard.MipLODBias		= 0;
-		standard.MaxAnisotropy	= 16;
-		*/
-		standard.Filter					= D3D11_FILTER_ANISOTROPIC;
-		standard.AddressU				= D3D11_TEXTURE_ADDRESS_WRAP;
-		standard.AddressV				= D3D11_TEXTURE_ADDRESS_WRAP;
-		standard.AddressW				= D3D11_TEXTURE_ADDRESS_WRAP;
-		standard.ComparisonFunc			= D3D11_COMPARISON_ALWAYS;
-		standard.MinLOD					= 0;
-		standard.MaxLOD					= D3D11_FLOAT32_MAX;
-		return standard;
-	}
-
 	// These settings are hard-coded by a programmer.
 
 	static constexpr Donya::Model::RegisterDesc TransSetting()
@@ -146,44 +105,6 @@ bool RenderingHelper::ShaderSet::Create()
 	return succeeded;
 }
 
-bool RenderingHelper::State::Create()
-{
-	using FindFunction = std::function<bool( int )>;
-	auto  FindAvailableID = []( const FindFunction &IsAlreadyExists )
-	{
-		for ( int i = 0; i < INT_MAX; ++i )
-		{
-			if ( IsAlreadyExists( i ) ) { continue; }
-			// else
-
-			return i;
-		}
-
-		_ASSERT_EXPR( 0, L"Error : An available identifier was not found!" );
-		return NULL;
-	};
-
-	bool succeeded = true;
-
-	if ( DS == DEFAULT_ID )
-	{
-		DS =  FindAvailableID( Donya::DepthStencil::IsAlreadyExists );
-		if ( !Donya::DepthStencil::CreateState( DS, DepthStencilDesc() ) ) { succeeded = false; }
-	}
-	if ( RS == DEFAULT_ID )
-	{
-		RS = FindAvailableID( Donya::Rasterizer::IsAlreadyExists );
-		if ( !Donya::Rasterizer::CreateState( RS, RasterizerDesc() ) ) { succeeded = false; }
-	}
-	if ( PS == DEFAULT_ID )
-	{
-		PS = FindAvailableID( Donya::Sampler::IsAlreadyExists );
-		if ( !Donya::Sampler::CreateState( PS, SamplerDesc() ) ) { succeeded = false; }
-	}
-
-	return succeeded;
-}
-
 bool RenderingHelper::Init()
 {
 	if ( wasCreated ) { return true; }
@@ -196,7 +117,6 @@ bool RenderingHelper::Init()
 	pRenderer	= std::make_unique<Renderer>();
 	pPrimitive	= std::make_unique<PrimitiveSet>();
 
-	if ( !state.Create() )			{ succeeded = false; }
 	if ( !pCBuffer->Create() )		{ succeeded = false; }
 	if ( !pRenderer->Create() )		{ succeeded = false; }
 	if ( !pShader->Create() )		{ succeeded = false; }
@@ -307,10 +227,6 @@ void RenderingHelper::DeactivateShaderSphere()
 	pPrimitive->rendererSphere.DeactivatePixelShader();
 }
 
-void RenderingHelper::ActivateDepthStencilModel()
-{
-	Donya::DepthStencil::Activate( state.DS );
-}
 void RenderingHelper::ActivateDepthStencilCube()
 {
 	pPrimitive->rendererCube.ActivateDepthStencil();
@@ -318,10 +234,6 @@ void RenderingHelper::ActivateDepthStencilCube()
 void RenderingHelper::ActivateDepthStencilSphere()
 {
 	pPrimitive->rendererSphere.ActivateDepthStencil();
-}
-void RenderingHelper::ActivateRasterizerModel()
-{
-	Donya::Rasterizer::Activate( state.RS );
 }
 void RenderingHelper::ActivateRasterizerCube()
 {
@@ -331,14 +243,10 @@ void RenderingHelper::ActivateRasterizerSphere()
 {
 	pPrimitive->rendererSphere.ActivateRasterizer();
 }
-void RenderingHelper::ActivateSamplerModel()
+void RenderingHelper::ActivateSamplerModel( int identifier )
 {
 	constexpr auto desc = SamplerSetting();
-	Donya::Sampler::SetPS( state.PS, desc.setSlot );
-}
-void RenderingHelper::DeactivateDepthStencilModel()
-{
-	Donya::DepthStencil::Deactivate();
+	Donya::Sampler::SetPS( identifier, desc.setSlot );
 }
 void RenderingHelper::DeactivateDepthStencilCube()
 {
@@ -347,10 +255,6 @@ void RenderingHelper::DeactivateDepthStencilCube()
 void RenderingHelper::DeactivateDepthStencilSphere()
 {
 	pPrimitive->rendererSphere.DeactivateDepthStencil();
-}
-void RenderingHelper::DeactivateRasterizerModel()
-{
-	Donya::Rasterizer::Deactivate();
 }
 void RenderingHelper::DeactivateRasterizerCube()
 {
@@ -363,7 +267,7 @@ void RenderingHelper::DeactivateRasterizerSphere()
 void RenderingHelper::DeactivateSamplerModel()
 {
 	constexpr auto desc = SamplerSetting();
-	Donya::Sampler::ResetPS( state.PS );
+	Donya::Sampler::ResetPS( desc.setSlot );
 }
 
 void RenderingHelper::Render( const Donya::Model::StaticModel	&model, const Donya::Model::Pose &pose )
