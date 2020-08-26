@@ -15,19 +15,18 @@
 class RenderingHelper
 {
 public:
-	struct TransConstant
+	struct ShadowConstant
 	{
-		float zNear				= 1.0f;
-		float zFar				= 3.0f;
-		float lowerAlpha		= 0.1f;
-		float heightThreshold	= 0.0f;	// I don't wanna transparentize a pixel that under the threshold.
+		Donya::Vector4x4	lightProjMatrix;	// The view-projection matrix that was used to making shadow map. The view-projection of light-source.
+		Donya::Vector3		shadowColor;		// RGB
+		float				shadowBias = 0.03f;	// Used for ease a shadow acne
 	};
 private:
 	struct CBuffer
 	{
-		Donya::CBuffer<TransConstant> trans;
 		Donya::CBuffer<Donya::Model::Constants::PerScene::Common> scene;
 		Donya::CBuffer<Donya::Model::Constants::PerModel::Common> model;
+		Donya::CBuffer<ShadowConstant> shadow;
 	public:
 		bool Create();
 	};
@@ -61,6 +60,8 @@ private:
 	{
 		Shader	normalStatic;
 		Shader	normalSkinning;
+		Shader	shadowStatic;
+		Shader	shadowSkinning;
 	public:
 		bool Create();
 	};
@@ -73,28 +74,32 @@ private:
 public:
 	bool Init();
 public:
-	void UpdateConstant( const TransConstant &constant );
 	void UpdateConstant( const Donya::Model::Constants::PerScene::Common &constant );
 	void UpdateConstant( const Donya::Model::Constants::PerModel::Common &constant );
+	void UpdateConstant( const ShadowConstant &constant );
 	void UpdateConstant( const Donya::Model::Cube::Constant		&constant );	// For primitive.
 	void UpdateConstant( const Donya::Model::Sphere::Constant	&constant );	// For primitive.
-	void ActivateConstantTrans();
 	void ActivateConstantScene();
 	void ActivateConstantModel();
+	void ActivateConstantShadow();
 	void ActivateConstantCube();	// For primitive.
 	void ActivateConstantSphere();	// For primitive.
-	void DeactivateConstantTrans();
 	void DeactivateConstantScene();
 	void DeactivateConstantModel();
+	void DeactivateConstantShadow();
 	void DeactivateConstantCube();	// For primitive.
 	void DeactivateConstantSphere();// For primitive.
 public:
 	void ActivateShaderNormalStatic();
 	void ActivateShaderNormalSkinning();
+	void ActivateShaderShadowStatic();
+	void ActivateShaderShadowSkinning();
 	void ActivateShaderCube();		// For primitive.
 	void ActivateShaderSphere();	// For primitive.
 	void DeactivateShaderNormalStatic();
 	void DeactivateShaderNormalSkinning();
+	void DeactivateShaderShadowStatic();
+	void DeactivateShaderShadowSkinning();
 	void DeactivateShaderCube();	// For primitive.
 	void DeactivateShaderSphere();	// For primitive.
 public:
