@@ -51,6 +51,7 @@ private:
 private:
 	Donya::ICamera						iCamera;
 	Scroll								scroll;
+	Donya::ICamera						lightCamera;
 
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 	Input								currentInput;
@@ -106,6 +107,8 @@ private:
 	void	PrepareScrollIfNotActive( int oldRoomID, int newRoomID );
 	void	AssignCameraPos();
 	void	CameraUpdate( float elapsedTime );
+
+	Donya::Vector4x4 CalcLightViewProjectionMatrix() const;
 
 	void	PlayerInit();
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );

@@ -54,8 +54,8 @@ namespace
 		{
 			float slerpFactor	= 0.2f;
 			float fovDegree		= 30.0f;
-			Donya::Vector3 offsetPos{ 0.0f, 5.0f, -10.0f };	// The offset of position from the player position.
-			Donya::Vector3 offsetFocus;	// The offset of focus from the player position.
+			Donya::Vector3 offsetPos{ 0.0f, 5.0f, -10.0f };	// The offset of position from the player position
+			Donya::Vector3 offsetFocus;						// The offset of focus from the player position
 		}
 		camera;
 		
@@ -63,6 +63,38 @@ namespace
 
 		float scrollTakeSecond	= 1.0f;	// The second required for scrolling
 		float waitSecondRetry	= 1.0f; // Waiting second between Miss ~ Re-try
+
+		struct ShadowMap
+		{
+			Donya::Vector3	color;			// RGB
+			float			bias = 0.03f;	// Ease an acne
+
+			Donya::Vector3	posOffset;		// From the player position
+			Donya::Vector3	projectDirection{  0.0f,  0.0f,  1.0f };
+			Donya::Vector3	projectDistance { 10.0f, 10.0f, 50.0f };// [m]
+			float			nearDistance = 1.0f;					// Z near is this. Z far is projectDistance.z.
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( color			),
+					CEREAL_NVP( bias			),
+					CEREAL_NVP( posOffset		),
+					CEREAL_NVP( projectDirection),
+					CEREAL_NVP( projectDistance	),
+					CEREAL_NVP( nearDistance	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		ShadowMap shadowMap;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -90,6 +122,10 @@ namespace
 			}
 			if ( 4 <= version )
 			{
+				archive( CEREAL_NVP( shadowMap ) );
+			}
+			if ( 5 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -108,6 +144,23 @@ namespace
 			}
 			
 			ImGui::Helper::ShowDirectionalLightNode( u8"平行光", &directionalLight );
+
+			if ( ImGui::TreeNode( u8"シャドウマップ関連" ) )
+			{
+				ImGui::ColorEdit3( u8"影の色",						&shadowMap.color.x,				0.01f );
+				ImGui::DragFloat ( u8"アクネ用のバイアス",			&shadowMap.bias,				0.01f );
+				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&shadowMap.posOffset.x,			0.01f );
+				ImGui::DragFloat3( u8"写す方向（単位ベクトル）",		&shadowMap.projectDirection.x,	0.01f );
+				ImGui::DragFloat3( u8"写す範囲ＸＹＺ",				&shadowMap.projectDistance.x,	0.01f );
+				ImGui::DragFloat ( u8"Z-Near",						&shadowMap.nearDistance,		0.01f );
+
+				if ( ImGui::Button( u8"写す方向を正規化" ) )
+				{
+					shadowMap.projectDirection.Normalize();
+				}
+
+				ImGui::TreePop();
+			}
 
 			if ( ImGui::TreeNode( u8"秒数関連" ) )
 			{
@@ -154,7 +207,8 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam, 3 )
+CEREAL_CLASS_VERSION( SceneParam,				4 )
+CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
 {
@@ -209,10 +263,12 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		if ( nowDebugMode )
 		{
 			iCamera.ChangeMode( Donya::ICamera::Mode::Satellite );
+			lightCamera.ChangeMode( Donya::ICamera::Mode::Satellite );
 		}
 		else
 		{
 			iCamera.SetOrientation( Donya::Quaternion::Identity() );
+			lightCamera.SetOrientation( Donya::Quaternion::Identity() );
 			CameraInit();
 		}
 	}
@@ -529,30 +585,6 @@ void SceneGame::Draw( float elapsedTime )
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
 
-	//Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
-	//Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
-	//pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
-	//pRenderer->ActivateConstantScene();
-	//{
-	//	// The drawing priority is determined by the priority of the information.
-
-	//	pRenderer->ActivateShaderNormalStatic();
-	//	if ( pMap ) { pMap->Draw( pRenderer.get() ); }
-	//	pRenderer->DeactivateShaderNormalStatic();
-
-	//	pRenderer->ActivateShaderNormalSkinning();
-	//	Bullet::Admin::Get().Draw( pRenderer.get() );
-	//	if ( pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
-	//	if ( pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
-	//	Enemy::Admin::Get().Draw( pRenderer.get() );
-	//	Item::Admin::Get().Draw( pRenderer.get() );
-	//	pRenderer->DeactivateShaderNormalSkinning();
-	//}
-	//pRenderer->DeactivateConstantScene();
-	//pRenderer->DeactivateSamplerModel();
-	//Donya::Rasterizer::Deactivate();
-	//Donya::DepthStencil::Deactivate();
-
 #if DEBUG_MODE
 	// Object's hit/hurt boxes
 	if ( Common::IsShowCollision() )
@@ -798,8 +830,15 @@ void SceneGame::CameraInit()
 	iCamera.SetZRange( 0.1f, 1000.0f );
 	iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
 	iCamera.SetScreenSize( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
+
+	lightCamera.Init( Donya::ICamera::Mode::Free );
+	lightCamera.SetZRange( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
+	lightCamera.SetScreenSize( data.shadowMap.projectDistance.XY() );
+
 	AssignCameraPos();
+
 	iCamera.SetProjectionPerspective();
+	lightCamera.SetProjectionOrthographic();
 
 	// I can setting a configuration,
 	// but current data is not changed immediately.
@@ -808,6 +847,7 @@ void SceneGame::CameraInit()
 	moveInitPoint.SetNoOperation();
 	moveInitPoint.slerpPercent = 1.0f;
 	iCamera.Update( moveInitPoint );
+	lightCamera.Update( moveInitPoint );
 
 	scroll.active			= false;
 	scroll.elapsedSecond	= 0.0f;
@@ -873,14 +913,23 @@ void SceneGame::AssignCameraPos()
 
 	iCamera.SetPosition  ( focusPos + data.camera.offsetPos   );
 	iCamera.SetFocusPoint( focusPos + data.camera.offsetFocus );
+	
+	lightCamera.SetPosition( focusPos + data.shadowMap.posOffset );
 }
 void SceneGame::CameraUpdate( float elapsedTime )
 {
 	const auto &data = FetchParameter();
 
 #if USE_IMGUI
-	iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
-	iCamera.SetProjectionPerspective();
+	// Apply for be able to see an adjustment immediately
+	{
+		iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
+		iCamera.SetProjectionPerspective();
+
+		lightCamera.SetZRange( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
+		lightCamera.SetScreenSize( data.shadowMap.projectDistance.XY() );
+		lightCamera.SetProjectionOrthographic();
+	}
 #endif // USE_IMGUI
 
 	if ( scroll.active )
@@ -899,11 +948,13 @@ void SceneGame::CameraUpdate( float elapsedTime )
 #if !DEBUG_MODE
 	AssignCameraPos();
 	iCamera.Update( input );
+	lightCamera.Update( input );
 #else
 	if ( !nowDebugMode )
 	{
 		AssignCameraPos();
 		iCamera.Update( input );
+		lightCamera.Update( input );
 		return;
 	}
 	// else
@@ -923,6 +974,7 @@ void SceneGame::CameraUpdate( float elapsedTime )
 	{
 		input.SetNoOperation();
 		iCamera.Update( input );
+		lightCamera.Update( input );
 		return;
 	}
 	// else
@@ -968,8 +1020,20 @@ void SceneGame::CameraUpdate( float elapsedTime )
 	input.moveInLocalSpace	= true;
 
 	iCamera.Update( input );
+	lightCamera.Update( input );
 
 #endif // !DEBUG_MODE
+}
+
+Donya::Vector4x4 SceneGame::CalcLightViewProjectionMatrix() const
+{
+	const Donya::Vector3 lightPos = lightCamera.GetPosition();
+
+	Donya::Vector4x4 view = lightCamera.GetOrientation().Conjugate().MakeRotationMatrix();
+	view._41 = -lightPos.x;
+	view._42 = -lightPos.y;
+	view._43 = -lightPos.z;
+	return view * lightCamera.GetProjectionMatrix();
 }
 
 void SceneGame::PlayerInit()
@@ -1953,6 +2017,22 @@ void SceneGame::UseImGui()
 
 		Meter::Parameter::Update( u8"メータのパラメータ" );
 		ImGui::Text( "" );
+
+		ImGui::TreePop();
+	}
+
+	if ( ImGui::TreeNode( u8"サーフェス描画" ) )
+	{
+		static Donya::Vector2 drawSize{ 320.0f, 180.0f };
+		ImGui::DragFloat2( u8"描画サイズ", &drawSize.x, 10.0f );
+		drawSize.x = std::max( 10.0f, drawSize.x );
+		drawSize.y = std::max( 10.0f, drawSize.y );
+
+		if ( pShadowMap )
+		{
+			ImGui::Text( u8"シャドウマップ：" );
+			pShadowMap->DrawDepthStencilToImGui( drawSize );
+		}
 
 		ImGui::TreePop();
 	}
