@@ -171,6 +171,18 @@ void SceneGame::Init()
 	result = pRenderer->Init();
 	assert( result );
 
+	pShadowMap = std::make_unique<Donya::Surface>();
+	result = pShadowMap->Init
+	(
+		Common::ScreenWidth(),
+		Common::ScreenHeight(),
+		DXGI_FORMAT_R32_FLOAT,		true,
+		DXGI_FORMAT_R32_TYPELESS,	true
+	);
+	assert( result );
+
+	pShadowMap->Clear( Donya::Color::Code::BLACK );
+
 #if DEBUG_MODE
 	stageNumber = 0; // temporary debug stage
 #endif // DEBUG_MODE
@@ -402,14 +414,73 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	return ReturnResult();
 }
 
+namespace
+{
+	enum class DrawTarget
+	{
+		Map		= 1 << 0,
+		Bullet	= 1 << 1,
+		Player	= 1 << 2,
+		Boss	= 1 << 3,
+		Enemy	= 1 << 4,
+		Item	= 1 << 5,
+
+		All		= Map | Bullet | Player | Boss | Enemy | Item
+	};
+	DEFINE_ENUM_FLAG_OPERATORS( DrawTarget )
+}
 void SceneGame::Draw( float elapsedTime )
 {
 	ClearBackGround();
 
+	if ( !pRenderer || !pShadowMap ) { return; }
+	// else
+
+	if ( pShadowMap ) { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
+
+	auto DrawObjects = [&]( DrawTarget option, bool castShadow )
+	{
+		using Kind = DrawTarget;
+		auto Drawable = [&option]( Kind verify )
+		{
+			return scast<int>( option & verify ) != 0;
+		};
+
+		// The drawing priority is determined by the priority of the information.
+
+		( castShadow )
+		? pRenderer->ActivateShaderShadowStatic()
+		: pRenderer->ActivateShaderNormalStatic();
+
+		if ( Drawable( Kind::Map ) && pMap ) { pMap->Draw( pRenderer.get() ); }
+
+		( castShadow )
+		? pRenderer->DeactivateShaderShadowStatic()
+		: pRenderer->DeactivateShaderNormalStatic();
+
+
+		( castShadow )
+		? pRenderer->ActivateShaderShadowSkinning()
+		: pRenderer->ActivateShaderNormalSkinning();
+
+		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() ); }
+		if ( Drawable( Kind::Player	) && pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
+		if ( Drawable( Kind::Boss	) && pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
+		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );	}
+		if ( Drawable( Kind::Item	) ) { Item::Admin::Get().Draw( pRenderer.get() );	}
+
+		( castShadow )
+		? pRenderer->DeactivateShaderShadowSkinning()
+		: pRenderer->DeactivateShaderNormalSkinning();
+	};
+
+	constexpr DrawTarget castShadowTarget = DrawTarget::All;
+	constexpr DrawTarget normalDrawTarget = DrawTarget::All;
+	
 	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
 	const auto &data = FetchParameter();
-	
-	// Update scene constant.
+
+	// Update scene constant
 	{
 		Donya::Model::Constants::PerScene::Common constant{};
 		constant.directionalLight	= data.directionalLight;
@@ -422,25 +493,65 @@ void SceneGame::Draw( float elapsedTime )
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
 	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
 	pRenderer->ActivateConstantScene();
+
+	// Make the shadow map
 	{
-		// The drawing priority is determined by the priority of the information.
+		pShadowMap->SetRenderTarget();
+		pShadowMap->SetViewport();
 
-		pRenderer->ActivateShaderNormalStatic();
-		if ( pMap ) { pMap->Draw( pRenderer.get() ); }
-		pRenderer->DeactivateShaderNormalStatic();
+		DrawObjects( castShadowTarget, /* castShadow = */ true );
 
-		pRenderer->ActivateShaderNormalSkinning();
-		Bullet::Admin::Get().Draw( pRenderer.get() );
-		if ( pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
-		if ( pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
-		Enemy::Admin::Get().Draw( pRenderer.get() );
-		Item::Admin::Get().Draw( pRenderer.get() );
-		pRenderer->DeactivateShaderNormalSkinning();
+		Donya::Surface::ResetRenderTarget();
+	}
+
+	// Draw normal scene with shadow map
+	{
+		Donya::SetDefaultRenderTargets();
+
+		RenderingHelper::ShadowConstant constant{};
+		constant.lightProjMatrix	= VP;
+		constant.shadowColor		= Donya::Vector3{ 0.2f, 0.2f, 0.2f };
+		constant.shadowBias			= 0.03f;
+		pRenderer->UpdateConstant( constant );
+
+		pRenderer->ActivateConstantShadow();
+		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
+		pRenderer->ActivateShadowMap( *pShadowMap );
+
+		DrawObjects( normalDrawTarget, /* castShadow = */ false );
+
+		pRenderer->DeactivateShadowMap( *pShadowMap );
+		pRenderer->DeactivateSamplerShadow();
+		pRenderer->DeactivateConstantShadow();
 	}
 	pRenderer->DeactivateConstantScene();
 	pRenderer->DeactivateSamplerModel();
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
+
+	//Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
+	//Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
+	//pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
+	//pRenderer->ActivateConstantScene();
+	//{
+	//	// The drawing priority is determined by the priority of the information.
+
+	//	pRenderer->ActivateShaderNormalStatic();
+	//	if ( pMap ) { pMap->Draw( pRenderer.get() ); }
+	//	pRenderer->DeactivateShaderNormalStatic();
+
+	//	pRenderer->ActivateShaderNormalSkinning();
+	//	Bullet::Admin::Get().Draw( pRenderer.get() );
+	//	if ( pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
+	//	if ( pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
+	//	Enemy::Admin::Get().Draw( pRenderer.get() );
+	//	Item::Admin::Get().Draw( pRenderer.get() );
+	//	pRenderer->DeactivateShaderNormalSkinning();
+	//}
+	//pRenderer->DeactivateConstantScene();
+	//pRenderer->DeactivateSamplerModel();
+	//Donya::Rasterizer::Deactivate();
+	//Donya::DepthStencil::Deactivate();
 
 #if DEBUG_MODE
 	// Object's hit/hurt boxes

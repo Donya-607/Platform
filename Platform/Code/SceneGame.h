@@ -7,6 +7,7 @@
 #include "Donya/Collision.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
 #include "Donya/GamepadXInput.h"
+#include "Donya/Surface.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
 #include "Boss.h"
@@ -60,6 +61,7 @@ private:
 	State								status			= State::StrategyStage;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
+	std::unique_ptr<Donya::Surface>		pShadowMap;
 
 	std::unique_ptr<Map>				pMap;
 	std::unique_ptr<House>				pHouse;
