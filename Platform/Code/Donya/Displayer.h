@@ -21,6 +21,16 @@ namespace Donya
 			Donya::Vector3 pos;		// NDC
 			Donya::Vector4 color;	// RGBA
 			Donya::Vector2 texCoord;// Origin is left-top
+		public:
+			static constexpr const auto GenerateInputElements( UINT inputSlot = 0 )
+			{
+				return std::array<D3D11_INPUT_ELEMENT_DESC, 3>
+				{
+					D3D11_INPUT_ELEMENT_DESC{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		inputSlot, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA,	0 },
+					D3D11_INPUT_ELEMENT_DESC{ "COLOR",		0, DXGI_FORMAT_R32G32B32A32_FLOAT,	inputSlot, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA,	0 },
+					D3D11_INPUT_ELEMENT_DESC{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		inputSlot, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA,	0 },
+				};
+			}
 		};
 	private:
 		bool wasInitialized = false;
