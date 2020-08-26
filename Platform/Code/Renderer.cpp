@@ -21,8 +21,14 @@ namespace Config
 	enum TextureName
 	{
 		DiffuseMap = 0,
+		ShadowMap,
 
 		TextureCount
+	};
+	enum SamplerSlot : unsigned int
+	{
+		SamplerModel = 0,
+		SamplerShadow,
 	};
 
 	using RegisterDesc = Donya::Model::RegisterDesc;
@@ -38,9 +44,8 @@ namespace Config
 	static constexpr RegisterDesc textures[TextureName::TextureCount]
 	{
 		/* DiffuseMap	*/	RegisterDesc::Make( 0, /* setVS = */ false,	/* setPS = */ true	),
+		/* ShadowMap	*/	RegisterDesc::Make( 1, /* setVS = */ false,	/* setPS = */ true	),
 	};
-
-	static constexpr unsigned int samplerSlotModel = 0;
 }
 
 bool RenderingHelper::CBuffer::Create()
@@ -156,17 +161,17 @@ void RenderingHelper::UpdateConstant( const Donya::Model::Sphere::Constant	&cons
 }
 void RenderingHelper::ActivateConstantScene()
 {
-	constexpr auto &desc = Config::constants[Config::Scene];
+	constexpr auto desc = Config::constants[Config::Scene];
 	pCBuffer->scene.Activate( desc.setSlot, desc.setVS, desc.setPS );
 }
 void RenderingHelper::ActivateConstantModel()
 {
-	constexpr auto &desc = Config::constants[Config::Model];
+	constexpr auto desc = Config::constants[Config::Model];
 	pCBuffer->model.Activate( desc.setSlot, desc.setVS, desc.setPS );
 }
 void RenderingHelper::ActivateConstantShadow()
 {
-	constexpr auto &desc = Config::constants[Config::Shadow];
+	constexpr auto desc = Config::constants[Config::Shadow];
 	pCBuffer->shadow.Activate( desc.setSlot, desc.setVS, desc.setPS );
 }
 void RenderingHelper::ActivateConstantCube()
@@ -269,7 +274,11 @@ void RenderingHelper::ActivateRasterizerSphere()
 }
 void RenderingHelper::ActivateSamplerModel( int identifier )
 {
-	Donya::Sampler::SetPS( identifier, Config::samplerSlotModel );
+	Donya::Sampler::SetPS( identifier, Config::SamplerModel );
+}
+void RenderingHelper::ActivateSamplerShadow( int identifier )
+{
+	Donya::Sampler::SetPS( identifier, Config::SamplerShadow );
 }
 void RenderingHelper::DeactivateDepthStencilCube()
 {
@@ -289,7 +298,22 @@ void RenderingHelper::DeactivateRasterizerSphere()
 }
 void RenderingHelper::DeactivateSamplerModel()
 {
-	Donya::Sampler::ResetPS( Config::samplerSlotModel );
+	Donya::Sampler::ResetPS( Config::SamplerModel );
+}
+void RenderingHelper::DeactivateSamplerShadow()
+{
+	Donya::Sampler::ResetPS( Config::SamplerShadow );
+}
+
+void RenderingHelper::ActivateShadowMap( const Donya::Surface &shadowMap )
+{
+	constexpr auto desc = Config::textures[Config::ShadowMap];
+	shadowMap.SetDepthStencilShaderResourcePS( desc.setSlot );
+}
+void RenderingHelper::DeactivateShadowMap( const Donya::Surface &shadowMap )
+{
+	constexpr auto desc = Config::textures[Config::ShadowMap];
+	shadowMap.ResetShaderResourcePS( desc.setSlot );
 }
 
 void RenderingHelper::Render( const Donya::Model::StaticModel	&model, const Donya::Model::Pose &pose )

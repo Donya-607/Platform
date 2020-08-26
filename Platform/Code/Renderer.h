@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Donya/Shader.h"
+#include "Donya/Surface.h"
 #include "Donya/CBuffer.h"
 #include "Donya/Model.h"
 #include "Donya/ModelCommon.h"
@@ -108,11 +109,16 @@ public:
 	void ActivateRasterizerCube();
 	void ActivateRasterizerSphere();
 	void ActivateSamplerModel( int samplerIdentifier );
+	void ActivateSamplerShadow( int samplerIdentifier );
 	void DeactivateDepthStencilCube();
 	void DeactivateDepthStencilSphere();
 	void DeactivateRasterizerCube();
 	void DeactivateRasterizerSphere();
 	void DeactivateSamplerModel();
+	void DeactivateSamplerShadow();
+public:
+	void ActivateShadowMap( const Donya::Surface &shadowMap );
+	void DeactivateShadowMap( const Donya::Surface &shadowMap );
 public:
 	void Render( const Donya::Model::StaticModel	&model, const Donya::Model::Pose &pose );
 	void Render( const Donya::Model::SkinningModel	&model, const Donya::Model::Pose &pose );
