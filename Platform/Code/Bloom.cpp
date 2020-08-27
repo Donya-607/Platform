@@ -165,7 +165,7 @@ void  BloomApplier::UpdateGaussianBlurParams( float bufferWholeWidth, float buff
 	// Normalize the weights
 	if ( !IsZero( totalWeight ) )
 	{
-		for ( unsigned int i = 0; i < halfSampleCount; ++i )
+		for ( int i = 0; i < halfSampleCount; ++i )
 		{
 			data.params[i].distribution /= totalWeight;
 		}
