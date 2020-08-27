@@ -115,10 +115,10 @@ public:
 	/// </summary>
 	void WriteBlur();
 	/// <summary>
-	/// It changes current blend-state, sampler state and shaders.<para></para>
+	/// It changes current sampler state and shaders.<para></para>
 	/// You can set zero to the "drawingSize". It will use a registered screen size in that case.
 	/// </summary>
-	void DrawBlurBuffersByAddBlend( const Donya::Vector2 &drawingSize = Donya::Vector2::Zero() );
+	void DrawBlurBuffers( const Donya::Vector2 &drawingSize = Donya::Vector2::Zero() );
 private:
 	float CalcGaussianWeight( const Donya::Vector2 &pos, float deviation );
 	void  UpdateGaussianBlurParams( float bufferWholeWidth, float bufferWholeHeight, const Donya::Vector2 &unitBlurDirection, float multiply );

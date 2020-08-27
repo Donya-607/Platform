@@ -243,39 +243,14 @@ void SceneGame::Init()
 	
 	bool result{};
 
-	pRenderer = std::make_unique<RenderingHelper>();
-	result = pRenderer->Init();
-	assert( result );
-	
-	pDisplayer = std::make_unique<Donya::Displayer>();
-	result = pDisplayer->Init();
+	result = CreateRenderers( wholeScreenSize );
 	assert( result );
 
-	pBloomer = std::make_unique<BloomApplier>();
-	result = pBloomer->Init( wholeScreenSize );
+	result = CreateSurfaces( wholeScreenSize );
 	assert( result );
-	pBloomer->AssignParameter( FetchParameter().bloomParam );
 
-	pScreenSurface = std::make_unique<Donya::Surface>();
-	result = pScreenSurface->Init
-	(
-		wholeScreenSize.x,
-		wholeScreenSize.y,
-		DXGI_FORMAT_R16G16B16A16_FLOAT
-	);
+	result = CreateShaders();
 	assert( result );
-	pScreenSurface->Clear( Donya::Color::Code::BLACK );
-	
-	pShadowMap = std::make_unique<Donya::Surface>();
-	result = pShadowMap->Init
-	(
-		wholeScreenSize.x,
-		wholeScreenSize.y,
-		DXGI_FORMAT_R32_FLOAT,		true,
-		DXGI_FORMAT_R32_TYPELESS,	true
-	);
-	assert( result );
-	pShadowMap->Clear( Donya::Color::Code::BLACK );
 
 #if DEBUG_MODE
 	stageNumber = 0; // temporary debug stage
@@ -315,6 +290,11 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 #if USE_IMGUI
 	UseImGui();
+
+	// Apply for be able to see an adjustment immediately
+	{
+		if ( pBloomer ) { pBloomer->AssignParameter( FetchParameter().bloomParam ); }
+	}
 #endif // USE_IMGUI
 	if ( Fader::Get().IsClosed() && nextScene == Scene::Type::Game )
 	{
@@ -528,11 +508,8 @@ void SceneGame::Draw( float elapsedTime )
 {
 	ClearBackGround();
 
-	if ( !pRenderer || !pDisplayer || !pScreenSurface || !pShadowMap ) { return; }
+	if ( !AreRenderersReady() ) { return; }
 	// else
-
-	if ( pScreenSurface	) { pScreenSurface->Clear( Donya::Color::Code::BLACK );	}
-	if ( pShadowMap		) { pShadowMap->Clear( Donya::Color::Code::BLACK );		}
 
 	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector3 &eyePos, const Donya::Vector4x4 &viewProjectionMatrix )
 	{
@@ -673,17 +650,31 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
 		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA );
+
+		pQuadShader->VS.Activate();
+		pQuadShader->PS.Activate();
+
+		pScreenSurface->SetRenderTargetShaderResourcePS( 0U );
+
 		pDisplayer->Draw
 		(
 			screenSurfaceSize,
 			Donya::Vector2::Zero()
 		);
+
+		pScreenSurface->ResetShaderResourcePS( 0U );
+
+		pQuadShader->PS.Deactivate();
+		pQuadShader->VS.Deactivate();
+
 		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 		Donya::Sampler::ResetPS( 0 );
 	}
 
 	// Add the bloom buffers
-	pBloomer->DrawBlurBuffersByAddBlend( screenSurfaceSize );
+	Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
+	pBloomer->DrawBlurBuffers( screenSurfaceSize );
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
@@ -789,6 +780,79 @@ void SceneGame::Draw( float elapsedTime )
 		line.Flush( VP );
 	}
 #endif // DEBUG_MODE
+}
+
+bool SceneGame::CreateRenderers( const Donya::Int2 &wholeScreenSize )
+{
+	bool succeeded = true;
+
+	pRenderer = std::make_unique<RenderingHelper>();
+	if ( !pRenderer->Init() ) { succeeded = false; }
+
+	pDisplayer = std::make_unique<Donya::Displayer>();
+	if ( !pDisplayer->Init() ) { succeeded = false; }
+
+	pBloomer = std::make_unique<BloomApplier>();
+	if ( !pBloomer->Init( wholeScreenSize ) ) { succeeded = false; }
+	pBloomer->AssignParameter( FetchParameter().bloomParam );
+
+	return succeeded;
+}
+bool SceneGame::CreateSurfaces( const Donya::Int2 &wholeScreenSize )
+{
+	bool succeeded	= true;
+	bool result		= true;
+
+	pScreenSurface = std::make_unique<Donya::Surface>();
+	result = pScreenSurface->Init
+	(
+		wholeScreenSize.x,
+		wholeScreenSize.y,
+		DXGI_FORMAT_R16G16B16A16_FLOAT
+	);
+	if ( !result ) { succeeded = false; }
+	else { pScreenSurface->Clear( Donya::Color::Code::BLACK ); }
+
+	pShadowMap = std::make_unique<Donya::Surface>();
+	result = pShadowMap->Init
+	(
+		wholeScreenSize.x,
+		wholeScreenSize.y,
+		DXGI_FORMAT_R32_FLOAT, true,
+		DXGI_FORMAT_R32_TYPELESS, true
+	);
+	if ( !result ) { succeeded = false; }
+	else { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
+
+	return succeeded;
+}
+bool SceneGame::CreateShaders()
+{
+	constexpr const char *VSPath = "./Data/Shaders/DisplayQuadVS.cso";
+	constexpr const char *PSPath = "./Data/Shaders/DisplayQuadPS.cso";
+	constexpr auto IEDescs = Donya::Displayer::Vertex::GenerateInputElements();
+
+	// The vertex shader requires IE-descs as std::vector<>
+	const std::vector<D3D11_INPUT_ELEMENT_DESC> IEDescsV{ IEDescs.begin(), IEDescs.end() };
+
+	bool succeeded = true;
+
+	pQuadShader = std::make_unique<Shader>();
+	if ( !pQuadShader->VS.CreateByCSO( VSPath, IEDescsV	) ) { succeeded = false; }
+	if ( !pQuadShader->PS.CreateByCSO( PSPath			) ) { succeeded = false; }
+
+	return succeeded;
+}
+bool SceneGame::AreRenderersReady() const
+{
+	if ( !pRenderer			) { return false; }
+	if ( !pDisplayer		) { return false; }
+	if ( !pBloomer			) { return false; }
+	if ( !pScreenSurface	) { return false; }
+	if ( !pShadowMap		) { return false; }
+	if ( !pQuadShader		) { return false; }
+	// else
+	return true;
 }
 
 Donya::Vector4x4 SceneGame::MakeScreenTransform() const
@@ -1734,16 +1798,21 @@ void SceneGame::Collision_PlayerVSItem()
 
 void SceneGame::ClearBackGround() const
 {
+	if ( pShadowMap ) { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
+
 	constexpr Donya::Vector3 gray = Donya::Color::MakeColor( Donya::Color::Code::GRAY );
 	constexpr FLOAT BG_COLOR[4]{ gray.x, gray.y, gray.z, 1.0f };
 	Donya::ClearViews( BG_COLOR );
 
+	if ( pScreenSurface ) { pScreenSurface->Clear( Donya::Vector4{ gray, 1.0f } ); }
 #if DEBUG_MODE
 	if ( nowDebugMode )
 	{
 		constexpr Donya::Vector3 teal = Donya::Color::MakeColor( Donya::Color::Code::CYAN );
 		constexpr FLOAT DEBUG_COLOR[4]{ teal.x, teal.y, teal.z, 1.0f };
 		Donya::ClearViews( DEBUG_COLOR );
+
+		if ( pScreenSurface ) { pScreenSurface->Clear( Donya::Vector4{ teal, 1.0f } ); }
 	}
 #endif // DEBUG_MODE
 }

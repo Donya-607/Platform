@@ -7,6 +7,7 @@
 #include "Donya/Collision.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
 #include "Donya/GamepadXInput.h"
+#include "Donya/Shader.h"
 #include "Donya/Surface.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
@@ -49,6 +50,11 @@ private:
 		Donya::Vector3	cameraFocusStart;
 		Donya::Vector3	cameraFocusDest;
 	};
+	struct Shader
+	{
+		Donya::VertexShader VS;
+		Donya::PixelShader  PS;
+	};
 private:
 	Donya::ICamera						iCamera;
 	Scroll								scroll;
@@ -67,7 +73,7 @@ private:
 	std::unique_ptr<BloomApplier>		pBloomer;
 	std::unique_ptr<Donya::Surface>		pScreenSurface;
 	std::unique_ptr<Donya::Surface>		pShadowMap;
-
+	std::unique_ptr<Shader>				pQuadShader;
 	std::unique_ptr<Map>				pMap;
 	std::unique_ptr<House>				pHouse;
 	std::unique_ptr<ClearEvent>			pClearEvent;
@@ -99,6 +105,11 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
+	bool	CreateRenderers( const Donya::Int2 &wholeScreenSize );
+	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
+	bool	CreateShaders();
+	bool	AreRenderersReady() const;
+
 	Donya::Vector4x4 MakeScreenTransform() const;
 	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
 

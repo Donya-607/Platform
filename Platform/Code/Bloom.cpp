@@ -76,10 +76,10 @@ bool  BloomApplier::Init( const Donya::Int2 &wholeScreenSize )
 
 	// Create shaders
 	{
-		constexpr const char *VSPath			= "./Data/Shader/DisplayQuadVS.cso";
-		constexpr const char *PSLuminancePath	= "./Data/Shader/ExtractLuminancePS.cso";
-		constexpr const char *PSBlurPath		= "./Data/Shader/ApplyBlurPS.cso";
-		constexpr const char *PSCombinePath		= "./Data/Shader/DrawBlurBuffersPS.cso";
+		constexpr const char *VSPath			= "./Data/Shaders/DisplayQuadVS.cso";
+		constexpr const char *PSLuminancePath	= "./Data/Shaders/ExtractLuminancePS.cso";
+		constexpr const char *PSBlurPath		= "./Data/Shaders/ApplyBlurPS.cso";
+		constexpr const char *PSCombinePath		= "./Data/Shaders/DrawBlurBuffersPS.cso";
 		constexpr auto IEDescs = Donya::Displayer::Vertex::GenerateInputElements();
 
 		// The vertex shader requires IE-descs as std::vector<>
@@ -302,20 +302,20 @@ void  BloomApplier::WriteBlur()
 	PSBlur.Deactivate();
 	VS.Deactivate();
 }
-void  BloomApplier::DrawBlurBuffersByAddBlend( const Donya::Vector2 &drawingSize )
+void  BloomApplier::DrawBlurBuffers( const Donya::Vector2 &drawingSize )
 {
 	const Donya::Vector2 drawSize = ( drawingSize.IsZero() ) ? applicationScreenSize.Float() : drawingSize;
 
 	VS.Activate();
 	PSCombine.Activate();
 
+	SetShaderResourcesPS( 0U );
 	Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0 );
-	Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
-
+	
 	display.Draw( drawSize, Donya::Vector2::Zero() );
 
-	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 	Donya::Sampler::ResetPS( 0 );
+	ResetShaderResourcesPS( 0U );
 
 	PSCombine.Deactivate();
 	VS.Deactivate();
