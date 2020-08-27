@@ -11,6 +11,7 @@
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
 #include "Boss.h"
+#include "Bloom.h"
 #include "ClearEvent.h"
 #include "Map.h"
 #include "ObjectBase.h"
@@ -62,6 +63,9 @@ private:
 	State								status			= State::StrategyStage;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
+	std::unique_ptr<Donya::Displayer>	pDisplayer;
+	std::unique_ptr<BloomApplier>		pBloomer;
+	std::unique_ptr<Donya::Surface>		pScreenSurface;
 	std::unique_ptr<Donya::Surface>		pShadowMap;
 
 	std::unique_ptr<Map>				pMap;

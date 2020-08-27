@@ -7,6 +7,7 @@
 #undef min
 #include <cereal/types/vector.hpp>
 
+#include "Donya/Blend.h"
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
@@ -96,6 +97,8 @@ namespace
 			}
 		};
 		ShadowMap shadowMap;
+
+		BloomApplier::Parameter bloomParam;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -126,6 +129,10 @@ namespace
 				archive( CEREAL_NVP( shadowMap ) );
 			}
 			if ( 5 <= version )
+			{
+				archive( CEREAL_NVP( bloomParam ) );
+			}
+			if ( 6 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -168,6 +175,8 @@ namespace
 
 				ImGui::TreePop();
 			}
+
+			bloomParam.ShowImGuiNode( u8"ブルーム関連" );
 
 			if ( ImGui::TreeNode( u8"秒数関連" ) )
 			{
@@ -214,7 +223,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				4 )
+CEREAL_CLASS_VERSION( SceneParam,				5 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
@@ -225,23 +234,47 @@ void SceneGame::Init()
 #endif // DEBUG_MODE
 
 	sceneParam.LoadParameter();
+
+	constexpr Donya::Int2 wholeScreenSize
+	{
+		Common::ScreenWidth(),
+		Common::ScreenHeight(),
+	};
 	
 	bool result{};
 
 	pRenderer = std::make_unique<RenderingHelper>();
 	result = pRenderer->Init();
 	assert( result );
+	
+	pDisplayer = std::make_unique<Donya::Displayer>();
+	result = pDisplayer->Init();
+	assert( result );
 
+	pBloomer = std::make_unique<BloomApplier>();
+	result = pBloomer->Init( wholeScreenSize );
+	assert( result );
+	pBloomer->AssignParameter( FetchParameter().bloomParam );
+
+	pScreenSurface = std::make_unique<Donya::Surface>();
+	result = pScreenSurface->Init
+	(
+		wholeScreenSize.x,
+		wholeScreenSize.y,
+		DXGI_FORMAT_R16G16B16A16_FLOAT
+	);
+	assert( result );
+	pScreenSurface->Clear( Donya::Color::Code::BLACK );
+	
 	pShadowMap = std::make_unique<Donya::Surface>();
 	result = pShadowMap->Init
 	(
-		Common::ScreenWidth(),
-		Common::ScreenHeight(),
+		wholeScreenSize.x,
+		wholeScreenSize.y,
 		DXGI_FORMAT_R32_FLOAT,		true,
 		DXGI_FORMAT_R32_TYPELESS,	true
 	);
 	assert( result );
-
 	pShadowMap->Clear( Donya::Color::Code::BLACK );
 
 #if DEBUG_MODE
@@ -495,10 +528,11 @@ void SceneGame::Draw( float elapsedTime )
 {
 	ClearBackGround();
 
-	if ( !pRenderer || !pShadowMap ) { return; }
+	if ( !pRenderer || !pDisplayer || !pScreenSurface || !pShadowMap ) { return; }
 	// else
 
-	if ( pShadowMap ) { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
+	if ( pScreenSurface	) { pScreenSurface->Clear( Donya::Color::Code::BLACK );	}
+	if ( pShadowMap		) { pShadowMap->Clear( Donya::Color::Code::BLACK );		}
 
 	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector3 &eyePos, const Donya::Vector4x4 &viewProjectionMatrix )
 	{
@@ -577,7 +611,8 @@ void SceneGame::Draw( float elapsedTime )
 
 	// Draw normal scene with shadow map
 	{
-		Donya::SetDefaultRenderTargets();
+		pScreenSurface->SetRenderTarget();
+		pScreenSurface->SetViewport();
 
 		UpdateSceneConstant( data.directionalLight, iCamera.GetPosition(), VP );
 		// Update shadow constant
@@ -600,8 +635,56 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->DeactivateSamplerShadow();
 		pRenderer->DeactivateConstantShadow();
 		pRenderer->DeactivateConstantScene();
+
+		Donya::Surface::ResetRenderTarget();
 	}
+
 	pRenderer->DeactivateSamplerModel();
+	Donya::Rasterizer::Deactivate();
+	Donya::DepthStencil::Deactivate();
+
+	// Generate the buffers of bloom
+	{
+		constexpr Donya::Vector4 black{ 0.0f, 0.0f, 0.0f, 1.0f };
+		pBloomer->ClearBuffers( black );
+
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
+		Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
+
+		Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0 );
+		pBloomer->WriteLuminance( *pScreenSurface );
+		Donya::Sampler::ResetPS( 0 );
+
+		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
+		pBloomer->WriteBlur();
+		Donya::Sampler::ResetPS( 0 );
+
+		Donya::Rasterizer::Deactivate();
+		Donya::DepthStencil::Deactivate();
+	}
+
+	Donya::SetDefaultRenderTargets();
+
+	const Donya::Vector2 screenSurfaceSize = pScreenSurface->GetSurfaceSizeF();
+
+	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
+	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
+	// Draw the scene to screen
+	{
+		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
+		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA );
+		pDisplayer->Draw
+		(
+			screenSurfaceSize,
+			Donya::Vector2::Zero()
+		);
+		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+		Donya::Sampler::ResetPS( 0 );
+	}
+
+	// Add the bloom buffers
+	pBloomer->DrawBlurBuffersByAddBlend( screenSurfaceSize );
+
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
 
@@ -623,7 +706,7 @@ void SceneGame::Draw( float elapsedTime )
 	if ( pPlayer ) { pPlayer->DrawMeter(); }
 
 #if DEBUG_MODE
-	// if ( Common::IsShowCollision() )
+	if ( Common::IsShowCollision() )
 	{
 		static Donya::Geometric::Line line{ 512U };
 		static bool shouldInitializeLine = true;
@@ -2150,10 +2233,23 @@ void SceneGame::UseImGui()
 		drawSize.x = std::max( 10.0f, drawSize.x );
 		drawSize.y = std::max( 10.0f, drawSize.y );
 
-		if ( pShadowMap )
+		if ( pShadowMap && ImGui::TreeNode( u8"シャドウマップ" ) )
 		{
-			ImGui::Text( u8"シャドウマップ：" );
 			pShadowMap->DrawDepthStencilToImGui( drawSize );
+			ImGui::TreePop();
+		}
+		if ( pScreenSurface && ImGui::TreeNode( u8"スクリーン" ) )
+		{
+			pScreenSurface->DrawRenderTargetToImGui( drawSize );
+			ImGui::TreePop();
+		}
+		if ( pBloomer && ImGui::TreeNode( u8"ブルーム" ) )
+		{
+			ImGui::Text( u8"輝度抽出：" );
+			pBloomer->DrawHighLuminanceToImGui( drawSize );
+			ImGui::Text( u8"縮小バッファたち：" );
+			pBloomer->DrawBlurBuffersToImGui( drawSize );
+			ImGui::TreePop();
 		}
 
 		ImGui::TreePop();

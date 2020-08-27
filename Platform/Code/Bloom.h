@@ -78,6 +78,7 @@ private:
 	Donya::VertexShader VS;
 	Donya::PixelShader  PSHighLuminance;
 	Donya::PixelShader  PSBlur;
+	Donya::PixelShader  PSCombine;
 
 	Donya::CBuffer<HighLuminanceConstant>	cbHighLuminance;
 	Donya::CBuffer<BlurConstant>			cbBlur;
@@ -103,22 +104,28 @@ public:
 	void SetShaderResourcesPS( size_t startIndex );
 	void ResetShaderResourcesPS( size_t startIndex );
 public:
+	void AssignParameter( const Parameter &parameter );
 	void ClearBuffers( const Donya::Vector4 &clearColor );
 	/// <summary>
-	/// It changes current render target, viewport and shaders
+	/// It changes current render target, viewport and shaders.
 	/// </summary>
 	void WriteLuminance( const Donya::Surface &sceneSurface );
 	/// <summary>
-	/// It changes current render target, viewport and shaders
+	/// It changes current render target, viewport and shaders.
 	/// </summary>
 	void WriteBlur();
+	/// <summary>
+	/// It changes current blend-state, sampler state and shaders.<para></para>
+	/// You can set zero to the "drawingSize". It will use a registered screen size in that case.
+	/// </summary>
+	void DrawBlurBuffersByAddBlend( const Donya::Vector2 &drawingSize = Donya::Vector2::Zero() );
 private:
 	float CalcGaussianWeight( const Donya::Vector2 &pos, float deviation );
 	void  UpdateGaussianBlurParams( float bufferWholeWidth, float bufferWholeHeight, const Donya::Vector2 &unitBlurDirection, float multiply );
 public:
 #if USE_IMGUI
-	void ShowImGuiNode( const std::string &nodeCaption );
+	void DrawHighLuminanceToImGui( const Donya::Vector2 &wholeDrawSize );
+	void DrawBlurBuffersToImGui( const Donya::Vector2 &wholeDrawSize );
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( BloomApplier,				0 )
 CEREAL_CLASS_VERSION( BloomApplier::Parameter,	0 )

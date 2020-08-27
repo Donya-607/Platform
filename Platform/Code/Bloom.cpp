@@ -1,10 +1,11 @@
 #include "Bloom.h"
 
+#include "Donya/Blend.h"
 #include "Donya/Color.h"
 #include "Donya/RenderingStates.h"
 
 #if USE_IMGUI
-void BloomApplier::Parameter::ShowImGuiNode( const std::string &nodeCaption )
+void  BloomApplier::Parameter::ShowImGuiNode( const std::string &nodeCaption )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
@@ -75,9 +76,10 @@ bool  BloomApplier::Init( const Donya::Int2 &wholeScreenSize )
 
 	// Create shaders
 	{
-		constexpr const char *VSPath			= "./Data/Shader/SpriteVS.cso";
+		constexpr const char *VSPath			= "./Data/Shader/DisplayQuadVS.cso";
 		constexpr const char *PSLuminancePath	= "./Data/Shader/ExtractLuminancePS.cso";
 		constexpr const char *PSBlurPath		= "./Data/Shader/ApplyBlurPS.cso";
+		constexpr const char *PSCombinePath		= "./Data/Shader/DrawBlurBuffersPS.cso";
 		constexpr auto IEDescs = Donya::Displayer::Vertex::GenerateInputElements();
 
 		// The vertex shader requires IE-descs as std::vector<>
@@ -86,6 +88,7 @@ bool  BloomApplier::Init( const Donya::Int2 &wholeScreenSize )
 
 		if ( !PSHighLuminance	.CreateByCSO( PSLuminancePath	) ) { succeeded = false; }
 		if ( !PSBlur			.CreateByCSO( PSBlurPath		) ) { succeeded = false; }
+		if ( !PSCombine			.CreateByCSO( PSCombinePath		) ) { succeeded = false; }
 	}
 
 	// Create cbuffers
@@ -146,7 +149,7 @@ void  BloomApplier::UpdateGaussianBlurParams( float bufferWholeWidth, float buff
 
 	// It sampling toward positive side,
 	// then assign negated value to negative side.
-	const int halfSampleCount = data.sampleCount >> 1;
+	const int halfSampleCount = parameter.blurSampleCount >> 1;
 
 	// Calc weights of positive side
 	for ( int i = 0 + 1/* Ignore center */; i < halfSampleCount; ++i )
@@ -170,7 +173,7 @@ void  BloomApplier::UpdateGaussianBlurParams( float bufferWholeWidth, float buff
 
 	// Assign to negative side
 	const int offsetToPositive = halfSampleCount - 1;
-	for ( int i = halfSampleCount; i < data.sampleCount; ++i )
+	for ( int i = halfSampleCount; i < parameter.blurSampleCount; ++i )
 	{
 		const int positiveIndex = ( i < offsetToPositive ) ? 0 : i - offsetToPositive; // Prevent to be negative
 		auto &negativeSide = data.params[i];
@@ -178,6 +181,10 @@ void  BloomApplier::UpdateGaussianBlurParams( float bufferWholeWidth, float buff
 		negativeSide.uvOffset		= -positiveSide.uvOffset;
 		negativeSide.distribution	= positiveSide.distribution;
 	}
+}
+void  BloomApplier::AssignParameter( const Parameter &newParameter )
+{
+	parameter = newParameter;
 }
 void  BloomApplier::ClearBuffers( const Donya::Vector4 &clearColor )
 {
@@ -189,6 +196,8 @@ void  BloomApplier::ClearBuffers( const Donya::Vector4 &clearColor )
 void  BloomApplier::WriteLuminance( const Donya::Surface &sceneSurface )
 {
 	VS.Activate();
+
+	cbHighLuminance.data.threshold = parameter.luminanceThreshold;
 
 	PSHighLuminance.Activate();
 	cbHighLuminance.Activate( 0U, false, true );
@@ -293,15 +302,34 @@ void  BloomApplier::WriteBlur()
 	PSBlur.Deactivate();
 	VS.Deactivate();
 }
-
-#if USE_IMGUI
-void BloomApplier::ShowImGuiNode( const std::string &nodeCaption )
+void  BloomApplier::DrawBlurBuffersByAddBlend( const Donya::Vector2 &drawingSize )
 {
-	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
-	// else
+	const Donya::Vector2 drawSize = ( drawingSize.IsZero() ) ? applicationScreenSize.Float() : drawingSize;
 
-	parameter.ShowImGuiNode( u8"ƒpƒ‰ƒ[ƒ^’²®" );
+	VS.Activate();
+	PSCombine.Activate();
 
-	ImGui::TreePop();
+	Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0 );
+	Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
+
+	display.Draw( drawSize, Donya::Vector2::Zero() );
+
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+	Donya::Sampler::ResetPS( 0 );
+
+	PSCombine.Deactivate();
+	VS.Deactivate();
+}
+#if USE_IMGUI
+void  BloomApplier::DrawHighLuminanceToImGui( const Donya::Vector2 &drawSize )
+{
+	highLuminanceSurface.DrawRenderTargetToImGui( drawSize );
+}
+void  BloomApplier::DrawBlurBuffersToImGui( const Donya::Vector2 &drawSize )
+{
+	for ( const auto &it : blurBuffers )
+	{
+		it.DrawRenderTargetToImGui( drawSize );
+	}
 }
 #endif // USE_IMGUI
