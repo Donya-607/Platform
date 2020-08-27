@@ -135,6 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Code\Bloom.cpp" />
     <ClCompile Include="Code\Boss.cpp" />
     <ClCompile Include="Code\Bosses\Skull.cpp" />
     <ClCompile Include="Code\Bullet.cpp" />
@@ -214,6 +215,7 @@
     <ClCompile Include="External\ImGui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Code\Bloom.h" />
     <ClInclude Include="Code\Boss.h" />
     <ClInclude Include="Code\Bosses\Skull.h" />
     <ClInclude Include="Code\Bullet.h" />

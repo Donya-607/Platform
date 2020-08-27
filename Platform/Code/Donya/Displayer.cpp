@@ -42,24 +42,23 @@ namespace Donya
 	}
 
 #pragma region Normal
-	bool Displayer::Draw			( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, float degree, float alpha, const Donya::Vector2 &origin ) const
+	bool Displayer::Draw			( const Donya::Vector2 &originalTexSize, const Donya::Vector2 &ssPos, float degree, float alpha, const Donya::Vector2 &origin ) const
 	{
 		return DrawExt
 		(
-			pSRV,
+			originalTexSize,
 			ssPos,
 			defaultConfig.scale, degree,
 			defaultConfig.MakeColor( alpha ), origin
 		);
 	}
-	bool Displayer::DrawExt			( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
+	bool Displayer::DrawExt			( const Donya::Vector2 &originalTexSize, const Donya::Vector2 &ssPos, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
 	{
-		const Donya::Vector2 wholeTexSize = FetchTextureSizeF( pSRV );
 		return DrawGeneralExt
 		(
-			pSRV,
-			ssPos, wholeTexSize,
-			Donya::Vector2::Zero(), wholeTexSize,
+			originalTexSize,
+			ssPos, originalTexSize,
+			Donya::Vector2::Zero(), originalTexSize,
 			scale, degree,
 			color, origin
 		);
@@ -67,24 +66,23 @@ namespace Donya
 #pragma endregion
 
 #pragma region Stretched
-	bool Displayer::DrawStretched	( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, float degree, float alpha, const Donya::Vector2 &origin ) const
+	bool Displayer::DrawStretched	( const Donya::Vector2 &originalTexSize, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, float degree, float alpha, const Donya::Vector2 &origin ) const
 	{
 		return DrawStretchedExt
 		(
-			pSRV,
+			originalTexSize,
 			ssPos, ssSize,
 			defaultConfig.scale, degree,
 			defaultConfig.MakeColor( alpha ), origin
 		);
 	}
-	bool Displayer::DrawStretchedExt( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
+	bool Displayer::DrawStretchedExt( const Donya::Vector2 &originalTexSize, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
 	{
-		const Donya::Vector2 wholeTexSize = FetchTextureSizeF( pSRV );
 		return DrawGeneralExt
 		(
-			pSRV,
+			originalTexSize,
 			ssPos, ssSize,
-			Donya::Vector2::Zero(), wholeTexSize,
+			Donya::Vector2::Zero(), originalTexSize,
 			scale, degree,
 			color, origin
 		);
@@ -92,44 +90,43 @@ namespace Donya
 #pragma endregion
 
 #pragma region Part
-	bool Displayer::DrawPart		( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, float degree, float alpha, const Donya::Vector2 &origin ) const
+	bool Displayer::DrawPart		( const Donya::Vector2 &originalTexSize, const Donya::Vector2 &ssPos, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, float degree, float alpha, const Donya::Vector2 &origin ) const
 	{
 		return DrawPartExt
 		(
-			pSRV,
+			originalTexSize,
 			ssPos,
 			texPos, texSize,
 			defaultConfig.scale, degree,
 			defaultConfig.MakeColor( alpha ), origin
 		);
 	}
-	bool Displayer::DrawPartExt		( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
+	bool Displayer::DrawPartExt		( const Donya::Vector2 &originalTexSize, const Donya::Vector2 &ssPos, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
 	{
-		const Donya::Vector2 wholeTexSize = FetchTextureSizeF( pSRV );
 		return DrawGeneralExt
 		(
-			pSRV,
-			ssPos, wholeTexSize,
+			originalTexSize,
+			ssPos,  originalTexSize,
 			texPos, texSize,
-			scale, degree,
-			color, origin
+			scale,  degree,
+			color,  origin
 		);
 	}
 #pragma endregion
 
 #pragma region General
-	bool Displayer::DrawGeneral		( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, float degree, float alpha, const Donya::Vector2 &origin ) const
+	bool Displayer::DrawGeneral		( const Donya::Vector2 &originalTexSize, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, float degree, float alpha, const Donya::Vector2 &origin ) const
 	{
 		return DrawGeneralExt
 		(
-			pSRV,
+			originalTexSize,
 			ssPos, ssSize,
 			texPos, texSize,
 			defaultConfig.scale, degree,
 			defaultConfig.MakeColor( alpha ), origin
 		);
 	}
-	bool Displayer::DrawGeneralExt	( ID3D11ShaderResourceView *pSRV, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
+	bool Displayer::DrawGeneralExt	( const Donya::Vector2 &originalTexSize, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, const Donya::Vector2 &scale, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
 	{
 		if ( !wasInitialized )
 		{
@@ -155,7 +152,7 @@ namespace Donya
 
 		const auto NDCVertices = MakeNDCVertices
 		(
-			FetchTextureSizeF( pSRV ),
+			originalTexSize,
 			scrPos, scrSize,
 			texPos, texSize,
 			degree, color, origin
@@ -174,28 +171,6 @@ namespace Donya
 		return true;
 	}
 #pragma endregion
-
-	Donya::Int2		Displayer::FetchTextureSize ( ID3D11ShaderResourceView *pSRV ) const
-	{
-		D3D11_TEXTURE2D_DESC desc{};
-		ID3D11Texture2D *pTexture = nullptr;
-
-		pSRV->GetResource( reinterpret_cast<ID3D11Resource **>( &pTexture ) );
-		pTexture->GetDesc( &desc );
-
-		Donya::Int2 wholeSize
-		{
-			scast<int>( desc.Width  ),
-			scast<int>( desc.Height )
-		};
-
-		pTexture->Release();
-		return wholeSize;
-	}
-	Donya::Vector2	Displayer::FetchTextureSizeF( ID3D11ShaderResourceView *pSRV ) const
-	{
-		return FetchTextureSize( pSRV ).Float();
-	}
 
 	std::array<Displayer::Vertex, 4U> Displayer::MakeNDCVertices( const Donya::Vector2 &originalTexSize, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &texPos, const Donya::Vector2 &texSize, float degree, const Donya::Vector4 &color, const Donya::Vector2 &origin ) const
 	{

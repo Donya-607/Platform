@@ -52,7 +52,7 @@ namespace Donya
 		/// </summary>
 		bool Draw
 		(
-			ID3D11ShaderResourceView *pSRV,
+			const Donya::Vector2 &originalTextureWholeSize,
 			const Donya::Vector2 &screenSpacePosition,
 			float degree = 0.0f,
 			float alpha  = 1.0f,
@@ -64,7 +64,7 @@ namespace Donya
 		/// </summary>
 		bool DrawExt
 		(
-			ID3D11ShaderResourceView *pSRV,
+			const Donya::Vector2 &originalTextureWholeSize,
 			const Donya::Vector2 &screenSpacePosition,
 			const Donya::Vector2 &screenSpaceDrawScale,
 			float degree = 0.0f,
@@ -80,7 +80,7 @@ namespace Donya
 		/// </summary>
 		bool DrawStretched
 		(
-			ID3D11ShaderResourceView *pSRV,
+			const Donya::Vector2 &originalTextureWholeSize,
 			const Donya::Vector2 &screenSpacePosition,
 			const Donya::Vector2 &screenSpaceWholeSize,
 			float degree = 0.0f,
@@ -92,7 +92,7 @@ namespace Donya
 		/// </summary>
 		bool DrawStretchedExt
 		(
-			ID3D11ShaderResourceView *pSRV,
+			const Donya::Vector2 &originalTextureWholeSize,
 			const Donya::Vector2 &screenSpacePosition,
 			const Donya::Vector2 &screenSpaceWholeSize,
 			const Donya::Vector2 &screenSpaceDrawScale,
@@ -109,7 +109,7 @@ namespace Donya
 		/// </summary>
 		bool DrawPart
 		(
-			ID3D11ShaderResourceView *pSRV,
+			const Donya::Vector2 &originalTextureWholeSize,
 			const Donya::Vector2 &screenSpacePosition,
 			const Donya::Vector2 &textureOriginLeftTop,
 			const Donya::Vector2 &textureWholeSize,
@@ -122,7 +122,7 @@ namespace Donya
 		/// </summary>
 		bool DrawPartExt
 		(
-			ID3D11ShaderResourceView *pSRV,
+			const Donya::Vector2 &originalTextureWholeSize,
 			const Donya::Vector2 &screenSpacePosition,
 			const Donya::Vector2 &textureOriginLeftTop,
 			const Donya::Vector2 &textureWholeSize,
@@ -139,7 +139,7 @@ namespace Donya
 		/// </summary>
 		bool DrawGeneral
 		(
-			ID3D11ShaderResourceView *pSRV,
+			const Donya::Vector2 &originalTextureWholeSize,
 			const Donya::Vector2 &screenSpacePosition,
 			const Donya::Vector2 &screenSpaceWholeSize,
 			const Donya::Vector2 &textureOriginLeftTop,
@@ -150,7 +150,7 @@ namespace Donya
 		) const;
 		bool DrawGeneralExt
 		(
-			ID3D11ShaderResourceView *pSRV,
+			const Donya::Vector2 &originalTextureWholeSize,
 			const Donya::Vector2 &screenSpacePosition,
 			const Donya::Vector2 &screenSpaceWholeSize,
 			const Donya::Vector2 &textureOriginLeftTop,
@@ -179,15 +179,6 @@ namespace Donya
 		};
 		static constexpr Default defaultConfig{};
 	private:
-		/// <summary>
-		/// Returns whole size.
-		/// </summary>
-		Donya::Int2		FetchTextureSize ( ID3D11ShaderResourceView *pSRV ) const;
-		/// <summary>
-		/// Returns whole size.
-		/// </summary>
-		Donya::Vector2	FetchTextureSizeF( ID3D11ShaderResourceView *pSRV ) const;
-
 		std::array<Displayer::Vertex, 4U> MakeNDCVertices
 		(
 			const Donya::Vector2 &originalTextureWholeSize,
