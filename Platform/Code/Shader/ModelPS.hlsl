@@ -33,14 +33,14 @@ float4 main( VS_OUT pin ) : SV_TARGET
 {
 			pin.normal		= normalize( pin.normal );
 			
-	float3	nLightVec		= normalize( -cbDirLight.direction.rgb );	// Vector from position.
-	float4	nEyeVector		= cbEyePosition - pin.wsPos;				// Vector from position.
+	float3	nLightVec		= normalize( -cbDirLight.direction.xyz );	// Vector from position.
+	float4	nEyeVector		= normalize( cbEyePosition - pin.wsPos );	// Vector from position.
 
 	float4	diffuseMapColor	= diffuseMap.Sample( diffuseMapSampler, pin.texCoord );
 			diffuseMapColor	= SRGBToLinear( diffuseMapColor );
 	float	diffuseMapAlpha	= diffuseMapColor.a;
 
-	float3	totalLight		= CalcLightInfluence( cbDirLight.light, nLightVec, pin.normal.rgb, nEyeVector.rgb );
+	float3	totalLight		= CalcLightInfluence( cbDirLight.light, nLightVec, pin.normal.xyz, nEyeVector.xyz );
 			totalLight		+= cbAmbient.rgb * cbAmbient.w;
 
 	float3	resultColor		= diffuseMapColor.rgb * totalLight * cbDrawColor.rgb;

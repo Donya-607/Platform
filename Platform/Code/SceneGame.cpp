@@ -638,11 +638,12 @@ void SceneGame::Draw( float elapsedTime )
 		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 0.6f };
 		constant.lightDirection	= data.directionalLight.direction.XYZ();
 		
-		auto DrawCube = [&]( const Donya::Vector3 &pos, const Donya::Vector3 &scale = { 1.0f, 1.0f, 1.0f } )
+		auto DrawCube = [&]( const Donya::Vector3 &pos, const Donya::Vector3 &scale = { 1.0f, 1.0f, 1.0f }, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
 		{
 			constant.matWorld._11 = scale.x * 2.0f;
 			constant.matWorld._22 = scale.y * 2.0f;
 			constant.matWorld._33 = scale.z * 2.0f;
+			constant.matWorld *= rotation.MakeRotationMatrix();
 			constant.matWorld._41 = pos.x;
 			constant.matWorld._42 = pos.y;
 			constant.matWorld._43 = pos.z;
@@ -665,30 +666,22 @@ void SceneGame::Draw( float elapsedTime )
 		// Light source
 		if ( 1 )
 		{
-			const auto lightPos = lightCamera.GetPosition();
-
-			constexpr auto  color = Donya::Color::Code::OLIVE;
-			constexpr float alpha = 1.0f;
-			constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( color ), alpha };
-			DrawCube( lightPos, Donya::Vector3{ 1.0f, 1.0f, 1.0f } );
-
-			constexpr auto  lineColor  = Donya::Color::Code::FUCHSIA;
-			constexpr auto  lineColor4 = Donya::Vector4{ Donya::Color::MakeColor( lineColor ), 1.0f };
 			constexpr float lineLength = 24.0f;
+
+			const auto lightPos = lightCamera.GetPosition();
 			const auto lightDir = data.shadowMap.projectDirection.Unit();
+
+			auto lineColor  = Donya::Color::Code::FUCHSIA;
+			auto lineColor4 = Donya::Vector4{ Donya::Color::MakeColor( lineColor ), 1.0f };
 			line.Reserve( lightPos, lightPos + ( lightDir * lineLength ), lineColor4 );
 
+			/*
 			Donya::Quaternion lookAt = Donya::Quaternion::LookAt
 			(
 				Donya::Quaternion::Identity(), lightDir
 			);
-			auto checkColor = Donya::Color::Code::DARK_GRAY;
-			auto checkColor4 = Donya::Vector4{ Donya::Color::MakeColor( checkColor ), 1.0f };
-			line.Reserve( lightPos, lightPos + ( lookAt.LocalFront() * lineLength * 0.5f ), checkColor4 );
-			line.Reserve( lightPos, lightPos + ( lookAt.LocalUp() * lineLength * 0.5f ), checkColor4 );
-			line.Reserve( lightPos, lightPos + ( lookAt.LocalRight() * lineLength * 0.5f ), checkColor4 );
-
-			lookAt = Donya::Quaternion::LookAt
+			*/
+			Donya::Quaternion lookAt = Donya::Quaternion::LookAt
 			(
 				Donya::Quaternion::Identity(), lightDir,
 				Donya::Quaternion::Freeze::Up
@@ -696,28 +689,18 @@ void SceneGame::Draw( float elapsedTime )
 			lookAt = Donya::Quaternion::LookAt
 			(
 				lookAt, lightDir,
-				Donya::Quaternion::Freeze::Right 
+				Donya::Quaternion::Freeze::Right
 			);
-			checkColor = Donya::Color::Code::GREEN;
-			checkColor4 = Donya::Vector4{ Donya::Color::MakeColor( checkColor ), 1.0f };
-			//line.Reserve( lightPos, lightPos + ( lookAt.LocalFront() * lineLength * 3.0f ), checkColor4 );
+			lineColor = Donya::Color::Code::DARK_GRAY;
+			lineColor4 = Donya::Vector4{ Donya::Color::MakeColor( lineColor ), 1.0f };
+			//line.Reserve( lightPos, lightPos + ( lookAt.LocalFront()	* lineLength * 0.5f ), lineColor4 );
+			line.Reserve( lightPos, lightPos + ( lookAt.LocalUp()		* lineLength * 0.5f ), lineColor4 );
+			line.Reserve( lightPos, lightPos + ( lookAt.LocalRight()	* lineLength * 0.5f ), lineColor4 );
 
-			lookAt = Donya::Quaternion::LookAt
-			(
-				Donya::Quaternion::Identity(), lightDir,
-				Donya::Quaternion::Freeze::Up
-			);
-			lookAt.RotateBy
-			(
-				Donya::Quaternion::Make
-				(
-					lookAt.LocalRight(),
-					atan2f( lightDir.y, lightDir.z )
-				)
-			);
-			checkColor = Donya::Color::Code::TEAL;
-			checkColor4 = Donya::Vector4{ Donya::Color::MakeColor( checkColor ), 1.0f };
-			//line.Reserve( lightPos, lightPos + ( lookAt.LocalFront() * lineLength * 4.0f ), checkColor4 );
+			constexpr auto  color = Donya::Color::Code::OLIVE;
+			constexpr float alpha = 1.0f;
+			constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( color ), alpha };
+			DrawCube( lightPos, Donya::Vector3{ 1.0f, 1.0f, 1.0f }, lookAt );
 		}
 		
 		line.Flush( VP );
@@ -1136,20 +1119,32 @@ Donya::Vector4x4 SceneGame::CalcLightViewProjectionMatrix() const
 	const Donya::Vector3 lightPos = lightCamera.GetPosition();
 
 	const Donya::Vector3 lookDirection = FetchParameter().shadowMap.projectDirection.Unit();
+#define DISALLOW_ROLL ( true )
+#if DISALLOW_ROLL
+	Donya::Quaternion lookAt = Donya::Quaternion::LookAt
+	(
+		Donya::Quaternion::Identity(), lookDirection,
+		Donya::Quaternion::Freeze::Up
+	);
+	lookAt = Donya::Quaternion::LookAt
+	(
+		lookAt, lookDirection,
+		Donya::Quaternion::Freeze::Right
+	);
+	/*
+	lookAt.RotateBy
+	(
+		Donya::Quaternion::Make
+		(
+			lookAt.LocalRight(),
+			atan2f( -lookDirection.y, lookDirection.z )
+		)
+	);
+	*/
+#else
 	Donya::Quaternion lookAt = Donya::Quaternion::LookAt( Donya::Vector3::Front(), lookDirection );
-	//Donya::Quaternion lookAt = Donya::Quaternion::LookAt
-	//(
-	//	Donya::Quaternion::Identity(), lookDirection,
-	//	Donya::Quaternion::Freeze::Up
-	//);
-	//lookAt.RotateBy
-	//(
-	//	Donya::Quaternion::Make
-	//	(
-	//		lookAt.LocalRight(),
-	//		atan2f( -lookDirection.y, lookDirection.z )
-	//	)
-	//);
+#endif // DISALLOW_ROLL
+#undef DISALLOW_ROLL
 
 	Donya::Vector4x4 view = lookAt.Conjugate().MakeRotationMatrix();
 	view._41 = -lightPos.x;
@@ -2145,6 +2140,11 @@ void SceneGame::UseImGui()
 
 	if ( ImGui::TreeNode( u8"サーフェス描画" ) )
 	{
+		const auto cameraPos = iCamera.GetPosition();
+		const auto lightPos  = lightCamera.GetPosition();
+		ImGui::Text( u8"Camera.Pos[%5.2f][%5.2f][%5.2f]", cameraPos.x, cameraPos.y, cameraPos.z );
+		ImGui::Text( u8"Light.Pos[%5.2f][%5.2f][%5.2f]", lightPos.x, lightPos.y, lightPos.z );
+
 		static Donya::Vector2 drawSize{ 320.0f, 180.0f };
 		ImGui::DragFloat2( u8"描画サイズ", &drawSize.x, 10.0f );
 		drawSize.x = std::max( 10.0f, drawSize.x );
