@@ -11,10 +11,10 @@ void  BloomApplier::Parameter::ShowImGuiNode( const std::string &nodeCaption )
 	// else
 
 	ImGui::SliderFloat	( u8"輝度抽出の閾値（下限）",	&luminanceThreshold, 0.0f, 3.0f );
-	ImGui::DragFloat	( u8"ぼかし範囲",			&blurRange, 0.01f );
+	ImGui::DragFloat	( u8"deviation",			&blurRange, 0.01f );
 	ImGui::SliderInt	( u8"ぼかし回数",			&blurSampleCount, 1, maxBlurSampleCount );
 
-	blurRange = std::max( 0.0f, blurRange );
+	blurRange = std::max( 0.01f, blurRange );
 
 	ImGui::TreePop();
 }

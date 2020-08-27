@@ -11,6 +11,9 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+/// <summary>
+/// Gaussian Blur
+/// </summary>
 class BloomApplier
 {
 public:
