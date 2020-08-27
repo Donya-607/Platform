@@ -2014,6 +2014,8 @@ void SceneGame::UseImGui()
 				ProcessOf( bufferItem,	ApplyToItem		);
 
 				if ( pMap ) { pMap->ReloadModel( readStageNumber ); }
+
+				currentRoomID = CalcCurrentRoomID();
 			}
 
 			ImGui::InputInt ( u8"読み込むステージ番号",	&readStageNumber );
@@ -2026,8 +2028,6 @@ void SceneGame::UseImGui()
 			ImGui::InputText( u8"識別子・マップ＆自機",	bufferMap.data(),		bufferSize );
 			ImGui::InputText( u8"識別子・ルーム",			bufferRoom.data(),		bufferSize );
 			ImGui::InputText( u8"拡張子",				bufferExtension.data(),	bufferSize );
-
-			currentRoomID = CalcCurrentRoomID();
 
 			ImGui::TreePop();
 		}
