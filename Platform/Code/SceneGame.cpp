@@ -599,8 +599,8 @@ void SceneGame::Draw( float elapsedTime )
 
 	// Update point light constant
 #if USE_IMGUI
+	static Donya::Model::Constants::PerScene::PointLightRoom plr;
 	{
-		static Donya::Model::Constants::PerScene::PointLightRoom plr;
 		static bool shouldInitialize = true;
 		if ( shouldInitialize )
 		{
@@ -750,7 +750,7 @@ void SceneGame::Draw( float elapsedTime )
 	if ( pPlayer ) { pPlayer->DrawMeter(); }
 
 #if DEBUG_MODE
-	if ( Common::IsShowCollision() )
+	// if ( Common::IsShowCollision() )
 	{
 		static Donya::Geometric::Line line{ 512U };
 		static bool shouldInitializeLine = true;
@@ -767,6 +767,7 @@ void SceneGame::Draw( float elapsedTime )
 		
 		auto DrawCube = [&]( const Donya::Vector3 &pos, const Donya::Vector3 &scale = { 1.0f, 1.0f, 1.0f }, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
 		{
+			constant.matWorld = Donya::Vector4x4::Identity();
 			constant.matWorld._11 = scale.x * 2.0f;
 			constant.matWorld._22 = scale.y * 2.0f;
 			constant.matWorld._33 = scale.z * 2.0f;
@@ -790,7 +791,7 @@ void SceneGame::Draw( float elapsedTime )
 			DrawCube( currentScreen.WorldPosition(), Donya::Vector3{ scale, 0.2f } );
 		}
 
-		// Light source
+		// DirectionalLight source
 		if ( 1 )
 		{
 			constexpr float lineLength = 24.0f;
@@ -828,6 +829,21 @@ void SceneGame::Draw( float elapsedTime )
 			constexpr float alpha = 1.0f;
 			constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( color ), alpha };
 			DrawCube( lightPos, Donya::Vector3{ 1.0f, 1.0f, 1.0f }, lookAt );
+		}
+
+		// PointLight source
+		if ( 1 )
+		{
+			constexpr Donya::Vector3 scale{ 0.2f, 0.2f, 0.2f };
+			const Donya::Vector3 basePos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+			for ( unsigned int i = 0; i < plr.enableLightCount; ++i )
+			{
+				constant.drawColor.x = plr.lights[i].light.diffuseColor.x;
+				constant.drawColor.y = plr.lights[i].light.diffuseColor.y;
+				constant.drawColor.z = plr.lights[i].light.diffuseColor.z;
+				constant.drawColor.w = 1.0f;
+				DrawCube( plr.lights[i].wsPos.XYZ() + basePos, scale );
+			}
 		}
 		
 		line.Flush( VP );
