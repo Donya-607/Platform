@@ -15,6 +15,7 @@ namespace Config
 		Subset,
 
 		Shadow,
+		PointLight,
 
 		ConstantCount
 	};
@@ -40,6 +41,7 @@ namespace Config
 		/* Subset	*/	RegisterDesc::Make( 3, /* setVS = */ false,	/* setPS = */ true	),
 
 		/* Shadow	*/	RegisterDesc::Make( 4, /* setVS = */ true,	/* setPS = */ true	),
+		/* PointLight*/	RegisterDesc::Make( 5, /* setVS = */ false,	/* setPS = */ true	),
 	};
 	static constexpr RegisterDesc textures[TextureName::TextureCount]
 	{
@@ -51,9 +53,10 @@ namespace Config
 bool RenderingHelper::CBuffer::Create()
 {
 	bool succeeded = true;
-	if ( !shadow.Create() ) { succeeded = false; }
-	if ( !scene.Create() ) { succeeded = false; }
-	if ( !model.Create() ) { succeeded = false; }
+	if ( !scene		.Create() ) { succeeded = false; }
+	if ( !pointLight.Create() ) { succeeded = false; }
+	if ( !model		.Create() ) { succeeded = false; }
+	if ( !shadow	.Create() ) { succeeded = false; }
 	return succeeded;
 }
 
@@ -143,6 +146,10 @@ void RenderingHelper::UpdateConstant( const Donya::Model::Constants::PerScene::C
 {
 	pCBuffer->scene.data = constant;
 }
+void RenderingHelper::UpdateConstant( const Donya::Model::Constants::PerScene::PointLightRoom &constant )
+{
+	pCBuffer->pointLight.data = constant;
+}
 void RenderingHelper::UpdateConstant( const Donya::Model::Constants::PerModel::Common &constant )
 {
 	pCBuffer->model.data = constant;
@@ -163,6 +170,11 @@ void RenderingHelper::ActivateConstantScene()
 {
 	constexpr auto desc = Config::constants[Config::Scene];
 	pCBuffer->scene.Activate( desc.setSlot, desc.setVS, desc.setPS );
+}
+void RenderingHelper::ActivateConstantPointLight()
+{
+	constexpr auto desc = Config::constants[Config::PointLight];
+	pCBuffer->pointLight.Activate( desc.setSlot, desc.setVS, desc.setPS );
 }
 void RenderingHelper::ActivateConstantModel()
 {
@@ -185,6 +197,10 @@ void RenderingHelper::ActivateConstantSphere()
 void RenderingHelper::DeactivateConstantScene()
 {
 	pCBuffer->scene.Deactivate();
+}
+void RenderingHelper::DeactivateConstantPointLight()
+{
+	pCBuffer->pointLight.Deactivate();
 }
 void RenderingHelper::DeactivateConstantModel()
 {

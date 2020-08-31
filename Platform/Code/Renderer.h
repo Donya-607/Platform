@@ -81,16 +81,19 @@ public:
 	bool Init();
 public:
 	void UpdateConstant( const Donya::Model::Constants::PerScene::Common &constant );
+	void UpdateConstant( const Donya::Model::Constants::PerScene::PointLightRoom &constant );
 	void UpdateConstant( const Donya::Model::Constants::PerModel::Common &constant );
 	void UpdateConstant( const ShadowConstant &constant );
 	void UpdateConstant( const Donya::Model::Cube::Constant		&constant );	// For primitive.
 	void UpdateConstant( const Donya::Model::Sphere::Constant	&constant );	// For primitive.
 	void ActivateConstantScene();
+	void ActivateConstantPointLight();
 	void ActivateConstantModel();
 	void ActivateConstantShadow();
 	void ActivateConstantCube();	// For primitive.
 	void ActivateConstantSphere();	// For primitive.
 	void DeactivateConstantScene();
+	void DeactivateConstantPointLight();
 	void DeactivateConstantModel();
 	void DeactivateConstantShadow();
 	void DeactivateConstantCube();	// For primitive.
