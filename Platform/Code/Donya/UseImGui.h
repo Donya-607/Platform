@@ -64,6 +64,7 @@ namespace ImGui
 		
 		void ShowLightNode				( const std::string &nodeCaption, Donya::Model::Constants::PerScene::Light				*pLight, bool useTreeNode = true );
 		void ShowDirectionalLightNode	( const std::string &nodeCaption, Donya::Model::Constants::PerScene::DirectionalLight	*pLight, bool useTreeNode = true );
+		void ShowPointLightNode			( const std::string &nodeCaption, Donya::Model::Constants::PerScene::PointLight			*pLight, bool useTreeNode = true );
 
 		void ShowAABBNode	( const std::string &nodeCaption, Donya::Collision::Box3F *pBox );
 		void ShowSphereNode	( const std::string &nodeCaption, Donya::Collision::Sphere3F *pSphere );

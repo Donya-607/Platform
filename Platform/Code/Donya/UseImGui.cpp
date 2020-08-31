@@ -177,6 +177,28 @@ namespace ImGui
 
 			if ( useTreeNode ) { ImGui::TreePop(); }
 		}
+		void ShowPointLightNode			( const std::string &nodeCaption, Donya::Model::Constants::PerScene::PointLight			*p, bool useTreeNode )
+		{
+			if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ShowLightNode( "", &p->light, /* useTreeNode = */ false );
+
+			ImGui::DragFloat3( u8"ƒ[ƒ‹ƒhÀ•W", &p->wsPos.x, 0.01f );
+			p->wsPos.w = 1.0f;
+
+			ImGui::SliderFloat	( u8"‰e‹¿”ÍˆÍ",			&p->range,			0.0f, 1.0f );
+			ImGui::DragFloat	( u8"Œ¸ŠŒW”E’è”",		&p->attenuation.x,	0.01f );
+			ImGui::DragFloat	( u8"Œ¸ŠŒW”EüŒ`",		&p->attenuation.y,	0.01f );
+			ImGui::DragFloat	( u8"Œ¸ŠŒW”EŽw”",		&p->attenuation.z,	0.01f );
+
+			p->attenuation.x	= std::max( 0.0f, p->attenuation.x	);
+			p->attenuation.y	= std::max( 0.0f, p->attenuation.y	);
+			p->attenuation.z	= std::max( 0.0f, p->attenuation.z	);
+			p->range			= std::max( 0.0f, p->range			);
+
+			if ( useTreeNode ) { ImGui::TreePop(); }
+		}
 		void ShowAABBNode	( const std::string &nodeCaption, Donya::Collision::Box3F *p )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }

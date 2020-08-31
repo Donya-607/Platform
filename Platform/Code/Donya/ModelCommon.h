@@ -314,7 +314,6 @@ namespace Donya
 				public: // See http://ogldev.atspace.co.uk/www/tutorial20/tutorial20.html
 					Light			light;
 					Donya::Vector4	wsPos{};
-					Donya::Vector4	color{ 1.0f, 1.0f, 1.0f, 1.0f };	// RGBA
 					Donya::Vector3	attenuation{ 1.0f, 0.0f, 0.0f };	// [X:Constant][Y:Linear][Z:Exponential]
 					float			range{ 1.0f };
 				};

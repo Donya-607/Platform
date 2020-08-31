@@ -16,7 +16,6 @@ struct PointLight // See http://ogldev.atspace.co.uk/www/tutorial20/tutorial20.h
 {
 	Light	light;
 	float4	wsPos;
-	float4	color;			// RGBA
 	float3	attenuation;	// [X:Constant][Y:Linear][Z:Exponential]
 	float	range;
 };

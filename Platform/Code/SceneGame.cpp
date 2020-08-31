@@ -586,22 +586,72 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->DeactivateConstantScene();
 	}
 
+	// Update scene and shadow constants
+	{
+		UpdateSceneConstant( data.directionalLight, iCamera.GetPosition(), VP );
+
+		RenderingHelper::ShadowConstant constant{};
+		constant.lightProjMatrix	= LVP;
+		constant.shadowColor		= data.shadowMap.color;
+		constant.shadowBias			= data.shadowMap.bias;
+		pRenderer->UpdateConstant( constant );
+	}
+
+	// Update point light constant
+#if USE_IMGUI
+	{
+		static Donya::Model::Constants::PerScene::PointLightRoom plr;
+		static bool shouldInitialize = true;
+		if ( shouldInitialize )
+		{
+			shouldInitialize = false;
+
+			Donya::Model::Constants::PerScene::PointLight defaultValue;
+			defaultValue.light.diffuseColor		= { 1.0f, 1.0f, 1.0f, 1.0f };
+			defaultValue.light.specularColor	= { 1.0f, 1.0f, 1.0f, 1.0f };
+			defaultValue.wsPos					= { 0.0f, 0.0f, 0.0f, 1.0f };
+			defaultValue.attenuation			= { 1.0f, 0.1f, 0.0f };
+			defaultValue.range					= 1.0f;
+			for ( auto &it : plr.lights )
+			{
+				it = defaultValue;
+			}
+		}
+		
+		if ( ImGui::BeginIfAllowed( u8"PointLight Test" ) )
+		{
+			int intCount = scast<int>( plr.enableLightCount );
+			ImGui::InputInt( u8"ÉâÉCÉgêî", &intCount ); std::max( 0, intCount );
+			plr.enableLightCount = scast<unsigned int>( intCount );
+
+			for ( unsigned int i = 0; i < plr.enableLightCount; ++i )
+			{
+				ImGui::Helper::ShowPointLightNode( Donya::MakeArraySuffix( i ), &plr.lights[i] );
+			}
+
+			ImGui::End();
+		}
+
+		const Donya::Vector3 basePos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+		const Donya::Vector4 basePos4{ basePos, 0.0f };
+		Donya::Model::Constants::PerScene::PointLightRoom constant = plr;
+		for ( auto &it : constant.lights )
+		{
+			it.wsPos += basePos4;
+		}
+		pRenderer->UpdateConstant( constant );
+	}
+#endif // USE_IMGUI
+
 	// Draw normal scene with shadow map
 	{
 		pScreenSurface->SetRenderTarget();
 		pScreenSurface->SetViewport();
 
-		UpdateSceneConstant( data.directionalLight, iCamera.GetPosition(), VP );
-		// Update shadow constant
-		{
-			RenderingHelper::ShadowConstant constant{};
-			constant.lightProjMatrix	= LVP;
-			constant.shadowColor		= data.shadowMap.color;
-			constant.shadowBias			= data.shadowMap.bias;
-			pRenderer->UpdateConstant( constant );
-		}
-
 		pRenderer->ActivateConstantScene();
+	#if USE_IMGUI
+		pRenderer->ActivateConstantPointLight();
+	#endif // USE_IMGUI
 		pRenderer->ActivateConstantShadow();
 		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		pRenderer->ActivateShadowMap( *pShadowMap );
@@ -611,6 +661,9 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->DeactivateShadowMap( *pShadowMap );
 		pRenderer->DeactivateSamplerShadow();
 		pRenderer->DeactivateConstantShadow();
+	#if USE_IMGUI
+		pRenderer->DeactivateConstantPointLight();
+	#endif // USE_IMGUI
 		pRenderer->DeactivateConstantScene();
 
 		Donya::Surface::ResetRenderTarget();
