@@ -1,4 +1,7 @@
-static const float PI = 3.14159265359f;
+#include "Struct.hlsli"
+
+static const float PI		= 3.14159265359f;
+static const float EPSILON	= 0.0001f;
 
 // See https://tech.cygames.co.jp/archives/2339/
 float4 SRGBToLinear( float4 colorSRGB )
@@ -104,6 +107,56 @@ float BlinnPhong( float3 nwsNormal, float3 nwsToLightVec, float3 nwsToEyeVec, fl
 	float3 nwsHalfVec		= normalize( nwsToEyeVec + nwsToLightVec );
 	float  specularFactor	= max( 0.0f, dot( nwsHalfVec, nwsNormal ) );
 	return max( 0.0f, pow( specularFactor, shininess ) * intensity );
+}
+
+// Calculate color that influenced by light.
+// Argument.nwsToLightVec : The light vector of normalized world space. this vector is "position -> light".
+// Argument.nwsNormal : The normal of normalized world space.
+// Argument.nwsToEyeVec : The eye vector of normalized world space. this vector is "position -> eye".
+// Argument.diffuse : The diffuse color.
+// Argument.specular : The specular color.
+// Argument.shininess : The specular power. Must be greater than zero.
+// Returns : Color that influenced by light.
+float3 CalcLightInfluence( Light light, float3 nwsToLightVec, float3 nwsNormal, float3 nwsEyeVec, float3 diffuse, float3 specular, float shininess )
+{
+	float	diffuseFactor	= HalfLambert( nwsNormal, nwsToLightVec );
+	//		diffuseFactor	= pow( diffuseFactor, 2.0f );
+	float3	diffuseColor	= diffuse.rgb * diffuseFactor;
+	
+	float	specularFactor	= Phong( nwsNormal, nwsToLightVec, nwsEyeVec, shininess, light.specularColor.w );
+	float3	specularColor	= specular.rgb * specularFactor;
+
+	float3	Kd				= diffuseColor;
+	float3	Id				= light.diffuseColor.rgb * light.diffuseColor.w;
+	float3	Ks				= specularColor;
+	float3	Is				= light.specularColor.rgb;
+	return	( Kd * Id ) + ( Ks * Is );
+}
+// Calculate color that influenced by point light.
+// Argument.wsPixelPos : The pixel position of world space.
+// Argument.nwsNormal : Normalized World-space vector of pixel's normal.
+// Argument.nwsEyeVec : Normalized World-space vector that is (camera.pos - pixel.pos).
+// Argument.diffuse : The diffuse color.
+// Argument.specular : The specular color.
+// Argument.shininess : The specular power. Must be greater than zero.
+// Returns : Color that influenced by light.
+float3 CalcPointLightInfl( PointLight plight, const float3 wsPixelPos, const float3 nwsNormal, const float3 nwsEyeVec, float3 diffuse, float3 specular, float shininess )
+{	
+	// See http://ogldev.atspace.co.uk/www/tutorial20/tutorial20.html
+	
+	float3	lightVec		= plight.wsPos.xyz - wsPixelPos;
+	float	distance		= length( lightVec );
+	float3	nLightVec		= normalize( lightVec );
+	
+	float3	lightColor		= CalcLightInfluence( plight.light, nLightVec, nwsNormal, nwsEyeVec, diffuse, specular, shininess );
+	
+	float	influence		= pow( 1.0f - saturate( ( plight.range / ( distance + EPSILON ) ) ), 2.0f );
+	float	attenuation		= plight.attenuation.x +
+							  plight.attenuation.y * distance +
+							  plight.attenuation.z * distance * distance;
+	
+	return	lightColor * influence / ( attenuation + EPSILON );
+	// return	lightColor / ( attenuation + EPSILON );
 }
 
 // Calculate shadowing percent.

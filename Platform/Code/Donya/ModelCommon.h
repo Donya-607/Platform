@@ -307,7 +307,16 @@ namespace Donya
 				{
 					Light			light;
 					Donya::Vector4	direction;
-
+				};
+				struct PointLight
+				{
+					static constexpr unsigned int MAX_POINT_COUNT = 8;
+				public: // See http://ogldev.atspace.co.uk/www/tutorial20/tutorial20.html
+					Light			light;
+					Donya::Vector4	wsPos{};
+					Donya::Vector4	color{ 1.0f, 1.0f, 1.0f, 1.0f };	// RGBA
+					Donya::Vector3	attenuation{ 1.0f, 0.0f, 0.0f };	// [X:Constant][Y:Linear][Z:Exponential]
+					float			range{ 1.0f };
 				};
 				/// <summary>
 				/// The everything model types is using this structure's member.
@@ -317,6 +326,12 @@ namespace Donya
 					DirectionalLight directionalLight;
 					Donya::Vector4   eyePosition;
 					Donya::Vector4x4 viewProjMatrix;	// World space -> NDC(actually Clip space)
+				};
+				struct PointLightRoom
+				{
+					std::array<PointLight, PointLight::MAX_POINT_COUNT> lights;
+					unsigned int enableLightCount = 0;
+					unsigned int _paddings[3]{ 0 };
 				};
 			}
 			/// <summary>

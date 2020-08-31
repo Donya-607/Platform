@@ -401,6 +401,7 @@
     <None Include="Code\Shader\CastShadowModel.hlsli" />
     <None Include="Code\Shader\DisplayQuad.hlsli" />
     <None Include="Code\Shader\Model.hlsli" />
+    <None Include="Code\Shader\Struct.hlsli" />
     <None Include="Code\Shader\Techniques.hlsli" />
     <None Include="External\Cereal\include\cereal\external\rapidxml\manual.html" />
   </ItemGroup>

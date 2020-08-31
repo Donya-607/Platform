@@ -1,3 +1,5 @@
+#include "Struct.hlsli"
+
 struct VS_OUT
 {
 	float4		svPos		: SV_POSITION;
@@ -8,16 +10,6 @@ struct VS_OUT
 	float2		shadowMapUV	: TEXCOORD1;
 };
 
-struct Light
-{
-	float4		diffuseColor;	// W is Intensity
-	float4		specularColor;	// W is Intensity
-};
-struct DirectionalLight
-{
-	Light		light;
-	float4		direction;
-};
 cbuffer CBPerScene : register( b0 )
 {
 	DirectionalLight cbDirLight;
@@ -43,3 +35,5 @@ cbuffer CBForShadow : register( b4 )
 	float3		cbShadowColor;	// RGB
 	float		cbShadowBias;
 };
+
+// cbuffer( b5 ) is there at PS

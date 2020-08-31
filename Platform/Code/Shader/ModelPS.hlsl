@@ -7,22 +7,13 @@ cbuffer CBPerSubset : register( b3 )
 	float4		cbDiffuse;
 	float4		cbSpecular;		// W is Shininess
 };
-
-float3 CalcLightInfluence( Light light, float3 nwsPixelToLightVec, float3 nwsPixelNormal, float3 nwsEyeVector )
-{
-	float	diffuseFactor	= HalfLambert( nwsPixelNormal, nwsPixelToLightVec );
-	//		diffuseFactor	= pow( diffuseFactor, 2.0f );
-	float3	diffuseColor	= cbDiffuse.rgb * diffuseFactor;
 	
-	float	specularFactor	= Phong( nwsPixelNormal, nwsPixelToLightVec, nwsEyeVector, cbSpecular.w, light.specularColor.w );
-	float3	specularColor	= cbSpecular.rgb * specularFactor;
-
-	float3	Kd				= diffuseColor;
-	float3	Id				= light.diffuseColor.rgb * light.diffuseColor.w;
-	float3	Ks				= specularColor;
-	float3	Is				= light.specularColor.rgb;
-	return	( Kd * Id ) + ( Ks * Is );
-}
+cbuffer CBForPointLiht : register( b5 )
+{
+	PointLight	cbPointLights[MAX_POINT_LIGHT_COUNT];
+	uint		cbPointLightCount;
+	uint3		cb_paddings;
+};
 
 Texture2D		diffuseMap			: register( t0 );
 SamplerState	diffuseMapSampler	: register( s0 );
@@ -40,7 +31,21 @@ float4 main( VS_OUT pin ) : SV_TARGET
 			diffuseMapColor	= SRGBToLinear( diffuseMapColor );
 	float	diffuseMapAlpha	= diffuseMapColor.a;
 
-	float3	totalLight		= CalcLightInfluence( cbDirLight.light, nLightVec, pin.normal.xyz, nEyeVector.xyz );
+	float3	totalLight		= CalcLightInfluence
+							(
+								cbDirLight.light, nLightVec,
+								pin.normal.xyz, nEyeVector.xyz,
+								cbDiffuse.rgb, cbSpecular.rgb, cbSpecular.w
+							);
+	for ( uint i = 0; i < cbPointLightCount; ++i )
+	{
+			totalLight += CalcPointLightInfl
+			(
+				cbPointLights[i],
+				pin.wsPos.xyz, pin.normal.xyz, nEyeVector.xyz,
+				cbDiffuse.rgb, cbSpecular.rgb, cbSpecular.w
+			);
+	}
 			totalLight		+= cbAmbient.rgb * cbAmbient.w;
 
 	float3	resultColor		= diffuseMapColor.rgb * totalLight * cbDrawColor.rgb;

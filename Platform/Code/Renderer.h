@@ -25,9 +25,14 @@ public:
 private:
 	struct CBuffer
 	{
-		Donya::CBuffer<Donya::Model::Constants::PerScene::Common> scene;
-		Donya::CBuffer<Donya::Model::Constants::PerModel::Common> model;
-		Donya::CBuffer<ShadowConstant> shadow;
+		Donya::CBuffer<Donya::Model::Constants::PerScene::Common>
+			scene;
+		Donya::CBuffer<Donya::Model::Constants::PerScene::PointLightRoom>
+			pointLight;
+		Donya::CBuffer<Donya::Model::Constants::PerModel::Common>
+			model;
+		Donya::CBuffer<ShadowConstant>
+			shadow;
 	public:
 		bool Create();
 	};
