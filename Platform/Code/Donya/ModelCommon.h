@@ -313,7 +313,8 @@ namespace Donya
 					static constexpr unsigned int MAX_POINT_COUNT = 8;
 				public: // See http://wiki.ogre3d.org/-Point+Light+Attenuation
 					Light			light;
-					Donya::Vector4	wsPos;
+					Donya::Vector3	wsPos;
+					float			_wsPosW = 1.0f;						// W part of float4 as position in HLSL. Always 1.0f.
 					Donya::Vector3	attenuation{ 1.0f, 0.22f, 0.20f };	// [X:Constant][Y:Linear][Z:Quadratic]
 					float			range{ 20.0f };						// World space
 				};

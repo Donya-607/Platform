@@ -185,7 +185,7 @@ namespace ImGui
 			ShowLightNode( "", &p->light, /* useTreeNode = */ false );
 
 			ImGui::DragFloat3( u8"ƒ[ƒ‹ƒhÀ•W", &p->wsPos.x, 0.01f );
-			p->wsPos.w = 1.0f;
+			p->_wsPosW = 1.0f;
 
 			ImGui::DragFloat( u8"‰e‹¿”ÍˆÍ",			&p->range,			0.1f );
 			ImGui::DragFloat( u8"Œ¸ŠŒW”E’è”",		&p->attenuation.x,	0.01f );

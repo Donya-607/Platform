@@ -6,8 +6,11 @@
 #undef min
 #include <cereal/types/vector.hpp>
 
+#include "../Donya/ModelCommon.h"
+
 #include "../Bullet.h"
 #include "../BulletParam.h"
+#include "../ModelHelper.h"	// Use serialize method
 #include "../Player.h"		// Use Player::ShotLevel
 
 namespace Bullet
@@ -46,6 +49,7 @@ namespace Bullet
 		{
 			BasicParam	basic;
 			float		accelRate = 1.0f; // Multiplies the fired speed
+			Donya::Model::Constants::PerScene::PointLight lightSource; // The "wsPos" will be used as an offset of world space
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -58,6 +62,10 @@ namespace Bullet
 				);
 
 				if ( 1 <= version )
+				{
+					archive( CEREAL_NVP( lightSource ) );
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -97,4 +105,4 @@ namespace Bullet
 	};
 }
 CEREAL_CLASS_VERSION( Bullet::BusterParam,				2 )
-CEREAL_CLASS_VERSION( Bullet::BusterParam::PerLevel,	0 )
+CEREAL_CLASS_VERSION( Bullet::BusterParam::PerLevel,	1 )

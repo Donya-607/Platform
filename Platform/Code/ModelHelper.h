@@ -131,9 +131,26 @@ namespace PerScene
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
+	template<class Archive>
+	void serialize( Archive &archive, PointLight &var, std::uint32_t version )
+	{
+		archive
+		(
+			cereal::make_nvp( "light",			var.light		),
+			cereal::make_nvp( "wsPos",			var.wsPos		),
+			cereal::make_nvp( "attenuation",	var.attenuation	),
+			cereal::make_nvp( "range",			var.range		)
+		);
+
+		if ( 1 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
 }
 }
 }
 }
 CEREAL_CLASS_VERSION( Donya::Model::Constants::PerScene::Light,				0 )
 CEREAL_CLASS_VERSION( Donya::Model::Constants::PerScene::DirectionalLight,	0 )
+CEREAL_CLASS_VERSION( Donya::Model::Constants::PerScene::PointLight,		0 )

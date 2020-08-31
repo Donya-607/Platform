@@ -1,6 +1,7 @@
 #include "Buster.h"
 
 #include "../Parameter.h"
+#include "../PointLightStorage.h"
 
 namespace Bullet
 {
@@ -109,6 +110,13 @@ namespace Bullet
 		const auto *pLevel = GetParamLevelOrNullptr( chargeLevel );
 		const float animePlaySpeed = ( pLevel ) ? pLevel->basic.animePlaySpeed : 1.0f;
 		UpdateMotionIfCan( elapsedTime * animePlaySpeed, scast<int>( chargeLevel ) );
+
+		if ( pLevel )
+		{
+			auto lightSource = pLevel->lightSource;
+			lightSource.wsPos += GetPosition();
+			PointLightStorage::Get().RegisterIfThereSpace( lightSource );
+		}
 	}
 	Kind Buster::GetKind() const
 	{
@@ -170,6 +178,8 @@ namespace Bullet
 			auto &elem = params[i];
 			ImGui::Text( u8"（ダメージ量は生成時に +%d されます）", i );
 			elem.basic.ShowImGuiNode( u8"汎用設定" );
+
+			ImGui::Helper::ShowPointLightNode( u8"光源設定", &elem.lightSource );
 
 			ImGui::DragFloat( u8"速度倍率", &elem.accelRate, 0.01f );
 			ImGui::Text( u8"（生成時の速度に掛け算されます）" );

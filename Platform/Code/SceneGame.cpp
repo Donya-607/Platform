@@ -33,6 +33,7 @@
 #include "Music.h"
 #include "Parameter.h"
 #include "PlayerParam.h"
+#include "PointLightStorage.h"
 
 #if DEBUG_MODE
 #include "CSVLoader.h"
@@ -296,6 +297,9 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		if ( pBloomer ) { pBloomer->AssignParameter( FetchParameter().bloomParam ); }
 	}
 #endif // USE_IMGUI
+
+	PointLightStorage::Get().Clear();
+
 	if ( Fader::Get().IsClosed() && nextScene == Scene::Type::Game )
 	{
 		UninitStage();
@@ -598,51 +602,9 @@ void SceneGame::Draw( float elapsedTime )
 	}
 
 	// Update point light constant
-#if USE_IMGUI
-	static Donya::Model::Constants::PerScene::PointLightRoom plr;
 	{
-		static bool shouldInitialize = true;
-		if ( shouldInitialize )
-		{
-			shouldInitialize = false;
-
-			// http://wiki.ogre3d.org/-Point+Light+Attenuation
-			Donya::Model::Constants::PerScene::PointLight defaultValue;
-			defaultValue.light.diffuseColor		= { 1.0f, 1.0f, 1.0f, 1.0f };
-			defaultValue.light.specularColor	= { 1.0f, 1.0f, 1.0f, 1.0f };
-			defaultValue.wsPos					= { 0.0f, 0.0f, 0.0f, 1.0f };
-			defaultValue.attenuation			= { 1.0f, 0.22f, 0.2f };
-			defaultValue.range					= 20.0f;
-			for ( auto &it : plr.lights )
-			{
-				it = defaultValue;
-			}
-		}
-		
-		if ( ImGui::BeginIfAllowed( u8"PointLight Test" ) )
-		{
-			int intCount = scast<int>( plr.enableLightCount );
-			ImGui::InputInt( u8"ÉâÉCÉgêî", &intCount ); std::max( 0, intCount );
-			plr.enableLightCount = scast<unsigned int>( intCount );
-
-			for ( unsigned int i = 0; i < plr.enableLightCount; ++i )
-			{
-				ImGui::Helper::ShowPointLightNode( Donya::MakeArraySuffix( i ), &plr.lights[i] );
-			}
-
-			ImGui::End();
-		}
-
-		const Donya::Vector3 basePos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
-		const Donya::Vector4 basePos4{ basePos, 0.0f };
-		Donya::Model::Constants::PerScene::PointLightRoom constant = plr;
-		for ( auto &it : constant.lights )
-		{
-			it.wsPos += basePos4;
-		}
-		pRenderer->UpdateConstant( constant );
+		pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
 	}
-#endif // USE_IMGUI
 
 	// Draw normal scene with shadow map
 	{
@@ -650,9 +612,7 @@ void SceneGame::Draw( float elapsedTime )
 		pScreenSurface->SetViewport();
 
 		pRenderer->ActivateConstantScene();
-	#if USE_IMGUI
 		pRenderer->ActivateConstantPointLight();
-	#endif // USE_IMGUI
 		pRenderer->ActivateConstantShadow();
 		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		pRenderer->ActivateShadowMap( *pShadowMap );
@@ -662,9 +622,7 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->DeactivateShadowMap( *pShadowMap );
 		pRenderer->DeactivateSamplerShadow();
 		pRenderer->DeactivateConstantShadow();
-	#if USE_IMGUI
 		pRenderer->DeactivateConstantPointLight();
-	#endif // USE_IMGUI
 		pRenderer->DeactivateConstantScene();
 
 		Donya::Surface::ResetRenderTarget();
@@ -751,7 +709,7 @@ void SceneGame::Draw( float elapsedTime )
 	if ( pPlayer ) { pPlayer->DrawMeter(); }
 
 #if DEBUG_MODE
-	// if ( Common::IsShowCollision() )
+	if ( Common::IsShowCollision() )
 	{
 		static Donya::Geometric::Line line{ 512U };
 		static bool shouldInitializeLine = true;
@@ -835,15 +793,16 @@ void SceneGame::Draw( float elapsedTime )
 		// PointLight source
 		if ( 1 )
 		{
-			constexpr Donya::Vector3 scale{ 0.2f, 0.2f, 0.2f };
-			const Donya::Vector3 basePos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+			const auto &plr = PointLightStorage::Get().GetStorage();
+
+			constexpr Donya::Vector3 scale{ 0.05f, 0.05f, 0.05f };
 			for ( unsigned int i = 0; i < plr.enableLightCount; ++i )
 			{
 				constant.drawColor.x = plr.lights[i].light.diffuseColor.x;
 				constant.drawColor.y = plr.lights[i].light.diffuseColor.y;
 				constant.drawColor.z = plr.lights[i].light.diffuseColor.z;
 				constant.drawColor.w = 1.0f;
-				DrawCube( plr.lights[i].wsPos.XYZ() + basePos, scale );
+				DrawCube( plr.lights[i].wsPos, scale );
 			}
 		}
 		

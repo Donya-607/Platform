@@ -9,6 +9,8 @@ class PointLightStorage : public Donya::Singleton<PointLightStorage>
 	friend Donya::Singleton<PointLightStorage>;
 private:
 	Donya::Model::Constants::PerScene::PointLightRoom plr;
+private:
+	PointLightStorage() = default;
 public:
 	/// <summary>
 	/// Clear the registered point lights.
@@ -22,5 +24,5 @@ public:
 	/// <summary>
 	/// Returns registered point lights with enable count of lights.
 	/// </summary>
-	const Donya::Model::Constants::PerScene::PointLightRoom &Get() const { return plr; }
+	const Donya::Model::Constants::PerScene::PointLightRoom &GetStorage() const { return plr; }
 };
