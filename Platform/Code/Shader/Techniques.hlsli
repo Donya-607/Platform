@@ -139,24 +139,27 @@ float3 CalcLightInfluence( Light light, float3 nwsToLightVec, float3 nwsNormal, 
 // Argument.diffuse : The diffuse color.
 // Argument.specular : The specular color.
 // Argument.shininess : The specular power. Must be greater than zero.
-// Returns : Color that influenced by light.
+// Returns : Color that influenced by light, or zero(0,0,0) if the distance from wsPixelPos is greater than range of plight.
 float3 CalcPointLightInfl( PointLight plight, const float3 wsPixelPos, const float3 nwsNormal, const float3 nwsEyeVec, float3 diffuse, float3 specular, float shininess )
 {	
 	// See http://ogldev.atspace.co.uk/www/tutorial20/tutorial20.html
 	
 	float3	lightVec		= plight.wsPos.xyz - wsPixelPos;
 	float	distance		= length( lightVec );
+	
+	[branch]
+	if ( plight.range < distance ) { return 0; }
+	// else
+	
 	float3	nLightVec		= normalize( lightVec );
 	
 	float3	lightColor		= CalcLightInfluence( plight.light, nLightVec, nwsNormal, nwsEyeVec, diffuse, specular, shininess );
 	
-	float	influence		= pow( 1.0f - saturate( ( plight.range / ( distance + EPSILON ) ) ), 2.0f );
 	float	attenuation		= plight.attenuation.x +
 							  plight.attenuation.y * distance +
 							  plight.attenuation.z * distance * distance;
 	
-	return	lightColor * influence / ( attenuation + EPSILON );
-	// return	lightColor / ( attenuation + EPSILON );
+	return	lightColor / ( attenuation + EPSILON );
 }
 
 // Calculate shadowing percent.

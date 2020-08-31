@@ -606,12 +606,13 @@ void SceneGame::Draw( float elapsedTime )
 		{
 			shouldInitialize = false;
 
+			// http://wiki.ogre3d.org/-Point+Light+Attenuation
 			Donya::Model::Constants::PerScene::PointLight defaultValue;
 			defaultValue.light.diffuseColor		= { 1.0f, 1.0f, 1.0f, 1.0f };
 			defaultValue.light.specularColor	= { 1.0f, 1.0f, 1.0f, 1.0f };
 			defaultValue.wsPos					= { 0.0f, 0.0f, 0.0f, 1.0f };
-			defaultValue.attenuation			= { 1.0f, 0.1f, 0.0f };
-			defaultValue.range					= 1.0f;
+			defaultValue.attenuation			= { 1.0f, 0.22f, 0.2f };
+			defaultValue.range					= 20.0f;
 			for ( auto &it : plr.lights )
 			{
 				it = defaultValue;

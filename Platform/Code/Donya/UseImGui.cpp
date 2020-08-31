@@ -187,10 +187,10 @@ namespace ImGui
 			ImGui::DragFloat3( u8"ƒ[ƒ‹ƒhÀ•W", &p->wsPos.x, 0.01f );
 			p->wsPos.w = 1.0f;
 
-			ImGui::SliderFloat	( u8"‰e‹¿”ÍˆÍ",			&p->range,			0.0f, 1.0f );
-			ImGui::DragFloat	( u8"Œ¸ŠŒW”E’è”",		&p->attenuation.x,	0.01f );
-			ImGui::DragFloat	( u8"Œ¸ŠŒW”EüŒ`",		&p->attenuation.y,	0.01f );
-			ImGui::DragFloat	( u8"Œ¸ŠŒW”EŽw”",		&p->attenuation.z,	0.01f );
+			ImGui::DragFloat( u8"‰e‹¿”ÍˆÍ",			&p->range,			0.1f );
+			ImGui::DragFloat( u8"Œ¸ŠŒW”E’è”",		&p->attenuation.x,	0.01f );
+			ImGui::DragFloat( u8"Œ¸ŠŒW”EüŒ`",		&p->attenuation.y,	0.01f );
+			ImGui::DragFloat( u8"Œ¸ŠŒW”E‚QŽŸ",		&p->attenuation.z,	0.01f );
 
 			p->attenuation.x	= std::max( 0.0f, p->attenuation.x	);
 			p->attenuation.y	= std::max( 0.0f, p->attenuation.y	);
