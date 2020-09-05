@@ -265,21 +265,21 @@ void House::RemakeByCSV( const CSVLoader &loadedData )
 		}
 	}
 
+#if 0 // EXPAND_TO_MIN_MAX
 	// Append function will register the center pos of tile,
-	// But I want the full size, so expand half tile size to outside.
+	// But if you want the full size, you should expand half tile size to outside.
+	constexpr Donya::Vector3 halfTileSize
 	{
-		constexpr Donya::Vector3 halfTileSize
-		{
-			Tile::unitWholeSize * 0.5f,
-			Tile::unitWholeSize * 0.5f,
-			0.0f
-		};
-		for ( auto &it : areas )
-		{
-			it.second.min -= halfTileSize;
-			it.second.max += halfTileSize;
-		}
+		Tile::unitWholeSize * 0.5f,
+		Tile::unitWholeSize * 0.5f,
+		0.0f
+	};
+	for ( auto &it : areas )
+	{
+		it.second.min -= halfTileSize;
+		it.second.max += halfTileSize;
 	}
+#endif // EXPAND_TO_MIN_MAX
 
 	Room argument;
 	for ( const auto &it : areas )
