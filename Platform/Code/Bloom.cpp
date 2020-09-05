@@ -11,10 +11,10 @@ void  BloomApplier::Parameter::ShowImGuiNode( const std::string &nodeCaption )
 	// else
 
 	ImGui::SliderFloat	( u8"輝度抽出の閾値（下限）",	&luminanceThreshold, 0.0f, 3.0f );
-	ImGui::DragFloat	( u8"deviation",			&blurRange, 0.01f );
+	ImGui::DragFloat	( u8"標準偏差",				&blurDeviation, 0.01f );
 	ImGui::SliderInt	( u8"ぼかし回数",			&blurSampleCount, 1, maxBlurSampleCount );
 
-	blurRange = std::max( 0.01f, blurRange );
+	blurDeviation = std::max( 0.01f, blurDeviation );
 
 	ImGui::TreePop();
 }
@@ -278,8 +278,9 @@ void  BloomApplier::DrawBlurBuffers( const Donya::Vector2 &drawingSize )
 	PSCombine.Deactivate();
 	VS.Deactivate();
 }
-float BloomApplier::CalcGaussianWeight( const Donya::Vector2 &pos, float deviation )
+float BloomApplier::CalcGaussianWeight( const Donya::Vector2 &pos )
 {
+	const float &deviation = parameter.blurDeviation;
 	return expf
 	(
 		-( pos.x*pos.x + pos.y*pos.y )
@@ -308,7 +309,7 @@ void  BloomApplier::UpdateGaussianBlurParams( float bufferWholeWidth, float buff
 	// [0] is center
 	data.params[0].uvOffset.x	= 0.0f;
 	data.params[0].uvOffset.y	= 0.0f;
-	data.params[0].distribution	= CalcGaussianWeight( Donya::Vector2::Zero(), parameter.blurRange );
+	data.params[0].distribution	= CalcGaussianWeight( Donya::Vector2::Zero() );
 	totalWeight = data.params[0].distribution;
 
 	// It sampling toward positive side,
@@ -322,7 +323,7 @@ void  BloomApplier::UpdateGaussianBlurParams( float bufferWholeWidth, float buff
 
 		data.params[i].uvOffset.x	= unitBlurDirection.x * texCoordU * floatIndex;
 		data.params[i].uvOffset.y	= unitBlurDirection.y * texCoordV * floatIndex;
-		data.params[i].distribution = CalcGaussianWeight( unitBlurDirection * floatIndex, parameter.blurRange );
+		data.params[i].distribution = CalcGaussianWeight( unitBlurDirection * floatIndex );
 		totalWeight += data.params[i].distribution * 2.0f; // Also consider the negative side
 	}
 

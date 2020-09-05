@@ -22,7 +22,7 @@ public:
 		static constexpr int maxBlurSampleCount = 16;
 	public:
 		float	luminanceThreshold	= 1.0f;						// The applier adopts the luminance of greater than this
-		float	blurRange			= 5.0f;						// The bluring range, [0.0f < blurRange]
+		float	blurDeviation		= 5.0f;						// The standard-deviation of gaussian, [0 < blurDeviation]
 		int		blurSampleCount		= maxBlurSampleCount >> 1;	// The loop count of bluring, [0 < blurSampleCount]
 	private:
 		friend class cereal::access;
@@ -32,7 +32,7 @@ public:
 			archive
 			(
 				CEREAL_NVP( luminanceThreshold	),
-				CEREAL_NVP( blurRange			),
+				CEREAL_NVP( blurDeviation		),
 				CEREAL_NVP( blurSampleCount		)
 			);
 
@@ -128,7 +128,7 @@ public:
 	/// </summary>
 	void DrawBlurBuffers( const Donya::Vector2 &drawingSize = Donya::Vector2::Zero() );
 private:
-	float CalcGaussianWeight( const Donya::Vector2 &pos, float deviation );
+	float CalcGaussianWeight( const Donya::Vector2 &pos );
 	void  UpdateGaussianBlurParams( float bufferWholeWidth, float bufferWholeHeight, const Donya::Vector2 &unitBlurDirection );
 public:
 #if USE_IMGUI
