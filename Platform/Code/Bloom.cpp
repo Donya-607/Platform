@@ -27,45 +27,53 @@ bool  BloomApplier::Init( const Donya::Int2 &wholeScreenSize )
 
 	bool succeeded = true;
 
-	applicationScreenSize = wholeScreenSize;
-	baseSurfaceSize.x = applicationScreenSize.x >> 1;
-	baseSurfaceSize.y = applicationScreenSize.y >> 1;
+	applicationScreenSize	= wholeScreenSize;
+	baseSurfaceSize.x		= applicationScreenSize.x >> 2;
+	baseSurfaceSize.y		= applicationScreenSize.y >> 2;
 
 	// Create blur-buffers
 	{
+		constexpr const wchar_t *createErrorMessage = L"Failed: Create a blur-buffer.";
+
+		auto Create = []( Donya::Surface *p, const Donya::Int2 &wholeSize, const DXGI_FORMAT &format )
+		{
+			const bool result = p->Init
+			(
+				wholeSize.x,
+				wholeSize.y,
+				format
+			);
+			if ( result )
+			{
+				p->Clear( Donya::Color::Code::BLACK );
+			}
+
+			return result;
+		};
+
+		if ( !Create( &highLuminanceSurface, applicationScreenSize, blurBufferFormat ) )
+		{
+			_ASSERT_EXPR( 0, createErrorMessage );
+			succeeded = false;
+		}
+
+		Donya::Int2 bufferSize = baseSurfaceSize;
 		blurBuffers.resize( blurBufferCount );
 		for ( size_t i = 0; i < blurBufferCount; ++i )
 		{
-			const bool result = blurBuffers[i].Init
-			(
-				baseSurfaceSize.x >> i,
-				baseSurfaceSize.y >> i,
-				blurBufferFormat
-			);
-			if ( !result )
+			if ( !Create( &blurBuffers[i].first, bufferSize, blurBufferFormat ) )
 			{
-				_ASSERT_EXPR( 0, L"Failed: Create a blur-buffer." );
+				_ASSERT_EXPR( 0, createErrorMessage );
 				succeeded = false;
 			}
-			else
+			if ( !Create( &blurBuffers[i].second, bufferSize, blurBufferFormat ) )
 			{
-				blurBuffers[i].Clear( Donya::Color::Code::BLACK );
+				_ASSERT_EXPR( 0, createErrorMessage );
+				succeeded = false;
 			}
-		}
 
-		const bool result = highLuminanceSurface.Init
-		(
-			applicationScreenSize.x,
-			applicationScreenSize.y,
-			blurBufferFormat
-		);
-		if ( !result )
-		{
-			succeeded = false;
-		}
-		else
-		{
-			highLuminanceSurface.Clear( Donya::Color::Code::BLACK );
+			bufferSize.x >>= 1;
+			bufferSize.y >>= 1;
 		}
 	}
 
@@ -104,14 +112,14 @@ void  BloomApplier::SetShaderResourcesPS( size_t startIndex )
 {
 	for ( size_t i = 0; i < blurBufferCount; ++i )
 	{
-		blurBuffers[i].SetRenderTargetShaderResourcePS( i + startIndex );
+		blurBuffers[i].second.SetRenderTargetShaderResourcePS( i + startIndex );
 	}
 }
 void  BloomApplier::ResetShaderResourcesPS( size_t startIndex )
 {
 	for ( size_t i = 0; i < blurBufferCount; ++i )
 	{
-		blurBuffers[i].ResetShaderResourcePS( i + startIndex );
+		blurBuffers[i].second.ResetShaderResourcePS( i + startIndex );
 	}
 }
 float BloomApplier::CalcGaussianWeight( const Donya::Vector2 &pos, float deviation )
@@ -190,7 +198,8 @@ void  BloomApplier::ClearBuffers( const Donya::Vector4 &clearColor )
 {
 	for ( auto &it : blurBuffers )
 	{
-		it.Clear( clearColor );
+		it.first.Clear( clearColor );
+		it.second.Clear( clearColor );
 	}
 };
 void  BloomApplier::WriteLuminance( const Donya::Surface &sceneSurface )
@@ -204,7 +213,6 @@ void  BloomApplier::WriteLuminance( const Donya::Surface &sceneSurface )
 
 	highLuminanceSurface.SetRenderTarget();
 	highLuminanceSurface.SetViewport();
-	// sceneSurface.SetViewport();
 
 	sceneSurface.SetRenderTargetShaderResourcePS( 0U );
 
@@ -232,9 +240,7 @@ void  BloomApplier::WriteBlur()
 	PSBlur.Activate();
 
 	Donya::Surface *pSourceSurface = &highLuminanceSurface;
-	Donya::Surface *pOutputSurface = &blurBuffers[0];
-
-	pSourceSurface->SetViewport();
+	Donya::Surface *pOutputSurface = &blurBuffers[0].first;
 
 	Donya::Vector2	blurSize = baseSurfaceSize.Float();
 	float			multiply = 1.0f;
@@ -246,6 +252,7 @@ void  BloomApplier::WriteBlur()
 
 		pOutputSurface->Clear( Donya::Color::Code::BLACK );
 		pOutputSurface->SetRenderTarget();
+		pOutputSurface->SetViewport();
 
 		pSourceSurface->SetRenderTargetShaderResourcePS( 0U );
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0U );
@@ -265,35 +272,57 @@ void  BloomApplier::WriteBlur()
 		Donya::Surface::ResetRenderTarget();
 	};
 
-	constexpr auto blurRight	= Donya::Vector2::Right();
-	constexpr auto blurUp		= Donya::Vector2::Up();
+	constexpr auto blurHorizontal	= Donya::Vector2::Right();
+	constexpr auto blurVertical		= Donya::Vector2::Up();
 
-	DrawProcess( blurRight );
-	pSourceSurface = &blurBuffers[0];
-	pOutputSurface = &blurBuffers[1];
-	DrawProcess( blurUp );
+	pSourceSurface = &highLuminanceSurface;
+	pOutputSurface = &blurBuffers[0].first;
+	DrawProcess( blurHorizontal	);
+
+	pSourceSurface = &blurBuffers[0].first;
+	pOutputSurface = &blurBuffers[0].second;
+	DrawProcess( blurVertical	);
 
 	blurSize *= 0.5f;
 	multiply *= 2.0f;
 
-	pSourceSurface = &blurBuffers[1];
-	pOutputSurface = &blurBuffers[2];
+	pSourceSurface = &blurBuffers[0].second;
+	pOutputSurface = &blurBuffers[1].first;
 
-	for ( size_t i = 1; i < ( blurBufferCount >> 1 ); ++i )
+	// "pp" -> PingPong
+	auto &pp = blurBuffers;
+	for ( size_t i = 0; i < blurBufferCount - 1; ++i )
 	{
-		DrawProcess( blurRight );
-		pSourceSurface = &blurBuffers[i*2 + 0];
-		pOutputSurface = &blurBuffers[i*2 + 1];
-		DrawProcess( blurUp );
+		/*
+		Source = [0].second;
+		Output = [1].first;
+		Draw( H )
+		Source = [1].first;
+		Output = [1].second;
+		Draw( V )
+
+		Source = [1].second;
+		Output = [2].first;
+		Draw( H )
+		Source = [2].first;
+		Output = [2].second;
+		Draw( V )
+
+		.
+		.
+		.
+		*/
+
+		pSourceSurface = &blurBuffers[i + 0].second;
+		pOutputSurface = &blurBuffers[i + 1].first;
+		DrawProcess( blurHorizontal	);
+
+		pSourceSurface = &blurBuffers[i + 1].first;
+		pOutputSurface = &blurBuffers[i + 1].second;
+		DrawProcess( blurVertical	);
 
 		blurSize *= 0.5f;
 		multiply *= 2.0f;
-
-		if ( i*2 + 2 < blurBufferCount )
-		{
-			pSourceSurface = &blurBuffers[i*2 + 1];
-			pOutputSurface = &blurBuffers[i*2 + 2];
-		}
 	}
 
 	pSourceSurface = nullptr;
@@ -329,7 +358,9 @@ void  BloomApplier::DrawBlurBuffersToImGui( const Donya::Vector2 &drawSize )
 {
 	for ( const auto &it : blurBuffers )
 	{
-		it.DrawRenderTargetToImGui( drawSize );
+		it.first.DrawRenderTargetToImGui( drawSize );
+		ImGui::SameLine();
+		it.second.DrawRenderTargetToImGui( drawSize );
 	}
 }
 #endif // USE_IMGUI

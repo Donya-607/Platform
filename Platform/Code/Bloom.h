@@ -68,20 +68,25 @@ private:
 private: // Serialize member
 	Parameter parameter;
 private:
-	static constexpr size_t		blurBufferCount  = 6;
-	static constexpr auto		blurBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	std::vector<Donya::Surface>	blurBuffers;			// PingPong buffer
+	struct PingPong
+	{
+		Donya::Surface first;	// Be drawn horizontal blur result
+		Donya::Surface second;	// Be drawn bi-directional blur result
+	};
+	static constexpr size_t	blurBufferCount  = 4;
+	static constexpr auto	blurBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	std::vector<PingPong>	blurBuffers;
 
-	Donya::Int2 baseSurfaceSize{ 1920, 1080 };			// Whole size
-	Donya::Int2 applicationScreenSize{ 1920, 1080 };	// Whole size
+	Donya::Int2				baseSurfaceSize			{ 1920, 1080 };	// Whole size
+	Donya::Int2				applicationScreenSize	{ 1920, 1080 };	// Whole size
 
-	Donya::Displayer	display;
-	Donya::Surface		highLuminanceSurface;
+	Donya::Displayer		display;
+	Donya::Surface			highLuminanceSurface;
 
-	Donya::VertexShader VS;
-	Donya::PixelShader  PSHighLuminance;
-	Donya::PixelShader  PSBlur;
-	Donya::PixelShader  PSCombine;
+	Donya::VertexShader		VS;
+	Donya::PixelShader		PSHighLuminance;
+	Donya::PixelShader		PSBlur;
+	Donya::PixelShader		PSCombine;
 
 	Donya::CBuffer<HighLuminanceConstant>	cbHighLuminance;
 	Donya::CBuffer<BlurConstant>			cbBlur;
