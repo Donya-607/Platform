@@ -122,74 +122,6 @@ void  BloomApplier::ResetShaderResourcesPS( size_t startIndex )
 		blurBuffers[i].second.ResetShaderResourcePS( i + startIndex );
 	}
 }
-float BloomApplier::CalcGaussianWeight( const Donya::Vector2 &pos, float deviation )
-{
-	return expf
-	(
-		-( pos.x*pos.x + pos.y*pos.y )
-		/ // ---------------------
-		( 2.0f * deviation*deviation )
-	);
-}
-void  BloomApplier::UpdateGaussianBlurParams( float bufferWholeWidth, float bufferWholeHeight, const Donya::Vector2 &unitBlurDirection, float multiply )
-{
-	// See: http://project-asura.com/program/d3d11/d3d11_010.html
-
-	if ( IsZero( bufferWholeWidth ) || IsZero( bufferWholeHeight ) )
-	{
-		_ASSERT_EXPR( 0, L"Error: Zero-division detected!" );
-		return;
-	}
-	// else
-
-	const float texCoordU = 1.0f / bufferWholeWidth;
-	const float texCoordV = 1.0f / bufferWholeHeight;
-
-	auto &data = cbBlur.data;
-
-	float totalWeight = 0.0f;
-
-	// [0] is center
-	data.params[0].uvOffset.x	= 0.0f;
-	data.params[0].uvOffset.y	= 0.0f;
-	data.params[0].distribution	= CalcGaussianWeight( Donya::Vector2::Zero(), parameter.blurRange ) * multiply;
-	totalWeight = data.params[0].distribution;
-
-	// It sampling toward positive side,
-	// then assign negated value to negative side.
-	const int halfSampleCount = parameter.blurSampleCount >> 1;
-
-	// Calc weights of positive side
-	for ( int i = 0 + 1/* Ignore center */; i < halfSampleCount; ++i )
-	{
-		const float floatIndex = scast<float>( i );
-
-		data.params[i].uvOffset.x	= unitBlurDirection.x * texCoordU * floatIndex;
-		data.params[i].uvOffset.y	= unitBlurDirection.y * texCoordV * floatIndex;
-		data.params[i].distribution = CalcGaussianWeight( unitBlurDirection * floatIndex, parameter.blurRange ) * multiply;
-		totalWeight += data.params[i].distribution * 2.0f; // Also consider the negative side
-	}
-
-	// Normalize the weights
-	if ( !IsZero( totalWeight ) )
-	{
-		for ( int i = 0; i < halfSampleCount; ++i )
-		{
-			data.params[i].distribution /= totalWeight;
-		}
-	}
-
-	// Assign to negative side
-	const int offsetToPositive = halfSampleCount - 1;
-	for ( int i = halfSampleCount; i < parameter.blurSampleCount; ++i )
-	{
-		const int positiveIndex = ( i < offsetToPositive ) ? 0 : i - offsetToPositive; // Prevent to be negative
-		auto &negativeSide = data.params[i];
-		auto &positiveSide = data.params[positiveIndex];
-		negativeSide.uvOffset		= -positiveSide.uvOffset;
-		negativeSide.distribution	= positiveSide.distribution;
-	}
-}
 void  BloomApplier::AssignParameter( const Parameter &newParameter )
 {
 	parameter = newParameter;
@@ -238,12 +170,13 @@ void  BloomApplier::WriteBlur()
 
 	VS.Activate();
 	PSBlur.Activate();
+	Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0U );
+
+	highLuminanceSurface.SetViewport();
 
 	Donya::Surface *pSourceSurface = &highLuminanceSurface;
 	Donya::Surface *pOutputSurface = &blurBuffers[0].first;
-
 	Donya::Vector2	blurSize = baseSurfaceSize.Float();
-	float			multiply = 1.0f;
 
 	auto DrawProcess = [&]( const Donya::Vector2 &blurDirection )
 	{
@@ -252,12 +185,10 @@ void  BloomApplier::WriteBlur()
 
 		pOutputSurface->Clear( Donya::Color::Code::BLACK );
 		pOutputSurface->SetRenderTarget();
-		pOutputSurface->SetViewport();
 
 		pSourceSurface->SetRenderTargetShaderResourcePS( 0U );
-		Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0U );
 
-		UpdateGaussianBlurParams( blurSize.x, blurSize.y, blurDirection, multiply );
+		UpdateGaussianBlurParams( blurSize.x, blurSize.y, blurDirection );
 		cbBlur.Activate( 0U, false, true );
 		display.Draw
 		(
@@ -267,7 +198,6 @@ void  BloomApplier::WriteBlur()
 		cbBlur.Deactivate();
 
 		pSourceSurface->ResetShaderResourcePS( 0U );
-		Donya::Sampler::ResetPS( 0U );
 
 		Donya::Surface::ResetRenderTarget();
 	};
@@ -284,7 +214,6 @@ void  BloomApplier::WriteBlur()
 	DrawProcess( blurVertical	);
 
 	blurSize *= 0.5f;
-	multiply *= 2.0f;
 
 	pSourceSurface = &blurBuffers[0].second;
 	pOutputSurface = &blurBuffers[1].first;
@@ -322,12 +251,12 @@ void  BloomApplier::WriteBlur()
 		DrawProcess( blurVertical	);
 
 		blurSize *= 0.5f;
-		multiply *= 2.0f;
 	}
 
 	pSourceSurface = nullptr;
 	pOutputSurface = nullptr;
 
+	Donya::Sampler::ResetPS( 0U );
 	PSBlur.Deactivate();
 	VS.Deactivate();
 }
@@ -348,6 +277,74 @@ void  BloomApplier::DrawBlurBuffers( const Donya::Vector2 &drawingSize )
 
 	PSCombine.Deactivate();
 	VS.Deactivate();
+}
+float BloomApplier::CalcGaussianWeight( const Donya::Vector2 &pos, float deviation )
+{
+	return expf
+	(
+		-( pos.x*pos.x + pos.y*pos.y )
+		/ // ---------------------
+		( 2.0f * deviation*deviation )
+	);
+}
+void  BloomApplier::UpdateGaussianBlurParams( float bufferWholeWidth, float bufferWholeHeight, const Donya::Vector2 &unitBlurDirection )
+{
+	// See: http://project-asura.com/program/d3d11/d3d11_010.html
+
+	if ( IsZero( bufferWholeWidth ) || IsZero( bufferWholeHeight ) )
+	{
+		_ASSERT_EXPR( 0, L"Error: Zero-division detected!" );
+		return;
+	}
+	// else
+
+	const float texCoordU = 1.0f / bufferWholeWidth;
+	const float texCoordV = 1.0f / bufferWholeHeight;
+
+	auto &data = cbBlur.data;
+
+	float totalWeight = 0.0f;
+
+	// [0] is center
+	data.params[0].uvOffset.x	= 0.0f;
+	data.params[0].uvOffset.y	= 0.0f;
+	data.params[0].distribution	= CalcGaussianWeight( Donya::Vector2::Zero(), parameter.blurRange );
+	totalWeight = data.params[0].distribution;
+
+	// It sampling toward positive side,
+	// then assign negated value to negative side.
+	const int halfSampleCount = parameter.blurSampleCount >> 1;
+
+	// Calc weights of positive side
+	for ( int i = 0 + 1/* Ignore center */; i < halfSampleCount; ++i )
+	{
+		const float floatIndex = scast<float>( i );
+
+		data.params[i].uvOffset.x	= unitBlurDirection.x * texCoordU * floatIndex;
+		data.params[i].uvOffset.y	= unitBlurDirection.y * texCoordV * floatIndex;
+		data.params[i].distribution = CalcGaussianWeight( unitBlurDirection * floatIndex, parameter.blurRange );
+		totalWeight += data.params[i].distribution * 2.0f; // Also consider the negative side
+	}
+
+	// Normalize the weights
+	if ( !IsZero( totalWeight ) )
+	{
+		for ( int i = 0; i < halfSampleCount; ++i )
+		{
+			data.params[i].distribution /= totalWeight;
+		}
+	}
+
+	// Assign to negative side
+	const int offsetToPositive = halfSampleCount - 1;
+	for ( int i = halfSampleCount; i < parameter.blurSampleCount; ++i )
+	{
+		const int positiveIndex = ( i < offsetToPositive ) ? 0 : i - offsetToPositive; // Prevent to be negative
+		auto &negativeSide = data.params[i];
+		auto &positiveSide = data.params[positiveIndex];
+		negativeSide.uvOffset		= -positiveSide.uvOffset;
+		negativeSide.distribution	= positiveSide.distribution;
+	}
 }
 #if USE_IMGUI
 void  BloomApplier::DrawHighLuminanceToImGui( const Donya::Vector2 &drawSize )

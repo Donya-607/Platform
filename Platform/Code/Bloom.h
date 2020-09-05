@@ -129,7 +129,7 @@ public:
 	void DrawBlurBuffers( const Donya::Vector2 &drawingSize = Donya::Vector2::Zero() );
 private:
 	float CalcGaussianWeight( const Donya::Vector2 &pos, float deviation );
-	void  UpdateGaussianBlurParams( float bufferWholeWidth, float bufferWholeHeight, const Donya::Vector2 &unitBlurDirection, float multiply );
+	void  UpdateGaussianBlurParams( float bufferWholeWidth, float bufferWholeHeight, const Donya::Vector2 &unitBlurDirection );
 public:
 #if USE_IMGUI
 	void DrawHighLuminanceToImGui( const Donya::Vector2 &wholeDrawSize );

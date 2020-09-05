@@ -231,13 +231,16 @@ namespace Donya
 			0               0               1/zMax-zMin  -(    zMin   /(zMax-zMin))
 			0               0               0            1
 			*/
-			const float xMax = Donya::Private::RegisteredScreenWidthF(),  xMin = -1.0f;
-			const float yMax = Donya::Private::RegisteredScreenHeightF(), yMin = -1.0f;
+			const Donya::Vector2 screenSize
+			{
+				Donya::Private::RegisteredScreenWidthF(),
+				Donya::Private::RegisteredScreenHeightF()
+			};
 
 			for ( size_t i = 0; i < vertexCount; ++i )
 			{
-				vertices[i].pos.x =        ( ( 2.0f * vertices[i].pos.x ) / ( xMax ) ) - 1.0f;
-				vertices[i].pos.y = 1.0f - ( ( 2.0f * vertices[i].pos.y ) / ( yMax ) );
+				vertices[i].pos.x =        ( ( 2.0f * vertices[i].pos.x ) / ( screenSize.x ) ) - 1.0f;
+				vertices[i].pos.y = 1.0f - ( ( 2.0f * vertices[i].pos.y ) / ( screenSize.y ) );
 
 				vertices[i].texCoord.x /= originalTexSize.x;
 				vertices[i].texCoord.y /= originalTexSize.y;
