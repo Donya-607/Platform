@@ -129,6 +129,8 @@ private:
 		void Init();
 		void Update( Player &instance, float elapsedTime, bool stopAnimation = false );
 		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW ) const;
+	public:
+		void QuitShotMotion();
 	private:
 		void UpdateShotMotion( Player &instance, float elapsedTime );
 		void ApplyPartMotion( Player &instance, float elapsedTime, MotionKind useMotion, const ModelHelper::PartApply &partData );

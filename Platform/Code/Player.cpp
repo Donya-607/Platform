@@ -478,6 +478,11 @@ void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vecto
 
 	pRenderer->DeactivateConstantModel();
 }
+void Player::MotionManager::QuitShotMotion()
+{
+	shouldPoseShot = false;
+	shotAnimator.ResetTimer();
+}
 void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 {
 	if ( shotAnimator.WasEnded() )
@@ -1371,6 +1376,8 @@ void Player::KnockBack::Init( Player &inst )
 		inst.velocity.x  = Parameter().Get().knockBackSpeed * impulseSign;
 		inst.lookingSign = -impulseSign;
 	}
+
+	inst.motionManager.QuitShotMotion();
 	
 	timer = 0.0f;
 }
@@ -1865,8 +1872,9 @@ void Player::MoveVertical  ( float elapsedTime, Input input )
 }
 bool Player::NowShotable() const
 {
-	const bool generatable = ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
-	return ( generatable ) ? true : false;
+	const bool movable		= ( pMover && !pMover->NowKnockBacking( *this ) );
+	const bool generatable	= ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
+	return ( generatable && movable ) ? true : false;
 }
 void Player::ShotIfRequested( float elapsedTime, Input input )
 {
