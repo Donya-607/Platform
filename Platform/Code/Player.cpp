@@ -993,6 +993,11 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 		}
 	}
 
+	if ( !IsZero( inst.velocity.x ) )
+	{
+		inst.lookingSign = Donya::SignBitF( inst.velocity.x );
+	}
+
 	// If the jump was triggered in here, the "slideIsEnd" is also true.
 	inst.MoveVertical( elapsedTime, input );
 
