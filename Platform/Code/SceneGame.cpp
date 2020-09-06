@@ -1818,7 +1818,7 @@ void SceneGame::Collision_PlayerVSItem()
 		// else
 
 		other = pItem->GetHitBox();
-		if ( Donya::Collision::IsHit( other, playerBody ) )
+		if ( Donya::Collision::IsHit( other, playerBody, /* considerExistFlag = */ false ) )
 		{
 			CatchItem( pItem );
 		}
