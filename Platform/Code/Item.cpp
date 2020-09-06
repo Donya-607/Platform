@@ -423,8 +423,11 @@ namespace Item
 		if ( wantRemove ) { return; }
 		// else
 
-		const float &aliveLimit		= initializer.aliveSecond;
-		const bool  willDisappear	= ( 0.0f <= aliveLimit && aliveLimit <= aliveTimer );
+		const float &aliveLimit = initializer.aliveSecond;
+		if ( aliveLimit < 0.0f ) { return; } // Minus time specifies don't remove until caught
+		// else
+
+		const bool willDisappear = ( aliveLimit <= aliveTimer );
 		if ( willDisappear || OnOutSideScreen( wsScreen ) )
 		{
 			wantRemove = true;
