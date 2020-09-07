@@ -1154,16 +1154,21 @@ int  SceneTitle::CalcCurrentRoomID() const
 
 void SceneTitle::ClearBackGround() const
 {
-	constexpr Donya::Vector3 gray = Donya::Color::MakeColor( Donya::Color::Code::LIGHT_GRAY );
+	if ( pShadowMap ) { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
+
+	constexpr Donya::Vector3 gray = Donya::Color::MakeColor( Donya::Color::Code::GRAY );
 	constexpr FLOAT BG_COLOR[4]{ gray.x, gray.y, gray.z, 1.0f };
 	Donya::ClearViews( BG_COLOR );
 
+	if ( pScreenSurface ) { pScreenSurface->Clear( Donya::Vector4{ gray, 1.0f } ); }
 #if DEBUG_MODE
 	if ( nowDebugMode )
 	{
-		constexpr Donya::Vector3 teal = Donya::Color::MakeColor( Donya::Color::Code::TEAL );
+		constexpr Donya::Vector3 teal = Donya::Color::MakeColor( Donya::Color::Code::CYAN );
 		constexpr FLOAT DEBUG_COLOR[4]{ teal.x, teal.y, teal.z, 1.0f };
 		Donya::ClearViews( DEBUG_COLOR );
+
+		if ( pScreenSurface ) { pScreenSurface->Clear( Donya::Vector4{ teal, 1.0f } ); }
 	}
 #endif // DEBUG_MODE
 }
