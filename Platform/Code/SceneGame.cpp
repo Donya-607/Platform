@@ -34,6 +34,7 @@
 #include "Parameter.h"
 #include "PlayerParam.h"
 #include "PointLightStorage.h"
+#include "StageNumber.h"
 
 #if DEBUG_MODE
 #include "CSVLoader.h"
@@ -253,9 +254,7 @@ void SceneGame::Init()
 	result = CreateShaders();
 	assert( result );
 
-#if DEBUG_MODE
-	stageNumber = 0; // temporary debug stage
-#endif // DEBUG_MODE
+	stageNumber = Definition::StageNumber::Game();
 
 	pPlayerIniter = std::make_unique<PlayerInitializer>();
 	pPlayerIniter->LoadParameter( stageNumber );
@@ -973,7 +972,7 @@ void SceneGame::InitStage( int stageNo )
 
 	PlayerInit();
 
-	currentRoomID = pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
+	currentRoomID = CalcCurrentRoomID();
 
 	// The calculation of camera position depends on the player's position
 	CameraInit();
@@ -1136,7 +1135,7 @@ void SceneGame::PrepareScrollIfNotActive( int oldRoomID, int newRoomID )
 	scroll.active			= true;
 	scroll.elapsedSecond	= 0.0f;
 
-	const Donya::Vector3 baseFocus  = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+	const Donya::Vector3 baseFocus = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 	scroll.cameraFocusStart = ClampFocusPoint( baseFocus, oldRoomID );
 	scroll.cameraFocusDest  = ClampFocusPoint( baseFocus, newRoomID );
 }
@@ -2148,7 +2147,7 @@ void SceneGame::UseImGui()
 			using  BufferType = std::array<char, bufferSizeWithNull>;
 
 			// These default value are my prefer
-			static int readStageNumber = 1;
+			static int readStageNumber = Definition::StageNumber::Game();
 			static BufferType bufferDirectory	{ "./../../EdittedData/"	};
 			static BufferType bufferPrefix		{ "Stage"					};
 			static BufferType bufferBoss		{ "Boss"					};
@@ -2321,11 +2320,6 @@ void SceneGame::UseImGui()
 
 	if ( ImGui::TreeNode( u8"サーフェス描画" ) )
 	{
-		const auto cameraPos = iCamera.GetPosition();
-		const auto lightPos  = lightCamera.GetPosition();
-		ImGui::Text( u8"Camera.Pos[%5.2f][%5.2f][%5.2f]", cameraPos.x, cameraPos.y, cameraPos.z );
-		ImGui::Text( u8"Light.Pos[%5.2f][%5.2f][%5.2f]", lightPos.x, lightPos.y, lightPos.z );
-
 		static Donya::Vector2 drawSize{ 320.0f, 180.0f };
 		ImGui::DragFloat2( u8"描画サイズ", &drawSize.x, 10.0f );
 		drawSize.x = std::max( 10.0f, drawSize.x );

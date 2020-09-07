@@ -7,17 +7,53 @@
 #include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
+#include "Boss.h"
+#include "Bloom.h"
+#include "ClearEvent.h"
+#include "Map.h"
+#include "ObjectBase.h"
+#include "Player.h"
 #include "Renderer.h"
+#include "Room.h"
 #include "Scene.h"
 #include "UI.h"
 
 class SceneTitle : public Scene
 {
 private:
+	struct Scroll
+	{
+		bool			active			= false;
+		float			elapsedSecond	= 0.0f;
+		Donya::Vector3	cameraFocusStart;
+		Donya::Vector3	cameraFocusDest;
+	};
+	struct Shader
+	{
+		Donya::VertexShader VS;
+		Donya::PixelShader  PS;
+	};
+private:
 	Donya::ICamera						iCamera;
-	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
+	Scroll								scroll;
+	Donya::ICamera						lightCamera;
 
+	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
+	Donya::Collision::Box3F				currentScreen;
+	int									currentRoomID	= 0;
+	
+	Scene::Type							nextScene		= Scene::Type::Null;
+	
 	std::unique_ptr<RenderingHelper>	pRenderer;
+	std::unique_ptr<Donya::Displayer>	pDisplayer;
+	std::unique_ptr<BloomApplier>		pBloomer;
+	std::unique_ptr<Donya::Surface>		pScreenSurface;
+	std::unique_ptr<Donya::Surface>		pShadowMap;
+	std::unique_ptr<Shader>				pQuadShader;
+	std::unique_ptr<Map>				pMap;
+	std::unique_ptr<House>				pHouse;
+	std::unique_ptr<Player>				pPlayer;
+	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 
 	UIObject sprTitleLogo;
 
@@ -27,6 +63,7 @@ private:
 	bool isReverseCameraMoveY	= true;
 	bool isReverseCameraRotX	= false;
 	bool isReverseCameraRotY	= false;
+	Donya::Vector3 previousCameraPos; // In not debugMode
 #endif // DEBUG_MODE
 public:
 	SceneTitle() : Scene() {}
@@ -38,9 +75,26 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
+	bool	CreateRenderers( const Donya::Int2 &wholeScreenSize );
+	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
+	bool	CreateShaders();
+	bool	AreRenderersReady() const;
+
+	Donya::Vector4x4 MakeScreenTransform() const;
+	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
+
 	void	CameraInit();
+	Donya::Vector3 ClampFocusPoint( const Donya::Vector3 &focusPoint, int roomID );
+	void	PrepareScrollIfNotActive( int oldRoomID, int newRoomID );
 	void	AssignCameraPos();
-	void	CameraUpdate();
+	void	CameraUpdate( float elapsedTime );
+
+	Donya::Vector4x4 CalcLightViewProjectionMatrix() const;
+
+	void	PlayerInit();
+	void	PlayerUpdate( float elapsedTime, const Map &terrain );
+
+	int		CalcCurrentRoomID() const;
 
 	void	ClearBackGround() const;
 	void	StartFade() const;

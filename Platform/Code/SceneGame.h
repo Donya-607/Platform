@@ -45,8 +45,8 @@ private:
 	};
 	struct Scroll
 	{
-		bool			active = false;
-		float			elapsedSecond = 0.0f;
+		bool			active			= false;
+		float			elapsedSecond	= 0.0f;
 		Donya::Vector3	cameraFocusStart;
 		Donya::Vector3	cameraFocusDest;
 	};
