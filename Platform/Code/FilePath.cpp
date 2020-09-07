@@ -9,21 +9,46 @@
 namespace
 {
 	static constexpr const char *DIR_PARAMETERS	= "./Data/Parameters/";
+	static constexpr const char *DIR_FONTS		= "./Data/Images/Fonts/";
 	static constexpr const char *DIR_MODELS		= "./Data/Models/";
-	static constexpr const char *EXT_MODEL		= ".bin";
+	static constexpr const char *EXT_BINARY		= ".bin";
+	static constexpr const char *EXT_FONT		= ".fnt";
+	static constexpr const char *EXT_JSON		= ".json";
 }
 
+namespace
+{
+	std::string GetFontName( FontAttribute attr )
+	{
+		switch ( attr )
+		{
+		case FontAttribute::Meiryo: return "MeiryoUI";
+		default: break;
+		}
+
+		_ASSERT_EXPR( 0, L"Error: Unexpected attribute!" );
+		return GetFontName( FontAttribute::Meiryo ); // Fail safe
+	}
+}
+std::string MakeFontPathBinary( FontAttribute attr )
+{
+	return DIR_FONTS + GetFontName( attr ) + EXT_BINARY;
+}
+std::string MakeFontPathFnt( FontAttribute attr )
+{
+	return DIR_FONTS + GetFontName( attr ) + EXT_FONT;
+}
 std::string MakeParameterPathBinary( std::string id )
 {
-	return DIR_PARAMETERS + id + ".bin";
+	return DIR_PARAMETERS + id + EXT_BINARY;
 }
 std::string MakeParameterPathJson( std::string id )
 {
-	return DIR_PARAMETERS + id + ".json";
+	return DIR_PARAMETERS + id + EXT_JSON;
 }
 std::string MakeModelPath( std::string id )
 {
-	return DIR_MODELS + id + EXT_MODEL;
+	return DIR_MODELS + id + EXT_BINARY;
 }
 std::string MakeStageParamPathBinary( std::string id, int stageNo )
 {
