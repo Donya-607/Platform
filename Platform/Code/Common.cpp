@@ -5,7 +5,7 @@
 namespace Common
 {
 #if DEBUG_MODE
-	static bool showCollision = true;
+	static bool showCollision = false;
 #endif // DEBUG_MODE
 	void	SetShowCollision( bool newState )
 	{

@@ -535,6 +535,14 @@ void SceneTitle::Draw( float elapsedTime )
 		Donya::Surface::ResetRenderTarget();
 	}
 
+	// Draw sprites
+	{
+		sprTitleLogo.pos.x = Common::HalfScreenWidthF();
+		sprTitleLogo.pos.y = Common::HalfScreenHeightF();
+		sprTitleLogo.alpha = 1.0f;
+		sprTitleLogo.Draw( 0.0f );
+	}
+
 	pRenderer->DeactivateSamplerModel();
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
