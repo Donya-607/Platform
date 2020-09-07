@@ -7,7 +7,7 @@ enum class FontAttribute
 	Meiryo
 };
 std::string MakeFontPathBinary( FontAttribute fontAttribute );
-std::string MakeFontPathFnt( FontAttribute fontAttribute );
+std::wstring MakeFontPathFnt( FontAttribute fontAttribute );
 std::string MakeParameterPathBinary( std::string parameterName );
 std::string MakeParameterPathJson( std::string parameterName );
 std::string MakeModelPath( std::string modelName );

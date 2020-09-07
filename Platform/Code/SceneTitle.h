@@ -4,6 +4,7 @@
 
 #include "Donya/Camera.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
+#include "Donya/Font.h"
 #include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
@@ -34,26 +35,27 @@ private:
 		Donya::PixelShader  PS;
 	};
 private:
-	Donya::ICamera						iCamera;
-	Scroll								scroll;
-	Donya::ICamera						lightCamera;
+	Donya::ICamera							iCamera;
+	Scroll									scroll;
+	Donya::ICamera							lightCamera;
 
-	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
-	Donya::Collision::Box3F				currentScreen;
-	int									currentRoomID	= 0;
+	Donya::XInput							controller{ Donya::Gamepad::PAD_1 };
+	Donya::Collision::Box3F					currentScreen;
+	int										currentRoomID	= 0;
 	
-	Scene::Type							nextScene		= Scene::Type::Null;
+	Scene::Type								nextScene		= Scene::Type::Null;
 	
-	std::unique_ptr<RenderingHelper>	pRenderer;
-	std::unique_ptr<Donya::Displayer>	pDisplayer;
-	std::unique_ptr<BloomApplier>		pBloomer;
-	std::unique_ptr<Donya::Surface>		pScreenSurface;
-	std::unique_ptr<Donya::Surface>		pShadowMap;
-	std::unique_ptr<Shader>				pQuadShader;
-	std::unique_ptr<Map>				pMap;
-	std::unique_ptr<House>				pHouse;
-	std::unique_ptr<Player>				pPlayer;
-	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
+	std::unique_ptr<RenderingHelper>		pRenderer;
+	std::unique_ptr<Donya::Font::Renderer>	pFontRenderer;
+	std::unique_ptr<Donya::Displayer>		pDisplayer;
+	std::unique_ptr<BloomApplier>			pBloomer;
+	std::unique_ptr<Donya::Surface>			pScreenSurface;
+	std::unique_ptr<Donya::Surface>			pShadowMap;
+	std::unique_ptr<Shader>					pQuadShader;
+	std::unique_ptr<Map>					pMap;
+	std::unique_ptr<House>					pHouse;
+	std::unique_ptr<Player>					pPlayer;
+	std::unique_ptr<PlayerInitializer>		pPlayerIniter;
 
 	UIObject sprTitleLogo;
 

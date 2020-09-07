@@ -542,6 +542,11 @@ void SceneTitle::Draw( float elapsedTime )
 		sprTitleLogo.alpha = 1.0f;
 		sprTitleLogo.Draw( 0.0f );
 	}
+	// Draw a fonts
+	{
+		pFontRenderer->Draw( L"START",  { 1024.0f, 600.0f } );
+		pFontRenderer->Draw( L"CONFIG", { 1024.0f, 640.0f } );
+	}
 
 	pRenderer->DeactivateSamplerModel();
 	Donya::Rasterizer::Deactivate();
@@ -728,6 +733,15 @@ bool SceneTitle::CreateRenderers( const Donya::Int2 &wholeScreenSize )
 
 	pRenderer = std::make_unique<RenderingHelper>();
 	if ( !pRenderer->Init() ) { succeeded = false; }
+	
+	std::unique_ptr<Donya::Font::Holder> fntLoader = std::make_unique<Donya::Font::Holder>();
+#if DEBUG_MODE
+	if ( !fntLoader->LoadFntFile	( MakeFontPathFnt	( FontAttribute::Meiryo ) ) ) { succeeded = false; }
+#else
+	if ( !fntLoader->LoadByCereal	( MakeFontPathBinary( FontAttribute::Meiryo ) ) ) { succeeded = false; }
+#endif // DEBUG_MODE
+	pFontRenderer = std::make_unique<Donya::Font::Renderer>();
+	if ( !pFontRenderer->Init( *fntLoader ) ) { succeeded = false; }
 
 	pDisplayer = std::make_unique<Donya::Displayer>();
 	if ( !pDisplayer->Init() ) { succeeded = false; }

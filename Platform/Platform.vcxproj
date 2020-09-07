@@ -154,6 +154,7 @@
     <ClCompile Include="Code\Donya\Color.cpp" />
     <ClCompile Include="Code\Donya\Displayer.cpp" />
     <ClCompile Include="Code\Donya\Donya.cpp" />
+    <ClCompile Include="Code\Donya\Font.cpp" />
     <ClCompile Include="Code\Donya\GamepadXInput.cpp" />
     <ClCompile Include="Code\Donya\GeometricPrimitive.cpp" />
     <ClCompile Include="Code\Donya\Keyboard.cpp" />
@@ -242,6 +243,7 @@
     <ClInclude Include="Code\Donya\Displayer.h" />
     <ClInclude Include="Code\Donya\Donya.h" />
     <ClInclude Include="Code\Donya\Easing.h" />
+    <ClInclude Include="Code\Donya\Font.h" />
     <ClInclude Include="Code\Donya\GamepadXInput.h" />
     <ClInclude Include="Code\Donya\GeometricPrimitive.h" />
     <ClInclude Include="Code\Donya\HighResolutionTimer.h" />

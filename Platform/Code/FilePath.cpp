@@ -8,17 +8,18 @@
 
 namespace
 {
-	static constexpr const char *DIR_PARAMETERS	= "./Data/Parameters/";
-	static constexpr const char *DIR_FONTS		= "./Data/Images/Fonts/";
-	static constexpr const char *DIR_MODELS		= "./Data/Models/";
-	static constexpr const char *EXT_BINARY		= ".bin";
-	static constexpr const char *EXT_FONT		= ".fnt";
-	static constexpr const char *EXT_JSON		= ".json";
+	static constexpr const char		*DIR_PARAMETERS	= "./Data/Parameters/";
+	static constexpr const char		*DIR_FONTS		=  "./Data/Images/Fonts/";
+	static constexpr const wchar_t	*DIR_FONTS_W	= L"./Data/Images/Fonts/";
+	static constexpr const char		*DIR_MODELS		= "./Data/Models/";
+	static constexpr const char		*EXT_BINARY		= ".bin";
+	static constexpr const wchar_t	*EXT_FONT		= L".fnt";
+	static constexpr const char		*EXT_JSON		= ".json";
 }
 
 namespace
 {
-	std::string GetFontName( FontAttribute attr )
+	std::string  GetFontName( FontAttribute attr )
 	{
 		switch ( attr )
 		{
@@ -29,14 +30,18 @@ namespace
 		_ASSERT_EXPR( 0, L"Error: Unexpected attribute!" );
 		return GetFontName( FontAttribute::Meiryo ); // Fail safe
 	}
+	std::wstring GetFontNameW( FontAttribute attr )
+	{
+		return Donya::UTF8ToWide( GetFontName( attr ) );
+	}
 }
 std::string MakeFontPathBinary( FontAttribute attr )
 {
 	return DIR_FONTS + GetFontName( attr ) + EXT_BINARY;
 }
-std::string MakeFontPathFnt( FontAttribute attr )
+std::wstring MakeFontPathFnt( FontAttribute attr )
 {
-	return DIR_FONTS + GetFontName( attr ) + EXT_FONT;
+	return DIR_FONTS_W + GetFontNameW( attr ) + EXT_FONT;
 }
 std::string MakeParameterPathBinary( std::string id )
 {
