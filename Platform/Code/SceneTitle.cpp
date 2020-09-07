@@ -7,6 +7,7 @@
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
+#include "Donya/Sprite.h"
 #include "Donya/Useful.h"
 #include "Donya/Vector.h"
 #if DEBUG_MODE
@@ -544,8 +545,9 @@ void SceneTitle::Draw( float elapsedTime )
 	}
 	// Draw a fonts
 	{
+		Donya::Sprite::SetDrawDepth( 0.0f );
 		pFontRenderer->Draw( L"START",  { 1024.0f, 600.0f } );
-		pFontRenderer->Draw( L"CONFIG", { 1024.0f, 640.0f } );
+		pFontRenderer->Draw( L"OPTION", { 1024.0f, 640.0f } );
 	}
 
 	pRenderer->DeactivateSamplerModel();

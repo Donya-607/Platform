@@ -93,13 +93,13 @@ void PlayerInitializer::LoadParameter( int stageNo )
 }
 void PlayerInitializer::LoadBin( int stageNo )
 {
-	constexpr bool fromBinary = true;
-	Donya::Serializer::Load( *this, MakeStageParamPathBinary( ID, stageNo ).c_str(), ID, fromBinary );
+	Donya::Serializer tmp;
+	tmp.LoadBinary( *this, MakeStageParamPathBinary( ID, stageNo ).c_str(), ID );
 }
 void PlayerInitializer::LoadJson( int stageNo )
 {
-	constexpr bool fromBinary = false;
-	Donya::Serializer::Load( *this, MakeStageParamPathJson( ID, stageNo ).c_str(), ID, fromBinary );
+	Donya::Serializer tmp;
+	tmp.LoadJSON( *this, MakeStageParamPathJson( ID, stageNo ).c_str(), ID );
 }
 #if USE_IMGUI
 void PlayerInitializer::RemakeByCSV( const CSVLoader &loadedData )
@@ -223,7 +223,8 @@ void PlayerInitializer::SaveBin( int stageNo )
 	MakeDirectoryIfNotExists( filePath );
 	MakeFileIfNotExists( filePath, fromBinary );
 
-	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
+	Donya::Serializer tmp;
+	tmp.SaveBinary( *this, filePath.c_str(), ID );
 }
 void PlayerInitializer::SaveJson( int stageNo )
 {
@@ -233,7 +234,8 @@ void PlayerInitializer::SaveJson( int stageNo )
 	MakeDirectoryIfNotExists( filePath );
 	MakeFileIfNotExists( filePath, fromBinary );
 
-	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
+	Donya::Serializer tmp;
+	tmp.SaveJSON( *this, filePath.c_str(), ID );
 }
 void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption, int stageNo, bool allowShowIONode )
 {

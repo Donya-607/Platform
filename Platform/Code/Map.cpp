@@ -465,7 +465,10 @@ bool Map::LoadMap( int stageNumber, bool fromBinary )
 	const std::string filePath	= ( fromBinary )
 								? MakeStageParamPathBinary( ID, stageNumber )
 								: MakeStageParamPathJson  ( ID, stageNumber );
-	return Donya::Serializer::Load( *this, filePath.c_str(), ID, fromBinary );
+	Donya::Serializer tmp;
+	return	( fromBinary )
+			? tmp.LoadBinary( *this, filePath.c_str(), ID )
+			: tmp.LoadJSON	( *this, filePath.c_str(), ID );
 }
 #if USE_IMGUI
 void Map::ReloadModel( int loadStageNumber )
@@ -542,7 +545,10 @@ void Map::SaveMap( int stageNumber, bool fromBinary )
 	MakeDirectoryIfNotExists( filePath );
 	MakeFileIfNotExists( filePath, fromBinary );
 
-	Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
+	Donya::Serializer tmp;
+	( fromBinary )
+	? tmp.SaveBinary( *this, filePath.c_str(), ID )
+	: tmp.SaveJSON	( *this, filePath.c_str(), ID );
 }
 void Map::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
 {

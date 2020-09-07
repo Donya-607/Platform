@@ -139,6 +139,27 @@ namespace Donya
 	std::vector<unsigned int> SeparateDigits( unsigned int value, int storeDigits = -1 );
 
 	/// <summary>
+	/// Read a file as a blob of byte code to pDestination.
+	/// Returns byte length of the readed, or -1 if the reading is failed.
+	/// </summary>
+	long ReadByteCode( std::unique_ptr<char[]> *pDestination, const std::string &filePath, const char *openMode = "rb" );
+	/// <summary>
+	/// Read a file as a blob of byte code to pDestination.
+	/// Returns byte length of the readed, or -1 if the reading is failed.
+	/// </summary>
+	long ReadByteCode( std::unique_ptr<unsigned char[]> *pDestination, const std::string &filePath, const char *openMode = "rb" );
+	/// <summary>
+	/// Read a file as a blob of byte code to pDestination.
+	/// Returns byte length of the readed, or -1 if the reading is failed.
+	/// </summary>
+	long ReadByteCode( std::unique_ptr<char[]> *pDestination, const std::wstring &filePath, const wchar_t *openMode = L"rb" );
+	/// <summary>
+	/// Read a file as a blob of byte code to pDestination.
+	/// Returns byte length of the readed, or -1 if the reading is failed.
+	/// </summary>
+	long ReadByteCode( std::unique_ptr<unsigned char[]> *pDestination, const std::wstring &filePath, const wchar_t *openMode = L"rb" );
+
+	/// <summary>
 	/// MakeArraySuffix( 2 ) returns "[2]".
 	/// MakeArraySuffix( -1 ) returns "[-1]".
 	/// </summary>
@@ -194,24 +215,25 @@ namespace Donya
 
 #pragma endregion
 
-	std::string ToFullPath( std::string filePath );
+	std::string  ToFullPath( const std::string  &filePath );
+	std::wstring ToFullPath( const std::wstring &filePath );
 
 	/// <summary>
 	/// If fullPath is invalid, returns ""(You can error-check with std::string::empty()).
 	/// </summary>
-	std::string ExtractFileDirectoryFromFullPath( std::string fullPath );
+	std::string ExtractFileDirectoryFromFullPath( const std::string &fullPath );
 	/// <summary>
 	/// If fullPath is invalid, returns ""(You can error-check with std::string::empty()).
 	/// </summary>
-	std::wstring ExtractFileDirectoryFromFullPath( std::wstring fullPath );
+	std::wstring ExtractFileDirectoryFromFullPath( const std::wstring &fullPath );
 	/// <summary>
 	/// If fullPath is invalid, returns ""(You can error-check with std::string::empty());
 	/// </summary>
-	std::string ExtractFileNameFromFullPath( std::string fullPath );
+	std::string ExtractFileNameFromFullPath( const std::string &fullPath );
 	/// <summary>
 	/// If fullPath is invalid, returns ""(You can error-check with std::string::empty());
 	/// </summary>
-	std::wstring ExtractFileNameFromFullPath( std::wstring fullPath );
+	std::wstring ExtractFileNameFromFullPath( const std::wstring &fullPath );
 
 	/// <summary>
 	/// Create the directory by _mkdir() if not exists.<para></para>

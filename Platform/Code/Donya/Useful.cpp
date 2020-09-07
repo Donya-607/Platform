@@ -125,6 +125,47 @@ namespace Donya
 		return digits;
 	}
 
+	template<typename DestCharType, typename FileOpenMethod, typename PathCharType>
+	long ReadByteCodeImpl( std::unique_ptr<DestCharType[]> *pDestination, FileOpenMethod FileOpen, const PathCharType *filePath, const PathCharType *openMode )
+	{
+		if ( !pDestination						) { return -1; }
+		if ( !Donya::IsExistFile( filePath )	) { return -1; }
+		// else
+
+		FILE *fp = nullptr;
+
+		FileOpen( &fp, filePath, openMode );
+		if ( !fp ) { return -1; }
+		// else
+
+		fseek( fp, 0, SEEK_END );
+		long codeLength = ftell( fp );
+		fseek( fp, 0, SEEK_SET );
+
+		*pDestination = std::make_unique<DestCharType[]>( codeLength );
+		fread( pDestination->get(), codeLength, 1, fp );
+		
+		fclose( fp );
+
+		return codeLength;
+	}
+	long ReadByteCode( std::unique_ptr<char[]> *pDestination, const std::string &filePath, const char *openMode )
+	{
+		return ReadByteCodeImpl( pDestination, fopen_s, filePath.c_str(), openMode );
+	}
+	long ReadByteCode( std::unique_ptr<unsigned char[]> *pDestination, const std::string &filePath, const char *openMode )
+	{
+		return ReadByteCodeImpl( pDestination, fopen_s, filePath.c_str(), openMode );
+	}
+	long ReadByteCode( std::unique_ptr<char[]> *pDestination, const std::wstring &filePath, const wchar_t *openMode )
+	{
+		return ReadByteCodeImpl( pDestination, _wfopen_s, filePath.c_str(), openMode );
+	}
+	long ReadByteCode( std::unique_ptr<unsigned char[]> *pDestination, const std::wstring &filePath, const wchar_t *openMode )
+	{
+		return ReadByteCodeImpl( pDestination, _wfopen_s, filePath.c_str(), openMode );
+	}
+
 	template<typename T>
 	std::string MakeArraySuffixImpl( T index )
 	{
@@ -310,7 +351,8 @@ namespace Donya
 
 	static std::mutex mutexFullPathName{};
 
-	std::string  ToFullPath( std::string filePath )
+	template<typename CharType, typename StringType, typename Method>
+	StringType   ToFullPathImpl( const StringType &filePath, Method GetFullPathNameMethod )
 	{
 		// GetFullPathName() is thread unsafe.
 		// Because a current directory always have possibility will be changed by another thread.
@@ -318,61 +360,72 @@ namespace Donya
 
 		std::lock_guard<std::mutex> enterCS( mutexFullPathName );
 
-		const auto bufferSize = GetFullPathNameA( filePath.c_str(), NULL, NULL, nullptr );
-		std::unique_ptr<char[]> buffer = std::make_unique<char[]>( bufferSize + 1/* Null-Terminate */ );
+		const auto bufferSize = GetFullPathNameMethod( filePath.c_str(), NULL, NULL, nullptr );
+		std::unique_ptr<CharType[]> buffer = std::make_unique<CharType[]>( bufferSize + sizeof( CharType )/* Null-Terminate */ );
 
-		/* auto result = */ GetFullPathNameA( filePath.c_str(), bufferSize, buffer.get(), nullptr );
+		/* auto result = */ GetFullPathNameMethod( filePath.c_str(), bufferSize, buffer.get(), nullptr );
 
-		return std::string{ buffer.get() };
+		return StringType{ buffer.get() };
+	}
+	std::string  ToFullPath( const std::string &filePath )
+	{
+		return ToFullPathImpl<char>( filePath, GetFullPathNameA );
+	}
+	std::wstring ToFullPath( const std::wstring &filePath )
+	{
+		return ToFullPathImpl<wchar_t>( filePath, GetFullPathNameW );
 	}
 
-	std::string  ExtractFileDirectoryFromFullPath( std::string fullPath )
+	template<typename CharType, typename StringType, typename RemoveFileSpecMethod, typename AddBackslashMethod>
+	StringType   ExtractFileDirectoryFromFullPathImpl( const StringType &fullPath, RemoveFileSpecMethod PathRemoveFileSpecMethod, AddBackslashMethod PathAddBackslashMethod )
 	{
 		const size_t pathLength = fullPath.size();
-		if ( !pathLength ) { return ""; }
+		if ( !pathLength ) { return StringType{}; }
 		// else
 
-		std::unique_ptr<char[]> directory = std::make_unique<char[]>( pathLength + 1/* Null-Terminate */ );
+		std::unique_ptr<CharType[]> directory = std::make_unique<CharType[]>( pathLength + sizeof( CharType )/* Null-Terminate */ );
 		for ( size_t i = 0; i < pathLength; ++i )
 		{
 			directory[i] = fullPath[i];
 		}
 
-		PathRemoveFileSpecA( directory.get() );
-		PathAddBackslashA( directory.get() );
+		PathRemoveFileSpecMethod( directory.get() );
+		PathAddBackslashMethod	( directory.get() );
 
-		return std::string{ directory.get() };
+		return StringType{ directory.get() };
 	}
-	std::wstring ExtractFileDirectoryFromFullPath( std::wstring fullPath )
+	std::string  ExtractFileDirectoryFromFullPath( const std::string &fullPath )
 	{
-		return
-		MultiToWide
-		(
-			ExtractFileDirectoryFromFullPath
-			(
-				WideToMulti( fullPath )
-			)
-		);
+		return	ExtractFileDirectoryFromFullPathImpl<char>
+				(
+					fullPath,
+					PathRemoveFileSpecA,
+					PathAddBackslashA
+				);
+	}
+	std::wstring ExtractFileDirectoryFromFullPath( const std::wstring &fullPath )
+	{
+		return	ExtractFileDirectoryFromFullPathImpl<wchar_t>
+				(
+					fullPath,
+					PathRemoveFileSpecW,
+					PathAddBackslashW
+				);
 	}
 
-	std::string  ExtractFileNameFromFullPath( std::string fullPath )
+	std::string  ExtractFileNameFromFullPath( const std::string &fullPath )
 	{
-		const std::string fileDirectory = ExtractFileDirectoryFromFullPath( fullPath );
-		if ( fileDirectory.empty() ) { return ""; }
-		// else
-
-		return fullPath.substr( fileDirectory.size() );
+		const	std::string fileDirectory = ExtractFileDirectoryFromFullPath( fullPath );
+		return	( fileDirectory.empty() )
+				? ""
+				: fullPath.substr( fileDirectory.size() );
 	}
-	std::wstring ExtractFileNameFromFullPath( std::wstring fullPath )
+	std::wstring ExtractFileNameFromFullPath( const std::wstring &fullPath )
 	{
-		return
-		MultiToWide
-		(
-			ExtractFileNameFromFullPath
-			(
-				WideToMulti( fullPath )
-			)
-		);
+		const	std::wstring fileDirectory = ExtractFileDirectoryFromFullPath( fullPath );
+		return	( fileDirectory.empty() )
+				? L""
+				: fullPath.substr( fileDirectory.size() );
 	}
 
 	bool MakeDirectory( const std::string  &dirPath )

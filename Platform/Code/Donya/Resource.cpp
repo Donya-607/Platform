@@ -40,33 +40,6 @@ namespace Donya
 {
 	namespace Resource
 	{
-		/// <summary>
-		/// Returns 0 if read the file failed.
-		/// </summary>
-		long ReadByteCode( std::unique_ptr<unsigned char[]> *pByteCode, std::string filePath, std::string openMode )
-		{
-			if ( !pByteCode ) { return NULL; }
-			if ( !Donya::IsExistFile( filePath ) ) { return NULL; }
-			// else
-
-			FILE *fp = nullptr;
-
-			fopen_s( &fp, filePath.c_str(), openMode.c_str() );
-			if ( !fp ) { return NULL; }
-			// else
-
-			fseek( fp, 0, SEEK_END );
-			long codeLength = ftell( fp );
-			fseek( fp, 0, SEEK_SET );
-
-			*pByteCode = std::make_unique<unsigned char[]>( codeLength );
-			fread( pByteCode->get(), codeLength, 1, fp );
-
-			fclose( fp );
-
-			return codeLength;
-		}
-
 		#pragma region VerteShaderCache
 
 		struct VertexShaderCacheContents

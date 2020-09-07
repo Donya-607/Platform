@@ -505,7 +505,10 @@ namespace Enemy
 		const std::string filePath	= ( fromBinary )
 									? MakeStageParamPathBinary( ID, stageNumber )
 									: MakeStageParamPathJson  ( ID, stageNumber );
-		const bool succeeded = Donya::Serializer::Load( *this, filePath.c_str(), ID, fromBinary );
+		Donya::Serializer tmp;
+		const bool succeeded		= ( fromBinary )
+									? tmp.LoadBinary( *this, filePath.c_str(), ID )
+									: tmp.LoadJSON	( *this, filePath.c_str(), ID );
 
 		// I should call Init()
 		for ( auto &pIt : enemyPtrs )
@@ -632,7 +635,10 @@ namespace Enemy
 		MakeDirectoryIfNotExists( filePath );
 		MakeFileIfNotExists( filePath, fromBinary );
 
-		Donya::Serializer::Save( *this, filePath.c_str(), ID, fromBinary );
+		Donya::Serializer tmp;
+		( fromBinary )
+		? tmp.SaveBinary( *this, filePath.c_str(), ID )
+		: tmp.SaveJSON	( *this, filePath.c_str(), ID );
 	}
 	void Admin::ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Donya::Collision::Box3F &wsScreen )
 	{

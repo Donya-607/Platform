@@ -92,23 +92,23 @@ private:
 	}
 	void LoadBinary()
 	{
-		constexpr bool fromBinary = true;
-		Donya::Serializer::Load( param, MakeParameterPathBinary( MakeFolderName() ).c_str(), objectName, fromBinary );
+		Donya::Serializer tmp;
+		tmp.LoadBinary( param, MakeParameterPathBinary( MakeFolderName() ).c_str(), objectName );
 	}
 	void LoadJson()
 	{
-		constexpr bool fromBinary = false;
-		Donya::Serializer::Load( param, MakeParameterPathJson( MakeFolderName() ).c_str(), objectName, fromBinary );
+		Donya::Serializer tmp;
+		tmp.LoadJSON( param, MakeParameterPathJson( MakeFolderName() ).c_str(), objectName );
 	}
 	void SaveBinary()
 	{
-		constexpr bool fromBinary = true;
-		Donya::Serializer::Save( param, MakeParameterPathBinary( MakeFolderName() ).c_str(), objectName, fromBinary );
+		Donya::Serializer tmp;
+		tmp.SaveBinary( param, MakeParameterPathBinary( MakeFolderName() ).c_str(), objectName );
 	}
 	void SaveJson()
 	{
-		constexpr bool fromBinary = false;
-		Donya::Serializer::Save( param, MakeParameterPathJson( MakeFolderName() ).c_str(), objectName, fromBinary );
+		Donya::Serializer tmp;
+		tmp.SaveJSON( param, MakeParameterPathJson( MakeFolderName() ).c_str(), objectName );
 	}
 #if USE_IMGUI
 private:

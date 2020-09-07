@@ -17,9 +17,9 @@ namespace Donya
 	class Serializer
 	{
 	public:
-		enum Extension
+		enum class Extension
 		{
-			BINARY = 0,
+			Binary = 0,
 			JSON,
 		};
 	private:	// Use for Begin() ~ End() process.
@@ -33,36 +33,22 @@ namespace Donya
 		std::unique_ptr<cereal::JSONOutputArchive>		pJsonOutArc;
 		bool isValid;	// It will be true while Begin() ~ End(), else false.
 	public:
-		Serializer() : ext( BINARY ), pIfs( nullptr ), pSS( nullptr ), pBinInArc( nullptr ), pJsonInArc( nullptr ), pBinOutArc( nullptr ), pJsonOutArc( nullptr ), isValid( false )
+		Serializer() : ext( Extension::Binary ), pIfs( nullptr ), pSS( nullptr ), pBinInArc( nullptr ), pJsonInArc( nullptr ), pBinOutArc( nullptr ), pJsonOutArc( nullptr ), isValid( false )
 		{}
-	public:
-		template<class SerializeObject>
-		bool Load( Extension extension, const char *filePath, const char *objectName, SerializeObject &instance ) const
+	private:
+		template<class InputArchiveType, class SerializeObject>
+		bool LoadImpl( int fileOpenMode, const char *filePath, const char *objectName, SerializeObject &instance ) const
 		{
-			auto openMode = ( extension == Extension::BINARY ) ? std::ios::in | std::ios::binary : std::ios::in;
-			std::ifstream ifs( filePath, openMode );
+			std::ifstream ifs( filePath, fileOpenMode );
 			if ( !ifs.is_open() ) { return false; }
 			// else
 
 			std::stringstream ss{};
 			ss << ifs.rdbuf();
 
-			switch ( extension )
 			{
-			case BINARY:
-				{
-					cereal::BinaryInputArchive binInArchive( ss );
-					binInArchive( cereal::make_nvp( objectName, instance ) );
-				}
-				break;
-			case JSON:
-				{
-					cereal::JSONInputArchive jsonInArchive( ss );
-					jsonInArchive( cereal::make_nvp( objectName, instance ) );
-				}
-				break;
-			default:
-				return false;
+				InputArchiveType archive( ss );
+				archive( cereal::make_nvp( objectName, instance ) );
 			}
 
 			ifs.close();
@@ -70,34 +56,19 @@ namespace Donya
 
 			return true;
 		}
-
-		template<class SerializeObject>
-		bool Save( Extension extension, const char *filePath, const char *objectName, SerializeObject &instance ) const
+		template<class OutputArchiveType, class SerializeObject>
+		bool SaveImpl( int fileOpenMode, const char *filePath, const char *objectName, SerializeObject &instance ) const
 		{
-			std::stringstream ss{};
-
-			switch ( extension )
-			{
-			case BINARY:
-				{
-					cereal::BinaryOutputArchive binOutArchive( ss );
-					binOutArchive( cereal::make_nvp( objectName, instance ) );
-				}
-				break;
-			case JSON:
-				{
-					cereal::JSONOutputArchive jsonOutArchive( ss );
-					jsonOutArchive( cereal::make_nvp( objectName, instance ) );
-				}
-				break;
-			default:
-				return false;
-			}
-
-			auto openMode = ( extension == Extension::BINARY ) ? std::ios::out | std::ios::binary : std::ios::out;
-			std::ofstream ofs( filePath, openMode );
+			std::ofstream ofs( filePath, fileOpenMode );
 			if ( !ofs.is_open() ) { return false; }
 			// else
+
+			std::stringstream ss{};
+
+			{
+				OutputArchiveType archive( ss );
+				archive( cereal::make_nvp( objectName, instance ) );
+			}
 
 			ofs << ss.str();
 
@@ -107,6 +78,43 @@ namespace Donya
 			return true;
 		}
 	public:
+		/// <summary>
+		/// The "objectName" is used to identify the object in reading files.
+		/// </summary>
+		template<class SerializeObject>
+		bool LoadBinary	( SerializeObject &instance, const char *filePath, const char *objectName ) const
+		{
+			constexpr int openMode = std::ios::in | std::ios::binary;
+			return LoadImpl<cereal::BinaryInputArchive>( openMode, filePath, objectName, instance );
+		}
+		/// <summary>
+		/// The "objectName" is used to identify the object in reading files.
+		/// </summary>
+		template<class SerializeObject>
+		bool LoadJSON	( SerializeObject &instance, const char *filePath, const char *objectName ) const
+		{
+			constexpr int openMode = std::ios::in;
+			return LoadImpl<cereal::JSONInputArchive>( openMode, filePath, objectName, instance );
+		}
+		/// <summary>
+		/// The "objectName" is used to identify the object in reading files.
+		/// </summary>
+		template<class SerializeObject>
+		bool SaveBinary	( SerializeObject &instance, const char *filePath, const char *objectName ) const
+		{
+			constexpr int openMode = std::ios::out | std::ios::binary;
+			return SaveImpl<cereal::BinaryOutputArchive>( openMode, filePath, objectName, instance );
+		}
+		/// <summary>
+		/// The "objectName" is used to identify the object in reading files.
+		/// </summary>
+		template<class SerializeObject>
+		bool SaveJSON	( SerializeObject &instance, const char *filePath, const char *objectName ) const
+		{
+			constexpr int openMode = std::ios::out;
+			return SaveImpl<cereal::JSONOutputArchive>( openMode, filePath, objectName, instance );
+		}
+	public: // TODO: Separate these loading method between extension(binary version, json versoin, etc) also
 		bool LoadBegin( Extension extension, const char *filePath )
 		{
 			if ( isValid )
@@ -120,7 +128,7 @@ namespace Donya
 			}
 			// else
 
-			auto openMode = ( extension == Extension::BINARY ) ? std::ios::in | std::ios::binary : std::ios::in;
+			auto openMode = ( extension == Extension::Binary ) ? std::ios::in | std::ios::binary : std::ios::in;
 			pIfs = std::make_unique<std::ifstream>( filePath, openMode );
 			if ( !pIfs->is_open() ) { return false; }
 			// else
@@ -131,10 +139,10 @@ namespace Donya
 			ext = extension;
 			switch ( extension )
 			{
-			case BINARY:
+			case Extension::Binary:
 				pBinInArc  = std::make_unique<cereal::BinaryInputArchive>( *pSS );
 				break;
-			case JSON:
+			case Extension::JSON:
 				pJsonInArc = std::make_unique<cereal::JSONInputArchive>( *pSS );
 				break;
 			default:
@@ -145,7 +153,6 @@ namespace Donya
 
 			return true;
 		}
-
 		template<class SerializeObject>
 		bool LoadPart( const char *objectName, SerializeObject &instance )
 		{
@@ -154,12 +161,12 @@ namespace Donya
 
 			switch ( ext )
 			{
-			case BINARY:
+			case Extension::Binary:
 				{
 					( *pBinInArc )( cereal::make_nvp( objectName, instance ) );
 				}
 				break;
-			case JSON:
+			case Extension::JSON:
 				{
 					( *pJsonInArc )( cereal::make_nvp( objectName, instance ) );
 				}
@@ -170,7 +177,6 @@ namespace Donya
 
 			return true;
 		}
-
 		void LoadEnd()
 		{
 			if ( !isValid ) { return; }
@@ -178,10 +184,10 @@ namespace Donya
 
 			switch ( ext )
 			{
-			case BINARY:
+			case Extension::Binary:
 				pBinInArc.reset( nullptr );
 				break;
-			case JSON:
+			case Extension::JSON:
 				pJsonInArc.reset( nullptr );
 				break;
 			default:
@@ -196,7 +202,6 @@ namespace Donya
 
 			isValid  = false;
 		}
-	public:
 		bool SaveBegin( Extension extension, const char *filePath )
 		{
 			if ( isValid )
@@ -215,17 +220,17 @@ namespace Donya
 			ext = extension;
 			switch ( extension )
 			{
-			case BINARY:
+			case Extension::Binary:
 				pBinOutArc  = std::make_unique<cereal::BinaryOutputArchive>( *pSS );
 				break;
-			case JSON:
+			case Extension::JSON:
 				pJsonOutArc = std::make_unique<cereal::JSONOutputArchive>( *pSS );
 				break;
 			default:
 				return false;
 			}
 
-			auto openMode = ( extension == Extension::BINARY ) ? std::ios::out | std::ios::binary : std::ios::out;
+			auto openMode = ( extension == Extension::Binary ) ? std::ios::out | std::ios::binary : std::ios::out;
 			pOfs = std::make_unique<std::ofstream>( filePath, openMode );
 			if ( !pOfs->is_open() ) { return false; }
 			// else
@@ -234,7 +239,6 @@ namespace Donya
 
 			return true;
 		}
-
 		template<class SerializeObject>
 		bool SavePart( const char *objectName, SerializeObject &instance )
 		{
@@ -243,12 +247,12 @@ namespace Donya
 
 			switch ( ext )
 			{
-			case BINARY:
+			case Extension::Binary:
 				{
 					( *pBinOutArc )( cereal::make_nvp( objectName, instance ) );
 				}
 				break;
-			case JSON:
+			case Extension::JSON:
 				{
 					( *pJsonOutArc )( cereal::make_nvp( objectName, instance ) );
 				}
@@ -259,7 +263,6 @@ namespace Donya
 
 			return true;
 		}
-
 		void SaveEnd()
 		{
 			if ( !isValid ) { return; }
@@ -267,10 +270,10 @@ namespace Donya
 
 			switch ( ext )
 			{
-			case BINARY:
+			case Extension::Binary:
 				pBinOutArc.reset( nullptr );
 				break;
-			case JSON:
+			case Extension::JSON:
 				pJsonOutArc.reset( nullptr );
 				break;
 			default:
@@ -286,41 +289,6 @@ namespace Donya
 			pSS.reset( nullptr );
 
 			isValid = false;
-		}
-	public:
-		// Static helper methods.
-
-		/// <summary>
-		/// "instance" : The object's instance that you want serialize. This object's status must be the same as when saving.<para></para>
-		/// "filePath" : The load file path that also contain extension.<para></para>
-		/// "objectName" : This name use as identifier. This name must be the same as when saving.<para></para>
-		/// "fromBinary" : [TRUE:Load from binary file] [FALSE: Load from json file]
-		/// </summary>
-		template<class SerializeObject>
-		static bool Load( SerializeObject &instance, const char *filePath, const char *objectName, bool fromBinary )
-		{
-			Extension ext = ( fromBinary )
-			? Serializer::Extension::BINARY
-			: Serializer::Extension::JSON;
-			
-			Serializer seria{};
-			return seria.Load( ext, filePath, objectName, instance );
-		}
-		/// <summary>
-		/// "instance" : The object's instance that you want serialize.<para></para>
-		/// "filePath" : The save file path that also contain extension.<para></para>
-		/// "objectName" : This name use as identifier. Please use same identifier at load.<para></para>
-		/// "toBinary" : Do you save to binary file?
-		/// </summary>
-		template<class SerializeObject>
-		static bool Save( SerializeObject &instance, const char *filePath, const char *objectName, bool toBinary )
-		{
-			Serializer::Extension ext = ( toBinary )
-			? Serializer::Extension::BINARY
-			: Serializer::Extension::JSON;
-			
-			Serializer seria{};
-			return seria.Save( ext, filePath, objectName, instance );
 		}
 	};
 }

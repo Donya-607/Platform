@@ -85,7 +85,10 @@ bool ClearEvent::LoadEvents( int stageNo, bool fromBinary )
 	const std::string filePath	= ( fromBinary )
 								? MakeStageParamPathBinary( serializeID, stageNo )
 								: MakeStageParamPathJson  ( serializeID, stageNo );
-	return Donya::Serializer::Load( *this, filePath.c_str(), serializeID, fromBinary );
+	Donya::Serializer tmp;
+	return	( fromBinary )
+			? tmp.LoadBinary( *this, filePath.c_str(), serializeID )
+			: tmp.LoadJSON	( *this, filePath.c_str(), serializeID );
 }
 #if USE_IMGUI
 void ClearEvent::RemakeByCSV( const CSVLoader &loadedData )
@@ -126,7 +129,10 @@ void ClearEvent::SaveEvents( int stageNo, bool fromBinary )
 	MakeDirectoryIfNotExists( filePath );
 	MakeFileIfNotExists( filePath, fromBinary );
 
-	Donya::Serializer::Save( *this, filePath.c_str(), serializeID, fromBinary );
+	Donya::Serializer tmp;
+	( fromBinary )
+	? tmp.SaveBinary( *this, filePath.c_str(), serializeID )
+	: tmp.SaveJSON	( *this, filePath.c_str(), serializeID );
 }
 void ClearEvent::ShowImGuiNode( const std::string &nodeCaption, const House &house, int stageNo )
 {
