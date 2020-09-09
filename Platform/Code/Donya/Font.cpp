@@ -373,13 +373,45 @@ namespace Donya
 			// else
 			return true;
 		}
-		void Renderer::Draw( const wchar_t *string,			const Donya::Vector2 &ssPos, const Donya::Vector4 &color ) const
+		namespace
 		{
-			const auto &characters  = info.GetCharacters();
-			const auto &charIndices = info.GetCharacterIndices();
+			constexpr Donya::Vector2 defaultScale	{ 1.0f, 1.0f };
+			constexpr Donya::Vector2 defaultSize	{-1.0f,-1.0f };
+		}
+		void Renderer::Draw( const wchar_t *string,					const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
+		{
+			DrawStretchedExt( string, ssPos, defaultSize, pivot, defaultScale, color );
+		}
+		void Renderer::Draw( const std::wstring &string,			const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
+		{
+			DrawStretchedExt( string.c_str(), ssPos, defaultSize, pivot, defaultScale, color );
+		}
+		void Renderer::DrawExt( const wchar_t *string,				const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
+		{
+			DrawStretchedExt( string, ssPos, defaultSize, pivot, scale, color );
+		}
+		void Renderer::DrawExt( const std::wstring &string,			const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
+		{
+			DrawStretchedExt( string.c_str(), ssPos, defaultSize, pivot, scale, color );
+		}
+		void Renderer::DrawStretched( const wchar_t *string,		const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
+		{
+			DrawStretchedExt( string, ssPos, ssSize, pivot, defaultScale, color );
+		}
+		void Renderer::DrawStretched( const std::wstring &string,	const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
+		{
+			DrawStretchedExt( string.c_str(), ssPos, ssSize, pivot, defaultScale, color );
+		}
+		void Renderer::DrawStretchedExt( const wchar_t *string,		const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
+		{
+			const auto &characters			= info.GetCharacters();
+			const auto &charIndices			= info.GetCharacterIndices();
 			const Donya::Vector2 &origin	= ssPos;
 			const Donya::Vector2 &fontSize	= info.GetFontSize();
-			const size_t strLength			= wcslen( string );
+
+			const size_t strLength = wcslen( string );
+			if ( strLength < 1 ) { return; }
+			// else
 
 			struct Instance
 			{
@@ -391,7 +423,8 @@ namespace Donya
 			};
 			std::vector<Instance> elements{ strLength };
 
-			Donya::Vector2 drawPos = origin;
+			Donya::Vector2 drawPos  = origin;					// Next drawing position of character (screen space)
+			Donya::Vector2 drawSize = Donya::Vector2::Zero();	// Sum of character widths in the string (screen space)
 
 			// Set drawing informations to "elements"
 			for ( size_t i = 0; i < strLength; ++i )
@@ -403,20 +436,23 @@ namespace Donya
 				// else
 				if ( charCode == Character::Code::idReturn )
 				{
-					drawPos.x =  origin.x;
-					drawPos.y += fontSize.y;
+					drawPos.x  =  origin.x;
+					drawPos.y  += fontSize.y;
+					drawSize.y += fontSize.y;
 					continue;
 				}
 				// else
 				if ( charCode == Character::Code::idTab )
 				{
-					drawPos.x += fontSize.x * 4.0f;
+					drawPos.x  += fontSize.x * 4.0f;
+					drawSize.x += fontSize.x * 4.0f;
 					continue;
 				}
 				// else
 				if ( charCode == Character::Code::idSpace )
 				{
-					drawPos.x += fontSize.x;
+					drawPos.x  += fontSize.x;
+					drawSize.x += fontSize.x;
 					continue;
 				}
 				// else
@@ -426,19 +462,23 @@ namespace Donya
 				// else
 
 				const auto &usingTexture = textures[data.pageNo];
-				elements[i].handle	= usingTexture.handle;
-				elements[i].pos		= drawPos + data.offset;
-				elements[i].size	= data.uvPartSize;
-				elements[i].uvPos	= data.uvMin;
-				elements[i].uvSize	= data.uvMax - data.uvMin;
+				elements[i].handle		= usingTexture.handle;
+				elements[i].pos			= drawPos + data.offset;
+				elements[i].size		= data.uvPartSize;
+				elements[i].uvPos		= data.uvMin;
+				elements[i].uvSize		= data.uvMax - data.uvMin;
 				// Donya::Sprite::DrawXX requires uv parameter as texture space
 				elements[i].uvPos.x		*= usingTexture.wholeSize.x;
 				elements[i].uvPos.y		*= usingTexture.wholeSize.y;
 				elements[i].uvSize.x	*= usingTexture.wholeSize.x;
 				elements[i].uvSize.y	*= usingTexture.wholeSize.y;
 
-				drawPos.x += data.advance;
+				drawPos.x  += data.advance;
+				drawSize.x += data.advance;
 			}
+			drawSize.x *= scale.x;
+			drawSize.y *= scale.y;
+
 
 			// Sort for sprite batching
 			auto AscendingOrder = []( const Instance &lhs, const Instance &rhs )
@@ -447,26 +487,36 @@ namespace Donya
 			};
 			std::sort( elements.begin(), elements.end(), AscendingOrder );
 
+			
 			// Draw
+			const Donya::Vector2 offset
+			{
+				drawSize.x * pivot.x,
+				drawSize.y * pivot.y,
+			};
+			const Donya::Vector2 drawScale
+			{
+				( ssSize.x < 0.0f ) ? 1.0f : ssSize.x / drawSize.x,
+				( ssSize.y < 0.0f ) ? 1.0f : ssSize.y / drawSize.y,
+			};
 			for ( const auto &it : elements )
 			{
-				Donya::Sprite::DrawGeneral
+				Donya::Sprite::DrawGeneralExt
 				(
 					it.handle,
-					it.pos.x,		it.pos.y,
-					it.size.x,		it.size.y,
-					it.uvPos.x,		it.uvPos.y,
-					it.uvSize.x,	it.uvSize.y,
+					it.pos.x + offset.x,	it.pos.y + offset.y,
+					it.size.x,				it.size.y,
+					it.uvPos.x,				it.uvPos.y,
+					it.uvSize.x,			it.uvSize.y,
+					drawScale.x,			drawScale.y,
 					0.0f, Donya::Sprite::Origin::LEFT_TOP,
 					color.w, color.x, color.y, color.z
 				);
 			}
-
-			Donya::Sprite::Flush();
 		}
-		void Renderer::Draw( const std::wstring &string,	const Donya::Vector2 &ssPos, const Donya::Vector4 &color ) const
+		void Renderer::DrawStretchedExt( const std::wstring &string,	const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
 		{
-			Draw( string.c_str(), ssPos, color );
+			DrawStretchedExt( string.c_str(), ssPos, ssSize, pivot, scale, color );
 		}
 	}
 }
