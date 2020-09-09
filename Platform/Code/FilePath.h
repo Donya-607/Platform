@@ -4,7 +4,7 @@
 
 enum class FontAttribute
 {
-	Meiryo
+	Main
 };
 std::string MakeFontPathBinary( FontAttribute fontAttribute );
 std::wstring MakeFontPathFnt( FontAttribute fontAttribute );

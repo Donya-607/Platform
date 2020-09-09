@@ -23,12 +23,12 @@ namespace
 	{
 		switch ( attr )
 		{
-		case FontAttribute::Meiryo: return "MeiryoUI";
+		case FontAttribute::Main: return "Main";
 		default: break;
 		}
 
 		_ASSERT_EXPR( 0, L"Error: Unexpected attribute!" );
-		return GetFontName( FontAttribute::Meiryo ); // Fail safe
+		return GetFontName( FontAttribute::Main ); // Fail safe
 	}
 	std::wstring GetFontNameW( FontAttribute attr )
 	{

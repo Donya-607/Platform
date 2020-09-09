@@ -478,6 +478,9 @@ void SceneTitle::Draw( float elapsedTime )
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
 	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
 
+
+	pShadowMap->SetRenderTarget();
+	pShadowMap->SetViewport();
 	// Update scene constant as light source
 	{
 		Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
@@ -487,16 +490,14 @@ void SceneTitle::Draw( float elapsedTime )
 	// Make the shadow map
 	{
 		pRenderer->ActivateConstantScene();
-
-		pShadowMap->SetRenderTarget();
-		pShadowMap->SetViewport();
-
 		DrawObjects( /* castShadow = */ true );
-
-		Donya::Surface::ResetRenderTarget();
-
 		pRenderer->DeactivateConstantScene();
 	}
+	Donya::Surface::ResetRenderTarget();
+
+
+	pScreenSurface->SetRenderTarget();
+	pScreenSurface->SetViewport();
 
 	// Update scene and shadow constants
 	{
@@ -508,17 +509,12 @@ void SceneTitle::Draw( float elapsedTime )
 		constant.shadowBias			= data.shadowMap.bias;
 		pRenderer->UpdateConstant( constant );
 	}
-
 	// Update point light constant
 	{
 		pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
 	}
-
 	// Draw normal scene with shadow map
 	{
-		pScreenSurface->SetRenderTarget();
-		pScreenSurface->SetViewport();
-
 		pRenderer->ActivateConstantScene();
 		pRenderer->ActivateConstantPointLight();
 		pRenderer->ActivateConstantShadow();
@@ -532,9 +528,11 @@ void SceneTitle::Draw( float elapsedTime )
 		pRenderer->DeactivateConstantShadow();
 		pRenderer->DeactivateConstantPointLight();
 		pRenderer->DeactivateConstantScene();
-
-		Donya::Surface::ResetRenderTarget();
 	}
+	
+	pRenderer->DeactivateSamplerModel();
+	Donya::Rasterizer::Deactivate();
+	Donya::DepthStencil::Deactivate();
 
 	// Draw sprites
 	{
@@ -542,17 +540,10 @@ void SceneTitle::Draw( float elapsedTime )
 		sprTitleLogo.pos.y = Common::HalfScreenHeightF();
 		sprTitleLogo.alpha = 1.0f;
 		sprTitleLogo.Draw( 0.0f );
-	}
-	// Draw a fonts
-	{
-		Donya::Sprite::SetDrawDepth( 0.0f );
-		pFontRenderer->Draw( L"START",  { 1024.0f, 600.0f } );
-		pFontRenderer->Draw( L"OPTION", { 1024.0f, 640.0f } );
+		Donya::Sprite::Flush();
 	}
 
-	pRenderer->DeactivateSamplerModel();
-	Donya::Rasterizer::Deactivate();
-	Donya::DepthStencil::Deactivate();
+	Donya::Surface::ResetRenderTarget();
 
 	// Generate the buffers of bloom
 	{
@@ -574,17 +565,27 @@ void SceneTitle::Draw( float elapsedTime )
 		Donya::DepthStencil::Deactivate();
 	}
 
+	pScreenSurface->SetRenderTarget();
+	pScreenSurface->SetViewport();
+	// Draw a fonts
+	{
+		Donya::Sprite::SetDrawDepth( 0.0f );
+		pFontRenderer->Draw( L"START",  { 1024.0f, 600.0f } );
+		pFontRenderer->Draw( L"OPTION", { 1024.0f, 640.0f } );
+	}
+	Donya::Surface::ResetRenderTarget();
+
 	Donya::SetDefaultRenderTargets();
 
 	const Donya::Vector2 screenSurfaceSize = pScreenSurface->GetSurfaceSizeF();
 
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
+	
+	Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA );
 	// Draw the scene to screen
 	{
-		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
-		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA );
-
 		pQuadShader->VS.Activate();
 		pQuadShader->PS.Activate();
 
@@ -600,10 +601,9 @@ void SceneTitle::Draw( float elapsedTime )
 
 		pQuadShader->PS.Deactivate();
 		pQuadShader->VS.Deactivate();
-
-		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
-		Donya::Sampler::ResetPS( 0 );
 	}
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+	Donya::Sampler::ResetPS( 0 );
 
 	// Add the bloom buffers
 	Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
@@ -736,14 +736,23 @@ bool SceneTitle::CreateRenderers( const Donya::Int2 &wholeScreenSize )
 	pRenderer = std::make_unique<RenderingHelper>();
 	if ( !pRenderer->Init() ) { succeeded = false; }
 	
-	std::unique_ptr<Donya::Font::Holder> fntLoader = std::make_unique<Donya::Font::Holder>();
+	auto pFontLoader = std::make_unique<Donya::Font::Holder>();
 #if DEBUG_MODE
-	if ( !fntLoader->LoadFntFile	( MakeFontPathFnt	( FontAttribute::Meiryo ) ) ) { succeeded = false; }
+	const auto binPath = MakeFontPathBinary( FontAttribute::Main );
+	if ( Donya::IsExistFile( binPath ) )
+	{
+		if ( !pFontLoader->LoadByCereal( binPath ) ) { succeeded = false; }
+	}
+	else
+	{
+		if ( !pFontLoader->LoadFntFile( MakeFontPathFnt( FontAttribute::Main ) ) ) { succeeded = false; }
+		pFontLoader->SaveByCereal( binPath );
+	}
 #else
-	if ( !fntLoader->LoadByCereal	( MakeFontPathBinary( FontAttribute::Meiryo ) ) ) { succeeded = false; }
+	if ( !pFontLoader->LoadByCereal( MakeFontPathBinary( FontAttribute::Main ) ) ) { succeeded = false; }
 #endif // DEBUG_MODE
 	pFontRenderer = std::make_unique<Donya::Font::Renderer>();
-	if ( !pFontRenderer->Init( *fntLoader ) ) { succeeded = false; }
+	if ( !pFontRenderer->Init( *pFontLoader ) ) { succeeded = false; }
 
 	pDisplayer = std::make_unique<Donya::Displayer>();
 	if ( !pDisplayer->Init() ) { succeeded = false; }
