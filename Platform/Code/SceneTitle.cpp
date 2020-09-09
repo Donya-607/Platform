@@ -570,8 +570,35 @@ void SceneTitle::Draw( float elapsedTime )
 	// Draw a fonts
 	{
 		Donya::Sprite::SetDrawDepth( 0.0f );
-		pFontRenderer->Draw( L"START",  { 1024.0f, 600.0f } );
-		pFontRenderer->Draw( L"OPTION", { 1024.0f, 640.0f } );
+		constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
+		constexpr Donya::Vector4 white{ 1, 1, 1, 1 };
+		constexpr Donya::Vector4 AHalf{ 1, 1, 1, 0.6f };
+		Donya::Sprite::DrawRect
+		(
+			800.0f, 300.0f,
+			64.0f, 32.0f, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f
+		);
+		Donya::Sprite::DrawRect
+		(
+			800.0f, 364.0f,
+			64.0f, 32.0f, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f
+		);
+		Donya::Sprite::DrawRect
+		(
+			1024.0f, 600.0f,
+			128.0f, 64.0f, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f
+		);
+		Donya::Sprite::DrawRect
+		(
+			1024.0f, 664.0f,
+			128.0f, 64.0f, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f
+		);
+		pFontRenderer->Draw		( L"START",  {  800.0f, 300.0f }, pivot, white );
+		pFontRenderer->Draw		( L"OPTION", {  800.0f, 364.0f }, pivot, white );
+
+		pFontRenderer->DrawExt	( L"START",  { 1024.0f, 600.0f }, pivot, { 2.0f, 2.0f },	white );
+		pFontRenderer->DrawExt	( L"OPTION", { 1024.0f, 664.0f }, pivot, { 2.0f, 2.0f },	white );
+		Donya::Sprite::Flush();
 	}
 	Donya::Surface::ResetRenderTarget();
 
