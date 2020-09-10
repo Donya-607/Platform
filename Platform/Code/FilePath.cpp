@@ -120,8 +120,6 @@ namespace
 		case SpriteAttribute::FMODLogoWhite:
 			return Make( L"Rights/FMOD Logo White - Black Background.png", 2U );
 
-		case SpriteAttribute::NowLoading:
-			return Make( L"UI/NowLoading.png",	1U );
 		case SpriteAttribute::TitleLogo:
 			return Make( L"Title/Logo.png",		2U );
 		
