@@ -6,26 +6,26 @@
 #include "Donya/Camera.h"
 #include "Donya/Collision.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
+#include "Donya/Font.h"
 #include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
 #include "Renderer.h"
 #include "Scene.h"
-#include "UI.h"
 
 class SceneResult : public Scene
 {
 private:
-	Donya::ICamera						iCamera;
-	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
+	Donya::ICamera							iCamera;
+	Donya::XInput							controller{ Donya::Gamepad::PAD_1 };
 	
-	// std::unique_ptr<RenderingHelper>	pRenderer;
+	std::unique_ptr<Donya::Font::Renderer>	pFontRenderer;
+	// std::unique_ptr<RenderingHelper>		pRenderer;
 	
 	// std::unique_ptr<Player>				pPlayer;
 	// std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 
 #if DEBUG_MODE
-	UIObject sprTmpDraw;
 	bool nowDebugMode = false;
 #endif // DEBUG_MODE
 public:

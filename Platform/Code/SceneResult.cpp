@@ -10,6 +10,7 @@
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
+#include "Donya/Sprite.h"
 #include "Donya/Template.h"			// Use Clamp
 #include "Donya/Useful.h"
 #include "Donya/Vector.h"
@@ -51,10 +52,12 @@ namespace
 			}
 		}
 	public:
+	#if USE_IMGUI
 		void ShowImGuiNode()
 		{
 			
 		}
+	#endif // USE_IMGUI
 	};
 
 	// static ParamOperator<SceneParam> sceneParam{ "SceneResult" };
@@ -74,10 +77,23 @@ void SceneResult::Init()
 
 	bool result{};
 
+	auto pFontLoader = std::make_unique<Donya::Font::Holder>();
 #if DEBUG_MODE
-	result = sprTmpDraw.LoadSprite( L"./Data/Images/Result/GotWeapon.png", 2U );
-	assert( result );
+	const auto binPath = MakeFontPathBinary( FontAttribute::Main );
+	if ( Donya::IsExistFile( binPath ) )
+	{
+		if ( !pFontLoader->LoadByCereal( binPath ) ) { result = false; }
+	}
+	else
+	{
+		if ( !pFontLoader->LoadFntFile( MakeFontPathFnt( FontAttribute::Main ) ) ) { result = false; }
+		pFontLoader->SaveByCereal( binPath );
+	}
+#else
+	if ( !pFontLoader->LoadByCereal( MakeFontPathBinary( FontAttribute::Main ) ) ) { result = false; }
 #endif // DEBUG_MODE
+	pFontRenderer = std::make_unique<Donya::Font::Renderer>();
+	if ( !pFontRenderer->Init( *pFontLoader ) ) { result = false; }
 
 	CameraInit();
 }
@@ -111,6 +127,24 @@ Scene::Result SceneResult::Update( float elapsedTime )
 
 	controller.Update();
 
+	if ( !Fader::Get().IsExist() )
+	{
+		bool shouldSkip = false;
+		if ( controller.IsConnected() )
+		{
+			shouldSkip = controller.Trigger( Donya::Gamepad::Button::A );
+		}
+		else
+		{
+			shouldSkip = Donya::Keyboard::Trigger( 'Z' );
+		}
+
+		if ( shouldSkip )
+		{
+			StartFade();
+		}
+	}
+
 	CameraUpdate();
 
 	return ReturnResult();
@@ -132,11 +166,44 @@ void SceneResult::Draw( float elapsedTime )
 	}
 #endif // DEBUG_MODE
 
-#if DEBUG_MODE
-	sprTmpDraw.pos.x = Common::HalfScreenWidthF();
-	sprTmpDraw.pos.y = Common::HalfScreenHeightF();
-	sprTmpDraw.Draw();
-#endif // DEBUG_MODE
+	{
+		constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
+		constexpr Donya::Vector2 center{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
+
+		pFontRenderer->Draw
+		(
+			L"YOU GOT",
+			center + Donya::Vector2{ 0.0f, -320.0f },
+			pivot
+		);
+		pFontRenderer->Draw
+		(
+			L"SPECIAL WEAPON",
+			center + Donya::Vector2{ 0.0f, -256.0f },
+			pivot
+		);
+		
+		if ( controller.IsConnected() )
+		{
+			pFontRenderer->Draw
+			(
+				L"PRESS A TO SKIP",
+				center + Donya::Vector2{ 0.0f, 256.0f },
+				pivot
+			);
+		}
+		else
+		{
+			pFontRenderer->Draw
+			(
+				L"PRESS Z TO SKIP",
+				center + Donya::Vector2{ 0.0f, 256.0f },
+				pivot
+			);
+		}
+
+		Donya::Sprite::Flush();
+	}
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
