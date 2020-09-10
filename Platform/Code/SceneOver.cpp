@@ -10,6 +10,7 @@
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
+#include "Donya/Sprite.h"
 #include "Donya/Template.h"			// Use Clamp
 #include "Donya/Useful.h"
 #include "Donya/Vector.h"
@@ -21,6 +22,7 @@
 #include "Common.h"
 #include "Fader.h"
 #include "FilePath.h"
+#include "FontHelper.h"
 #include "Music.h"
 #include "Parameter.h"
 #include "Player.h"
@@ -75,11 +77,6 @@ void SceneOver::Init()
 #endif // DEBUG_MODE
 
 	bool result{};
-
-#if DEBUG_MODE
-	result = sprTmpDraw.LoadSprite( L"./Data/Images/Over/GameOver.png", 2U );
-	assert( result );
-#endif // DEBUG_MODE
 
 	Player::Remaining::Set( Player::Parameter().Get().initialRemainCount );
 
@@ -136,11 +133,16 @@ void SceneOver::Draw( float elapsedTime )
 	}
 #endif // DEBUG_MODE
 
-#if DEBUG_MODE
-	sprTmpDraw.pos.x = Common::HalfScreenWidthF();
-	sprTmpDraw.pos.y = Common::HalfScreenHeightF();
-	sprTmpDraw.Draw();
-#endif // DEBUG_MODE
+	const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
+	if ( pFontRenderer )
+	{
+		constexpr Donya::Vector2 pivot { 0.5f, 0.5f };
+		constexpr Donya::Vector2 center{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
+		constexpr Donya::Vector4 color { Donya::Color::MakeColor( Donya::Color::Code::PURPLE ), 1.0f };
+
+		pFontRenderer->Draw( L"GAME OVER", center, pivot, color );
+		Donya::Sprite::Flush();
+	}
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )

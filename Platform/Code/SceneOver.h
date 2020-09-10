@@ -25,7 +25,6 @@ private:
 	// std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 
 #if DEBUG_MODE
-	UIObject sprTmpDraw;
 	bool nowDebugMode = false;
 #endif // DEBUG_MODE
 public:

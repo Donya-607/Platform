@@ -1848,8 +1848,11 @@ void SceneGame::ClearBackGround() const
 }
 void SceneGame::StartFade( Scene::Type nextSceneType )
 {
-	const auto color = ( nextSceneType == Scene::Type::Result )
+	const auto color =
+		  ( nextSceneType == Scene::Type::Result )
 		? Donya::Color::Code::WHITE
+		: ( nextSceneType == Scene::Type::Over )
+		? Donya::Color::Code::GRAY
 		: Donya::Color::Code::BLACK;
 	nextScene = nextSceneType;
 
@@ -1869,7 +1872,14 @@ Scene::Result SceneGame::ReturnResult()
 
 		if ( Donya::Keyboard::Press( VK_SHIFT ) )
 		{
-			StartFade( Scene::Type::Result );
+			if ( Donya::Keyboard::Press( VK_CONTROL ) )
+			{
+				StartFade( Scene::Type::Over );
+			}
+			else
+			{
+				StartFade( Scene::Type::Result );
+			}
 		}
 		else
 		{
