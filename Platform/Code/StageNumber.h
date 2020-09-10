@@ -7,7 +7,7 @@ namespace Definition
 		namespace Impl
 		{
 			constexpr int title	= -1;
-			constexpr int game	= -1;
+			constexpr int game	= 0;
 		}
 
 		constexpr int Title()	{ return Impl::title;	}
