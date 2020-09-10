@@ -1846,12 +1846,15 @@ void SceneGame::ClearBackGround() const
 }
 void SceneGame::StartFade( Scene::Type nextSceneType )
 {
+	const auto color = ( nextSceneType == Scene::Type::Result )
+		? Donya::Color::Code::WHITE
+		: Donya::Color::Code::BLACK;
 	nextScene = nextSceneType;
 
 	Fader::Configuration config{};
 	config.type			= Fader::Type::Gradually;
 	config.closeSecond	= Fader::GetDefaultCloseSecond();
-	config.SetColor( Donya::Color::Code::BLACK );
+	config.SetColor( color );
 	Fader::Get().StartFadeOut( config );
 }
 
@@ -1862,7 +1865,14 @@ Scene::Result SceneGame::ReturnResult()
 	{
 		Donya::Sound::Play( Music::DEBUG_Strong );
 
-		StartFade( Scene::Type::Title );
+		if ( Donya::Keyboard::Press( VK_SHIFT ) )
+		{
+			StartFade( Scene::Type::Result );
+		}
+		else
+		{
+			StartFade( Scene::Type::Title );
+		}
 	}
 #endif // DEBUG_MODE
 
