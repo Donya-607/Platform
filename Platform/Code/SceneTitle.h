@@ -21,6 +21,14 @@
 
 class SceneTitle : public Scene
 {
+public:
+	enum class Choice
+	{
+		Start = 0,
+		Option,
+		
+		ItemCount, // Do not select anything
+	};
 private:
 	struct Scroll
 	{
@@ -57,7 +65,10 @@ private:
 	std::unique_ptr<Player>					pPlayer;
 	std::unique_ptr<PlayerInitializer>		pPlayerIniter;
 
-	UIObject sprTitleLogo;
+	float		elapsedSecond	= 0.0f;
+	Choice		chooseItem		= Choice::ItemCount;
+
+	UIObject	sprTitleLogo;
 
 #if DEBUG_MODE
 	bool nowDebugMode			= false;

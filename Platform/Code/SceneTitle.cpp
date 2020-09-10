@@ -34,6 +34,19 @@
 
 namespace
 {
+	constexpr const char *GetChoiceItemName( SceneTitle::Choice item )
+	{
+		switch ( item )
+		{
+		case SceneTitle::Choice::Start:		return "START";
+		case SceneTitle::Choice::Option:	return "OPTION";
+		default: break;
+		}
+
+		// Fail safe
+		return GetChoiceItemName( SceneTitle::Choice::Start );
+	}
+
 	struct Member
 	{
 		struct
@@ -82,6 +95,9 @@ namespace
 		ShadowMap shadowMap;
 
 		BloomApplier::Parameter bloomParam;
+
+		std::vector<Donya::Vector2> itemPositions; // size() == SceneTitle::Choice::ItemCount
+		float chooseItemMagni = 1.5f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -101,6 +117,14 @@ namespace
 			);
 
 			if ( 1 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( itemPositions	),
+					CEREAL_NVP( chooseItemMagni	)
+				);
+			}
+			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -150,6 +174,30 @@ namespace
 			{
 				ImGui::DragFloat( u8"ÉXÉNÉçÅ[ÉãÇ…óvÇ∑ÇÈïbêî", &scrollTakeSecond, 0.01f );
 				scrollTakeSecond = std::max( 0.01f, scrollTakeSecond );
+
+				ImGui::TreePop();
+			}
+
+			constexpr size_t itemCount = scast<size_t>( SceneTitle::Choice::ItemCount );
+			if ( itemPositions.size() != itemCount )
+			{
+				constexpr Donya::Vector2 center{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
+				itemPositions.resize( itemCount, center );
+			}
+			if ( ImGui::TreeNode( u8"çÄñ⁄ä÷òA" ) )
+			{
+				ImGui::DragFloat( u8"ëIëï®ÇÃägëÂó¶", &chooseItemMagni, 0.01f );
+				if ( ImGui::TreeNode( u8"íÜêSç¿ïW" ) )
+				{
+					std::string caption{};
+					for ( size_t i = 0; i < itemCount; ++i )
+					{
+						caption = GetChoiceItemName( scast<SceneTitle::Choice>( i ) );
+						ImGui::DragFloat2( caption.c_str(), &itemPositions[i].x );
+					}
+					
+					ImGui::TreePop();
+				}
 
 				ImGui::TreePop();
 			}
@@ -320,6 +368,8 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 #endif // USE_IMGUI
 
 	PointLightStorage::Get().Clear();
+
+	elapsedSecond += elapsedTime;
 
 	controller.Update();
 
@@ -571,33 +621,43 @@ void SceneTitle::Draw( float elapsedTime )
 	{
 		Donya::Sprite::SetDrawDepth( 0.0f );
 		constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
-		constexpr Donya::Vector4 white{ 1, 1, 1, 1 };
-		constexpr Donya::Vector4 AHalf{ 1, 1, 1, 0.6f };
-		Donya::Sprite::DrawRect
-		(
-			800.0f, 300.0f,
-			64.0f, 32.0f, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f
-		);
-		Donya::Sprite::DrawRect
-		(
-			800.0f, 364.0f,
-			64.0f, 32.0f, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f
-		);
-		Donya::Sprite::DrawRect
-		(
-			1024.0f, 600.0f,
-			128.0f, 64.0f, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f
-		);
-		Donya::Sprite::DrawRect
-		(
-			1024.0f, 664.0f,
-			128.0f, 64.0f, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f
-		);
-		pFontRenderer->Draw		( L"START",  {  800.0f, 300.0f }, pivot, white );
-		pFontRenderer->Draw		( L"OPTION", {  800.0f, 364.0f }, pivot, white );
+		constexpr Donya::Vector4 selectColor	{ 1.0f, 1.0f, 1.0f, 1.0f };
+		constexpr Donya::Vector4 unselectColor	{ 0.4f, 0.4f, 0.4f, 1.0f };
+		const float &selectScale  = data.chooseItemMagni;
+		const float unselectScale = 1.0f;
 
-		pFontRenderer->DrawExt	( L"START",  { 1024.0f, 600.0f }, pivot, { 2.0f, 2.0f },	white );
-		pFontRenderer->DrawExt	( L"OPTION", { 1024.0f, 664.0f }, pivot, { 2.0f, 2.0f },	white );
+		auto Draw = [&]( const wchar_t *itemName, Choice item, bool selected )
+		{
+			// pFontRenderer->DrawExt( str, pos, pivot, scale, color );
+
+			std::wstring string =
+				( selected )
+				? L"ÅÑ"
+				: L"Å@";
+			string += itemName;
+
+			const int itemIndex = scast<int>( item );
+			const Donya::Vector2 pos =
+				( scast<int>( data.itemPositions.size() ) <= itemIndex )
+				? Donya::Vector2::Zero()
+				: data.itemPositions[itemIndex];
+
+			const Donya::Vector2 &scale =
+				( selected )
+				? selectScale
+				: unselectScale;
+
+			const Donya::Vector4 &color =
+				( selected )
+				? selectColor
+				: unselectColor;
+
+			pFontRenderer->DrawExt( string, pos, pivot, scale, color );
+		};
+
+		Draw( L"ÇrÇsÇ`ÇqÇs",		Choice::Start,	( chooseItem == Choice::Start  ) );
+		Draw( L"ÇnÇoÇsÇhÇnÇm",	Choice::Option,	( chooseItem == Choice::Option ) );
+	
 		Donya::Sprite::Flush();
 	}
 	Donya::Surface::ResetRenderTarget();
