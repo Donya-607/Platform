@@ -104,9 +104,21 @@ namespace Donya
 			bool result		= true;
 
 			D3D11_DEPTH_STENCIL_DESC desc{};
+			desc.StencilEnable	= FALSE;
+
+
+			desc.DepthEnable	= FALSE;
+			desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+			result = CreateState( scast<int>( Defined::NoTest_Write ), desc, pDevice );
+			if ( !result ) { succeeded = false; }
+
+			desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+			result = CreateState( scast<int>( Defined::NoTest_NoWrite ), desc, pDevice );
+			if ( !result ) { succeeded = false; }
+
+
 			desc.DepthEnable	= TRUE;
 			desc.DepthWriteMask	= D3D11_DEPTH_WRITE_MASK_ALL;
-			desc.StencilEnable	= FALSE;
 
 
 			desc.DepthFunc		= D3D11_COMPARISON_LESS;

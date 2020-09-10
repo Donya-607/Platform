@@ -23,6 +23,8 @@ namespace Donya
 			Write_PassLessEq	= -2,	// Z-Test:ON. Z-Write:On. Pass if less equal than Z-buffer.
 			Write_PassGreater	= -3,	// Z-Test:ON. Z-Write:On. Pass if greater than Z-buffer.
 			Write_PassGreaterEq	= -4,	// Z-Test:ON. Z-Write:On. Pass if greater equal than Z-buffer.
+			NoTest_Write		= -5,	// Z-Test:OFF. Z-Write:On.  Pass state is default.
+			NoTest_NoWrite		= -6,	// Z-Test:OFF. Z-Write:OFF. Pass state is default.
 		};
 
 		/// <summary>

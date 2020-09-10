@@ -557,9 +557,6 @@ void SceneGame::Draw( float elapsedTime )
 		? pRenderer->DeactivateShaderShadowSkinning()
 		: pRenderer->DeactivateShaderNormalSkinning();
 	};
-
-	constexpr DrawTarget castShadowTarget = DrawTarget::All;
-	constexpr DrawTarget normalDrawTarget = DrawTarget::All;
 	
 	const Donya::Vector4x4 VP  = iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix();
 	const Donya::Vector4x4 LVP = CalcLightViewProjectionMatrix();
@@ -582,7 +579,7 @@ void SceneGame::Draw( float elapsedTime )
 		pShadowMap->SetRenderTarget();
 		pShadowMap->SetViewport();
 
-		DrawObjects( castShadowTarget, /* castShadow = */ true );
+		DrawObjects( DrawTarget::All, /* castShadow = */ true );
 
 		Donya::Surface::ResetRenderTarget();
 
@@ -616,7 +613,12 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		pRenderer->ActivateShadowMap( *pShadowMap );
 
-		DrawObjects( normalDrawTarget, /* castShadow = */ false );
+		constexpr DrawTarget exceptBullet = DrawTarget::All ^ DrawTarget::Bullet;
+		DrawObjects( exceptBullet, /* castShadow = */ false );
+
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_Write );
+		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 
 		pRenderer->DeactivateShadowMap( *pShadowMap );
 		pRenderer->DeactivateSamplerShadow();
