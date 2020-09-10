@@ -22,6 +22,7 @@
 #include "Enemy.h"
 #include "Fader.h"
 #include "FilePath.h"
+#include "FontHelper.h"
 #include "Item.h"
 #include "ModelHelper.h"			// Use serialize methods
 #include "Music.h"
@@ -627,6 +628,8 @@ void SceneTitle::Draw( float elapsedTime )
 	pScreenSurface->SetRenderTarget();
 	pScreenSurface->SetViewport();
 	// Draw a fonts
+	const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
+	if ( pFontRenderer )
 	{
 		constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
 		constexpr Donya::Vector4 selectColor	{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -831,24 +834,6 @@ bool SceneTitle::CreateRenderers( const Donya::Int2 &wholeScreenSize )
 
 	pRenderer = std::make_unique<RenderingHelper>();
 	if ( !pRenderer->Init() ) { succeeded = false; }
-	
-	auto pFontLoader = std::make_unique<Donya::Font::Holder>();
-#if DEBUG_MODE
-	const auto binPath = MakeFontPathBinary( FontAttribute::Main );
-	if ( Donya::IsExistFile( binPath ) )
-	{
-		if ( !pFontLoader->LoadByCereal( binPath ) ) { succeeded = false; }
-	}
-	else
-	{
-		if ( !pFontLoader->LoadFntFile( MakeFontPathFnt( FontAttribute::Main ) ) ) { succeeded = false; }
-		pFontLoader->SaveByCereal( binPath );
-	}
-#else
-	if ( !pFontLoader->LoadByCereal( MakeFontPathBinary( FontAttribute::Main ) ) ) { succeeded = false; }
-#endif // DEBUG_MODE
-	pFontRenderer = std::make_unique<Donya::Font::Renderer>();
-	if ( !pFontRenderer->Init( *pFontLoader ) ) { succeeded = false; }
 
 	pDisplayer = std::make_unique<Donya::Displayer>();
 	if ( !pDisplayer->Init() ) { succeeded = false; }

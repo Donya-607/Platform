@@ -78,24 +78,6 @@ void SceneResult::Init()
 
 	bool result{};
 
-	auto pFontLoader = std::make_unique<Donya::Font::Holder>();
-#if DEBUG_MODE
-	const auto binPath = MakeFontPathBinary( FontAttribute::Main );
-	if ( Donya::IsExistFile( binPath ) )
-	{
-		if ( !pFontLoader->LoadByCereal( binPath ) ) { result = false; }
-	}
-	else
-	{
-		if ( !pFontLoader->LoadFntFile( MakeFontPathFnt( FontAttribute::Main ) ) ) { result = false; }
-		pFontLoader->SaveByCereal( binPath );
-	}
-#else
-	if ( !pFontLoader->LoadByCereal( MakeFontPathBinary( FontAttribute::Main ) ) ) { result = false; }
-#endif // DEBUG_MODE
-	pFontRenderer = std::make_unique<Donya::Font::Renderer>();
-	if ( !pFontRenderer->Init( *pFontLoader ) ) { result = false; }
-
 	CameraInit();
 }
 void SceneResult::Uninit()
@@ -167,11 +149,11 @@ void SceneResult::Draw( float elapsedTime )
 	}
 #endif // DEBUG_MODE
 
+	const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
+	if ( pFontRenderer )
 	{
 		constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
 		constexpr Donya::Vector2 center{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
-
-		const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
 
 		pFontRenderer->Draw
 		(

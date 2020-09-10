@@ -4,7 +4,6 @@
 
 #include "Donya/Camera.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
-#include "Donya/Font.h"
 #include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
@@ -54,7 +53,6 @@ private:
 	Scene::Type								nextScene		= Scene::Type::Null;
 	
 	std::unique_ptr<RenderingHelper>		pRenderer;
-	std::unique_ptr<Donya::Font::Renderer>	pFontRenderer;
 	std::unique_ptr<Donya::Displayer>		pDisplayer;
 	std::unique_ptr<BloomApplier>			pBloomer;
 	std::unique_ptr<Donya::Surface>			pScreenSurface;

@@ -6,7 +6,6 @@
 #include "Donya/Camera.h"
 #include "Donya/Collision.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
-#include "Donya/Font.h"
 #include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
@@ -19,7 +18,6 @@ private:
 	Donya::ICamera							iCamera;
 	Donya::XInput							controller{ Donya::Gamepad::PAD_1 };
 	
-	std::unique_ptr<Donya::Font::Renderer>	pFontRenderer;
 	// std::unique_ptr<RenderingHelper>		pRenderer;
 	
 	// std::unique_ptr<Player>				pPlayer;
