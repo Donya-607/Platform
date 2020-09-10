@@ -24,13 +24,11 @@ private:
 	std::mutex	succeedMutex;
 
 	std::unique_ptr<Donya::Font::Renderer>	pFontRenderer;
-	float fontAlpha = 1.0f;
-
-	// UIObject	sprNowLoading;
-	float		flushingTimer = 0.0f;
+	float		fontAlpha		= 1.0f;
+	float		flushingTimer	= 0.0f;
 
 #if DEBUG_MODE
-	float		elapsedTimer = 0;
+	float		elapsedTimer	= 0;
 #endif // DEBUG_MODE
 public:
 	SceneLoad() : Scene() {}

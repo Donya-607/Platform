@@ -330,8 +330,6 @@ void SceneLoad::Draw( float elapsedTime )
 		data.sprLoadScale,
 		{ 1.0f, 1.0f, 1.0f, fontAlpha }
 	);
-
-	// sprNowLoading.Draw();
 }
 
 void SceneLoad::ReleaseAllThread()
@@ -378,13 +376,6 @@ bool SceneLoad::SpritesInit()
 	pFontRenderer = std::make_unique<Donya::Font::Renderer>();
 	if ( !pFontRenderer->Init( *pFontLoader ) ) { succeeded = false; }
 
-	// constexpr size_t MAX_INSTANCE_COUNT = 1U;
-	// if ( !sprNowLoading.LoadSprite( GetSpritePath( SpriteAttribute::NowLoading ), MAX_INSTANCE_COUNT ) )
-	// { succeeded = false; }
-	// 
-	// sprNowLoading.pos	= data.sprLoadPos;
-	// sprNowLoading.scale	= data.sprLoadScale;
-	// sprNowLoading.alpha	= 1.0f;
 	fontAlpha		= 1.0f;
 	flushingTimer	= 0.0f;
 
@@ -402,7 +393,6 @@ void SceneLoad::SpritesUpdate( float elapsedTime )
 		const float sin_01 = ( sinf( flushingTimer ) + 1.0f ) * 0.5f;
 		const float shake  = sin_01 * data.sprLoadFlushingRange;
 
-		// sprNowLoading.alpha = std::max( data.sprLoadMinAlpha, std::min( 1.0f, shake ) );
 		fontAlpha = std::max( data.sprLoadMinAlpha, std::min( 1.0f, shake ) );
 	}
 }
@@ -458,8 +448,6 @@ void SceneLoad::UseImGui()
 			ImGui::Checkbox( u8"フェードアウトを止めるか", &stopFadeout );
 
 			sceneParam.ShowImGuiNode( u8"パラメータ調整" );
-
-			//sprNowLoading.ShowImGuiNode	( u8"画像調整・ロード中" );
 
 			auto GetBoolStr = []( bool v )->std::string
 			{
