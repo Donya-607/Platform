@@ -237,7 +237,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( Member, 0 )
+CEREAL_CLASS_VERSION( Member, 1 )
 
 void SceneTitle::Init()
 {
@@ -372,6 +372,8 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	elapsedSecond += elapsedTime;
 
 	controller.Update();
+
+	UpdateChooseItem();
 
 	const float deltaTimeForMove = ( scroll.active ) ? 0.0f : elapsedTime;
 
@@ -619,7 +621,6 @@ void SceneTitle::Draw( float elapsedTime )
 	pScreenSurface->SetViewport();
 	// Draw a fonts
 	{
-		Donya::Sprite::SetDrawDepth( 0.0f );
 		constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
 		constexpr Donya::Vector4 selectColor	{ 1.0f, 1.0f, 1.0f, 1.0f };
 		constexpr Donya::Vector4 unselectColor	{ 0.4f, 0.4f, 0.4f, 1.0f };
@@ -655,6 +656,7 @@ void SceneTitle::Draw( float elapsedTime )
 			pFontRenderer->DrawExt( string, pos, pivot, scale, color );
 		};
 
+		Donya::Sprite::SetDrawDepth( 0.0f );
 		Draw( L"‚r‚s‚`‚q‚s",		Choice::Start,	( chooseItem == Choice::Start  ) );
 		Draw( L"‚n‚o‚s‚h‚n‚m",	Choice::Option,	( chooseItem == Choice::Option ) );
 	
@@ -905,6 +907,55 @@ bool SceneTitle::AreRenderersReady() const
 	if ( !pQuadShader		) { return false; }
 	// else
 	return true;
+}
+
+void SceneTitle::UpdateChooseItem()
+{
+	bool trgLeft	= false;
+	bool trgRight	= false;
+	bool trgUp		= false;
+	bool trgDown	= false;
+	bool trgDecide	= false;
+	{
+		if ( controller.IsConnected() )
+		{
+			using Button	= Donya::Gamepad::Button;
+			using Direction	= Donya::Gamepad::StickDirection;
+		
+			trgLeft		= controller.Trigger( Button::LEFT	) || controller.TriggerStick( Direction::LEFT	);
+			trgRight	= controller.Trigger( Button::RIGHT	) || controller.TriggerStick( Direction::RIGHT	);
+			trgUp		= controller.Trigger( Button::UP	) || controller.TriggerStick( Direction::UP		);
+			trgDown		= controller.Trigger( Button::DOWN	) || controller.TriggerStick( Direction::DOWN	);
+			trgDecide	= controller.Trigger( Button::A		);
+		}
+		else
+		{
+			trgLeft		= Donya::Keyboard::Trigger( VK_LEFT	);
+			trgRight	= Donya::Keyboard::Trigger( VK_RIGHT);
+			trgUp		= Donya::Keyboard::Trigger( VK_UP	);
+			trgDown		= Donya::Keyboard::Trigger( VK_DOWN	);
+			trgDecide	= Donya::Keyboard::Trigger( 'Z' );
+		}
+	}
+
+	// TODO: Play choice SE
+
+	// If do not selected
+	if ( chooseItem == Choice::ItemCount )
+	{
+		if ( trgUp		) { chooseItem = Choice::Start;  }
+		else
+		if ( trgDown	) { chooseItem = Choice::Option; }
+		else
+		if ( trgLeft || trgRight ) { chooseItem = Choice::Start; }
+
+		return;
+	}
+	// else
+
+	if ( trgUp		) { chooseItem = Choice::Start;  }
+	else
+	if ( trgDown	) { chooseItem = Choice::Option; }
 }
 
 Donya::Vector4x4 SceneTitle::MakeScreenTransform() const
