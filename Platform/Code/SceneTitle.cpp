@@ -374,6 +374,13 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	controller.Update();
 
 	UpdateChooseItem();
+	if ( !Fader::Get().IsExist() && wasDecided )
+	{
+		if ( chooseItem == Choice::Start )
+		{
+			StartFade();
+		}
+	}
 
 	const float deltaTimeForMove = ( scroll.active ) ? 0.0f : elapsedTime;
 
@@ -939,6 +946,8 @@ void SceneTitle::UpdateChooseItem()
 	}
 
 	// TODO: Play choice SE
+
+	wasDecided = trgDecide;
 
 	// If do not selected
 	if ( chooseItem == Choice::ItemCount )
