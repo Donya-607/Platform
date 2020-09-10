@@ -22,6 +22,7 @@
 #include "Common.h"
 #include "Fader.h"
 #include "FilePath.h"
+#include "FontHelper.h"
 #include "Music.h"
 #include "Parameter.h"
 
@@ -169,6 +170,8 @@ void SceneResult::Draw( float elapsedTime )
 	{
 		constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
 		constexpr Donya::Vector2 center{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
+
+		const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
 
 		pFontRenderer->Draw
 		(

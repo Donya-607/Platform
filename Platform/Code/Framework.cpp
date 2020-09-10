@@ -10,6 +10,7 @@
 #include "Donya/UseImgui.h"
 
 #include "Common.h"
+#include "FontHelper.h"
 #include "Music.h"
 
 #undef max
@@ -18,6 +19,8 @@
 bool Framework::Init()
 {
 	bool succeeded = true;
+
+	if ( !FontHelper::Init() ) { succeeded = false; }
 
 	pSceneMng = std::make_unique<SceneMng>();
 
