@@ -321,7 +321,17 @@ void SceneLoad::Draw( float elapsedTime )
 {
 	ClearBackGround();
 
-	sprNowLoading.Draw();
+	const auto &data = FetchParameter();
+	constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
+	pFontRenderer->DrawExt
+	(
+		L"Now Loading...",
+		data.sprLoadPos, pivot,
+		data.sprLoadScale,
+		{ 1.0f, 1.0f, 1.0f, fontAlpha }
+	);
+
+	// sprNowLoading.Draw();
 }
 
 void SceneLoad::ReleaseAllThread()
@@ -350,15 +360,33 @@ bool SceneLoad::SpritesInit()
 
 	bool succeeded = true;
 
-	constexpr size_t MAX_INSTANCE_COUNT = 1U;
-	if ( !sprNowLoading.LoadSprite( GetSpritePath( SpriteAttribute::NowLoading ), MAX_INSTANCE_COUNT ) )
-	{ succeeded = false; }
+	auto pFontLoader = std::make_unique<Donya::Font::Holder>();
+#if DEBUG_MODE
+	const auto binPath = MakeFontPathBinary( FontAttribute::Main );
+	if ( Donya::IsExistFile( binPath ) )
+	{
+		if ( !pFontLoader->LoadByCereal( binPath ) ) { succeeded = false; }
+	}
+	else
+	{
+		if ( !pFontLoader->LoadFntFile( MakeFontPathFnt( FontAttribute::Main ) ) ) { succeeded = false; }
+		pFontLoader->SaveByCereal( binPath );
+	}
+#else
+	if ( !pFontLoader->LoadByCereal( MakeFontPathBinary( FontAttribute::Main ) ) ) { succeeded = false; }
+#endif // DEBUG_MODE
+	pFontRenderer = std::make_unique<Donya::Font::Renderer>();
+	if ( !pFontRenderer->Init( *pFontLoader ) ) { succeeded = false; }
 
-	sprNowLoading.pos	= data.sprLoadPos;
-	sprNowLoading.scale	= data.sprLoadScale;
-	sprNowLoading.alpha	= 1.0f;
-
-	flushingTimer		= 0.0f;
+	// constexpr size_t MAX_INSTANCE_COUNT = 1U;
+	// if ( !sprNowLoading.LoadSprite( GetSpritePath( SpriteAttribute::NowLoading ), MAX_INSTANCE_COUNT ) )
+	// { succeeded = false; }
+	// 
+	// sprNowLoading.pos	= data.sprLoadPos;
+	// sprNowLoading.scale	= data.sprLoadScale;
+	// sprNowLoading.alpha	= 1.0f;
+	fontAlpha		= 1.0f;
+	flushingTimer	= 0.0f;
 
 	return succeeded;
 }
@@ -374,7 +402,8 @@ void SceneLoad::SpritesUpdate( float elapsedTime )
 		const float sin_01 = ( sinf( flushingTimer ) + 1.0f ) * 0.5f;
 		const float shake  = sin_01 * data.sprLoadFlushingRange;
 
-		sprNowLoading.alpha = std::max( data.sprLoadMinAlpha, std::min( 1.0f, shake ) );
+		// sprNowLoading.alpha = std::max( data.sprLoadMinAlpha, std::min( 1.0f, shake ) );
+		fontAlpha = std::max( data.sprLoadMinAlpha, std::min( 1.0f, shake ) );
 	}
 }
 
@@ -430,7 +459,7 @@ void SceneLoad::UseImGui()
 
 			sceneParam.ShowImGuiNode( u8"パラメータ調整" );
 
-			sprNowLoading.ShowImGuiNode	( u8"画像調整・ロード中" );
+			//sprNowLoading.ShowImGuiNode	( u8"画像調整・ロード中" );
 
 			auto GetBoolStr = []( bool v )->std::string
 			{

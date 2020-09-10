@@ -4,10 +4,11 @@
 #include <mutex>
 #include <thread>
 
+#include "Donya/Font.h"
 #include "Donya/UseImGui.h"
 
 #include "Scene.h"
-#include "UI.h"
+// #include "UI.h"
 
 class SceneLoad : public Scene
 {
@@ -22,7 +23,10 @@ private:
 	bool allSucceeded	= true;
 	std::mutex	succeedMutex;
 
-	UIObject	sprNowLoading;
+	std::unique_ptr<Donya::Font::Renderer>	pFontRenderer;
+	float fontAlpha = 1.0f;
+
+	// UIObject	sprNowLoading;
 	float		flushingTimer = 0.0f;
 
 #if DEBUG_MODE

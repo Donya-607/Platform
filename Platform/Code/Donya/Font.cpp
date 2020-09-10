@@ -473,7 +473,9 @@ namespace Donya
 
 				const auto &usingTexture = textures[data.pageNo];
 				elements[i].handle		= usingTexture.handle;
-				elements[i].pos			= drawPos + data.offset;
+				elements[i].pos			= drawPos;
+				elements[i].pos.x		+= data.offset.x * scale.x;
+				elements[i].pos.y		+= data.offset.y * scale.y;
 				elements[i].size		= data.uvPartSize;
 				elements[i].uvPos		= data.uvMin;
 				elements[i].uvSize		= data.uvMax - data.uvMin;
