@@ -91,7 +91,6 @@ namespace Donya
 				(
 					CEREAL_NVP( characterCount		),
 					CEREAL_NVP( fontSize			),
-					CEREAL_NVP( textureDirectory	),
 					CEREAL_NVP( textureNames		),
 					CEREAL_NVP( characters			),
 					CEREAL_NVP( characterIndices	)

@@ -317,7 +317,16 @@ namespace Donya
 		bool Holder::LoadByCereal( const std::string &filePath )
 		{
 			Donya::Serializer tmp;
-			return tmp.LoadBinary( *this, filePath.c_str(), serializeObjectName );
+			const bool result = tmp.LoadBinary( *this, filePath.c_str(), serializeObjectName );
+
+			if ( result )
+			{
+				const std::wstring widePath = Donya::UTF8ToWide( filePath );
+				const std::wstring fullPath = Donya::ToFullPath( widePath );
+				SetTextureDirectory( Donya::ExtractFileDirectoryFromFullPath( fullPath ) );
+			}
+
+			return result;
 		}
 		bool Holder::SaveByCereal( const std::string &filePath ) const
 		{
