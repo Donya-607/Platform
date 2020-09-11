@@ -319,12 +319,12 @@ namespace Boss
 	{
 		const auto &data = Parameter::GetSkull();
 
-		Bullet::FireDesc desc = data.shotDesc;
-		desc.kind			=  data.shotDesc.kind;
-		desc.initialSpeed	=  data.shotDesc.initialSpeed;
-		desc.position		=  inst.orientation.RotateVector( data.shotDesc.position );
-		desc.position		+= inst.body.WorldPosition(); // Local space to World space
-		desc.owner			=  inst.hurtBox.id;
+		Bullet::FireDesc desc		= data.shotDesc;
+		desc.kind					=  data.shotDesc.kind;
+		desc.initialSpeed			=  data.shotDesc.initialSpeed;
+		desc.position				=  inst.orientation.RotateVector( data.shotDesc.position );
+		desc.position				+= inst.body.WorldPosition(); // Local space to World space
+		desc.owner					=  inst.hurtBox.id;
 
 		desc.direction				= ( input.wsTargetPos - desc.position ).Unit();
 		const float &increment		= data.shotDegreeIncrement;
@@ -344,6 +344,12 @@ namespace Boss
 		{
 			resultDegree += increment;
 		}
+
+		const int dirSign = Donya::SignBit( inst.orientation.LocalFront().x );
+		const auto &limit = data.shotDegreeLimit;
+		resultDegree = ( dirSign < 0 )
+		? Donya::Clamp( resultDegree, 180.0f - limit.x, 180.0f - limit.y )
+		: Donya::Clamp( resultDegree, limit.x, limit.y );
 
 		desc.direction.x = cosf( ToRadian( resultDegree ) );
 		desc.direction.y = sinf( ToRadian( resultDegree ) );
@@ -635,6 +641,7 @@ namespace Boss
 			{
 				wasArrived = true;
 				inst.velocity.x = 0.0f;
+				inst.motionManager.ChangeMotion( inst, MotionKind::Idle );
 			}
 		}
 	}
@@ -860,11 +867,15 @@ namespace Boss
 			ImGui::DragFloat( u8"”­ŽËŠÔŠui•bj",				&shotFireIntervalSecond,	0.01f	);
 			ImGui::DragFloat( u8"ŒãŒ„i•bj",				&shotEndLagSecond,			0.01f	);
 			ImGui::DragFloat( u8"”­ŽËŠp“x‚Ì‚Ý(degree)",		&shotDegreeIncrement,		1.0f	);
+			ImGui::SliderFloat2( u8"”­ŽËŠp§ŒÀ(‰EŒü‚«)(degree)",&shotDegreeLimit.x,		0.0f,	90.0f	);
 			shotFireCount			= std::max( 1,		shotFireCount			);
 			shotBeginLagSecond		= std::max( 0.0f,	shotBeginLagSecond		);
 			shotFireIntervalSecond	= std::max( 0.0f,	shotFireIntervalSecond	);
 			shotEndLagSecond		= std::max( 0.0f,	shotEndLagSecond		);
 			shotDegreeIncrement		= std::max( 0.0f,	shotDegreeIncrement		);
+
+			shotDegreeLimit.x		= std::min( shotDegreeLimit.y, shotDegreeLimit.x );
+			shotDegreeLimit.y		= std::max( shotDegreeLimit.x, shotDegreeLimit.y );
 
 			shotDesc.ShowImGuiNode( u8"”­ŽËÝ’è" );
 

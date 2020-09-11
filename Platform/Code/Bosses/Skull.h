@@ -241,10 +241,11 @@ namespace Boss
 		float				shotFireIntervalSecond	= 1.0f;
 		float				shotEndLagSecond		= 1.0f;
 		float				shotDegreeIncrement		= 10.0f;
+		Donya::Vector2		shotDegreeLimit			{ 0.0f, 90.0f };	// In right side case. [X:Min][Y:Max] [0.0f:RIGHT][90.0f:UP]
 		int					shotFireCount			= 3;
 		Bullet::FireDesc	shotDesc;
 
-		float				jumpDegree				= 60.0f;	// 0.0f <= degree <= 90.0f
+		float				jumpDegree				= 60.0f;			// 0.0f <= degree <= 90.0f
 		float				jumpVerticalHeight		= 1.0f;
 		std::vector<float>	jumpDestLengths;
 
@@ -275,7 +276,7 @@ namespace Boss
 		Donya::Vector3		shieldPosOffset			{ 0.0f, 0.0f, 0.0f };
 		
 		float				runSpeed				= 1.0f;
-		float				runDestTakeDist			= 1.0f;		// Destination = target-pos - runDestTakeDist
+		float				runDestTakeDist			= 1.0f;				// Destination = target-pos - runDestTakeDist
 		float				runEndLagSecond			= 1.0f;
 		
 		Definition::Damage	touchDamage;
@@ -284,7 +285,7 @@ namespace Boss
 		Donya::Vector3		hitBoxSize				{ 1.0f, 1.0f, 1.0f };
 		Donya::Vector3		hurtBoxSize				{ 1.0f, 1.0f, 1.0f };
 
-		std::vector<float>	animePlaySpeeds;					// It size() == Skull::MotionKind::MotionCount
+		std::vector<float>	animePlaySpeeds;							// It size() == Skull::MotionKind::MotionCount
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -350,6 +351,10 @@ namespace Boss
 			}
 			if ( 8 <= version )
 			{
+				archive( CEREAL_NVP( shotDegreeLimit ) );
+			}
+			if ( 9 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -362,4 +367,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 7 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 8 )
