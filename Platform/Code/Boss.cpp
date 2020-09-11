@@ -128,6 +128,37 @@ namespace Boss
 	}
 #endif // USE_IMGUI
 
+	
+	void Base::Flusher::Start( float flushingSeconds )
+	{
+		workingSeconds	= flushingSeconds;
+		timer			= 0.0f;
+	}
+	void Base::Flusher::Update( float elapsedTime )
+	{
+		timer += elapsedTime;
+	}
+	bool Base::Flusher::Drawable( float flushingInterval ) const
+	{
+		if ( !NowWorking() ) { return true; }
+		// else
+
+		/*
+		--- cycle
+		Undrawable
+		--- cycle * 0.5f
+		Drawable
+		--- 0.0f
+		*/
+
+		const auto  &cycle = flushingInterval;
+		const float remain = std::fmodf( timer, cycle );
+		return ( remain < cycle * 0.5f );
+	}
+	bool Base::Flusher::NowWorking() const
+	{
+		return ( timer < workingSeconds ) ? true : false;
+	}
 
 	void Base::Init( const InitializeParam &parameter, int belongRoomID, const Donya::Collision::Box3F &wsRoomArea )
 	{
@@ -166,6 +197,7 @@ namespace Boss
 		if ( NowDead() ) { return; }
 		// else
 
+		invincibleTimer.Update( elapsedTime );
 		ApplyReceivedDamageIfHas();
 	}
 	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )
@@ -185,6 +217,7 @@ namespace Boss
 		if ( !pRenderer			) { return; }
 		if ( !model.pResource	) { return; }
 		if ( NowDead()			) { return; }
+		if ( !invincibleTimer.Drawable( GetInvincibleInterval() ) ) { return; }
 		// else
 
 		const Donya::Vector3 &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
@@ -299,10 +332,16 @@ namespace Boss
 		}
 
 		pReceivedDamage.reset();
+
+		invincibleTimer.Start( GetInvincibleSecond() );
 	}
 	void Base::DieMoment()
 	{
 		isDead = true;
+	}
+	void Base::UpdateInvincibleExistence()
+	{
+		hurtBox.exist = ( invincibleTimer.NowWorking() ) ? false : true;
 	}
 	void Base::UpdateOrientation( bool lookingRight )
 	{

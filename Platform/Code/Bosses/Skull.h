@@ -198,10 +198,12 @@ namespace Boss
 		void Draw( RenderingHelper *pRenderer ) const override;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
 	public:
-		float				GetGravity()		const override;
-		Kind				GetKind()			const override;
-		Definition::Damage	GetTouchDamage()	const override;
-		bool				NowProtecting()		const override;
+		float				GetGravity()			const override;
+		float				GetInvincibleSecond()	const override;
+		float				GetInvincibleInterval()	const override;
+		Kind				GetKind()				const override;
+		Definition::Damage	GetTouchDamage()		const override;
+		bool				NowProtecting()			const override;
 	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
@@ -236,6 +238,8 @@ namespace Boss
 	public:
 		int					hp						= 28;
 		float				gravity					= 1.0f;
+		float				invincibleSecond		= 0.5f;
+		float				invincibleFlushInterval = 0.1f;	// Second
 		
 		float				shotBeginLagSecond		= 1.0f;
 		float				shotFireIntervalSecond	= 1.0f;
@@ -355,6 +359,14 @@ namespace Boss
 			}
 			if ( 9 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( invincibleSecond		),
+					CEREAL_NVP( invincibleFlushInterval	)
+				);
+			}
+			if ( 10 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -367,4 +379,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 8 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 9 )

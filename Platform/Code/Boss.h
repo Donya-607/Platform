@@ -90,6 +90,21 @@ namespace Boss
 
 	class Base : public Actor
 	{
+	protected:
+		class Flusher
+		{
+		private:
+			float workingSeconds	= 0.0f;
+			float timer				= 0.0f;
+		public:
+			void Start( float flushingSeconds );
+			void Update( float elapsedTime );
+			bool Drawable( float flushingInterval ) const;
+			/// <summary>
+			/// It means now invincible.
+			/// </summary>
+			bool NowWorking() const;
+		};
 	protected: // Seralize values
 		InitializeParam					initializer;
 		int								roomID		= Room::invalidID;
@@ -100,6 +115,7 @@ namespace Boss
 		Donya::Collision::Box3F			hurtBox;	// VS an attack
 		using					 Actor::orientation;
 		Donya::Vector3					velocity;
+		Flusher							invincibleTimer;
 		int								hp			= 1;	// Alive if this is greater than 0(if 0 < hp)
 		bool							isDead		= false;
 		bool							wantRemove	= false;
@@ -146,6 +162,8 @@ namespace Boss
 		/// Returns absolute value
 		/// </summary>
 		virtual float				GetGravity()		const = 0;
+		virtual float				GetInvincibleSecond()	const = 0;
+		virtual float				GetInvincibleInterval()	const = 0;
 		virtual Kind				GetKind()			const = 0;
 		InitializeParam				GetInitializer()	const;
 		virtual Definition::Damage	GetTouchDamage()	const = 0;
@@ -166,6 +184,7 @@ namespace Boss
 		/// </summary>
 		virtual void DieMoment();
 	protected:
+		void UpdateInvincibleExistence();
 		void UpdateOrientation( bool lookingRight );
 		void UpdateMotionIfCan( float elapsedTime, int motionIndex );
 		std::vector<Donya::Collision::Box3F> FetchSolidsByBody( const Map &terrain, const Donya::Collision::Box3F &hitBoxVSTerrain, float elapsedTime, const Donya::Vector3 &currentVelocity );

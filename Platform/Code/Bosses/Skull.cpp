@@ -176,6 +176,7 @@ namespace Boss
 	{
 		inst.Fall( elapsedTime );
 		inst.LookingToTarget( input.wsTargetPos );
+		inst.UpdateInvincibleExistence();
 
 		if ( nextState != Destination::None ) { return; }
 		// else
@@ -268,6 +269,7 @@ namespace Boss
 	void Skull::Shot::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 		inst.Fall( elapsedTime );
+		inst.UpdateInvincibleExistence();
 
 		timer += elapsedTime;
 
@@ -335,7 +337,8 @@ namespace Boss
 		float resultDegree = roundDegree - remain;
 
 		/*
-		The angles interval set from:
+		The angles interval set
+		from:
 		|---|---|---|---|
 		to:
 		--|---|---|---|--
@@ -438,6 +441,7 @@ namespace Boss
 	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 		inst.Fall( elapsedTime );
+		inst.UpdateInvincibleExistence();
 	}
 	void Skull::Jump::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
 	{
@@ -505,6 +509,7 @@ namespace Boss
 	{
 		inst.Fall( elapsedTime );
 		inst.LookingToTarget( input.wsTargetPos );
+		inst.UpdateInvincibleExistence();
 
 		const auto &data = Parameter::GetSkull();
 
@@ -625,6 +630,7 @@ namespace Boss
 	void Skull::Run::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 		inst.Fall( elapsedTime );
+		inst.UpdateInvincibleExistence();
 
 		if ( wasArrived )
 		{
@@ -758,6 +764,14 @@ namespace Boss
 		{
 			pShield->DrawHitBox( pRenderer, matVP );
 		}
+	}
+	float Skull::GetInvincibleSecond() const
+	{
+		return Parameter::GetSkull().invincibleSecond;
+	}
+	float Skull::GetInvincibleInterval() const
+	{
+		return Parameter::GetSkull().invincibleFlushInterval;
 	}
 	float Skull::GetGravity() const
 	{

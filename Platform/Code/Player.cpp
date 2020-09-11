@@ -1528,7 +1528,7 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 	invincibleTimer.Update( elapsedTime );
 	ApplyReceivedDamageIfHas( elapsedTime, terrain );
 
-	hurtBox.exist = !invincibleTimer.NowWorking();
+	hurtBox.exist = ( invincibleTimer.NowWorking() ) ? false : true;
 
 	hpDrawer.SetCurrent( scast<float>( currentHP ) );
 	hpDrawer.Update( elapsedTime );
