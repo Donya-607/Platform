@@ -221,6 +221,7 @@ namespace Boss
 		}
 	private:
 		void Fall( float elapsedTime );
+		void LookingToTarget( const Donya::Vector3 &wsTargetPos );
 	public:
 	#if USE_IMGUI
 		/// <summary>

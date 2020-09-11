@@ -547,11 +547,11 @@ void SceneGame::Draw( float elapsedTime )
 		? pRenderer->ActivateShaderShadowSkinning()
 		: pRenderer->ActivateShaderNormalSkinning();
 
-		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() ); }
 		if ( Drawable( Kind::Player	) && pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
 		if ( Drawable( Kind::Boss	) && pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
 		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );	}
 		if ( Drawable( Kind::Item	) ) { Item::Admin::Get().Draw( pRenderer.get() );	}
+		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() ); }
 
 		( castShadow )
 		? pRenderer->DeactivateShaderShadowSkinning()
@@ -596,7 +596,6 @@ void SceneGame::Draw( float elapsedTime )
 		constant.shadowBias			= data.shadowMap.bias;
 		pRenderer->UpdateConstant( constant );
 	}
-
 	// Update point light constant
 	{
 		pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );

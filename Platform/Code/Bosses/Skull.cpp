@@ -145,6 +145,7 @@ namespace Boss
 	void Skull::AppearPerformance::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 		inst.AppearUpdate( elapsedTime, input );
+		inst.LookingToTarget( input.wsTargetPos );
 	}
 	void Skull::AppearPerformance::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
 	{
@@ -174,6 +175,7 @@ namespace Boss
 	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 		inst.Fall( elapsedTime );
+		inst.LookingToTarget( input.wsTargetPos );
 
 		if ( nextState != Destination::None ) { return; }
 		// else
@@ -423,6 +425,9 @@ namespace Boss
 		inst.velocity.z	= 0.0f;
 		inst.onGround	= false;
 		inst.motionManager.ChangeMotion( inst, MotionKind::Jump );
+
+		const bool lookingRight = ( 0.0f <= horizontalDiff.x ) ? true : false;
+		inst.UpdateOrientation( lookingRight );
 	}
 	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
@@ -493,6 +498,7 @@ namespace Boss
 	void Skull::Shield::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 		inst.Fall( elapsedTime );
+		inst.LookingToTarget( input.wsTargetPos );
 
 		const auto &data = Parameter::GetSkull();
 
@@ -598,6 +604,7 @@ namespace Boss
 		inst.velocity.x	= runSpeed * GetCurrentDirectionSign( inst );
 		inst.velocity.y	= 0.0f;
 		inst.motionManager.ChangeMotion( inst, MotionKind::Run );
+		inst.LookingToTarget( inst.aimingPos );
 
 		// t[s] = displacement[m] / speed[m/s]
 		// But the speed here is [m], so the arrivalTime will be none unit.
@@ -607,7 +614,7 @@ namespace Boss
 		runTimer	= 0.0f;
 		waitTimer	= 0.0f;
 		wasArrived	= false;
-		initialPos	= inst.body.WorldPosition( );
+		initialPos	= inst.body.WorldPosition();
 	}
 	void Skull::Run::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
@@ -616,6 +623,7 @@ namespace Boss
 		if ( wasArrived )
 		{
 			waitTimer += elapsedTime;
+			inst.LookingToTarget( input.wsTargetPos );
 		}
 		else
 		{
@@ -626,6 +634,7 @@ namespace Boss
 			if ( arrivalTime <= runTimer )
 			{
 				wasArrived = true;
+				inst.velocity.x = 0.0f;
 			}
 		}
 	}
@@ -710,10 +719,6 @@ namespace Boss
 			ChangeState();
 		}
 
-		// The offset is not consider because judge by center position
-		const bool lookingRight = ( 0.0f <= ( input.wsTargetPos - body.pos ).x ) ? true : false;
-		UpdateOrientation( lookingRight );
-		
 		motionManager.Update( *this, elapsedTime );
 
 		previousInput = input;
@@ -785,6 +790,13 @@ namespace Boss
 	void Skull::Fall( float elapsedTime )
 	{
 		velocity.y -= GetGravity() * elapsedTime;
+	}
+	void Skull::LookingToTarget( const Donya::Vector3 &targetPos )
+	{
+		// The offset is not consider because judge by center position
+		const float diff			= targetPos.x - body.pos.x;
+		const bool  lookingRight	= ( 0.0f <= diff ) ? true : false;
+		UpdateOrientation( lookingRight );
 	}
 
 #if USE_IMGUI
