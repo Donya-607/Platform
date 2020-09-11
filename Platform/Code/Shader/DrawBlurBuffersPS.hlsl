@@ -9,5 +9,6 @@ float4 main( VS_OUT pin ) : SV_TARGET
 			sum += blurTextures[1].Sample( spriteSampler, pin.texCoord ).rgb;
 			sum += blurTextures[2].Sample( spriteSampler, pin.texCoord ).rgb;
 			sum += blurTextures[3].Sample( spriteSampler, pin.texCoord ).rgb;
+			sum *= 0.25f; // Take average. sum /= 4.0f
 	return	float4( sum, 1.0f );
 }
