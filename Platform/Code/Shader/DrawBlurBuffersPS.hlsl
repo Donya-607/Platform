@@ -1,6 +1,6 @@
 #include "DisplayQuad.hlsli"
 
-Texture2D		blurTextures[6]	: register( t0 );
+Texture2D		blurTextures[4]	: register( t0 );
 SamplerState	spriteSampler	: register( s0 );
 float4 main( VS_OUT pin ) : SV_TARGET
 {
@@ -9,7 +9,5 @@ float4 main( VS_OUT pin ) : SV_TARGET
 			sum += blurTextures[1].Sample( spriteSampler, pin.texCoord ).rgb;
 			sum += blurTextures[2].Sample( spriteSampler, pin.texCoord ).rgb;
 			sum += blurTextures[3].Sample( spriteSampler, pin.texCoord ).rgb;
-			sum += blurTextures[4].Sample( spriteSampler, pin.texCoord ).rgb;
-			sum += blurTextures[5].Sample( spriteSampler, pin.texCoord ).rgb;
 	return	float4( sum, 1.0f );
 }
