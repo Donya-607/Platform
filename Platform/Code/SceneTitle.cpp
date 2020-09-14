@@ -595,6 +595,7 @@ void SceneTitle::Draw( float elapsedTime )
 	Donya::DepthStencil::Deactivate();
 
 	// Draw sprites
+	// if ( 0 )
 	{
 		sprTitleLogo.pos.x = Common::HalfScreenWidthF();
 		sprTitleLogo.pos.y = Common::HalfScreenHeightF();
@@ -670,6 +671,16 @@ void SceneTitle::Draw( float elapsedTime )
 		Draw( L"‚r‚s‚`‚q‚s",		Choice::Start,	( chooseItem == Choice::Start  ) );
 		Draw( L"‚n‚o‚s‚h‚n‚m",	Choice::Option,	( chooseItem == Choice::Option ) );
 	
+		/*
+		static Donya::Vector2 tmpPos{ 800.0f, 128.0f };
+		pFontRenderer->DrawExt
+		(
+			L"‚s‚h‚s‚k‚d",
+			tmpPos,
+			pivot, { 5.0f, 5.0f }
+		);
+		*/
+
 		Donya::Sprite::Flush();
 	}
 	Donya::Surface::ResetRenderTarget();
