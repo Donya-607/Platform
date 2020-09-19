@@ -631,7 +631,8 @@ void SceneGame::Draw( float elapsedTime )
 		dayTime += timeSpeed * elapsedTime;
 		if ( 24.0f < dayTime ) { dayTime -= 24.0f; }
 
-		static Donya::Vector3 bias = { 0.1f, 0.1f, 0.1f };
+		static Donya::Vector3 upperLimit = { 0.9f, 0.85f, 0.72f };
+		static Donya::Vector3 lowerLimit = { 0.1f, 0.1f, 0.1f };
 		static Donya::Vector3 ampl = { 3.0f, 2.0f, 1.5f };
 		static float blueIntensity = 1.0f;
 
@@ -641,7 +642,7 @@ void SceneGame::Draw( float elapsedTime )
 		Donya::Vector3 color{};
 		for ( int i = 0; i < 3; ++i )
 		{
-			color[i] = Donya::Clamp( ampl[i] * -cos, bias[i], 1.0f );
+			color[i] = Donya::Clamp( ampl[i] * -cos, lowerLimit[i], upperLimit[i] );
 		}
 		color.z *= blueIntensity;
 
@@ -654,14 +655,14 @@ void SceneGame::Draw( float elapsedTime )
 			Common::ScreenWidthF(), Common::ScreenHeightF(),
 			color.x, color.y, color.z, 1.0f
 		);
-		Donya::Sprite::Flush();
-
+		
 		Donya::Sprite::SetDrawDepth( oldDepth );
 
 	#if USE_IMGUI
 		if ( ImGui::BeginIfAllowed( u8"空色テスト" ) )
 		{
-			ImGui::SliderFloat3( u8"バイアス", &bias.x, 0.0f, 1.0f );
+			ImGui::SliderFloat3( u8"上限", &upperLimit.x, 0.0f, 1.0f );
+			ImGui::SliderFloat3( u8"下限", &lowerLimit.x, 0.0f, 1.0f );
 			ImGui::DragFloat3( u8"増幅値", &ampl.x, 0.01f );
 			ImGui::DragFloat( u8"青色の強度", &blueIntensity, 0.01f );
 			ImGui::SliderFloat( u8"日時", &dayTime, 0.0f, 24.0f );

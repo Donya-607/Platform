@@ -2,7 +2,8 @@
 
 #include <array>
 
-#include "Donya.h" // Use for getting a default device and immediate-context, call a setting default render-targets function.
+#include "Donya.h"	// Use for getting a default device and immediate-context, call a setting default render-targets function.
+#include "Sprite.h"	// Use Flush() for draw the batching sprites before Set(Reset)RenderTarget(s)
 
 #undef max
 #undef min
@@ -24,6 +25,8 @@ namespace Donya
 
 	void Surface::SetRenderTargets( const std::vector<Surface> &surfaces, ID3D11DeviceContext *pImmediateContext )
 	{
+		Donya::Sprite::Flush();
+
 		if ( surfaces.empty() ) { return; }
 		// else
 
@@ -42,6 +45,8 @@ namespace Donya
 	}
 	void Surface::ResetRenderTargets( size_t resetCount, ID3D11DeviceContext *pImmediateContext )
 	{
+		Donya::Sprite::Flush();
+
 		SetDefaultIfNull( &pImmediateContext );
 
 		constexpr size_t maxSlot = scast<size_t>( D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT );
@@ -61,6 +66,7 @@ namespace Donya
 	}
 	void Surface::ResetRenderTarget()
 	{
+		// Donya::Sprite::Flush() will be called in Donya::SetDefaultRenderTargets()
 		Donya::SetDefaultRenderTargets();
 	}
 
@@ -257,6 +263,8 @@ namespace Donya
 
 	void Surface::SetRenderTarget( ID3D11DeviceContext *pImmediateContext ) const
 	{
+		Donya::Sprite::Flush();
+
 		SetDefaultIfNull( &pImmediateContext );
 		pImmediateContext->OMSetRenderTargets( 1U, pRTV.GetAddressOf(), pDSV.Get() );
 	}

@@ -988,13 +988,9 @@ namespace Donya
 		CreateDevices();
 		CreateSwapChain();
 		CreateRenderTargetViewsAndViewport();
-		SetDefaultRenderTargets();
-		ClearViews( 0.0f, 0.0f, 0.0f, 1.0f );
 
 	#if USE_IMGUI
-
 		ImGuiInitIfAllowed();
-
 	#endif // USE_IMGUI
 
 		Donya::Blend::Init();
@@ -1005,6 +1001,11 @@ namespace Donya
 		Donya::Sprite::Init();
 
 		Donya::ScreenShake::SetEnableState( true );
+
+		// It will call Donya::Sprite::Flush(), but that function requires the sprite system already initialized(by Donya::Sprite::Init()).
+		// So I set render target(and viewport) after that.
+		SetDefaultRenderTargets();
+		ClearViews( 0.0f, 0.0f, 0.0f, 1.0f );
 
 		return true;
 	}
@@ -1141,6 +1142,8 @@ namespace Donya
 
 	void SetDefaultRenderTargets()
 	{
+		Donya::Sprite::Flush();
+
 		Donya::GetImmediateContext()->OMSetRenderTargets
 		(
 			1,
