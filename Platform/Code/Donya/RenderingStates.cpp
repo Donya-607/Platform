@@ -363,6 +363,12 @@ namespace Donya
 			result = CreateState( scast<int>( Defined::Aniso_Wrap ), desc, pDevice );
 			if ( !result ) { succeeded = false; }
 
+			desc.AddressU		= D3D11_TEXTURE_ADDRESS_CLAMP;
+			desc.AddressV		= D3D11_TEXTURE_ADDRESS_CLAMP;
+			desc.AddressW		= D3D11_TEXTURE_ADDRESS_CLAMP;
+			result = CreateState( scast<int>( Defined::Aniso_Clamp ), desc, pDevice );
+			if ( !result ) { succeeded = false; }
+
 
 			desc.Filter			= D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 			desc.AddressU		= D3D11_TEXTURE_ADDRESS_BORDER;

@@ -129,6 +129,390 @@ namespace Donya
 				SetNullIndexBuffer( Donya::GetImmediateContext() );
 			}
 		}
+		
+		namespace Geometry
+		{
+			Cube	CreateCube( float halfSize )
+			{
+				/*
+				Abbreviations:
+
+				VTX	Vertex
+				IDX	Index
+				L	Left
+				R	Right
+				T	Top
+				B	Bottom
+				N	Near
+				F	Far
+				*/
+
+				constexpr size_t STRIDE_VTX = 4U;		// Because the square is made up of 4 vertices.
+				constexpr size_t STRIDE_IDX = 3U * 2U;	// Because the square is made up of 2 triangles, and that triangle is made up of 3 vertices.
+				constexpr std::array<size_t, STRIDE_IDX> CW_INDICES
+				{
+					0, 1, 2,	// LT->RT->LB(->LT)
+					1, 3, 2		// RT->RB->LB(->RT)
+				};
+				constexpr std::array<size_t, STRIDE_IDX> CCW_INDICES
+				{
+					0, 2, 1,	// LT->LB->RT(->LT)
+					1, 2, 3		// RT->LB->RB(->RT)
+				};
+
+			#if 1 // Use for loop version
+
+				constexpr Donya::Vector3 TOP_NORMAL		{ 0.0f, +1.0f, 0.0f };
+				constexpr Donya::Vector3 BOTTOM_NORMAL	{ 0.0f, -1.0f, 0.0f };
+				constexpr Donya::Vector3 RIGHT_NORMAL	{ +1.0f, 0.0f, 0.0f };
+				constexpr Donya::Vector3 LEFT_NORMAL	{ -1.0f, 0.0f, 0.0f };
+				constexpr Donya::Vector3 FAR_NORMAL		{ 0.0f, 0.0f, +1.0f };
+				constexpr Donya::Vector3 NEAR_NORMAL	{ 0.0f, 0.0f, -1.0f };
+
+				constexpr std::array<Donya::Vector3, STRIDE_VTX> TOP_VERTICES
+				{
+					Donya::Vector3{ -1.0f, +1.0f, +1.0f }, // LTF
+					Donya::Vector3{ +1.0f, +1.0f, +1.0f }, // RTF
+					Donya::Vector3{ -1.0f, +1.0f, -1.0f }, // LTN
+					Donya::Vector3{ +1.0f, +1.0f, -1.0f }, // RTN
+				};
+				constexpr std::array<Donya::Vector3, STRIDE_VTX> BOTTOM_VERTICES
+				{
+					Donya::Vector3{ -1.0f, -1.0f, +1.0f }, // LBF
+					Donya::Vector3{ +1.0f, -1.0f, +1.0f }, // RBF
+					Donya::Vector3{ -1.0f, -1.0f, -1.0f }, // LBN
+					Donya::Vector3{ +1.0f, -1.0f, -1.0f }, // RBN
+				};
+				constexpr std::array<Donya::Vector3, STRIDE_VTX> RIGHT_VERTICES
+				{
+					Donya::Vector3{ +1.0f, +1.0f, -1.0f }, // RTN
+					Donya::Vector3{ +1.0f, +1.0f, +1.0f }, // RTF
+					Donya::Vector3{ +1.0f, -1.0f, -1.0f }, // RBN
+					Donya::Vector3{ +1.0f, -1.0f, +1.0f }, // RBF
+				};
+				constexpr std::array<Donya::Vector3, STRIDE_VTX> LEFT_VERTICES
+				{
+					Donya::Vector3{ -1.0f, +1.0f, -1.0f }, // LTN
+					Donya::Vector3{ -1.0f, +1.0f, +1.0f }, // LTF
+					Donya::Vector3{ -1.0f, -1.0f, -1.0f }, // LBN
+					Donya::Vector3{ -1.0f, -1.0f, +1.0f }, // LBF
+				};
+				constexpr std::array<Donya::Vector3, STRIDE_VTX> FAR_VERTICES
+				{
+					Donya::Vector3{ +1.0f, -1.0f, +1.0f }, // RBF
+					Donya::Vector3{ +1.0f, +1.0f, +1.0f }, // RTF
+					Donya::Vector3{ -1.0f, -1.0f, +1.0f }, // LBF
+					Donya::Vector3{ -1.0f, +1.0f, +1.0f }, // LTF
+				};
+				constexpr std::array<Donya::Vector3, STRIDE_VTX> NEAR_VERTICES
+				{
+					Donya::Vector3{ +1.0f, -1.0f, -1.0f }, // RBN
+					Donya::Vector3{ +1.0f, +1.0f, -1.0f }, // RTN
+					Donya::Vector3{ -1.0f, -1.0f, -1.0f }, // LBN
+					Donya::Vector3{ -1.0f, +1.0f, -1.0f }, // LTN
+				};
+		
+				struct Step // These pointers are used for reference only.
+				{
+					const size_t stride = 0;
+					const Donya::Vector3							*pNormal	= nullptr;
+					const std::array<Donya::Vector3, STRIDE_VTX>	*pVertices	= nullptr;
+					const std::array<size_t, STRIDE_IDX>			*pIndices	= nullptr;
+				public:
+					constexpr Step
+					(
+						size_t stride,
+						const Donya::Vector3							&normal,
+						const std::array<Donya::Vector3, STRIDE_VTX>	&vertices,
+						const std::array<size_t, STRIDE_IDX>			&indices
+					) : stride( stride ), pNormal( &normal ), pVertices( &vertices ), pIndices( &indices )
+					{}
+					constexpr Step( const Step &source )
+						: stride( source.stride ), pNormal( source.pNormal ), pVertices( source.pVertices ), pIndices( source.pIndices )
+					{}
+				};
+				constexpr std::array<Step, 6U> SQUARES
+				{
+					Step{ 0U, TOP_NORMAL,		TOP_VERTICES,		CW_INDICES	},
+					Step{ 1U, BOTTOM_NORMAL,	BOTTOM_VERTICES,	CCW_INDICES	},
+					Step{ 2U, RIGHT_NORMAL,		RIGHT_VERTICES,		CW_INDICES	},
+					Step{ 3U, LEFT_NORMAL,		LEFT_VERTICES,		CCW_INDICES	},
+					Step{ 4U, FAR_NORMAL,		FAR_VERTICES,		CW_INDICES	},
+					Step{ 5U, NEAR_NORMAL,		NEAR_VERTICES,		CCW_INDICES	}
+				};
+
+				Cube cube{};
+
+				size_t vStride = 0U;
+				size_t iStride = 0U;
+				for ( const auto &it : SQUARES )
+				{
+					vStride = STRIDE_VTX * it.stride;
+					iStride = STRIDE_IDX * it.stride;
+					for ( size_t i = 0; i < STRIDE_VTX; ++i )
+					{
+						cube.vertices[vStride + i].position =  it.pVertices->at( i ) * halfSize;
+						cube.vertices[vStride + i].normal   = *it.pNormal;
+					}
+					for ( size_t i = 0; i < STRIDE_IDX; ++i )
+					{
+						cube.indices[iStride + i] = it.pIndices->at( i ) + vStride;
+					}
+				}
+
+			#else
+		
+				constexpr size_t TOP_VTX_IDX = STRIDE_VTX * 0U;
+				constexpr size_t TOP_IDX_IDX = STRIDE_IDX * 0U;
+				constexpr Donya::Vector3 TOP_NORMAL{ 0.0f, +1.0f, 0.0f };
+				// Top
+				{
+					cube.vertices[TOP_VTX_IDX + 0U].position = Donya::Vector3{ -DIST, +DIST, +DIST }; // LTF
+					cube.vertices[TOP_VTX_IDX + 1U].position = Donya::Vector3{ +DIST, +DIST, +DIST }; // RTF
+					cube.vertices[TOP_VTX_IDX + 2U].position = Donya::Vector3{ -DIST, +DIST, -DIST }; // LTN
+					cube.vertices[TOP_VTX_IDX + 3U].position = Donya::Vector3{ +DIST, +DIST, -DIST }; // RTN
+					cube.vertices[TOP_VTX_IDX + 0U].normal = TOP_NORMAL;
+					cube.vertices[TOP_VTX_IDX + 1U].normal = TOP_NORMAL;
+					cube.vertices[TOP_VTX_IDX + 2U].normal = TOP_NORMAL;
+					cube.vertices[TOP_VTX_IDX + 3U].normal = TOP_NORMAL;
+				
+					cube.indices[TOP_IDX_IDX + 0U] = CW_INDICES[0U] + TOP_VTX_IDX;
+					cube.indices[TOP_IDX_IDX + 1U] = CW_INDICES[1U] + TOP_VTX_IDX;
+					cube.indices[TOP_IDX_IDX + 2U] = CW_INDICES[2U] + TOP_VTX_IDX;
+
+					cube.indices[TOP_IDX_IDX + 3U] = CW_INDICES[3U] + TOP_VTX_IDX;
+					cube.indices[TOP_IDX_IDX + 4U] = CW_INDICES[4U] + TOP_VTX_IDX;
+					cube.indices[TOP_IDX_IDX + 5U] = CW_INDICES[5U] + TOP_VTX_IDX;
+				}
+				constexpr size_t BOTTOM_VTX_IDX = STRIDE_VTX * 1U;
+				constexpr size_t BOTTOM_IDX_IDX = STRIDE_IDX * 1U;
+				constexpr Donya::Vector3 BOTTOM_NORMAL{ 0.0f, -1.0f, 0.0f };
+				// Bottom
+				{
+					cube.vertices[BOTTOM_VTX_IDX + 0U].position = Donya::Vector3{ -DIST, -DIST, +DIST }; // LBF
+					cube.vertices[BOTTOM_VTX_IDX + 1U].position = Donya::Vector3{ +DIST, -DIST, +DIST }; // RBF
+					cube.vertices[BOTTOM_VTX_IDX + 2U].position = Donya::Vector3{ -DIST, -DIST, -DIST }; // LBN
+					cube.vertices[BOTTOM_VTX_IDX + 3U].position = Donya::Vector3{ +DIST, -DIST, -DIST }; // RBN
+					cube.vertices[BOTTOM_VTX_IDX + 0U].normal = BOTTOM_NORMAL;
+					cube.vertices[BOTTOM_VTX_IDX + 1U].normal = BOTTOM_NORMAL;
+					cube.vertices[BOTTOM_VTX_IDX + 2U].normal = BOTTOM_NORMAL;
+					cube.vertices[BOTTOM_VTX_IDX + 3U].normal = BOTTOM_NORMAL;
+
+					cube.indices[BOTTOM_IDX_IDX + 0U] = CCW_INDICES[0U] + BOTTOM_VTX_IDX;
+					cube.indices[BOTTOM_IDX_IDX + 1U] = CCW_INDICES[1U] + BOTTOM_VTX_IDX;
+					cube.indices[BOTTOM_IDX_IDX + 2U] = CCW_INDICES[2U] + BOTTOM_VTX_IDX;
+
+					cube.indices[BOTTOM_IDX_IDX + 3U] = CCW_INDICES[3U] + BOTTOM_VTX_IDX;
+					cube.indices[BOTTOM_IDX_IDX + 4U] = CCW_INDICES[4U] + BOTTOM_VTX_IDX;
+					cube.indices[BOTTOM_IDX_IDX + 5U] = CCW_INDICES[5U] + BOTTOM_VTX_IDX;
+				}
+				constexpr size_t RIGHT_VTX_IDX = STRIDE_VTX * 2U;
+				constexpr size_t RIGHT_IDX_IDX = STRIDE_IDX * 2U;
+				constexpr Donya::Vector3 RIGHT_NORMAL{ +1.0f, 0.0f, 0.0f };
+				// Right
+				{
+					cube.vertices[RIGHT_VTX_IDX + 0U].position = Donya::Vector3{ +DIST, +DIST, -DIST }; // RTN
+					cube.vertices[RIGHT_VTX_IDX + 1U].position = Donya::Vector3{ +DIST, +DIST, +DIST }; // RTF
+					cube.vertices[RIGHT_VTX_IDX + 2U].position = Donya::Vector3{ +DIST, -DIST, -DIST }; // RBN
+					cube.vertices[RIGHT_VTX_IDX + 3U].position = Donya::Vector3{ +DIST, -DIST, +DIST }; // RBF
+					cube.vertices[RIGHT_VTX_IDX + 0U].normal = RIGHT_NORMAL;
+					cube.vertices[RIGHT_VTX_IDX + 1U].normal = RIGHT_NORMAL;
+					cube.vertices[RIGHT_VTX_IDX + 2U].normal = RIGHT_NORMAL;
+					cube.vertices[RIGHT_VTX_IDX + 3U].normal = RIGHT_NORMAL;
+
+					cube.indices[RIGHT_IDX_IDX + 0U] = CW_INDICES[0U] + RIGHT_VTX_IDX;
+					cube.indices[RIGHT_IDX_IDX + 1U] = CW_INDICES[1U] + RIGHT_VTX_IDX;
+					cube.indices[RIGHT_IDX_IDX + 2U] = CW_INDICES[2U] + RIGHT_VTX_IDX;
+
+					cube.indices[RIGHT_IDX_IDX + 3U] = CW_INDICES[3U] + RIGHT_VTX_IDX;
+					cube.indices[RIGHT_IDX_IDX + 4U] = CW_INDICES[4U] + RIGHT_VTX_IDX;
+					cube.indices[RIGHT_IDX_IDX + 5U] = CW_INDICES[5U] + RIGHT_VTX_IDX;
+				}
+				constexpr size_t LEFT_VTX_IDX = STRIDE_VTX * 3U;
+				constexpr size_t LEFT_IDX_IDX = STRIDE_IDX * 3U;
+				constexpr Donya::Vector3 LEFT_NORMAL{ -1.0f, 0.0f, 0.0f };
+				// Left
+				{
+					cube.vertices[LEFT_VTX_IDX + 0U].position = Donya::Vector3{ -DIST, +DIST, -DIST }; // LTN
+					cube.vertices[LEFT_VTX_IDX + 1U].position = Donya::Vector3{ -DIST, +DIST, +DIST }; // LTF
+					cube.vertices[LEFT_VTX_IDX + 2U].position = Donya::Vector3{ -DIST, -DIST, -DIST }; // LBN
+					cube.vertices[LEFT_VTX_IDX + 3U].position = Donya::Vector3{ -DIST, -DIST, +DIST }; // LBF
+					cube.vertices[LEFT_VTX_IDX + 0U].normal = LEFT_NORMAL;
+					cube.vertices[LEFT_VTX_IDX + 1U].normal = LEFT_NORMAL;
+					cube.vertices[LEFT_VTX_IDX + 2U].normal = LEFT_NORMAL;
+					cube.vertices[LEFT_VTX_IDX + 3U].normal = LEFT_NORMAL;
+
+					cube.indices[LEFT_IDX_IDX + 0U] = CCW_INDICES[0U] + LEFT_VTX_IDX;
+					cube.indices[LEFT_IDX_IDX + 1U] = CCW_INDICES[1U] + LEFT_VTX_IDX;
+					cube.indices[LEFT_IDX_IDX + 2U] = CCW_INDICES[2U] + LEFT_VTX_IDX;
+
+					cube.indices[LEFT_IDX_IDX + 3U] = CCW_INDICES[3U] + LEFT_VTX_IDX;
+					cube.indices[LEFT_IDX_IDX + 4U] = CCW_INDICES[4U] + LEFT_VTX_IDX;
+					cube.indices[LEFT_IDX_IDX + 5U] = CCW_INDICES[5U] + LEFT_VTX_IDX;
+				}
+				constexpr size_t FAR_VTX_IDX = STRIDE_VTX * 4U;
+				constexpr size_t FAR_IDX_IDX = STRIDE_IDX * 4U;
+				constexpr Donya::Vector3 FAR_NORMAL{ 0.0f, 0.0f, +1.0f };
+				// Far
+				{
+					cube.vertices[FAR_VTX_IDX + 0U].position = Donya::Vector3{ +DIST, -DIST, +DIST }; // RBF
+					cube.vertices[FAR_VTX_IDX + 1U].position = Donya::Vector3{ +DIST, +DIST, +DIST }; // RTF
+					cube.vertices[FAR_VTX_IDX + 2U].position = Donya::Vector3{ -DIST, -DIST, +DIST }; // LBF
+					cube.vertices[FAR_VTX_IDX + 3U].position = Donya::Vector3{ -DIST, +DIST, +DIST }; // LTF
+					cube.vertices[FAR_VTX_IDX + 0U].normal = FAR_NORMAL;
+					cube.vertices[FAR_VTX_IDX + 1U].normal = FAR_NORMAL;
+					cube.vertices[FAR_VTX_IDX + 2U].normal = FAR_NORMAL;
+					cube.vertices[FAR_VTX_IDX + 3U].normal = FAR_NORMAL;
+
+					cube.indices[FAR_IDX_IDX + 0U] = CW_INDICES[0U] + FAR_VTX_IDX;
+					cube.indices[FAR_IDX_IDX + 1U] = CW_INDICES[1U] + FAR_VTX_IDX;
+					cube.indices[FAR_IDX_IDX + 2U] = CW_INDICES[2U] + FAR_VTX_IDX;
+
+					cube.indices[FAR_IDX_IDX + 3U] = CW_INDICES[3U] + FAR_VTX_IDX;
+					cube.indices[FAR_IDX_IDX + 4U] = CW_INDICES[4U] + FAR_VTX_IDX;
+					cube.indices[FAR_IDX_IDX + 5U] = CW_INDICES[5U] + FAR_VTX_IDX;
+				}
+				constexpr size_t NEAR_VTX_IDX = STRIDE_VTX * 5U;
+				constexpr size_t NEAR_IDX_IDX = STRIDE_IDX * 5U;
+				constexpr Donya::Vector3 NEAR_NORMAL{ 0.0f, 0.0f, -1.0f };
+				// Near
+				{
+					cube.vertices[NEAR_VTX_IDX + 0U].position = Donya::Vector3{ +DIST, -DIST, -DIST }; // RBN
+					cube.vertices[NEAR_VTX_IDX + 1U].position = Donya::Vector3{ +DIST, +DIST, -DIST }; // RTN
+					cube.vertices[NEAR_VTX_IDX + 2U].position = Donya::Vector3{ -DIST, -DIST, -DIST }; // LBN
+					cube.vertices[NEAR_VTX_IDX + 3U].position = Donya::Vector3{ -DIST, +DIST, -DIST }; // LTN
+					cube.vertices[NEAR_VTX_IDX + 0U].normal = NEAR_NORMAL;
+					cube.vertices[NEAR_VTX_IDX + 1U].normal = NEAR_NORMAL;
+					cube.vertices[NEAR_VTX_IDX + 2U].normal = NEAR_NORMAL;
+					cube.vertices[NEAR_VTX_IDX + 3U].normal = NEAR_NORMAL;
+				
+					cube.indices[NEAR_IDX_IDX + 0U] = CCW_INDICES[0U] + NEAR_VTX_IDX;
+					cube.indices[NEAR_IDX_IDX + 1U] = CCW_INDICES[1U] + NEAR_VTX_IDX;
+					cube.indices[NEAR_IDX_IDX + 2U] = CCW_INDICES[2U] + NEAR_VTX_IDX;
+
+					cube.indices[NEAR_IDX_IDX + 3U] = CCW_INDICES[3U] + NEAR_VTX_IDX;
+					cube.indices[NEAR_IDX_IDX + 4U] = CCW_INDICES[4U] + NEAR_VTX_IDX;
+					cube.indices[NEAR_IDX_IDX + 5U] = CCW_INDICES[5U] + NEAR_VTX_IDX;
+				}
+
+			#endif // Use for loop version
+
+				return cube;
+			}
+
+			Sphere	CreateSphere( size_t sliceCountH, size_t sliceCountV, float radius )
+			{
+				// see http://rudora7.blog81.fc2.com/blog-entry-388.html
+
+				constexpr Donya::Vector3 CENTER{ 0.0f, 0.0f, 0.0f };
+
+				Sphere sphere{};
+
+				// Make Vertices
+				{
+					auto MakeVertex = [&CENTER]( const Donya::Vector3 &pos )
+					{
+						Vertex::Pos v{};
+						v.position	= pos;
+						v.normal	= Donya::Vector3{ pos - CENTER }.Unit();
+						return v;
+					};
+					auto PushVertex = [&sphere]( const Vertex::Pos &vertex )->void
+					{
+						sphere.vertices.emplace_back( vertex );
+					};
+			
+					const Vertex::Pos TOP_VERTEX = MakeVertex( CENTER + Donya::Vector3{ 0.0f, radius, 0.0f } );
+					PushVertex( TOP_VERTEX );
+
+					const float xyPlaneStep = ToRadian( 180.0f ) / scast<float>( sliceCountV );		// Line-up to vertically.
+					const float xzPlaneStep = ToRadian( 360.0f ) / scast<float>( sliceCountH );		// Line-up to horizontally.
+
+					constexpr float BASE_THETA = ToRadian( 90.0f ); // Use cosf(), sinf() with start from top(90-degrees).
+
+					float nowRadius{};
+					Donya::Vector3 pos{};
+					for ( size_t vertical = 1; vertical < sliceCountV; ++vertical )
+					{
+						nowRadius	=  cosf( BASE_THETA + ( xyPlaneStep * vertical ) ) * radius;
+						pos.y		=  sinf( BASE_THETA + ( xyPlaneStep * vertical ) ) * radius;
+						pos.y		+= CENTER.y;
+
+						for ( size_t horizontal = 0; horizontal <= sliceCountH; ++horizontal )
+						{
+							pos.x = CENTER.x + cosf( xzPlaneStep * horizontal ) * nowRadius;
+							pos.z = CENTER.z + sinf( xzPlaneStep * horizontal ) * nowRadius;
+
+							PushVertex( MakeVertex( pos ) );
+						}
+					}
+
+					const Vertex::Pos BOTTOM_VERTEX = MakeVertex( CENTER - Donya::Vector3{ 0.0f, radius, 0.0f } );
+					PushVertex( BOTTOM_VERTEX );
+				}
+
+				// Make Triangle Indices
+				{
+					auto PushIndex = [&sphere]( size_t index )->void
+					{
+						sphere.indices.emplace_back( index );
+					};
+
+					// Make triangles with top.
+					{
+						const size_t TOP_INDEX = 0;
+
+						for ( size_t i = 1; i <= sliceCountH; ++i )
+						{
+							PushIndex( TOP_INDEX );
+							PushIndex( i + 1 );
+							PushIndex( i );
+						}
+					}
+
+					const size_t vertexCountPerRing = sliceCountH + 1;
+
+					// Make triangles of inner.
+					{
+						const size_t BASE_INDEX = 1; // Start next of top vertex.
+
+						size_t step{};		// The index of current ring.
+						size_t nextStep{};	// The index of next ring.
+						for ( size_t ring = 0; ring < sliceCountV - 2/* It's OK to "-1" also */; ++ring )
+						{
+							step		= ( ring ) * vertexCountPerRing;
+							nextStep	= ( ring + 1 ) * vertexCountPerRing;
+
+							for ( size_t i = 0; i < sliceCountH; ++i )
+							{
+								PushIndex( BASE_INDEX + step		+ i		);
+								PushIndex( BASE_INDEX + step		+ i + 1	);
+								PushIndex( BASE_INDEX + nextStep	+ i		);
+							
+								PushIndex( BASE_INDEX + nextStep	+ i		);
+								PushIndex( BASE_INDEX + step		+ i + 1	);
+								PushIndex( BASE_INDEX + nextStep	+ i + 1	);
+							}
+						}
+					}
+
+					// Make triangles with bottom.
+					{
+						const size_t BOTTOM_INDEX = sphere.vertices.size() - 1;
+						const size_t BASE_INDEX   = BOTTOM_INDEX - vertexCountPerRing;
+
+						for ( size_t i = 0; i < sliceCountH; ++i )
+						{
+							PushIndex( BOTTOM_INDEX );
+							PushIndex( BASE_INDEX + i );
+							PushIndex( BASE_INDEX + i + 1 );
+						}
+					}
+				}
+
+				return sphere;
+			}
+		}
 
 		namespace
 		{
@@ -208,287 +592,13 @@ namespace Donya
 
 	#pragma region Cube
 
-		struct CubeConfigration
-		{
-			std::array<Vertex::Pos, 4U * 6U> vertices;	// "4 * 6" represents six squares.
-			std::array<size_t, 3U * 2U * 6U> indices;	// "3 * 2 * 6" represents the six groups of the square that constructed by two triangles.
-		};
-		CubeConfigration CreateCube()
-		{
-			/*
-			Abbreviations:
-
-			VTX	Vertex
-			IDX	Index
-			L	Left
-			R	Right
-			T	Top
-			B	Bottom
-			N	Near
-			F	Far
-			*/
-
-			constexpr float  WHOLE_CUBE_SIZE = 1.0f;		// Unit size.
-			constexpr float  DIST = WHOLE_CUBE_SIZE / 2.0f;	// The distance from center(0.0f).
-			constexpr size_t STRIDE_VTX = 4U;				// Because the square is made up of 4 vertices.
-			constexpr size_t STRIDE_IDX = 3U * 2U;			// Because the square is made up of 2 triangles, and that triangle is made up of 3 vertices.
-			constexpr std::array<size_t, STRIDE_IDX> CW_INDICES
-			{
-				0, 1, 2,	// LT->RT->LB(->LT)
-				1, 3, 2		// RT->RB->LB(->RT)
-			};
-			constexpr std::array<size_t, STRIDE_IDX> CCW_INDICES
-			{
-				0, 2, 1,	// LT->LB->RT(->LT)
-				1, 2, 3		// RT->LB->RB(->RT)
-			};
-
-		#if 1 // Use for loop version
-
-			constexpr Donya::Vector3 TOP_NORMAL		{ 0.0f, +1.0f, 0.0f };
-			constexpr Donya::Vector3 BOTTOM_NORMAL	{ 0.0f, -1.0f, 0.0f };
-			constexpr Donya::Vector3 RIGHT_NORMAL	{ +1.0f, 0.0f, 0.0f };
-			constexpr Donya::Vector3 LEFT_NORMAL	{ -1.0f, 0.0f, 0.0f };
-			constexpr Donya::Vector3 FAR_NORMAL		{ 0.0f, 0.0f, +1.0f };
-			constexpr Donya::Vector3 NEAR_NORMAL	{ 0.0f, 0.0f, -1.0f };
-
-			constexpr std::array<Donya::Vector3, STRIDE_VTX> TOP_VERTICES
-			{
-				Donya::Vector3{ -DIST, +DIST, +DIST }, // LTF
-				Donya::Vector3{ +DIST, +DIST, +DIST }, // RTF
-				Donya::Vector3{ -DIST, +DIST, -DIST }, // LTN
-				Donya::Vector3{ +DIST, +DIST, -DIST }, // RTN
-			};
-			constexpr std::array<Donya::Vector3, STRIDE_VTX> BOTTOM_VERTICES
-			{
-				Donya::Vector3{ -DIST, -DIST, +DIST }, // LBF
-				Donya::Vector3{ +DIST, -DIST, +DIST }, // RBF
-				Donya::Vector3{ -DIST, -DIST, -DIST }, // LBN
-				Donya::Vector3{ +DIST, -DIST, -DIST }, // RBN
-			};
-			constexpr std::array<Donya::Vector3, STRIDE_VTX> RIGHT_VERTICES
-			{
-				Donya::Vector3{ +DIST, +DIST, -DIST }, // RTN
-				Donya::Vector3{ +DIST, +DIST, +DIST }, // RTF
-				Donya::Vector3{ +DIST, -DIST, -DIST }, // RBN
-				Donya::Vector3{ +DIST, -DIST, +DIST }, // RBF
-			};
-			constexpr std::array<Donya::Vector3, STRIDE_VTX> LEFT_VERTICES
-			{
-				Donya::Vector3{ -DIST, +DIST, -DIST }, // LTN
-				Donya::Vector3{ -DIST, +DIST, +DIST }, // LTF
-				Donya::Vector3{ -DIST, -DIST, -DIST }, // LBN
-				Donya::Vector3{ -DIST, -DIST, +DIST }, // LBF
-			};
-			constexpr std::array<Donya::Vector3, STRIDE_VTX> FAR_VERTICES
-			{
-				Donya::Vector3{ +DIST, -DIST, +DIST }, // RBF
-				Donya::Vector3{ +DIST, +DIST, +DIST }, // RTF
-				Donya::Vector3{ -DIST, -DIST, +DIST }, // LBF
-				Donya::Vector3{ -DIST, +DIST, +DIST }, // LTF
-			};
-			constexpr std::array<Donya::Vector3, STRIDE_VTX> NEAR_VERTICES
-			{
-				Donya::Vector3{ +DIST, -DIST, -DIST }, // RBN
-				Donya::Vector3{ +DIST, +DIST, -DIST }, // RTN
-				Donya::Vector3{ -DIST, -DIST, -DIST }, // LBN
-				Donya::Vector3{ -DIST, +DIST, -DIST }, // LTN
-			};
-		
-			struct Step // These pointers are used for reference only.
-			{
-				const size_t stride = 0;
-				const Donya::Vector3							*pNormal	= nullptr;
-				const std::array<Donya::Vector3, STRIDE_VTX>	*pVertices	= nullptr;
-				const std::array<size_t, STRIDE_IDX>			*pIndices	= nullptr;
-			public:
-				constexpr Step
-				(
-					size_t stride,
-					const Donya::Vector3							&normal,
-					const std::array<Donya::Vector3, STRIDE_VTX>	&vertices,
-					const std::array<size_t, STRIDE_IDX>			&indices
-				) : stride( stride ), pNormal( &normal ), pVertices( &vertices ), pIndices( &indices )
-				{}
-				constexpr Step( const Step &source )
-					: stride( source.stride ), pNormal( source.pNormal ), pVertices( source.pVertices ), pIndices( source.pIndices )
-				{}
-			};
-			constexpr std::array<Step, 6U> SQUARES
-			{
-				Step{ 0U, TOP_NORMAL,		TOP_VERTICES,		CW_INDICES	},
-				Step{ 1U, BOTTOM_NORMAL,	BOTTOM_VERTICES,	CCW_INDICES	},
-				Step{ 2U, RIGHT_NORMAL,		RIGHT_VERTICES,		CW_INDICES	},
-				Step{ 3U, LEFT_NORMAL,		LEFT_VERTICES,		CCW_INDICES	},
-				Step{ 4U, FAR_NORMAL,		FAR_VERTICES,		CW_INDICES	},
-				Step{ 5U, NEAR_NORMAL,		NEAR_VERTICES,		CCW_INDICES	}
-			};
-
-			CubeConfigration cube{};
-
-			size_t vStride = 0U;
-			size_t iStride = 0U;
-			for ( const auto &it : SQUARES )
-			{
-				vStride = STRIDE_VTX * it.stride;
-				iStride = STRIDE_IDX * it.stride;
-				for ( size_t i = 0; i < STRIDE_VTX; ++i )
-				{
-					cube.vertices[vStride + i].position = it.pVertices->at( i );
-					cube.vertices[vStride + i].normal   = *it.pNormal;
-				}
-				for ( size_t i = 0; i < STRIDE_IDX; ++i )
-				{
-					cube.indices[iStride + i] = it.pIndices->at( i ) + vStride;
-				}
-			}
-
-		#else
-		
-			constexpr size_t TOP_VTX_IDX = STRIDE_VTX * 0U;
-			constexpr size_t TOP_IDX_IDX = STRIDE_IDX * 0U;
-			constexpr Donya::Vector3 TOP_NORMAL{ 0.0f, +1.0f, 0.0f };
-			// Top
-			{
-				cube.vertices[TOP_VTX_IDX + 0U].position = Donya::Vector3{ -DIST, +DIST, +DIST }; // LTF
-				cube.vertices[TOP_VTX_IDX + 1U].position = Donya::Vector3{ +DIST, +DIST, +DIST }; // RTF
-				cube.vertices[TOP_VTX_IDX + 2U].position = Donya::Vector3{ -DIST, +DIST, -DIST }; // LTN
-				cube.vertices[TOP_VTX_IDX + 3U].position = Donya::Vector3{ +DIST, +DIST, -DIST }; // RTN
-				cube.vertices[TOP_VTX_IDX + 0U].normal = TOP_NORMAL;
-				cube.vertices[TOP_VTX_IDX + 1U].normal = TOP_NORMAL;
-				cube.vertices[TOP_VTX_IDX + 2U].normal = TOP_NORMAL;
-				cube.vertices[TOP_VTX_IDX + 3U].normal = TOP_NORMAL;
-				
-				cube.indices[TOP_IDX_IDX + 0U] = CW_INDICES[0U] + TOP_VTX_IDX;
-				cube.indices[TOP_IDX_IDX + 1U] = CW_INDICES[1U] + TOP_VTX_IDX;
-				cube.indices[TOP_IDX_IDX + 2U] = CW_INDICES[2U] + TOP_VTX_IDX;
-
-				cube.indices[TOP_IDX_IDX + 3U] = CW_INDICES[3U] + TOP_VTX_IDX;
-				cube.indices[TOP_IDX_IDX + 4U] = CW_INDICES[4U] + TOP_VTX_IDX;
-				cube.indices[TOP_IDX_IDX + 5U] = CW_INDICES[5U] + TOP_VTX_IDX;
-			}
-			constexpr size_t BOTTOM_VTX_IDX = STRIDE_VTX * 1U;
-			constexpr size_t BOTTOM_IDX_IDX = STRIDE_IDX * 1U;
-			constexpr Donya::Vector3 BOTTOM_NORMAL{ 0.0f, -1.0f, 0.0f };
-			// Bottom
-			{
-				cube.vertices[BOTTOM_VTX_IDX + 0U].position = Donya::Vector3{ -DIST, -DIST, +DIST }; // LBF
-				cube.vertices[BOTTOM_VTX_IDX + 1U].position = Donya::Vector3{ +DIST, -DIST, +DIST }; // RBF
-				cube.vertices[BOTTOM_VTX_IDX + 2U].position = Donya::Vector3{ -DIST, -DIST, -DIST }; // LBN
-				cube.vertices[BOTTOM_VTX_IDX + 3U].position = Donya::Vector3{ +DIST, -DIST, -DIST }; // RBN
-				cube.vertices[BOTTOM_VTX_IDX + 0U].normal = BOTTOM_NORMAL;
-				cube.vertices[BOTTOM_VTX_IDX + 1U].normal = BOTTOM_NORMAL;
-				cube.vertices[BOTTOM_VTX_IDX + 2U].normal = BOTTOM_NORMAL;
-				cube.vertices[BOTTOM_VTX_IDX + 3U].normal = BOTTOM_NORMAL;
-
-				cube.indices[BOTTOM_IDX_IDX + 0U] = CCW_INDICES[0U] + BOTTOM_VTX_IDX;
-				cube.indices[BOTTOM_IDX_IDX + 1U] = CCW_INDICES[1U] + BOTTOM_VTX_IDX;
-				cube.indices[BOTTOM_IDX_IDX + 2U] = CCW_INDICES[2U] + BOTTOM_VTX_IDX;
-
-				cube.indices[BOTTOM_IDX_IDX + 3U] = CCW_INDICES[3U] + BOTTOM_VTX_IDX;
-				cube.indices[BOTTOM_IDX_IDX + 4U] = CCW_INDICES[4U] + BOTTOM_VTX_IDX;
-				cube.indices[BOTTOM_IDX_IDX + 5U] = CCW_INDICES[5U] + BOTTOM_VTX_IDX;
-			}
-			constexpr size_t RIGHT_VTX_IDX = STRIDE_VTX * 2U;
-			constexpr size_t RIGHT_IDX_IDX = STRIDE_IDX * 2U;
-			constexpr Donya::Vector3 RIGHT_NORMAL{ +1.0f, 0.0f, 0.0f };
-			// Right
-			{
-				cube.vertices[RIGHT_VTX_IDX + 0U].position = Donya::Vector3{ +DIST, +DIST, -DIST }; // RTN
-				cube.vertices[RIGHT_VTX_IDX + 1U].position = Donya::Vector3{ +DIST, +DIST, +DIST }; // RTF
-				cube.vertices[RIGHT_VTX_IDX + 2U].position = Donya::Vector3{ +DIST, -DIST, -DIST }; // RBN
-				cube.vertices[RIGHT_VTX_IDX + 3U].position = Donya::Vector3{ +DIST, -DIST, +DIST }; // RBF
-				cube.vertices[RIGHT_VTX_IDX + 0U].normal = RIGHT_NORMAL;
-				cube.vertices[RIGHT_VTX_IDX + 1U].normal = RIGHT_NORMAL;
-				cube.vertices[RIGHT_VTX_IDX + 2U].normal = RIGHT_NORMAL;
-				cube.vertices[RIGHT_VTX_IDX + 3U].normal = RIGHT_NORMAL;
-
-				cube.indices[RIGHT_IDX_IDX + 0U] = CW_INDICES[0U] + RIGHT_VTX_IDX;
-				cube.indices[RIGHT_IDX_IDX + 1U] = CW_INDICES[1U] + RIGHT_VTX_IDX;
-				cube.indices[RIGHT_IDX_IDX + 2U] = CW_INDICES[2U] + RIGHT_VTX_IDX;
-
-				cube.indices[RIGHT_IDX_IDX + 3U] = CW_INDICES[3U] + RIGHT_VTX_IDX;
-				cube.indices[RIGHT_IDX_IDX + 4U] = CW_INDICES[4U] + RIGHT_VTX_IDX;
-				cube.indices[RIGHT_IDX_IDX + 5U] = CW_INDICES[5U] + RIGHT_VTX_IDX;
-			}
-			constexpr size_t LEFT_VTX_IDX = STRIDE_VTX * 3U;
-			constexpr size_t LEFT_IDX_IDX = STRIDE_IDX * 3U;
-			constexpr Donya::Vector3 LEFT_NORMAL{ -1.0f, 0.0f, 0.0f };
-			// Left
-			{
-				cube.vertices[LEFT_VTX_IDX + 0U].position = Donya::Vector3{ -DIST, +DIST, -DIST }; // LTN
-				cube.vertices[LEFT_VTX_IDX + 1U].position = Donya::Vector3{ -DIST, +DIST, +DIST }; // LTF
-				cube.vertices[LEFT_VTX_IDX + 2U].position = Donya::Vector3{ -DIST, -DIST, -DIST }; // LBN
-				cube.vertices[LEFT_VTX_IDX + 3U].position = Donya::Vector3{ -DIST, -DIST, +DIST }; // LBF
-				cube.vertices[LEFT_VTX_IDX + 0U].normal = LEFT_NORMAL;
-				cube.vertices[LEFT_VTX_IDX + 1U].normal = LEFT_NORMAL;
-				cube.vertices[LEFT_VTX_IDX + 2U].normal = LEFT_NORMAL;
-				cube.vertices[LEFT_VTX_IDX + 3U].normal = LEFT_NORMAL;
-
-				cube.indices[LEFT_IDX_IDX + 0U] = CCW_INDICES[0U] + LEFT_VTX_IDX;
-				cube.indices[LEFT_IDX_IDX + 1U] = CCW_INDICES[1U] + LEFT_VTX_IDX;
-				cube.indices[LEFT_IDX_IDX + 2U] = CCW_INDICES[2U] + LEFT_VTX_IDX;
-
-				cube.indices[LEFT_IDX_IDX + 3U] = CCW_INDICES[3U] + LEFT_VTX_IDX;
-				cube.indices[LEFT_IDX_IDX + 4U] = CCW_INDICES[4U] + LEFT_VTX_IDX;
-				cube.indices[LEFT_IDX_IDX + 5U] = CCW_INDICES[5U] + LEFT_VTX_IDX;
-			}
-			constexpr size_t FAR_VTX_IDX = STRIDE_VTX * 4U;
-			constexpr size_t FAR_IDX_IDX = STRIDE_IDX * 4U;
-			constexpr Donya::Vector3 FAR_NORMAL{ 0.0f, 0.0f, +1.0f };
-			// Far
-			{
-				cube.vertices[FAR_VTX_IDX + 0U].position = Donya::Vector3{ +DIST, -DIST, +DIST }; // RBF
-				cube.vertices[FAR_VTX_IDX + 1U].position = Donya::Vector3{ +DIST, +DIST, +DIST }; // RTF
-				cube.vertices[FAR_VTX_IDX + 2U].position = Donya::Vector3{ -DIST, -DIST, +DIST }; // LBF
-				cube.vertices[FAR_VTX_IDX + 3U].position = Donya::Vector3{ -DIST, +DIST, +DIST }; // LTF
-				cube.vertices[FAR_VTX_IDX + 0U].normal = FAR_NORMAL;
-				cube.vertices[FAR_VTX_IDX + 1U].normal = FAR_NORMAL;
-				cube.vertices[FAR_VTX_IDX + 2U].normal = FAR_NORMAL;
-				cube.vertices[FAR_VTX_IDX + 3U].normal = FAR_NORMAL;
-
-				cube.indices[FAR_IDX_IDX + 0U] = CW_INDICES[0U] + FAR_VTX_IDX;
-				cube.indices[FAR_IDX_IDX + 1U] = CW_INDICES[1U] + FAR_VTX_IDX;
-				cube.indices[FAR_IDX_IDX + 2U] = CW_INDICES[2U] + FAR_VTX_IDX;
-
-				cube.indices[FAR_IDX_IDX + 3U] = CW_INDICES[3U] + FAR_VTX_IDX;
-				cube.indices[FAR_IDX_IDX + 4U] = CW_INDICES[4U] + FAR_VTX_IDX;
-				cube.indices[FAR_IDX_IDX + 5U] = CW_INDICES[5U] + FAR_VTX_IDX;
-			}
-			constexpr size_t NEAR_VTX_IDX = STRIDE_VTX * 5U;
-			constexpr size_t NEAR_IDX_IDX = STRIDE_IDX * 5U;
-			constexpr Donya::Vector3 NEAR_NORMAL{ 0.0f, 0.0f, -1.0f };
-			// Near
-			{
-				cube.vertices[NEAR_VTX_IDX + 0U].position = Donya::Vector3{ +DIST, -DIST, -DIST }; // RBN
-				cube.vertices[NEAR_VTX_IDX + 1U].position = Donya::Vector3{ +DIST, +DIST, -DIST }; // RTN
-				cube.vertices[NEAR_VTX_IDX + 2U].position = Donya::Vector3{ -DIST, -DIST, -DIST }; // LBN
-				cube.vertices[NEAR_VTX_IDX + 3U].position = Donya::Vector3{ -DIST, +DIST, -DIST }; // LTN
-				cube.vertices[NEAR_VTX_IDX + 0U].normal = NEAR_NORMAL;
-				cube.vertices[NEAR_VTX_IDX + 1U].normal = NEAR_NORMAL;
-				cube.vertices[NEAR_VTX_IDX + 2U].normal = NEAR_NORMAL;
-				cube.vertices[NEAR_VTX_IDX + 3U].normal = NEAR_NORMAL;
-				
-				cube.indices[NEAR_IDX_IDX + 0U] = CCW_INDICES[0U] + NEAR_VTX_IDX;
-				cube.indices[NEAR_IDX_IDX + 1U] = CCW_INDICES[1U] + NEAR_VTX_IDX;
-				cube.indices[NEAR_IDX_IDX + 2U] = CCW_INDICES[2U] + NEAR_VTX_IDX;
-
-				cube.indices[NEAR_IDX_IDX + 3U] = CCW_INDICES[3U] + NEAR_VTX_IDX;
-				cube.indices[NEAR_IDX_IDX + 4U] = CCW_INDICES[4U] + NEAR_VTX_IDX;
-				cube.indices[NEAR_IDX_IDX + 5U] = CCW_INDICES[5U] + NEAR_VTX_IDX;
-			}
-
-		#endif // Use for loop version
-
-			return cube;
-		}
-
 		bool Cube::Create()
 		{
 			if ( wasCreated ) { return true; }
 			// else
 
-			const auto cubeSource = CreateCube();
+			constexpr float radius = 0.5f;
+			const auto cubeSource  = Geometry::CreateCube( radius );
 
 			// The creation method requires std::vector.
 
@@ -612,125 +722,6 @@ namespace Donya
 
 	#pragma region Sphere
 
-		struct SphereConfigration
-		{
-			std::vector<Vertex::Pos>	vertices;
-			std::vector<size_t>			indices;
-		};
-		SphereConfigration CreateSphere( size_t sliceCountH, size_t sliceCountV )
-		{
-			// see http://rudora7.blog81.fc2.com/blog-entry-388.html
-
-			constexpr float RADIUS = 1.0f / 2.0f;
-			constexpr Donya::Vector3 CENTER{ 0.0f, 0.0f, 0.0f };
-
-			SphereConfigration sphere{};
-
-			// Make Vertices
-			{
-				auto MakeVertex = [&CENTER]( const Donya::Vector3 &pos )
-				{
-					Vertex::Pos v{};
-					v.position	= pos;
-					v.normal	= Donya::Vector3{ pos - CENTER }.Unit();
-					return v;
-				};
-				auto PushVertex = [&sphere]( const Vertex::Pos &vertex )->void
-				{
-					sphere.vertices.emplace_back( vertex );
-				};
-			
-				const Vertex::Pos TOP_VERTEX = MakeVertex( CENTER + Donya::Vector3{ 0.0f, RADIUS, 0.0f } );
-				PushVertex( TOP_VERTEX );
-
-				const float xyPlaneStep = ToRadian( 180.0f ) / scast<float>( sliceCountV );		// Line-up to vertically.
-				const float xzPlaneStep = ToRadian( 360.0f ) / scast<float>( sliceCountH );		// Line-up to horizontally.
-
-				constexpr float BASE_THETA = ToRadian( 90.0f ); // Use cosf(), sinf() with start from top(90-degrees).
-
-				float nowRadius{};
-				Donya::Vector3 pos{};
-				for ( size_t vertical = 1; vertical < sliceCountV; ++vertical )
-				{
-					nowRadius	=  cosf( BASE_THETA + ( xyPlaneStep * vertical ) ) * RADIUS;
-					pos.y		=  sinf( BASE_THETA + ( xyPlaneStep * vertical ) ) * RADIUS;
-					pos.y		+= CENTER.y;
-
-					for ( size_t horizontal = 0; horizontal <= sliceCountH; ++horizontal )
-					{
-						pos.x = CENTER.x + cosf( xzPlaneStep * horizontal ) * nowRadius;
-						pos.z = CENTER.z + sinf( xzPlaneStep * horizontal ) * nowRadius;
-
-						PushVertex( MakeVertex( pos ) );
-					}
-				}
-
-				const Vertex::Pos BOTTOM_VERTEX = MakeVertex( CENTER - Donya::Vector3{ 0.0f, RADIUS, 0.0f } );
-				PushVertex( BOTTOM_VERTEX );
-			}
-
-			// Make Triangle Indices
-			{
-				auto PushIndex = [&sphere]( size_t index )->void
-				{
-					sphere.indices.emplace_back( index );
-				};
-
-				// Make triangles with top.
-				{
-					const size_t TOP_INDEX = 0;
-
-					for ( size_t i = 1; i <= sliceCountH; ++i )
-					{
-						PushIndex( TOP_INDEX );
-						PushIndex( i + 1 );
-						PushIndex( i );
-					}
-				}
-
-				const size_t vertexCountPerRing = sliceCountH + 1;
-
-				// Make triangles of inner.
-				{
-					const size_t BASE_INDEX = 1; // Start next of top vertex.
-
-					size_t step{};		// The index of current ring.
-					size_t nextStep{};	// The index of next ring.
-					for ( size_t ring = 0; ring < sliceCountV - 2/* It's OK to "-1" also */; ++ring )
-					{
-						step		= ( ring ) * vertexCountPerRing;
-						nextStep	= ( ring + 1 ) * vertexCountPerRing;
-
-						for ( size_t i = 0; i < sliceCountH; ++i )
-						{
-							PushIndex( BASE_INDEX + step		+ i		);
-							PushIndex( BASE_INDEX + step		+ i + 1	);
-							PushIndex( BASE_INDEX + nextStep	+ i		);
-							
-							PushIndex( BASE_INDEX + nextStep	+ i		);
-							PushIndex( BASE_INDEX + step		+ i + 1	);
-							PushIndex( BASE_INDEX + nextStep	+ i + 1	);
-						}
-					}
-				}
-
-				// Make triangles with bottom.
-				{
-					const size_t BOTTOM_INDEX = sphere.vertices.size() - 1;
-					const size_t BASE_INDEX   = BOTTOM_INDEX - vertexCountPerRing;
-
-					for ( size_t i = 0; i < sliceCountH; ++i )
-					{
-						PushIndex( BOTTOM_INDEX );
-						PushIndex( BASE_INDEX + i );
-						PushIndex( BASE_INDEX + i + 1 );
-					}
-				}
-			}
-
-			return sphere;
-		}
-
 		Sphere::Sphere( size_t sliceH, size_t sliceV )
 			: sliceCountH( sliceH ), sliceCountV( sliceV ), indexCount(), pIndexBuffer()
 		{}
@@ -739,8 +730,9 @@ namespace Donya
 			if ( wasCreated ) { return true; }
 			// else
 
-			const auto		sphereSource	= CreateSphere( sliceCountH, sliceCountV );
-			ID3D11Device	*pDevice = Donya::GetDevice();
+			constexpr float	radius			= 1.0f / 2.0f;
+			const auto		sphereSource	= Geometry::CreateSphere( sliceCountH, sliceCountV, radius );
+			ID3D11Device	*pDevice		= Donya::GetDevice();
 			HRESULT			hr = S_OK;
 
 			hr = CreateBufferPos  ( sphereSource.vertices );

@@ -141,9 +141,10 @@ namespace Donya
 			Linear_Wrap			= -2,	// Filter:Linear. Address:Wrap. Comparison:Never.
 			Linear_Border_Black	= -3,	// Filter:Linear. Address:Border. BorderColor:(0, 0, 0, 1). Comparison:Never.
 			Aniso_Wrap			= -4,	// Filter:Anisotropic. Address:Wrap. Comparison:Never.
-			Point_Border_Black	= -5,	// Filter:Point. Address:Border. BorderColor:(0, 0, 0, 1). Comparison:Never.
-			Point_Border_Clear	= -6,	// Filter:Point. Address:Border. BorderColor:(0, 0, 0, 0). Comparison:Never.
-			Point_Border_White	= -7,	// Filter:Point. Address:Border. BorderColor:(1, 1, 1, 1). Comparison:Never.
+			Aniso_Clamp			= -5,	// Filter:Anisotropic. Address:Clamp. Comparison:Never.
+			Point_Border_Black	= -6,	// Filter:Point. Address:Border. BorderColor:(0, 0, 0, 1). Comparison:Never.
+			Point_Border_Clear	= -7,	// Filter:Point. Address:Border. BorderColor:(0, 0, 0, 0). Comparison:Never.
+			Point_Border_White	= -8,	// Filter:Point. Address:Border. BorderColor:(1, 1, 1, 1). Comparison:Never.
 		};
 
 		/// <summary>

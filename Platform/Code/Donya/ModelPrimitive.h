@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <d3d11.h>
 #include <vector>
 #include <wrl.h>
@@ -94,6 +95,21 @@ namespace Donya
 					cbuffer.Deactivate();
 				}
 			};
+		}
+		namespace Geometry
+		{
+			struct Cube
+			{
+				std::array<Vertex::Pos, 4U * 6U> vertices;	// "4 * 6" represents six squares.
+				std::array<size_t, 3U * 2U * 6U> indices;	// "3 * 2 * 6" represents the six groups of the square that constructed by two triangles.
+			};
+			struct Sphere
+			{
+				std::vector<Donya::Model::Vertex::Pos> vertices;
+				std::vector<size_t> indices;
+			};
+			Cube	CreateCube( float halfSize = 0.5f );
+			Sphere	CreateSphere( size_t sliceCountH, size_t sliceCountV, float radius = 0.5f );
 		}
 
 		/// <summary>
