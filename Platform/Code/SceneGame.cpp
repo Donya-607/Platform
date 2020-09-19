@@ -12,6 +12,7 @@
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
+#include "Donya/Sprite.h"
 #include "Donya/Template.h"			// Use Clamp
 #include "Donya/Useful.h"
 #include "Donya/Vector.h"
@@ -289,7 +290,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 #endif // DEBUG_MODE
 
 #if USE_IMGUI
-	UseImGui();
+	UseImGui( elapsedTime );
 
 	// Apply for be able to see an adjustment immediately
 	{
@@ -572,19 +573,17 @@ void SceneGame::Draw( float elapsedTime )
 		tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
 		UpdateSceneConstant( tmpDirLight, lightCamera.GetPosition(), LVP );
 	}
+	pShadowMap->SetRenderTarget();
+	pShadowMap->SetViewport();
 	// Make the shadow map
 	{
 		pRenderer->ActivateConstantScene();
 
-		pShadowMap->SetRenderTarget();
-		pShadowMap->SetViewport();
-
 		DrawObjects( DrawTarget::All, /* castShadow = */ true );
-
-		Donya::Surface::ResetRenderTarget();
 
 		pRenderer->DeactivateConstantScene();
 	}
+	Donya::Surface::ResetRenderTarget();
 
 	// Update scene and shadow constants
 	{
@@ -601,11 +600,10 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
 	}
 
+	pScreenSurface->SetRenderTarget();
+	pScreenSurface->SetViewport();
 	// Draw normal scene with shadow map
 	{
-		pScreenSurface->SetRenderTarget();
-		pScreenSurface->SetViewport();
-
 		pRenderer->ActivateConstantScene();
 		pRenderer->ActivateConstantPointLight();
 		pRenderer->ActivateConstantShadow();
@@ -624,9 +622,60 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->DeactivateConstantShadow();
 		pRenderer->DeactivateConstantPointLight();
 		pRenderer->DeactivateConstantScene();
-
-		Donya::Surface::ResetRenderTarget();
 	}
+#if DEBUG_MODE
+	// Sky test
+	{
+		static float timeSpeed = 1.5f;
+		static float dayTime = 0.0f;
+		dayTime += timeSpeed * elapsedTime;
+		if ( 24.0f < dayTime ) { dayTime -= 24.0f; }
+
+		static Donya::Vector3 bias = { 0.1f, 0.1f, 0.1f };
+		static Donya::Vector3 ampl = { 3.0f, 2.0f, 1.5f };
+		static float blueIntensity = 1.0f;
+
+		const float timeDegree = dayTime / 24.0f * 360.0f;
+		const float cos = cosf( ToRadian( timeDegree ) );
+
+		Donya::Vector3 color{};
+		for ( int i = 0; i < 3; ++i )
+		{
+			color[i] = Donya::Clamp( ampl[i] * -cos, bias[i], 1.0f );
+		}
+		color.z *= blueIntensity;
+
+		const float oldDepth = Donya::Sprite::GetDrawDepth();
+		Donya::Sprite::SetDrawDepth( 1.0f );
+
+		Donya::Sprite::DrawRect
+		(
+			Common::HalfScreenWidthF(), Common::HalfScreenHeightF(),
+			Common::ScreenWidthF(), Common::ScreenHeightF(),
+			color.x, color.y, color.z, 1.0f
+		);
+		Donya::Sprite::Flush();
+
+		Donya::Sprite::SetDrawDepth( oldDepth );
+
+	#if USE_IMGUI
+		if ( ImGui::BeginIfAllowed( u8"空色テスト" ) )
+		{
+			ImGui::SliderFloat3( u8"バイアス", &bias.x, 0.0f, 1.0f );
+			ImGui::DragFloat3( u8"増幅値", &ampl.x, 0.01f );
+			ImGui::DragFloat( u8"青色の強度", &blueIntensity, 0.01f );
+			ImGui::SliderFloat( u8"日時", &dayTime, 0.0f, 24.0f );
+			ImGui::DragFloat( u8"経過速度", &timeSpeed, 0.01f );
+			ImGui::Text( u8"角度:%.2f", timeDegree );
+			ImGui::Text( u8"cosf:%.3f", cos );
+			ImGui::ColorEdit3( u8"空色", &color.x );
+
+			ImGui::End();
+		}
+	#endif // USE_IMGUI
+	}
+#endif // DEBUG_MODE
+	Donya::Surface::ResetRenderTarget();
 
 	pRenderer->DeactivateSamplerModel();
 	Donya::Rasterizer::Deactivate();
@@ -661,7 +710,7 @@ void SceneGame::Draw( float elapsedTime )
 	// Draw the scene to screen
 	{
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
-		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA );
+		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 
 		pQuadShader->VS.Activate();
 		pQuadShader->PS.Activate();
@@ -1975,7 +2024,7 @@ namespace
 	static bool enableFloatWindow = true;
 	static GuiWindow testTileWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 }
-void SceneGame::UseImGui()
+void SceneGame::UseImGui( float elapsedTime )
 {
 	UseScreenSpaceImGui();
 

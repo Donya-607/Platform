@@ -147,7 +147,7 @@ private:
 	Result	ReturnResult();
 private:
 #if USE_IMGUI
-	void	UseImGui();
+	void	UseImGui( float elapsedTime );
 	void	UseScreenSpaceImGui();
 #endif // USE_IMGUI
 };
