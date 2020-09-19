@@ -115,6 +115,18 @@ namespace Donya
 		#pragma region Texture
 
 		/// <summary>
+		/// If file path is invalid, returns false.
+		/// These arguments must be not null.
+		/// </summary>
+		bool CreateTextureFromFile
+		(
+			ID3D11Device				*pd3dDevice,
+			const std::wstring			&filename,
+			ID3D11ShaderResourceView	**pd3dShaderResourceView,
+			bool isEnableCache = true
+		);
+
+		/// <summary>
 		/// If file path is invalid, returns false.<para></para>
 		/// I doing; CreateWICTextureFromFile(), QueryInterface(),<para></para>
 		/// ID3D11Texture2D::GetDesc().<para></para>

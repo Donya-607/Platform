@@ -17,6 +17,7 @@ bool SkyMap::Init()
 	// else
 
 	bool succeeded = true;
+	if ( !CreateCubeMap() ) { succeeded = false; }
 	if ( !CreateBuffers() ) { succeeded = false; }
 	if ( !CreateShaders() ) { succeeded = false; }
 
@@ -79,6 +80,10 @@ void SkyMap::Draw() const
 	Donya::DepthStencil::Deactivate( pContext );
 }
 
+bool SkyMap::CreateCubeMap()
+{
+	// TODO: Implement this
+}
 bool SkyMap::CreateBuffers()
 {
 	if ( !cbuffer.Create() ) { return false; }

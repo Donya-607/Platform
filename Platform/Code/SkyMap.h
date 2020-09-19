@@ -28,19 +28,21 @@ public:
 		Donya::Vector4x4	matWVP;
 	};
 private:
-	Microsoft::WRL::ComPtr<ID3D11Buffer>	pBufferPos;
-	Microsoft::WRL::ComPtr<ID3D11Buffer>	pBufferIdx;
-	Donya::CBuffer<Constant>				cbuffer;
-	Donya::VertexShader						VS;
-	Donya::PixelShader						PS;
-	size_t									indexCount  = 0;
-	bool									initialized = false;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	pSRV;
+	Microsoft::WRL::ComPtr<ID3D11Buffer>				pBufferPos;
+	Microsoft::WRL::ComPtr<ID3D11Buffer>				pBufferIdx;
+	Donya::CBuffer<Constant>							cbuffer;
+	Donya::VertexShader									VS;
+	Donya::PixelShader									PS;
+	size_t												indexCount  = 0;
+	bool												initialized = false;
 public:
 	bool Init();
 	void UpdateConstant( const Constant &data );
 	void UpdateConstant( const Donya::Vector4x4 &matWVP, const Donya::Vector4 &drawColor );
 	void Draw() const;
 private:
+	bool CreateCubeMap();
 	bool CreateBuffers();
 	bool CreateShaders();
 };

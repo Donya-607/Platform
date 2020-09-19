@@ -511,19 +511,76 @@ namespace Donya
 		struct SpriteCacheContents
 		{
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	d3dShaderResourceView;
-			D3D11_TEXTURE2D_DESC								d3dTexture2DDesc;
+			std::shared_ptr<D3D11_TEXTURE2D_DESC>				d3dTexture2DDesc;
 		public:
+			SpriteCacheContents( ID3D11ShaderResourceView *pShaderResourceView ) :
+				d3dShaderResourceView( pShaderResourceView ), d3dTexture2DDesc( nullptr )
+			{}
 			SpriteCacheContents
 			(
 				ID3D11ShaderResourceView	*pShaderResourceView,
 				D3D11_TEXTURE2D_DESC		*pTexture2DDesc
 			) :
 				d3dShaderResourceView( pShaderResourceView ),
-				d3dTexture2DDesc( *pTexture2DDesc )
+				d3dTexture2DDesc( std::make_shared<D3D11_TEXTURE2D_DESC>( *pTexture2DDesc ) )
 			{}
 		};
 
 		static std::unordered_map<std::wstring, SpriteCacheContents> spriteCache{};
+
+		// HACK: CreateTextureFromFile is just a copy of CreateTexture2DFromFile
+		bool CreateTextureFromFile( ID3D11Device *d3dDevice, const std::wstring &filename, ID3D11ShaderResourceView **d3dShaderResourceView, bool isEnableCache )
+		{
+			HRESULT hr = S_OK;
+
+			if ( !Donya::IsExistFile( filename ) ) { return false; }
+			// else
+
+			auto it =  spriteCache.find( filename );
+			if ( it != spriteCache.end() )
+			{
+				*d3dShaderResourceView = it->second.d3dShaderResourceView.Get();
+				( *d3dShaderResourceView )->AddRef();
+
+				return true;
+			}
+			// else
+
+			Microsoft::WRL::ComPtr<ID3D11Resource> d3dResource;
+			if ( filename.find( L".dds" ) != std::wstring::npos )
+			{	
+				hr = CreateDDSTextureFromFile
+				(
+					d3dDevice, filename.c_str(),
+					d3dResource.GetAddressOf(),
+					d3dShaderResourceView
+				);
+			}
+			else
+			{
+				hr = CreateWICTextureFromFile
+				(
+					d3dDevice, filename.c_str(),
+					d3dResource.GetAddressOf(),
+					d3dShaderResourceView
+				);
+			}
+			_ASSERT_EXPR( SUCCEEDED( hr ), _TEXT( "Failed : CreateWICTextureFromFile()" ) );
+
+			if ( isEnableCache )
+			{
+				spriteCache.insert
+				(
+					std::make_pair
+					(
+						filename,
+						SpriteCacheContents{ *d3dShaderResourceView }
+					)
+				);
+			}
+
+			return true;
+		}
 
 		bool CreateTexture2DFromFile( ID3D11Device *d3dDevice, const std::wstring &filename, ID3D11ShaderResourceView **d3dShaderResourceView, D3D11_TEXTURE2D_DESC *d3dTexture2DDesc, bool isEnableCache )
 		{
@@ -532,13 +589,16 @@ namespace Donya
 			if ( !Donya::IsExistFile( filename ) ) { return false; }
 			// else
 
-			auto it = spriteCache.find( filename );
+			auto it =  spriteCache.find( filename );
 			if ( it != spriteCache.end() )
 			{
 				*d3dShaderResourceView = it->second.d3dShaderResourceView.Get();
 				( *d3dShaderResourceView )->AddRef();
 
-				*d3dTexture2DDesc = it->second.d3dTexture2DDesc;
+				if ( it->second.d3dTexture2DDesc )
+				{
+					*d3dTexture2DDesc = *it->second.d3dTexture2DDesc;
+				}
 
 				return true;
 			}
@@ -556,7 +616,8 @@ namespace Donya
 			}
 			else
 			{
-				hr = CreateWICTextureFromFile	// ID3D11Resource と ID3D11ShaderResourceView の２つが作成される
+				// It will creates ID3D11Resource and ID3D11ShaderResourceView
+				hr = CreateWICTextureFromFile
 				(
 					d3dDevice, filename.c_str(),
 					d3dResource.GetAddressOf(),
@@ -569,7 +630,7 @@ namespace Donya
 			hr = d3dResource.Get()->QueryInterface<ID3D11Texture2D>( d3dTexture2D.GetAddressOf() );
 			_ASSERT_EXPR( SUCCEEDED( hr ), _TEXT( "Failed : QueryInterface()" ) );
 
-			d3dTexture2D->GetDesc( d3dTexture2DDesc );	// テクスチャ情報の取得
+			d3dTexture2D->GetDesc( d3dTexture2DDesc );
 
 			/*
 			if ( d3dTexture2DDesc->BindFlags & D3D11_BIND_SHADER_RESOURCE )
@@ -637,7 +698,8 @@ namespace Donya
 			auto it =  spriteCache.find( dummyFileName );
 			if ( it != spriteCache.end() )
 			{
-				*pOutTexDesc	= it->second.d3dTexture2DDesc;
+				if ( it->second.d3dTexture2DDesc )
+				{ *pOutTexDesc	= *it->second.d3dTexture2DDesc; }
 				*pOutSRV		= it->second.d3dShaderResourceView.Get();
 				( *pOutSRV )->AddRef();
 
