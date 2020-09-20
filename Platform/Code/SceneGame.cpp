@@ -618,7 +618,7 @@ void SceneGame::Draw( float elapsedTime )
 		if ( 24.0f < dayTime ) { dayTime -= 24.0f; }
 
 		static Donya::Vector3 upperLimit = { 0.9f, 0.85f, 0.72f };
-		static Donya::Vector3 lowerLimit = { 0.1f, 0.1f, 0.1f };
+		static Donya::Vector3 lowerLimit = { 0.3f, 0.3f, 0.3f };
 		static Donya::Vector3 ampl = { 3.0f, 2.0f, 1.5f };
 		static float blueIntensity = 1.0f;
 
@@ -632,8 +632,31 @@ void SceneGame::Draw( float elapsedTime )
 		}
 		color.z *= blueIntensity;
 
-		const Donya::Vector4x4 translation = Donya::Vector4x4::MakeTranslation( iCamera.GetPosition() );
-		pSkyMap->UpdateConstant( translation * VP, Donya::Vector4{ color, 1.0f } );
+		static Donya::Vector3 scale{ 1.0f, 1.0f, 1.0f };
+		const  Donya::Vector3 pos = iCamera.GetPosition();
+
+		static float pitch = 0.0f; // degree
+
+		/*
+		const Donya::Vector4x4 world
+		{
+			scale.x,	0.0f,		0.0f,		0.0f,
+			0.0f,		scale.y,	0.0f,		0.0f,
+			0.0f,		0.0f,		scale.z,	0.0f,
+			pos.x,		pos.y,		pos.z,		1.0f
+		};
+		*/
+		const Donya::Vector4x4 world = Donya::Vector4x4::MakeTransformation
+		(
+			scale,
+			Donya::Quaternion::Make( Donya::Vector3::Right(), ToRadian( pitch ) ),
+			pos
+		);
+		
+		SkyMap::Constant constant{};
+		constant.drawColor = Donya::Vector4{ color, 1.0f };
+		constant.matWVP = world * VP;
+		pSkyMap->UpdateConstant( constant );
 		pSkyMap->Draw();
 
 		/*
@@ -649,18 +672,24 @@ void SceneGame::Draw( float elapsedTime )
 		*/
 
 	#if USE_IMGUI
-		if ( ImGui::BeginIfAllowed( u8"空色テスト" ) )
+		if ( ImGui::BeginIfAllowed() )
 		{
-			ImGui::SliderFloat3( u8"上限", &upperLimit.x, 0.0f, 1.0f );
-			ImGui::SliderFloat3( u8"下限", &lowerLimit.x, 0.0f, 1.0f );
-			ImGui::DragFloat3( u8"増幅値", &ampl.x, 0.01f );
-			ImGui::DragFloat( u8"青色の強度", &blueIntensity, 0.01f );
-			ImGui::SliderFloat( u8"日時", &dayTime, 0.0f, 24.0f );
-			ImGui::DragFloat( u8"経過速度", &timeSpeed, 0.01f );
-			ImGui::Text( u8"角度:%.2f", timeDegree );
-			ImGui::Text( u8"cosf:%.3f", cos );
-			ImGui::ColorEdit3( u8"空色", &color.x );
+			if ( ImGui::TreeNode( u8"空色テスト" ) )
+			{
+				ImGui::ColorEdit3( u8"空色", &color.x );
+				ImGui::SliderFloat3( u8"スケール", &scale.x, 0.0f, 2.0f );
+				ImGui::SliderFloat( u8"Pitch（Degree）", &pitch, -180.0f, 180.0f );
+				ImGui::SliderFloat3( u8"上限", &upperLimit.x, 0.0f, 1.0f );
+				ImGui::SliderFloat3( u8"下限", &lowerLimit.x, 0.0f, 1.0f );
+				ImGui::DragFloat3( u8"増幅値", &ampl.x, 0.01f );
+				ImGui::DragFloat( u8"青色の強度", &blueIntensity, 0.01f );
+				ImGui::SliderFloat( u8"日時", &dayTime, 0.0f, 24.0f );
+				ImGui::DragFloat( u8"経過速度", &timeSpeed, 0.01f );
+				ImGui::Text( u8"角度:%.2f", timeDegree );
+				ImGui::Text( u8"cosf:%.3f", cos );
 
+				ImGui::TreePop();
+			}
 			ImGui::End();
 		}
 	#endif // USE_IMGUI

@@ -434,16 +434,15 @@ namespace Donya
 					Donya::Vector3 pos{};
 					for ( size_t vertical = 1; vertical < sliceCountV; ++vertical )
 					{
-						nowRadius	=  cosf( BASE_THETA + ( xyPlaneStep * vertical ) ) * radius;
-						pos.y		=  sinf( BASE_THETA + ( xyPlaneStep * vertical ) ) * radius;
-						pos.y		+= CENTER.y;
-
+						nowRadius	= cosf( BASE_THETA + ( xyPlaneStep * vertical ) ) * radius;
+						pos.y		= sinf( BASE_THETA + ( xyPlaneStep * vertical ) ) * radius;
+						
 						for ( size_t horizontal = 0; horizontal <= sliceCountH; ++horizontal )
 						{
-							pos.x = CENTER.x + cosf( xzPlaneStep * horizontal ) * nowRadius;
-							pos.z = CENTER.z + sinf( xzPlaneStep * horizontal ) * nowRadius;
+							pos.x = cosf( xzPlaneStep * horizontal ) * nowRadius;
+							pos.z = sinf( xzPlaneStep * horizontal ) * nowRadius;
 
-							PushVertex( MakeVertex( pos ) );
+							PushVertex( MakeVertex( CENTER + pos ) );
 						}
 					}
 

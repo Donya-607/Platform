@@ -8,7 +8,7 @@
 
 namespace
 {
-	constexpr const wchar_t	*skyMapPath = L"./Data/Images/BG/SkyMap/envmap_miramar.dds";
+	constexpr const wchar_t	*skyMapPath = L"./Data/Images/BG/SkyMap/SkyMap.dds";
 	constexpr const char	*VSFilePath = "./Data/Shaders/SkyMapVS.cso";
 	constexpr const char	*PSFilePath = "./Data/Shaders/SkyMapPS.cso";
 }
@@ -110,6 +110,7 @@ bool SkyMap::CreateBuffers()
 	constexpr size_t sliceV = 6U;
 	constexpr float  radius = 1.0f;
 	const auto geometry = Donya::Model::Geometry::CreateSphere( sliceH, sliceV, radius );
+	// const auto geometry = Donya::Model::Geometry::CreateCube( radius );
 
 	// The create functions requires a resource as std::vector
 	const size_t posCount = geometry.vertices.size();
