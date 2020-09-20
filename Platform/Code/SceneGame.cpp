@@ -255,6 +255,10 @@ void SceneGame::Init()
 	result = CreateShaders();
 	assert( result );
 
+	pSkyMap = std::make_unique<SkyMap>();
+	result = pSkyMap->Init();
+	assert( result );
+
 	stageNumber = Definition::StageNumber::Game();
 
 	pPlayerIniter = std::make_unique<PlayerInitializer>();
@@ -602,29 +606,11 @@ void SceneGame::Draw( float elapsedTime )
 
 	pScreenSurface->SetRenderTarget();
 	pScreenSurface->SetViewport();
-	// Draw normal scene with shadow map
-	{
-		pRenderer->ActivateConstantScene();
-		pRenderer->ActivateConstantPointLight();
-		pRenderer->ActivateConstantShadow();
-		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
-		pRenderer->ActivateShadowMap( *pShadowMap );
-
-		constexpr DrawTarget exceptBullet = DrawTarget::All ^ DrawTarget::Bullet;
-		DrawObjects( exceptBullet, /* castShadow = */ false );
-
-		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_Write );
-		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
-		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
-
-		pRenderer->DeactivateShadowMap( *pShadowMap );
-		pRenderer->DeactivateSamplerShadow();
-		pRenderer->DeactivateConstantShadow();
-		pRenderer->DeactivateConstantPointLight();
-		pRenderer->DeactivateConstantScene();
-	}
 #if DEBUG_MODE
-	// Sky test
+	pRenderer->DeactivateSamplerModel();
+	Donya::Rasterizer::Deactivate();
+	Donya::DepthStencil::Deactivate();
+	if ( pSkyMap )
 	{
 		static float timeSpeed = 1.5f;
 		static float dayTime = 0.0f;
@@ -646,17 +632,21 @@ void SceneGame::Draw( float elapsedTime )
 		}
 		color.z *= blueIntensity;
 
+		const Donya::Vector4x4 translation = Donya::Vector4x4::MakeTranslation( iCamera.GetPosition() );
+		pSkyMap->UpdateConstant( translation * VP, Donya::Vector4{ color, 1.0f } );
+		pSkyMap->Draw();
+
+		/*
 		const float oldDepth = Donya::Sprite::GetDrawDepth();
 		Donya::Sprite::SetDrawDepth( 1.0f );
-
 		Donya::Sprite::DrawRect
 		(
 			Common::HalfScreenWidthF(), Common::HalfScreenHeightF(),
 			Common::ScreenWidthF(), Common::ScreenHeightF(),
 			color.x, color.y, color.z, 1.0f
 		);
-		
 		Donya::Sprite::SetDrawDepth( oldDepth );
+		*/
 
 	#if USE_IMGUI
 		if ( ImGui::BeginIfAllowed( u8"空色テスト" ) )
@@ -675,7 +665,31 @@ void SceneGame::Draw( float elapsedTime )
 		}
 	#endif // USE_IMGUI
 	}
+	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
+	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
+	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
 #endif // DEBUG_MODE
+	// Draw normal scene with shadow map
+	{
+		pRenderer->ActivateConstantScene();
+		pRenderer->ActivateConstantPointLight();
+		pRenderer->ActivateConstantShadow();
+		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
+		pRenderer->ActivateShadowMap( *pShadowMap );
+
+		constexpr DrawTarget exceptBullet = DrawTarget::All ^ DrawTarget::Bullet;
+		DrawObjects( exceptBullet, /* castShadow = */ false );
+
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_Write );
+		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
+
+		pRenderer->DeactivateShadowMap( *pShadowMap );
+		pRenderer->DeactivateSamplerShadow();
+		pRenderer->DeactivateConstantShadow();
+		pRenderer->DeactivateConstantPointLight();
+		pRenderer->DeactivateConstantScene();
+	}
 	Donya::Surface::ResetRenderTarget();
 
 	pRenderer->DeactivateSamplerModel();

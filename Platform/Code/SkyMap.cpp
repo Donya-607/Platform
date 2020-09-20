@@ -3,12 +3,14 @@
 #include "Donya/Direct3DUtil.h"
 #include "Donya/ModelPrimitive.h"	// Use CreateCube()
 #include "Donya/RenderingStates.h"
+#include "Donya/Resource.h"
 #include "Donya/Useful.h"			// Use OutputDebugStr()
 
 namespace
 {
-	constexpr const char *VSFilePath = "./Data/Shaders/SkyMapVS.cso";
-	constexpr const char *PSFilePath = "./Data/Shaders/SkyMapPS.cso";
+	constexpr const wchar_t	*skyMapPath = L"./Data/Images/BG/SkyMap/envmap_miramar.dds";
+	constexpr const char	*VSFilePath = "./Data/Shaders/SkyMapVS.cso";
+	constexpr const char	*PSFilePath = "./Data/Shaders/SkyMapPS.cso";
 }
 
 bool SkyMap::Init()
@@ -69,7 +71,12 @@ void SkyMap::Draw() const
 	PS.Activate( pContext );
 	cbuffer.Activate( 0U, /* setVS = */ true, /* setVS = */ true, pContext );
 
+	pContext->PSSetShaderResources( 0U, 1U, pSRV.GetAddressOf() );
+
 	pContext->DrawIndexed( indexCount, 0U, 0U );
+
+	ID3D11ShaderResourceView *pNullSRV = nullptr;
+	pContext->PSSetShaderResources( 0U, 1U, &pNullSRV );
 
 	cbuffer.Deactivate( pContext );
 	PS.Deactivate( pContext );
@@ -82,7 +89,14 @@ void SkyMap::Draw() const
 
 bool SkyMap::CreateCubeMap()
 {
-	// TODO: Implement this
+	const bool result = Donya::Resource::CreateTextureFromFile
+	(
+		Donya::GetDevice(),
+		skyMapPath,
+		pSRV.GetAddressOf()
+	);
+
+	return result;
 }
 bool SkyMap::CreateBuffers()
 {
