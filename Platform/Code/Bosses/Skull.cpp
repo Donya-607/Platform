@@ -842,10 +842,14 @@ namespace Boss
 	{
 		if ( ImGui::TreeNode( u8"‹¤’Êƒpƒ‰ƒ[ƒ^" ) )
 		{
-			ImGui::DragInt   ( u8"‰Šú‚g‚o",	&hp					);
-			ImGui::DragFloat ( u8"d—Í",		&gravity,	0.01f	);
-			hp		= std::max( 1,		hp		);
-			gravity	= std::max( 0.001f, gravity	);
+			ImGui::DragInt   ( u8"‰Šú‚g‚o",		&hp									);
+			ImGui::DragFloat ( u8"d—Í",			&gravity,					0.01f	);
+			ImGui::DragFloat ( u8"–³“G-•b",		&invincibleSecond,			0.01f	);
+			ImGui::DragFloat ( u8"“_–ÅŠÔŠu-•b",	&invincibleFlushInterval,	0.01f	);
+			hp						= std::max( 1,		hp						);
+			gravity					= std::max( 0.001f, gravity					);
+			invincibleSecond		= std::max( 0.001f, invincibleSecond		);
+			invincibleFlushInterval	= std::max( 0.001f, invincibleFlushInterval	);
 
 			ImGui::TreePop();
 		}
