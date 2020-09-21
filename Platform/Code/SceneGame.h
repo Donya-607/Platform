@@ -20,7 +20,7 @@
 #include "Renderer.h"
 #include "Room.h"
 #include "Scene.h"
-#include "SkyMap.h"
+#include "Sky.h"
 
 class SceneGame : public Scene
 {
@@ -76,7 +76,7 @@ private:
 	std::unique_ptr<Donya::Surface>		pShadowMap;
 	std::unique_ptr<Shader>				pQuadShader;
 	std::unique_ptr<Map>				pMap;
-	std::unique_ptr<SkyMap>				pSkyMap;
+	std::unique_ptr<Sky>				pSky;
 	std::unique_ptr<House>				pHouse;
 	std::unique_ptr<ClearEvent>			pClearEvent;
 	std::unique_ptr<Boss::Container>	pBossContainer;

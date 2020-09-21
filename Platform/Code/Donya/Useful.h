@@ -10,8 +10,8 @@ constexpr float EPSILON	= 1.192092896e-07F;	// FLT_EPSILON. smallest such that 1
 template<typename T, size_t size>
 constexpr size_t	ArraySize( const T( & )[size] ) { return size; }
 
-constexpr float		ToRadian( float degree	) { return degree *  0.01745f/* PI / 180 */;	}
-constexpr float		ToDegree( float radian	) { return radian * 57.29577f/* 180 / PI */;	}
+constexpr float		ToRadian( float degree	) { return degree *  0.0174532925f	/* PI / 180 */;	}
+constexpr float		ToDegree( float radian	) { return radian * 57.2957795f		/* 180 / PI */;	}
 
 /// <summary>
 /// Used for making a consistency.

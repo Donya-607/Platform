@@ -255,8 +255,8 @@ void SceneGame::Init()
 	result = CreateShaders();
 	assert( result );
 
-	pSkyMap = std::make_unique<SkyMap>();
-	result = pSkyMap->Init();
+	pSky = std::make_unique<Sky>();
+	result = pSky->Init();
 	assert( result );
 
 	stageNumber = Definition::StageNumber::Game();
@@ -610,54 +610,15 @@ void SceneGame::Draw( float elapsedTime )
 	pRenderer->DeactivateSamplerModel();
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
-	if ( pSkyMap )
+	if ( pSky )
 	{
 		static float timeSpeed = 1.5f;
 		static float dayTime = 0.0f;
 		dayTime += timeSpeed * elapsedTime;
 		if ( 24.0f < dayTime ) { dayTime -= 24.0f; }
 
-		static Donya::Vector3 upperLimit = { 0.9f, 0.85f, 0.72f };
-		static Donya::Vector3 lowerLimit = { 0.3f, 0.3f, 0.3f };
-		static Donya::Vector3 ampl = { 3.0f, 2.0f, 1.5f };
-		static float blueIntensity = 1.0f;
-
-		const float timeDegree = dayTime / 24.0f * 360.0f;
-		const float cos = cosf( ToRadian( timeDegree ) );
-
-		Donya::Vector3 color{};
-		for ( int i = 0; i < 3; ++i )
-		{
-			color[i] = Donya::Clamp( ampl[i] * -cos, lowerLimit[i], upperLimit[i] );
-		}
-		color.z *= blueIntensity;
-
-		static Donya::Vector3 scale{ 1.0f, 1.0f, 1.0f };
-		const  Donya::Vector3 pos = iCamera.GetPosition();
-
-		static float pitch = 0.0f; // degree
-
-		/*
-		const Donya::Vector4x4 world
-		{
-			scale.x,	0.0f,		0.0f,		0.0f,
-			0.0f,		scale.y,	0.0f,		0.0f,
-			0.0f,		0.0f,		scale.z,	0.0f,
-			pos.x,		pos.y,		pos.z,		1.0f
-		};
-		*/
-		const Donya::Vector4x4 world = Donya::Vector4x4::MakeTransformation
-		(
-			scale,
-			Donya::Quaternion::Make( Donya::Vector3::Right(), ToRadian( pitch ) ),
-			pos
-		);
-		
-		SkyMap::Constant constant{};
-		constant.drawColor = Donya::Vector4{ color, 1.0f };
-		constant.matWVP = world * VP;
-		pSkyMap->UpdateConstant( constant );
-		pSkyMap->Draw();
+		pSky->ChangeHour( dayTime );
+		pSky->Draw( iCamera.GetPosition(), VP );
 
 		/*
 		const float oldDepth = Donya::Sprite::GetDrawDepth();
@@ -676,18 +637,9 @@ void SceneGame::Draw( float elapsedTime )
 		{
 			if ( ImGui::TreeNode( u8"空色テスト" ) )
 			{
-				ImGui::ColorEdit3( u8"空色", &color.x );
-				ImGui::SliderFloat3( u8"スケール", &scale.x, 0.0f, 2.0f );
-				ImGui::SliderFloat( u8"Pitch（Degree）", &pitch, -180.0f, 180.0f );
-				ImGui::SliderFloat3( u8"上限", &upperLimit.x, 0.0f, 1.0f );
-				ImGui::SliderFloat3( u8"下限", &lowerLimit.x, 0.0f, 1.0f );
-				ImGui::DragFloat3( u8"増幅値", &ampl.x, 0.01f );
-				ImGui::DragFloat( u8"青色の強度", &blueIntensity, 0.01f );
 				ImGui::SliderFloat( u8"日時", &dayTime, 0.0f, 24.0f );
 				ImGui::DragFloat( u8"経過速度", &timeSpeed, 0.01f );
-				ImGui::Text( u8"角度:%.2f", timeDegree );
-				ImGui::Text( u8"cosf:%.3f", cos );
-
+				
 				ImGui::TreePop();
 			}
 			ImGui::End();
@@ -2400,6 +2352,9 @@ void SceneGame::UseImGui( float elapsedTime )
 			ImGui::Text( "" );
 			ImGui::TreePop();
 		}
+		ImGui::Text( "" );
+
+		if ( pSky ) { pSky->ShowImGuiNode( u8"空の現在" ); }
 		ImGui::Text( "" );
 
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }

@@ -208,6 +208,7 @@
     <ClCompile Include="Code\SceneResult.cpp" />
     <ClCompile Include="Code\SceneTitle.cpp" />
     <ClCompile Include="Code\Enemies\Togehero.cpp" />
+    <ClCompile Include="Code\Sky.cpp" />
     <ClCompile Include="Code\SkyMap.cpp" />
     <ClCompile Include="Code\StageFormat.cpp" />
     <ClCompile Include="Code\UI.cpp" />
@@ -307,6 +308,7 @@
     <ClInclude Include="Code\ScenePause.h" />
     <ClInclude Include="Code\SceneResult.h" />
     <ClInclude Include="Code\SceneTitle.h" />
+    <ClInclude Include="Code\Sky.h" />
     <ClInclude Include="Code\SkyMap.h" />
     <ClInclude Include="Code\StageFormat.h" />
     <ClInclude Include="Code\Enemies\Togehero.h" />

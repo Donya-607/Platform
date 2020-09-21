@@ -7,6 +7,9 @@
 #include "Donya/Shader.h"
 #include "Donya/Vector.h"
 
+/// <summary>
+/// Draw a sky by cube map
+/// </summary>
 class SkyMap
 {
 public:
