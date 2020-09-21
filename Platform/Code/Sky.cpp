@@ -41,11 +41,32 @@ bool Sky::Init()
 {
 	parameter.LoadParameter();
 
-	hour		= 0.0f;
-	drawColor	= { 1.0f, 1.0f, 1.0f };
+	lerpTimer		= -1.0f;
+	lerpSecond		= 0.0f;
+	startHour		= defaultHour;
+	destinationHour	= defaultHour;
+	drawColor		= CalcCurrentColor( defaultHour );
 	return sky.Init();
 }
+void Sky::Update( float elapsedTime )
+{
+	if ( lerpTimer <= 0.0f ) { return; }
+	// else
 
+	lerpTimer -= elapsedTime;
+	if ( lerpTimer <= 0.0f )
+	{
+		lerpTimer = -1.0f;
+		startHour = destinationHour;
+		drawColor = CalcCurrentColor( destinationHour );
+		return;
+	}
+	// else
+
+	const float percent		= 1.0f - ( lerpTimer / lerpSecond );
+	const float currentHour = Donya::Lerp( startHour, destinationHour, percent );
+	drawColor = CalcCurrentColor( currentHour );
+}
 void Sky::Draw( const Donya::Vector3 &cameraPos, const Donya::Vector4x4 &VP )
 {
 	const auto &data = GetParameter();
@@ -57,22 +78,45 @@ void Sky::Draw( const Donya::Vector3 &cameraPos, const Donya::Vector4x4 &VP )
 	sky.Draw();
 }
 
-void Sky::ChangeHour( float argHour )
+void Sky::AdvanceHourTo( float dest, float second )
 {
-	while ( 24.0f < argHour ) { argHour -= 24.0f; }
-	while ( argHour <  0.0f ) { argHour += 24.0f; }
+	second = std::max( 0.0f, second );
 
-	hour = argHour;
+	while ( 24.0f < dest ) { dest -= 24.0f; }
+	while ( dest <  0.0f ) { dest += 24.0f; }
 
+	if ( IsZero( second ) )
+	{
+		lerpTimer		= -1.0f;
+		lerpSecond		= 0.0f;
+		startHour		= dest;
+		destinationHour	= dest;
+		drawColor		= CalcCurrentColor( destinationHour );
+		return;
+	}
+	// else
+
+	lerpTimer		= second;
+	lerpSecond		= second;
+
+	startHour		= destinationHour;
+	destinationHour	= dest;
+}
+
+Donya::Vector3 Sky::CalcCurrentColor( float hour ) const
+{
 	constexpr float timeToRad = 1.0f / 24.0f * ToRadian( 360.0f );
 	const float timeRadian = hour * timeToRad;
 	const float cos = cosf( timeRadian );
 
 	const auto &data = GetParameter();
+
+	Donya::Vector3 color;
 	for ( int i = 0; i < 3; ++i )
 	{
-		drawColor[i] = Donya::Clamp( data.magnification[i] * -cos, data.lowerLimit[i], data.upperLimit[i] );
+		color[i] = Donya::Clamp( data.magnification[i] * -cos, data.lowerLimit[i], data.upperLimit[i] );
 	}
+	return color;
 }
 
 #if USE_IMGUI
@@ -81,8 +125,19 @@ void Sky::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::SliderFloat( u8"現在の時間",	&hour, 0.0f, 24.0f );
-	ImGui::ColorEdit3 ( u8"現在の色",	&drawColor.x );
+	ImGui::ColorEdit3	( u8"現在の色",		&drawColor.x );
+
+	ImGui::SliderFloat	( u8"始点時間",		&startHour,			0.0f, 24.0f );
+	ImGui::SliderFloat	( u8"終点時間",		&destinationHour,	0.0f, 24.0f );
+	ImGui::DragFloat	( u8"補間秒数",		&lerpSecond,		0.01f );
+	ImGui::DragFloat	( u8"補間残り秒数",	&lerpTimer,			0.01f );
+
+	static bool alwaysAdvance = true;
+	ImGui::Checkbox( u8"常に終点時間へ変更する", &alwaysAdvance );
+	if ( alwaysAdvance || ImGui::Button( u8"補間開始" ) )
+	{
+		AdvanceHourTo( destinationHour, 0.0f );
+	}
 
 	parameter.ShowImGuiNode( u8"パラメータ調整" );
 

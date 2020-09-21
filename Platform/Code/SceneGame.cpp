@@ -302,7 +302,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 #endif // USE_IMGUI
 
+
+	const auto &data = FetchParameter();
 	PointLightStorage::Get().Clear();
+
 
 	if ( Fader::Get().IsClosed() && nextScene == Scene::Type::Game )
 	{
@@ -310,15 +313,19 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		InitStage( stageNumber );
 	}
 
+	
 	controller.Update();
 	AssignCurrentInput();
+
 
 	const float deltaTimeForMove  = ( scroll.active ) ? 0.0f : elapsedTime;
 	const float deltaTimeForAnime = ( scroll.active ) ? 0.0f : elapsedTime;
 
+
 	if ( pMap ) { pMap->Update( deltaTimeForMove ); }
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+
 
 	const int oldRoomID = currentRoomID;
 	if ( scroll.active )
@@ -327,8 +334,15 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		// That limit prevents the camera moves to not allowed direction.
 		currentRoomID = CalcCurrentRoomID();
 	}
+	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
+
 	if ( oldRoomID != currentRoomID )
 	{
+		if ( pSky )
+		{
+			pSky->AdvanceHourTo( pCurrentRoom->GetHour(), data.scrollTakeSecond );
+		}
+
 		isThereClearEvent	= ( pClearEvent		&& pClearEvent->IsThereIn( currentRoomID ) );
 		isThereBoss			= ( pBossContainer	&& pBossContainer->IsThereIn( currentRoomID ) );
 	}
@@ -353,15 +367,12 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		// then call it.
 		StartFade( Scene::Type::Result );
 	}
-
-	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
-	if ( pSky && pCurrentRoom )
-	{
-		pSky->ChangeHour( pCurrentRoom->GetHour() );
-	}
 	
+
+	if ( pSky ) { pSky->Update( elapsedTime ); }
+
 	PlayerUpdate( deltaTimeForMove, mapRef );
-	if ( FetchParameter().waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
+	if ( data.waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
 	{
 		const int remaining = Player::Remaining::Get();
 		if ( remaining <= 0 )
@@ -381,13 +392,13 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		}
 	}
 
+
 	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
-
 	BossUpdate( deltaTimeForMove, playerPos );
-	
 	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
+
 
 	// PhysicUpdates
 	{
@@ -463,6 +474,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		if ( pBossContainer ) { pBossContainer->PhysicUpdate( deltaTimeForMove, mapRef ); }
 	}
 
+
 	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate( elapsedTime );
@@ -482,6 +494,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 			pPlayer->KillMe();
 		}
 	}
+
 
 	Collision_PlayerVSItem();
 	Collision_BulletVSBullet();
@@ -991,6 +1004,11 @@ void SceneGame::InitStage( int stageNo )
 	PlayerInit();
 
 	currentRoomID = CalcCurrentRoomID();
+	const Room  *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
+	if ( pSky && pCurrentRoom )
+	{
+		pSky->AdvanceHourTo( pCurrentRoom->GetHour(), 0.0f ); // Immediately
+	}
 
 	// The calculation of camera position depends on the player's position
 	CameraInit();

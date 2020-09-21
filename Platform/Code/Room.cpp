@@ -128,7 +128,7 @@ void Room::ShowImGuiNode( const std::string &nodeCaption )
 
 	ImGui::Text( u8"ID:%d", id );
 	ImGui::InputInt( u8"Ú‘±æ‚ÌID", &connectingRoomID );
-	ImGui::InputFloat( u8"İ’è(h)", &hour );
+	ImGui::SliderFloat( u8"İ’è(h)", &hour, 0.0f, 24.0f );
 	hour = Donya::Clamp( hour, 0.0f, 24.0f );
 	Definition::ShowImGuiNode( u8"‘JˆÚ‰Â”\•ûŒü‚Ìİ’è", &transition );
 	ImGui::Helper::ShowAABBNode( u8"”ÍˆÍİ’è", &area );

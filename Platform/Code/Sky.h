@@ -46,17 +46,25 @@ public:
 	#endif // USE_IMGUI
 	};
 private:
+	static constexpr float defaultHour = 12.0f;
+private:
 	SkyMap			sky;
-	float			hour = 0.0f;
+	float			lerpTimer		= -1.0f;	// Second. The amount of remaining second.
+	float			lerpSecond		= 0.0f;		// Second. Store the specified second
+	float			startHour		= defaultHour;
+	float			destinationHour	= defaultHour;
 	Donya::Vector3	drawColor{ 1.0f, 1.0f, 1.0f };
 public:
 	bool Init();
+	void Update( float elapsedTime );
 	void Draw( const Donya::Vector3 &wsCameraPos, const Donya::Vector4x4 &matVP );
 public:
 	/// <summary>
-	/// Accepts value is in 0.0f ~ 24.0f as hour.
+	/// Accepts hour is in 0.0f ~ 24.0f.
 	/// </summary>
-	void ChangeHour( float hour );
+	void AdvanceHourTo( float destinationHour, float takeSecond );
+private:
+	Donya::Vector3 CalcCurrentColor( float hour ) const;
 public:
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption );
