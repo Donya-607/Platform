@@ -355,6 +355,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 
 	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
+	if ( pSky && pCurrentRoom )
+	{
+		pSky->ChangeHour( pCurrentRoom->GetHour() );
+	}
 	
 	PlayerUpdate( deltaTimeForMove, mapRef );
 	if ( FetchParameter().waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
@@ -612,39 +616,7 @@ void SceneGame::Draw( float elapsedTime )
 	Donya::DepthStencil::Deactivate();
 	if ( pSky )
 	{
-		static float timeSpeed = 1.5f;
-		static float dayTime = 0.0f;
-		dayTime += timeSpeed * elapsedTime;
-		if ( 24.0f < dayTime ) { dayTime -= 24.0f; }
-
-		pSky->ChangeHour( dayTime );
 		pSky->Draw( iCamera.GetPosition(), VP );
-
-		/*
-		const float oldDepth = Donya::Sprite::GetDrawDepth();
-		Donya::Sprite::SetDrawDepth( 1.0f );
-		Donya::Sprite::DrawRect
-		(
-			Common::HalfScreenWidthF(), Common::HalfScreenHeightF(),
-			Common::ScreenWidthF(), Common::ScreenHeightF(),
-			color.x, color.y, color.z, 1.0f
-		);
-		Donya::Sprite::SetDrawDepth( oldDepth );
-		*/
-
-	#if USE_IMGUI
-		if ( ImGui::BeginIfAllowed() )
-		{
-			if ( ImGui::TreeNode( u8"空色テスト" ) )
-			{
-				ImGui::SliderFloat( u8"日時", &dayTime, 0.0f, 24.0f );
-				ImGui::DragFloat( u8"経過速度", &timeSpeed, 0.01f );
-				
-				ImGui::TreePop();
-			}
-			ImGui::End();
-		}
-	#endif // USE_IMGUI
 	}
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );

@@ -21,10 +21,11 @@ class Room
 public:
 	static constexpr int invalidID = -1;
 private:
-	int id					= 0;
-	int connectingRoomID	= invalidID;	// -1 is invalid
-	Definition::Direction	transition = Definition::Direction::Nil; // Direction that be able to transition
-	Donya::Collision::Box3F	area;			// Z component is infinite
+	int		id					= 0;
+	int		connectingRoomID	= invalidID;	// -1 is invalid
+	float	hour				= 12.0f;
+	Definition::Direction		transition = Definition::Direction::Nil; // Direction that be able to transition
+	Donya::Collision::Box3F		area;			// Z component is infinite
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -39,7 +40,11 @@ private:
 		);
 		if ( 1 <= version )
 		{
-			// archive();
+			archive( CEREAL_NVP( hour ) );
+		}
+		if ( 2 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
 		}
 	}
 public:
@@ -47,8 +52,9 @@ public:
 	void Uninit();
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
-	bool IsConnectTo( int verifyRoomID ) const;
-	int  GetID() const;
+	bool  IsConnectTo( int verifyRoomID ) const;
+	int   GetID() const;
+	float GetHour() const;
 	Definition::Direction GetTransitionableDirection() const;
 	const Donya::Collision::Box3F &GetArea() const;
 	/// <summary>
@@ -66,7 +72,7 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( Room, 0 )
+CEREAL_CLASS_VERSION( Room, 1 )
 
 
 /// <summary>

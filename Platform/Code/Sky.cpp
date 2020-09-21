@@ -59,6 +59,9 @@ void Sky::Draw( const Donya::Vector3 &cameraPos, const Donya::Vector4x4 &VP )
 
 void Sky::ChangeHour( float argHour )
 {
+	while ( 24.0f < argHour ) { argHour -= 24.0f; }
+	while ( argHour <  0.0f ) { argHour += 24.0f; }
+
 	hour = argHour;
 
 	constexpr float timeToRad = 1.0f / 24.0f * ToRadian( 360.0f );
