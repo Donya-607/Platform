@@ -537,6 +537,7 @@ void SceneTitle::Draw( float elapsedTime )
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
 	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
+	pRenderer->ActivateSamplerNormal( Donya::Sampler::Defined::Point_Wrap );
 
 
 	pShadowMap->SetRenderTarget();
@@ -590,6 +591,7 @@ void SceneTitle::Draw( float elapsedTime )
 		pRenderer->DeactivateConstantScene();
 	}
 	
+	pRenderer->DeactivateSamplerNormal();
 	pRenderer->DeactivateSamplerModel();
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();

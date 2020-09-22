@@ -27,7 +27,7 @@ float4 main( VS_OUT pin ) : SV_TARGET
 {
 			pin.tsLightVec	= normalize( pin.tsLightVec	);
 			pin.tsEyeVec	= normalize( pin.tsEyeVec	);
-			
+
 	float4	normalMapColor	= normalMap.Sample( normalMapSampler, pin.texCoord );
 			normalMapColor	= SRGBToLinear( normalMapColor );
 	float3	tsNormal		= normalize( SampledToNormal( normalMapColor.xyz ) );
@@ -63,6 +63,7 @@ float4 main( VS_OUT pin ) : SV_TARGET
 			resultColor		= lerp( cbShadowColor.rgb, resultColor, shadowFactor );
 	
 	float4	outputColor		= float4( resultColor, diffuseMapAlpha * cbDrawColor.a );
+			outputColor.rgb	+= cbEmissive.rgb * cbEmissive.a;
 
 	return	LinearToSRGB( outputColor );
 }

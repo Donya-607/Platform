@@ -22,6 +22,7 @@ namespace Config
 	enum TextureName
 	{
 		DiffuseMap = 0,
+		NormalMap,
 		ShadowMap,
 
 		TextureCount
@@ -29,6 +30,7 @@ namespace Config
 	enum SamplerSlot : unsigned int
 	{
 		SamplerModel = 0,
+		SamplerNormal,
 		SamplerShadow,
 	};
 
@@ -46,7 +48,8 @@ namespace Config
 	static constexpr RegisterDesc textures[TextureName::TextureCount]
 	{
 		/* DiffuseMap	*/	RegisterDesc::Make( 0, /* setVS = */ false,	/* setPS = */ true	),
-		/* ShadowMap	*/	RegisterDesc::Make( 1, /* setVS = */ false,	/* setPS = */ true	),
+		/* NormalMap	*/	RegisterDesc::Make( 1, /* setVS = */ false,	/* setPS = */ true	),
+		/* ShadowMap	*/	RegisterDesc::Make( 2, /* setVS = */ false,	/* setPS = */ true	),
 	};
 }
 
@@ -292,6 +295,10 @@ void RenderingHelper::ActivateSamplerModel( int identifier )
 {
 	Donya::Sampler::SetPS( identifier, Config::SamplerModel );
 }
+void RenderingHelper::ActivateSamplerNormal( int identifier )
+{
+	Donya::Sampler::SetPS( identifier, Config::SamplerNormal );
+}
 void RenderingHelper::ActivateSamplerShadow( int identifier )
 {
 	Donya::Sampler::SetPS( identifier, Config::SamplerShadow );
@@ -315,6 +322,10 @@ void RenderingHelper::DeactivateRasterizerSphere()
 void RenderingHelper::DeactivateSamplerModel()
 {
 	Donya::Sampler::ResetPS( Config::SamplerModel );
+}
+void RenderingHelper::DeactivateSamplerNormal()
+{
+	Donya::Sampler::ResetPS( Config::SamplerNormal );
 }
 void RenderingHelper::DeactivateSamplerShadow()
 {
@@ -340,7 +351,8 @@ void RenderingHelper::Render( const Donya::Model::StaticModel	&model, const Dony
 		pose,
 		Config::constants[Config::Mesh],
 		Config::constants[Config::Subset],
-		Config::textures[Config::DiffuseMap]
+		Config::textures[Config::DiffuseMap],
+		Config::textures[Config::NormalMap]
 	);
 }
 void RenderingHelper::Render( const Donya::Model::SkinningModel	&model, const Donya::Model::Pose &pose )
@@ -351,7 +363,8 @@ void RenderingHelper::Render( const Donya::Model::SkinningModel	&model, const Do
 		pose,
 		Config::constants[Config::Mesh],
 		Config::constants[Config::Subset],
-		Config::textures[Config::DiffuseMap]
+		Config::textures[Config::DiffuseMap],
+		Config::textures[Config::NormalMap]
 	);
 }
 

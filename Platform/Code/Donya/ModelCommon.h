@@ -42,9 +42,9 @@ namespace Donya
 				Donya::Vector3	tangent;	// Unit vector
 			public:
 				constexpr Pos()
-					: position(), normal(), tangent() {}
+					: position(), normal( 0.0f, 0.0f, 1.0f ), tangent( 1.0f, 0.0f, 0.0f ) {}
 				constexpr Pos( const Donya::Vector3 &position, const Donya::Vector3 &normal )
-					: position( position ), normal( normal ), tangent() {}
+					: position( position ), normal( normal ), tangent( 1.0f, 0.0f, 0.0f ) {}
 				constexpr Pos( const Donya::Vector3 &position, const Donya::Vector3 &normal, const Donya::Vector3 &tangent )
 					: position( position ), normal( normal ), tangent( tangent ) {}
 			public:

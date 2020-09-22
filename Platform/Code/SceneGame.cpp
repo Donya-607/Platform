@@ -587,6 +587,7 @@ void SceneGame::Draw( float elapsedTime )
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
 	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
+	pRenderer->ActivateSamplerNormal( Donya::Sampler::Defined::Point_Wrap );
 
 	// Update scene constant as light source
 	{
@@ -624,6 +625,7 @@ void SceneGame::Draw( float elapsedTime )
 	pScreenSurface->SetRenderTarget();
 	pScreenSurface->SetViewport();
 #if DEBUG_MODE
+	pRenderer->DeactivateSamplerNormal();
 	pRenderer->DeactivateSamplerModel();
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
@@ -634,6 +636,7 @@ void SceneGame::Draw( float elapsedTime )
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
 	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
+	pRenderer->ActivateSamplerNormal( Donya::Sampler::Defined::Point_Wrap );
 #endif // DEBUG_MODE
 	// Draw normal scene with shadow map
 	{

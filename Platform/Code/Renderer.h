@@ -117,12 +117,14 @@ public:
 	void ActivateRasterizerCube();
 	void ActivateRasterizerSphere();
 	void ActivateSamplerModel( int samplerIdentifier );
+	void ActivateSamplerNormal( int samplerIdentifier );
 	void ActivateSamplerShadow( int samplerIdentifier );
 	void DeactivateDepthStencilCube();
 	void DeactivateDepthStencilSphere();
 	void DeactivateRasterizerCube();
 	void DeactivateRasterizerSphere();
 	void DeactivateSamplerModel();
+	void DeactivateSamplerNormal();
 	void DeactivateSamplerShadow();
 public:
 	void ActivateShadowMap( const Donya::Surface &shadowMap );

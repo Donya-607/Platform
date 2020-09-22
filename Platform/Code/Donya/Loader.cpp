@@ -30,6 +30,79 @@ namespace
 		const std::string postfix{ "\n" };
 		Donya::OutputDebugStr( ( prefix + str + postfix ).c_str() );
 	}
+
+	void CalcTangentVectors( std::vector<Donya::Model::Vertex::Pos> *pOutPositions, const std::vector<Donya::Model::Vertex::Tex> &texCoords, const std::vector<unsigned int> &indices )
+	{
+		if ( !pOutPositions ) { return; }
+		// else
+		
+		auto &positions = *pOutPositions;
+		if ( positions.size() != texCoords.size() ) { return; } // The position and texCoord are must be thing of same vertex!
+		// else
+
+		// See http://www.opengl-tutorial.org/jp/intermediate-tutorials/tutorial-13-normal-mapping/
+
+		auto CalcOrthogonalTangent = []( const Donya::Vector3 &normal, const Donya::Vector3 &tangent )
+		{
+			const auto projT = Donya::Vector3::Projection( tangent, normal );
+			return ( tangent - projT ).Unit();
+		};
+
+		const size_t indexCount = indices.size();
+		for ( unsigned int i = 0; i < indexCount; i += 3 )
+		{
+			Donya::Model::Vertex::Pos *p[3]
+			{
+				&positions[indices[i + 0]],
+				&positions[indices[i + 1]],
+				&positions[indices[i + 2]],
+			};
+			const Donya::Model::Vertex::Tex *t[3]
+			{
+				&texCoords[indices[i + 0]],
+				&texCoords[indices[i + 1]],
+				&texCoords[indices[i + 2]],
+			};
+
+			const auto pDelta01 = p[1]->position - p[0]->position;
+			const auto pDelta02 = p[2]->position - p[0]->position;
+
+			const auto tDelta01 = t[1]->texCoord - t[0]->texCoord;
+			const auto tDelta02 = t[2]->texCoord - t[0]->texCoord;
+
+			const float d = Donya::Vector2::Cross( tDelta01, tDelta02 ); // (a.x*b.y - a.y*b.x)
+			if ( IsZero( d ) )
+			{
+				for ( auto &v : p )
+				{
+					v->tangent = Donya::Vector3::Zero();
+				}
+
+				constexpr const wchar_t *errMsg =
+					L"Error: A Degenerate-Triangle detected in calculation of tangent vector!";
+				Donya::OutputDebugStr( errMsg );
+				_ASSERT_EXPR( 0, errMsg );
+				continue;
+			}
+			// else
+
+			const float r = 1.0f / d;
+			const auto  tangent  = ( ( pDelta01*tDelta02.y - pDelta02*tDelta01.y ) * r ).Unit();
+			const auto  binormal = ( ( pDelta02*tDelta01.x - pDelta01*tDelta02.x ) * r ).Unit();
+
+			for ( auto &v : p )
+			{
+				v->tangent = CalcOrthogonalTangent( v->normal, tangent );
+
+				// Uniform the coordine system
+				const auto B = Donya::Vector3::Cross( v->normal, v->tangent );
+				if ( Donya::Vector3::Dot( B, binormal ) < 0.0f )
+				{
+					v->tangent *= -1.0f;
+				}
+			}
+		}
+	}
 }
 
 namespace Donya
@@ -122,78 +195,6 @@ namespace Donya
 		}
 
 		return false;
-	}
-	void CalcTangentVectors( std::vector<Model::Vertex::Pos> *pOutPositions, const std::vector<Model::Vertex::Tex> &texCoords, const std::vector<unsigned int> &indices )
-	{
-		if ( !pOutPositions ) { return; }
-		// else
-		
-		auto &positions = *pOutPositions;
-		if ( positions.size() != texCoords.size() ) { return; } // The position and texCoord are must be thing of same vertex!
-		// else
-
-		// See http://www.opengl-tutorial.org/jp/intermediate-tutorials/tutorial-13-normal-mapping/
-
-		auto CalcOrthogonalTangent = []( const Donya::Vector3 &normal, const Donya::Vector3 &tangent )
-		{
-			const auto projT = Donya::Vector3::Projection( tangent, normal );
-			return ( tangent - projT ).Unit();
-		};
-
-		const size_t indexCount = indices.size();
-		for ( unsigned int i = 0; i < indexCount; i += 3 )
-		{
-			Model::Vertex::Pos *p[3]
-			{
-				&positions[indices[i + 0]],
-				&positions[indices[i + 1]],
-				&positions[indices[i + 2]],
-			};
-			const Model::Vertex::Tex *t[3]
-			{
-				&texCoords[indices[i + 0]],
-				&texCoords[indices[i + 1]],
-				&texCoords[indices[i + 2]],
-			};
-
-			const auto pDelta01 = p[1]->position - p[0]->position;
-			const auto pDelta02 = p[2]->position - p[0]->position;
-
-			const auto tDelta01 = t[1]->texCoord - t[0]->texCoord;
-			const auto tDelta02 = t[2]->texCoord - t[0]->texCoord;
-
-			const float d = Donya::Vector2::Cross( tDelta01, tDelta02 ); // (a.x*b.y - a.y*b.x)
-			if ( ZeroEqual( d ) )
-			{
-				for ( auto &v : p )
-				{
-					v->tangent = Donya::Vector3::Zero();
-				}
-
-				constexpr const wchar_t *errMsg =
-					L"Error: A Degenerate-Triangle detected in calculation of tangent vector!";
-				Donya::OutputDebugStr( errMsg );
-				_ASSERT_EXPR( 0, errMsg );
-				continue;
-			}
-			// else
-
-			const float r = 1.0f / d;
-			const auto  tangent  = ( ( pDelta01*tDelta02.y - pDelta02*tDelta01.y ) * r ).Unit();
-			const auto  binormal = ( ( pDelta02*tDelta01.x - pDelta01*tDelta02.x ) * r ).Unit();
-
-			for ( auto &v : p )
-			{
-				v->tangent = CalcOrthogonalTangent( v->normal, tangent );
-
-				// Uniform the coordine system
-				const auto B = Donya::Vector3::Cross( v->normal, v->tangent );
-				if ( Donya::Vector3::Dot( B, binormal ) < 0.0f )
-				{
-					v->tangent *= -1.0f;
-				}
-			}
-		}
 	}
 
 	constexpr bool HasMesh		( FBX::FbxNodeAttribute::EType attr )
@@ -1235,6 +1236,14 @@ namespace Donya
 
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
+
+		if ( ImGui::Button( u8"Re-Calculate Tangent Vectors(Does not apply to the viewer)" ) )
+		{
+			for ( auto &mesh : source.meshes )
+			{
+				CalcTangentVectors( &mesh.positions, mesh.texCoords, mesh.indices );
+			}
+		}
 
 		const size_t meshCount = source.meshes.size();
 		for ( size_t i = 0; i < meshCount; ++i )
