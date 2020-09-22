@@ -38,17 +38,23 @@ namespace Donya
 			struct Pos
 			{
 				Donya::Vector3	position;
-				Donya::Vector3	normal;
+				Donya::Vector3	normal;		// Unit vector
+				Donya::Vector3	tangent;	// Unit vector
 			public:
-				constexpr Pos() : position(), normal() {}
-				constexpr Pos( const Donya::Vector3 &position, const Donya::Vector3 &normal ) : position( position ), normal( normal ) {}
+				constexpr Pos()
+					: position(), normal(), tangent() {}
+				constexpr Pos( const Donya::Vector3 &position, const Donya::Vector3 &normal )
+					: position( position ), normal( normal ), tangent() {}
+				constexpr Pos( const Donya::Vector3 &position, const Donya::Vector3 &normal, const Donya::Vector3 &tangent )
+					: position( position ), normal( normal ), tangent( tangent ) {}
 			public:
 				static constexpr const auto GenerateInputElements( UINT inputSlot )
 				{
-					return std::array<D3D11_INPUT_ELEMENT_DESC, 2>
+					return std::array<D3D11_INPUT_ELEMENT_DESC, 3>
 					{
 						D3D11_INPUT_ELEMENT_DESC{ "POSITION"	, 0, DXGI_FORMAT_R32G32B32_FLOAT,	inputSlot, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
 						D3D11_INPUT_ELEMENT_DESC{ "NORMAL"		, 0, DXGI_FORMAT_R32G32B32_FLOAT,	inputSlot, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+						D3D11_INPUT_ELEMENT_DESC{ "TANGENT"		, 0, DXGI_FORMAT_R32G32B32_FLOAT,	inputSlot, D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
 					};
 				}
 			private:
@@ -56,13 +62,19 @@ namespace Donya
 				template<class Archive>
 				void serialize( Archive &archive, std::uint32_t version )
 				{
-					if ( version == 0 )
+					archive
+					(
+						CEREAL_NVP( position ),
+						CEREAL_NVP( normal )
+					);
+
+					if ( 1 <= version )
 					{
-						archive
-						(
-							CEREAL_NVP( position ),
-							CEREAL_NVP( normal )
-						);
+						archive( CEREAL_NVP( tangent ) );
+					}
+					if ( 2 <= version )
+					{
+						// archive( CEREAL_NVP(  ) );
 					}
 				}
 			};
@@ -85,12 +97,14 @@ namespace Donya
 				template<class Archive>
 				void serialize( Archive &archive, std::uint32_t version )
 				{
-					if ( version == 0 )
+					archive
+					(
+						CEREAL_NVP( texCoord )
+					);
+					
+					if ( 1 <= version )
 					{
-						archive
-						(
-							CEREAL_NVP( texCoord )
-						);
+						// archive( CEREAL_NVP(  ) );
 					}
 				}
 			};
@@ -115,13 +129,15 @@ namespace Donya
 				template<class Archive>
 				void serialize( Archive &archive, std::uint32_t version )
 				{
-					if ( version == 0 )
+					archive
+					(
+						CEREAL_NVP( weights ),
+						CEREAL_NVP( indices )
+					);
+
+					if ( 1 <= version )
 					{
-						archive
-						(
-							CEREAL_NVP( weights ),
-							CEREAL_NVP( indices )
-						);
+						// archive( CEREAL_NVP(  ) );
 					}
 				}
 			};
@@ -325,6 +341,7 @@ namespace Donya
 				{
 					DirectionalLight directionalLight;
 					Donya::Vector4   eyePosition;
+					Donya::Vector4x4 viewMatrix;		// World space -> View space
 					Donya::Vector4x4 viewProjMatrix;	// World space -> NDC(actually Clip space)
 				};
 				struct PointLightRoom
@@ -387,6 +404,7 @@ namespace Donya
 					Donya::Vector4 ambient;
 					Donya::Vector4 diffuse;
 					Donya::Vector4 specular; // The W component is a shininess, so should be greater than zero.
+					Donya::Vector4 emissive;
 				};
 			}
 		}
@@ -413,7 +431,7 @@ namespace Donya
 	}
 }
 
-CEREAL_CLASS_VERSION( Donya::Model::Vertex::Pos,			0 )
+CEREAL_CLASS_VERSION( Donya::Model::Vertex::Pos,			1 )
 CEREAL_CLASS_VERSION( Donya::Model::Vertex::Tex,			0 )
 CEREAL_CLASS_VERSION( Donya::Model::Vertex::Bone,			0 )
 

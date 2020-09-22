@@ -80,7 +80,8 @@ namespace Donya
 				"{\n"
 				"	float4		svPos		: SV_POSITION;\n"
 				"	float4		wsPos		: POSITION;\n"
-				"	float4		normal		: NORMAL;\n"
+				"	float4		tsLightVec	: NORMAL0;\n"
+				"	float4		tsEyeVec	: NORMAL1;\n"
 				"	float2		texCoord	: TEXCOORD0;\n"
 				"};\n"
 				"struct DirectionalLight\n"
@@ -92,6 +93,8 @@ namespace Donya
 				"{\n"
 				"	DirectionalLight cbDirLight;\n"
 				"	float4		cbEyePosition;\n"
+				"	row_major\n"
+				"	float4x4	cbView;\n"
 				"	row_major\n"
 				"	float4x4	cbViewProj;\n"
 				"};\n"
@@ -106,6 +109,7 @@ namespace Donya
 				"	float4		cbAmbient;\n"
 				"	float4		cbDiffuse;\n"
 				"	float4		cbSpecular;\n"
+				"	float4		cbEmissive;\n"
 				"};\n"
 				// See https://tech.cygames.co.jp/archives/2339/
 				"float4 SRGBToLinear( float4 colorSRGB )\n"
@@ -116,6 +120,14 @@ namespace Donya
 				"float4 LinearToSRGB( float4 colorLinear )\n"
 				"{\n"
 				"	return pow( colorLinear, 1.0f / 2.2f );\n"
+				"}\n"
+				// Convert to normal from texture's color.
+				// 0.0f -> -1.0f
+				// 0.5f ->  0.0f
+				// 1.0f -> +1.0f
+				"float3 SampledToNormal( float3 sampledColor )\n"
+				"{\n"
+				"	return ( sampledColor * 2.0f ) - 1.0f;\n"
 				"}\n"
 				"float HalfLambert( float3 nwsNormal, float3 nwsToLightVec )\n"
 				"{\n"
@@ -146,19 +158,22 @@ namespace Donya
 
 				"Texture2D		diffuseMap			: register( t0 );\n"
 				"SamplerState	diffuseMapSampler	: register( s0 );\n"
+				"Texture2D		normalMap			: register( t1 );\n"
+				"SamplerState	normalMapSampler	: register( s1 );\n"
 
 				"float4 PSMain( VS_OUT pin ) : SV_TARGET\n"
 				"{\n"
-				"			pin.normal		= normalize( pin.normal );\n"
+				"			pin.tsLightVec	= normalize( pin.tsLightVec );\n"
+				"			pin.tsEyeVec	= normalize( pin.tsEyeVec );\n"
+				"	float4	normalMapColor	= normalMap.Sample( normalMapSampler, pin.texCoord );\n"
+				"			normalMapColor	= SRGBToLinear( normalMapColor );\n"
+				"	float4	tsNormal		= float4( normalize( SampledToNormal( normalMapColor.xyz ) ), 0.0f );\n"
 			
-				"	float3	nLightVec		= normalize( -cbDirLight.direction.rgb );	// Vector from position.\n"
-				"	float4	nEyeVector		= cbEyePosition - pin.wsPos;				// Vector from position.\n"
-
 				"	float4	diffuseMapColor	= diffuseMap.Sample( diffuseMapSampler, pin.texCoord );\n"
 				"			diffuseMapColor	= SRGBToLinear( diffuseMapColor );\n"
 				"	float	diffuseMapAlpha	= diffuseMapColor.a;\n"
 
-				"	float3	totalLight		= CalcLightInfluence( cbDirLight.color, nLightVec, pin.normal.rgb, nEyeVector.rgb );\n"
+				"	float3	totalLight		= CalcLightInfluence( cbDirLight.color, pin.tsLightVec.xyz, tsNormal.xyz, pin.tsEyeVec.rgb );\n"
 
 				"	float3	resultColor		= diffuseMapColor.rgb * totalLight;\n"
 				"	float4	outputColor		= float4( resultColor, diffuseMapAlpha );\n"
@@ -177,6 +192,7 @@ namespace Donya
 				"{\n"
 				"	float4		pos			: POSITION;\n"
 				"	float4		normal		: NORMAL;\n"
+				"	float4		tangent		: TANGENT;\n"
 				"	float2		texCoord	: TEXCOORD0;\n"
 				"	float4		weights		: WEIGHTS;\n"
 				"	uint4		bones		: BONES;\n"
@@ -185,7 +201,8 @@ namespace Donya
 				"{\n"
 				"	float4		svPos		: SV_POSITION;\n"
 				"	float4		wsPos		: POSITION;\n"
-				"	float4		normal		: NORMAL;\n"
+				"	float4		tsLightVec	: NORMAL0;\n"
+				"	float4		tsEyeVec	: NORMAL1;\n"
 				"	float2		texCoord	: TEXCOORD0;\n"
 				"};\n"
 				"struct DirectionalLight\n"
@@ -197,6 +214,8 @@ namespace Donya
 				"{\n"
 				"	DirectionalLight cbDirLight;\n"
 				"	float4		cbEyePosition;\n"
+				"	row_major\n"
+				"	float4x4	cbView;\n"
 				"	row_major\n"
 				"	float4x4	cbViewProj;\n"
 				"};\n"
@@ -214,6 +233,34 @@ namespace Donya
 				"	row_major\n"
 				"	float4x4	cbBoneTransforms[MAX_BONE_COUNT];\n"
 				"};\n"
+				// Calculate the matrix that transforms to tangent space from an arguments belong space.
+				// Argument.tangent  : The tangent(U) of unit vector.
+				// Argument.binormal : The binormal(V) of unit vector.
+				// Argument.normal   : The normal(Z) of unit vector.
+				"float4x4 MakeMatrixToTangentSpace( float3 tangent, float3 binormal, float3 normal )\n"
+				"{\n"
+				"	float4x4 M =\n"
+				"	{\n"
+				"		float4( tangent,	0.0f ),\n"
+				"		float4( binormal,	0.0f ),\n"
+				"		float4( normal,		0.0f ),\n"
+				"		float4( 0.0f, 0.0f, 0.0f, 1.0f )\n"
+				"	};\n"
+				"	// Inverse of regular-orthogonal matrix\n"
+				"	return transpose( M );\n"
+				"}\n"
+				// Calculate the matrix that transforms to tangent space from an arguments belong space.
+				// Argument.tangent : The tangent(U) of unit vector.
+				// Argument.normal : The normal(Z) of unit vector.
+				"float4x4 MakeMatrixToTangentSpace( float3 tangent, float3 normal )\n"
+				"{\n"
+				"	return MakeMatrixToTangentSpace\n"
+				"	(\n"
+				"		tangent,\n"
+				"		normalize( cross( normal, tangent ) ),\n"
+				"		normal\n"
+				"	);\n"
+				"}\n"
 				"void ApplyBoneMatrices( float4 boneWeights, uint4 boneIndices, inout float4 inoutPosition, inout float4 inoutNormal )\n"
 				"{\n"
 				"	const float4 inPosition	= float4( inoutPosition.xyz, 1.0f );\n"
@@ -236,15 +283,23 @@ namespace Donya
 				"{\n"
 				"	vin.pos.w		= 1.0f;\n"
 				"	vin.normal.w	= 0.0f;\n"
+				"	vin.tangent.w	= 0.0f;\n"
 				"	ApplyBoneMatrices( vin.weights, vin.bones, vin.pos, vin.normal );\n"
 
 				"	float4x4 W		= mul( cbAdjustMatrix, cbWorld );\n"
+				"	float4x4 WV		= mul( W, cbView );\n"
 				"	float4x4 WVP	= mul( W, cbViewProj );\n"
 
 				"	VS_OUT vout		= ( VS_OUT )0;\n"
 				"	vout.wsPos		= mul( vin.pos, W );\n"
 				"	vout.svPos		= mul( vin.pos, WVP );\n"
-				"	vout.normal		= normalize( mul( vin.normal, W ) );\n"
+
+				"	float3 vsNormal = normalize( mul( vin.normal, WV ).xyz );\n"
+				"	float3 vsTangent = normalize( mul( vin.tangent, WV ).xyz );\n"
+				"	float4x4 VT = mul( cbView, MakeMatrixToTangentSpace( vsTangent, vsNormal ) );\n"
+				"	vout.tsLightVec	= normalize( mul( -cbDirLight.direction, VT ) );\n"
+				"	vout.tsEyeVec	= normalize( mul( cbEyePosition - vout.wsPos, VT ) );\n"
+
 				"	vout.texCoord	= vin.texCoord;\n"
 				"	return vout;\n"
 				"}\n"
@@ -259,13 +314,15 @@ namespace Donya
 				"{\n"
 				"	float4		pos			: POSITION;\n"
 				"	float4		normal		: NORMAL;\n"
+				"	float4		tangent		: TANGENT;\n"
 				"	float2		texCoord	: TEXCOORD0;\n"
 				"};\n"
 				"struct VS_OUT\n"
 				"{\n"
 				"	float4		svPos		: SV_POSITION;\n"
 				"	float4		wsPos		: POSITION;\n"
-				"	float4		normal		: NORMAL;\n"
+				"	float4		tsLightVec	: NORMAL0;\n"
+				"	float4		tsEyeVec	: NORMAL1;\n"
 				"	float2		texCoord	: TEXCOORD0;\n"
 				"};\n"
 				"struct DirectionalLight\n"
@@ -277,6 +334,8 @@ namespace Donya
 				"{\n"
 				"	DirectionalLight cbDirLight;\n"
 				"	float4		cbEyePosition;\n"
+				"	row_major\n"
+				"	float4x4	cbView;\n"
 				"	row_major\n"
 				"	float4x4	cbViewProj;\n"
 				"};\n"
@@ -291,18 +350,54 @@ namespace Donya
 				"	row_major\n"
 				"	float4x4	cbAdjustMatrix;\n"
 				"};\n"
+				// Calculate the matrix that transforms to tangent space from an arguments belong space.
+				// Argument.tangent  : The tangent(U) of unit vector.
+				// Argument.binormal : The binormal(V) of unit vector.
+				// Argument.normal   : The normal(Z) of unit vector.
+				"float4x4 MakeMatrixToTangentSpace( float3 tangent, float3 binormal, float3 normal )\n"
+				"{\n"
+				"	float4x4 M =\n"
+				"	{\n"
+				"		float4( tangent,	0.0f ),\n"
+				"		float4( binormal,	0.0f ),\n"
+				"		float4( normal,		0.0f ),\n"
+				"		float4( 0.0f, 0.0f, 0.0f, 1.0f )\n"
+				"	};\n"
+				"	// Inverse of regular-orthogonal matrix\n"
+				"	return transpose( M );\n"
+				"}\n"
+				// Calculate the matrix that transforms to tangent space from an arguments belong space.
+				// Argument.tangent : The tangent(U) of unit vector.
+				// Argument.normal : The normal(Z) of unit vector.
+				"float4x4 MakeMatrixToTangentSpace( float3 tangent, float3 normal )\n"
+				"{\n"
+				"	return MakeMatrixToTangentSpace\n"
+				"	(\n"
+				"		tangent,\n"
+				"		normalize( cross( normal, tangent ) ),\n"
+				"		normal\n"
+				"	);\n"
+				"}\n"
 				"VS_OUT VSMain( VS_IN vin )\n"
 				"{\n"
 				"	vin.pos.w		= 1.0f;\n"
 				"	vin.normal.w	= 0.0f;\n"
+				"	vin.tangent.w	= 0.0f;\n"
 
 				"	float4x4 W		= mul( cbAdjustMatrix, cbWorld );\n"
+				"	float4x4 WV		= mul( W, cbView );\n"
 				"	float4x4 WVP	= mul( W, cbViewProj );\n"
 
 				"	VS_OUT vout		= ( VS_OUT )( 0 );\n"
 				"	vout.wsPos		= mul( vin.pos, W );\n"
 				"	vout.svPos		= mul( vin.pos, WVP );\n"
-				"	vout.normal		= normalize( mul( vin.normal, W ) );\n"
+
+				"	float3 vsNormal = normalize( mul( vin.normal, WV ).xyz );\n"
+				"	float3 vsTangent = normalize( mul( vin.tangent, WV ).xyz );\n"
+				"	float4x4 VT = mul( cbView, MakeMatrixToTangentSpace( vsTangent, vsNormal ) );\n"
+				"	vout.tsLightVec	= normalize( mul( -cbDirLight.direction, VT ) );\n"
+				"	vout.tsEyeVec	= normalize( mul( cbEyePosition - vout.wsPos, VT ) );\n"
+
 				"	vout.texCoord	= vin.texCoord;\n"
 				"	return vout;\n"
 				"}\n"
@@ -337,7 +432,7 @@ namespace Donya
 			standard.AntialiasedLineEnable	= TRUE;
 			return standard;
 		}
-		static constexpr D3D11_SAMPLER_DESC			DefaultSamplerDesc()
+		static constexpr D3D11_SAMPLER_DESC			DefaultDiffuseSamplerDesc()
 		{
 			D3D11_SAMPLER_DESC standard{};
 			/*
@@ -345,6 +440,22 @@ namespace Donya
 			standard.MaxAnisotropy	= 16;
 			*/
 			standard.Filter				= D3D11_FILTER_ANISOTROPIC;
+			standard.AddressU			= D3D11_TEXTURE_ADDRESS_WRAP;
+			standard.AddressV			= D3D11_TEXTURE_ADDRESS_WRAP;
+			standard.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;
+			standard.ComparisonFunc		= D3D11_COMPARISON_ALWAYS;
+			standard.MinLOD				= 0;
+			standard.MaxLOD				= D3D11_FLOAT32_MAX;
+			return standard;
+		}
+		static constexpr D3D11_SAMPLER_DESC			DefaultNormalSamplerDesc()
+		{
+			D3D11_SAMPLER_DESC standard{};
+			/*
+			standard.MipLODBias		= 0;
+			standard.MaxAnisotropy	= 16;
+			*/
+			standard.Filter				= D3D11_FILTER_MIN_MAG_MIP_POINT;
 			standard.AddressU			= D3D11_TEXTURE_ADDRESS_WRAP;
 			standard.AddressV			= D3D11_TEXTURE_ADDRESS_WRAP;
 			standard.AddressW			= D3D11_TEXTURE_ADDRESS_WRAP;
@@ -455,12 +566,13 @@ namespace Donya
 			};
 
 			using Bundle = std::tuple<int *, std::wstring, FindFunction>;
-			constexpr  size_t  STATE_COUNT = 3;
+			constexpr  size_t  STATE_COUNT = 4;
 			std::array<Bundle, STATE_COUNT> bundles
 			{
-				std::make_tuple( &pMember->idDSState,	L"DepthStencil",	Donya::DepthStencil::IsAlreadyExists	),
-				std::make_tuple( &pMember->idRSState,	L"Rasterizer",		Donya::Rasterizer::IsAlreadyExists		),
-				std::make_tuple( &pMember->idPSSampler,	L"Sampler",			Donya::Sampler::IsAlreadyExists			),
+				std::make_tuple( &pMember->idDSState,		L"DepthStencil",	Donya::DepthStencil::IsAlreadyExists	),
+				std::make_tuple( &pMember->idRSState,		L"Rasterizer",		Donya::Rasterizer::IsAlreadyExists		),
+				std::make_tuple( &pMember->idPSSamplerD,	L"DiffuseSampler",	Donya::Sampler::IsAlreadyExists			),
+				std::make_tuple( &pMember->idPSSamplerN,	L"NormalSampler",	Donya::Sampler::IsAlreadyExists			),
 			};
 
 			bool succeeded = true;
@@ -484,9 +596,10 @@ namespace Donya
 		}
 		bool Renderer::Default::CreateRenderingStates( ID3D11Device *pDevice )
 		{
-			if ( pMember->idDSState   == Member::DEFAULT_ID ||
-				 pMember->idRSState   == Member::DEFAULT_ID ||
-				 pMember->idPSSampler == Member::DEFAULT_ID )
+			if ( pMember->idDSState		== Member::DEFAULT_ID ||
+				 pMember->idRSState		== Member::DEFAULT_ID ||
+				 pMember->idPSSamplerD	== Member::DEFAULT_ID ||
+				 pMember->idPSSamplerN	== Member::DEFAULT_ID )
 			{
 				_ASSERT_EXPR( 0, L"Error : Some status identifier of ModelRenderer is invalid!" );
 				return false;
@@ -501,7 +614,8 @@ namespace Donya
 
 			constexpr auto descDS = DefaultDepthStencilDesc();
 			constexpr auto descRS = DefaultRasterizerDesc();
-			constexpr auto descPS = DefaultSamplerDesc();
+			constexpr auto descPS_D = DefaultDiffuseSamplerDesc();
+			constexpr auto descPS_N = DefaultNormalSamplerDesc();
 
 			bool result		= true;
 			bool succeeded	= true;
@@ -520,10 +634,17 @@ namespace Donya
 				succeeded = false;
 			}
 
-			result = Donya::Sampler::CreateState( pMember->idPSSampler, descPS );
+			result = Donya::Sampler::CreateState( pMember->idPSSamplerD, descPS_D );
 			if ( !result )
 			{
-				AssertFailedCreation( L"Sampler" );
+				AssertFailedCreation( L"Diffuse Sampler" );
+				succeeded = false;
+			}
+			
+			result = Donya::Sampler::CreateState( pMember->idPSSamplerN, descPS_N );
+			if ( !result )
+			{
+				AssertFailedCreation( L"Normal Sampler" );
 				succeeded = false;
 			}
 
@@ -632,14 +753,18 @@ namespace Donya
 		}
 		bool Renderer::Default::ActivateSampler( ID3D11DeviceContext *pImmediateContext )
 		{
-			bool result = true;
+			auto Set = [&]( int state, const RegisterDesc &desc )
+			{
+				bool succeeded = true;
+				if ( desc.setVS ) { if ( !Donya::Sampler::SetVS( state, desc.setSlot, pImmediateContext ) ) { succeeded = false; } }
+				if ( desc.setPS ) { if ( !Donya::Sampler::SetPS( state, desc.setSlot, pImmediateContext ) ) { succeeded = false; } }
+				return succeeded;
+			};
 
-			const RegisterDesc desc = DescSampler();
-			if ( desc.setVS ) { result = Donya::Sampler::SetVS( pMember->idPSSampler, desc.setSlot, pImmediateContext ); }
-			if ( !result ) { return false; }
-			if ( desc.setPS ) { result = Donya::Sampler::SetPS( pMember->idPSSampler, desc.setSlot, pImmediateContext ); }
-			if ( !result ) { return false; }
-			return true;
+			bool succeeded = true;
+			if ( !Set( pMember->idPSSamplerD, DescDiffuseSampler() ) ) { succeeded = false; }
+			if ( !Set( pMember->idPSSamplerN, DescNormalSampler()  ) ) { succeeded = false; }
+			return succeeded;
 		}
 		void Renderer::Default::DeactivateDepthStencil( ID3D11DeviceContext *pImmediateContext )
 		{
@@ -651,9 +776,14 @@ namespace Donya
 		}
 		void Renderer::Default::DeactivateSampler( ID3D11DeviceContext *pImmediateContext )
 		{
-			const RegisterDesc desc = DescSampler();
-			if ( desc.setVS ) { Donya::Sampler::ResetVS( pMember->idPSSampler, pImmediateContext ); }
-			if ( desc.setPS ) { Donya::Sampler::ResetPS( pMember->idPSSampler, pImmediateContext ); }
+			auto Reset = [&]( const RegisterDesc &desc )
+			{
+				if ( desc.setVS ) { Donya::Sampler::ResetVS( desc.setSlot, pImmediateContext ); }
+				if ( desc.setPS ) { Donya::Sampler::ResetPS( desc.setSlot, pImmediateContext ); }
+			};
+
+			Reset( DescDiffuseSampler() );
+			Reset( DescNormalSampler()  );
 		}
 
 		void Renderer::Default::ActivateVertexShaderSkinning( ID3D11DeviceContext *pImmediateContext )
@@ -732,13 +862,21 @@ namespace Donya
 		{
 			return RegisterDesc::Make( 3, false, true );
 		}
-		RegisterDesc Renderer::Default::DescSampler()
+		RegisterDesc Renderer::Default::DescDiffuseSampler()
 		{
 			return RegisterDesc::Make( 0, false, true );
+		}
+		RegisterDesc Renderer::Default::DescNormalSampler()
+		{
+			return RegisterDesc::Make( 1, false, true );
 		}
 		RegisterDesc Renderer::Default::DescDiffuseMap()
 		{
 			return RegisterDesc::Make( 0, false, true );
+		}
+		RegisterDesc Renderer::Default::DescNormalMap()
+		{
+			return RegisterDesc::Make( 1, false, true );
 		}
 
 		namespace
@@ -778,7 +916,7 @@ namespace Donya
 			pImmediateContext->IASetIndexBuffer( mesh.indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0 );
 		}
 
-		void Renderer::DrawEachSubsets( const Model &model, size_t meshIndex, const RegisterDesc &descSubset, const RegisterDesc &descDiffuseMap, ID3D11DeviceContext *pImmediateContext )
+		void Renderer::DrawEachSubsets( const Model &model, size_t meshIndex, const RegisterDesc &descSubset, const RegisterDesc &descDiffuseMap, const RegisterDesc &descNormalMap, ID3D11DeviceContext *pImmediateContext )
 		{
 			const auto &meshes	= model.GetMeshes();
 			const auto &mesh	= meshes[meshIndex];
@@ -790,10 +928,12 @@ namespace Donya
 				UpdateCBPerSubset( model, meshIndex, j, descSubset, pImmediateContext );
 
 				ActivateCBPerSubset( descSubset, pImmediateContext );
-				SetTexture( descDiffuseMap, subset.diffuse.pSRV.GetAddressOf(), pImmediateContext );
+				SetTexture( descDiffuseMap,	subset.diffuse.pSRV.GetAddressOf(),	pImmediateContext );
+				SetTexture( descNormalMap,	subset.normal.pSRV.GetAddressOf(),	pImmediateContext );
 
 				DrawIndexed( model, meshIndex, j, pImmediateContext );
 
+				UnsetTexture( descNormalMap, pImmediateContext );
 				UnsetTexture( descDiffuseMap, pImmediateContext );
 				DeactivateCBPerSubset( pImmediateContext );
 			}
@@ -809,6 +949,7 @@ namespace Donya
 			constants.ambient  = subset.ambient.color;
 			constants.diffuse  = subset.diffuse.color;
 			constants.specular = subset.specular.color;
+			constants.emissive = subset.emissive.color;
 			
 			CBPerSubset.data   = constants;
 		}
@@ -886,7 +1027,7 @@ namespace Donya
 				throw std::runtime_error{ errMsg };
 			}
 		}
-		void StaticRenderer::Render( const StaticModel &model, const Pose &pose, const RegisterDesc &descMesh, const RegisterDesc &descSubset, const RegisterDesc &descDiffuseMap, ID3D11DeviceContext *pImmediateContext )
+		void StaticRenderer::Render( const StaticModel &model, const Pose &pose, const RegisterDesc &descMesh, const RegisterDesc &descSubset, const RegisterDesc &descDiffuseMap, const RegisterDesc &descNormalMap, ID3D11DeviceContext *pImmediateContext )
 		{
 			SetDefaultIfNullptr( &pImmediateContext );
 
@@ -901,7 +1042,7 @@ namespace Donya
 				SetVertexBuffers( model, i, pImmediateContext );
 				SetIndexBuffer( model, i, pImmediateContext );
 
-				DrawEachSubsets( model, i, descSubset, descDiffuseMap, pImmediateContext );
+				DrawEachSubsets( model, i, descSubset, descDiffuseMap, descNormalMap, pImmediateContext );
 
 				DeactivateCBPerMesh( pImmediateContext );
 			}
@@ -942,7 +1083,7 @@ namespace Donya
 				throw std::runtime_error{ errMsg };
 			}
 		}
-		void SkinningRenderer::Render( const SkinningModel &model, const Pose &pose, const RegisterDesc &descMesh, const RegisterDesc &descSubset, const RegisterDesc &descDiffuseMap, ID3D11DeviceContext *pImmediateContext )
+		void SkinningRenderer::Render( const SkinningModel &model, const Pose &pose, const RegisterDesc &descMesh, const RegisterDesc &descSubset, const RegisterDesc &descDiffuseMap, const RegisterDesc &descNormalMap, ID3D11DeviceContext *pImmediateContext )
 		{
 			SetDefaultIfNullptr( &pImmediateContext );
 
@@ -957,7 +1098,7 @@ namespace Donya
 				SetVertexBuffers( model, i, pImmediateContext );
 				SetIndexBuffer( model, i, pImmediateContext );
 
-				DrawEachSubsets( model, i, descSubset, descDiffuseMap, pImmediateContext );
+				DrawEachSubsets( model, i, descSubset, descDiffuseMap, descNormalMap, pImmediateContext );
 
 				DeactivateCBPerMesh( pImmediateContext );
 			}

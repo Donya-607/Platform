@@ -83,7 +83,7 @@ namespace Donya
 			struct Material
 			{
 				Donya::Vector4						color;
-				std::string							textureName;	// Relative file-path. No support to multiple texture currently.
+				std::string							textureName;	// Relative file-path.
 				D3D11_TEXTURE2D_DESC				textureDesc;
 				ComPtr<ID3D11ShaderResourceView>	pSRV;
 			};
@@ -95,6 +95,8 @@ namespace Donya
 				Material		ambient;
 				Material		diffuse;
 				Material		specular;
+				Material		emissive;
+				Material		normal;
 			};
 			struct Mesh
 			{
@@ -133,7 +135,7 @@ namespace Donya
 			bool InitSubsets( ID3D11Device *pDevice, Model::Mesh *pDestination, const std::vector<Source::Subset> &source );
 			bool InitSubset( ID3D11Device *pDevice, Model::Subset *pDestination, const Source::Subset &source );
 			void AssignMaterial( Model::Material *pDest, const Source::Material &source );
-			bool CreateMaterial( Model::Material *pDestination, ID3D11Device *pDevice );
+			bool CreateMaterial( Model::Material *pDestination, ID3D11Device *pDevice, const Donya::Vector3 &dummyTextureColor );
 		protected:
 			virtual bool CreateVertices( std::vector<Mesh> *pDest ) = 0;
 		public:
