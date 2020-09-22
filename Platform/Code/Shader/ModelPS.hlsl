@@ -5,7 +5,8 @@ cbuffer CBPerSubset : register( b3 )
 {
 	float4		cbAmbient;
 	float4		cbDiffuse;
-	float4		cbSpecular;		// W is Shininess
+	float4		cbSpecular;	// W is Shininess
+	float4		cbEmissive;
 };
 	
 cbuffer CBForPointLiht : register( b5 )
@@ -17,15 +18,19 @@ cbuffer CBForPointLiht : register( b5 )
 
 Texture2D		diffuseMap			: register( t0 );
 SamplerState	diffuseMapSampler	: register( s0 );
-Texture2D		shadowMap			: register( t1 );
-SamplerState	shadowMapSampler	: register( s1 );
+Texture2D		normalMap			: register( t1 );
+SamplerState	normalMapSampler	: register( s1 );
+Texture2D		shadowMap			: register( t2 );
+SamplerState	shadowMapSampler	: register( s2 );
 
 float4 main( VS_OUT pin ) : SV_TARGET
 {
-			pin.normal		= normalize( pin.normal );
+			pin.tsLightVec	= normalize( pin.tsLightVec	);
+			pin.tsEyeVec	= normalize( pin.tsEyeVec	);
 			
-	float3	nLightVec		= normalize( -cbDirLight.direction.xyz );	// Vector from position.
-	float4	nEyeVector		= normalize( cbEyePosition - pin.wsPos );	// Vector from position.
+	float4	normalMapColor	= normalMap.Sample( normalMapSampler, pin.texCoord );
+			normalMapColor	= SRGBToLinear( normalMapColor );
+	float3	tsNormal		= normalize( SampledToNormal( normalMapColor.xyz ) );
 
 	float4	diffuseMapColor	= diffuseMap.Sample( diffuseMapSampler, pin.texCoord );
 			diffuseMapColor	= SRGBToLinear( diffuseMapColor );
@@ -33,16 +38,17 @@ float4 main( VS_OUT pin ) : SV_TARGET
 
 	float3	totalLight		= CalcLightInfluence
 							(
-								cbDirLight.light, nLightVec,
-								pin.normal.xyz, nEyeVector.xyz,
+								cbDirLight.light, pin.tsLightVec.xyz,
+								tsNormal, pin.tsEyeVec.xyz,
 								cbDiffuse.rgb, cbSpecular.rgb, cbSpecular.w
 							);
 	for ( uint i = 0; i < cbPointLightCount; ++i )
 	{
+		// TODO: Align the space between the cbPointLights and the tsNormal, tsEyeVec
 			totalLight += CalcPointLightInfl
 			(
 				cbPointLights[i],
-				pin.wsPos.xyz, pin.normal.xyz, nEyeVector.xyz,
+				pin.wsPos.xyz, tsNormal.xyz, pin.tsEyeVec.xyz,
 				cbDiffuse.rgb, cbSpecular.rgb, cbSpecular.w
 			);
 	}

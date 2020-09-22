@@ -4,6 +4,7 @@ struct VS_IN
 {
 	float4	pos			: POSITION;
 	float4	normal		: NORMAL;
+	float4	tangent		: TANGENT;
 	float2	texCoord	: TEXCOORD0;
 	float4	weights		: WEIGHTS;
 	uint4	bones		: BONES;
@@ -38,6 +39,7 @@ VS_OUT main( VS_IN vin )
 {
 	vin.pos.w		= 1.0f;
 	vin.normal.w	= 0.0f;
+	vin.tangent.w	= 0.0f;
 	ApplyBoneMatrices( vin.weights, vin.bones, vin.pos );
 
 	float4x4 W		= mul( cbAdjustMatrix, cbWorld );

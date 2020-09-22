@@ -5,6 +5,7 @@ cbuffer UNUSED_CBPerSubset : register( b3 )
 	float4	cbAmbient;
 	float4	cbDiffuse;
 	float4	cbSpecular;
+	float4	cbEmissive;
 };
 
 float4 main( VS_OUT pin ) : SV_TARGET
