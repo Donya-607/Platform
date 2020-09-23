@@ -17,8 +17,8 @@ cbuffer CBPerMesh : register( b2 )
 VS_OUT main( VS_IN vin )
 {
 	vin.pos.w		= 1.0f;
-	vin.normal.w	= 0.0f;
-	vin.tangent.w	= 0.0f;
+	//vin.normal.w	= 0.0f;
+	//vin.tangent.w	= 0.0f;
 
 	float4x4 W		= mul( cbAdjustMatrix, cbWorld );
 	float4x4 WVP	= mul( W, cbViewProj );

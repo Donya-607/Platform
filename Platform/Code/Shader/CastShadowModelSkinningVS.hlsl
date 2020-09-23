@@ -38,8 +38,8 @@ void ApplyBoneMatrices( float4 boneWeights, uint4 boneIndices, inout float4 inou
 VS_OUT main( VS_IN vin )
 {
 	vin.pos.w		= 1.0f;
-	vin.normal.w	= 0.0f;
-	vin.tangent.w	= 0.0f;
+	//vin.normal.w	= 0.0f;
+	//vin.tangent.w	= 0.0f;
 	ApplyBoneMatrices( vin.weights, vin.bones, vin.pos );
 
 	float4x4 W		= mul( cbAdjustMatrix, cbWorld );

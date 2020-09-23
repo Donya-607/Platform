@@ -49,6 +49,12 @@ namespace
 #else
 	constexpr bool IOFromBinary = true;
 #endif // DEBUG_MODE
+
+#if USE_IMGUI
+	static bool projectLightCamera	= false;
+	static bool drawLightSource		= true;
+	static bool drawPointLights		= false;
+#endif // USE_IMGUI
 }
 
 namespace
@@ -536,11 +542,12 @@ void SceneGame::Draw( float elapsedTime )
 	if ( !AreRenderersReady() ) { return; }
 	// else
 
-	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector3 &eyePos, const Donya::Vector4x4 &viewProjectionMatrix )
+	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector3 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix )
 	{
 		Donya::Model::Constants::PerScene::Common constant{};
 		constant.directionalLight	= directionalLight;
 		constant.eyePosition		= Donya::Vector4{ eyePos, 1.0f };
+		constant.viewMatrix			= viewProjectionMatrix;
 		constant.viewProjMatrix		= viewProjectionMatrix;
 		pRenderer->UpdateConstant( constant );
 	};
@@ -580,8 +587,21 @@ void SceneGame::Draw( float elapsedTime )
 		: pRenderer->DeactivateShaderNormalSkinning();
 	};
 	
-	const Donya::Vector4x4 VP  = iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix();
-	const Donya::Vector4x4 LVP = CalcLightViewProjectionMatrix();
+#if DEBUG_MODE
+		  Donya::Vector4x4 V = iCamera.CalcViewMatrix();
+		  Donya::Vector4x4 VP = V * iCamera.GetProjectionMatrix();
+	if ( projectLightCamera )
+	{
+		V = CalcLightViewMatrix();
+		VP = V * lightCamera.GetProjectionMatrix();
+	}
+#else
+	const Donya::Vector4x4 V   = iCamera.CalcViewMatrix();
+	const Donya::Vector4x4 VP  = V * iCamera.GetProjectionMatrix();
+#endif // DEBUG_MODE
+
+	const Donya::Vector4x4 LV  = CalcLightViewMatrix();
+	const Donya::Vector4x4 LVP = LV * lightCamera.GetProjectionMatrix();
 	const auto &data = FetchParameter();
 
 	// Draw the back-ground
@@ -604,7 +624,7 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
 		tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
-		UpdateSceneConstant( tmpDirLight, lightCamera.GetPosition(), LVP );
+		UpdateSceneConstant( tmpDirLight, lightCamera.GetPosition(), LV, LVP );
 	}
 	pShadowMap->SetRenderTarget();
 	pShadowMap->SetViewport();
@@ -620,7 +640,7 @@ void SceneGame::Draw( float elapsedTime )
 
 	// Update scene and shadow constants
 	{
-		UpdateSceneConstant( data.directionalLight, iCamera.GetPosition(), VP );
+		UpdateSceneConstant( data.directionalLight, iCamera.GetPosition(), V, VP );
 
 		RenderingHelper::ShadowConstant constant{};
 		constant.lightProjMatrix	= LVP;
@@ -739,7 +759,7 @@ void SceneGame::Draw( float elapsedTime )
 	if ( pPlayer ) { pPlayer->DrawMeter(); }
 
 #if DEBUG_MODE
-	if ( Common::IsShowCollision() )
+	// if ( Common::IsShowCollision() )
 	{
 		static Donya::Geometric::Line line{ 512U };
 		static bool shouldInitializeLine = true;
@@ -780,8 +800,8 @@ void SceneGame::Draw( float elapsedTime )
 			DrawCube( currentScreen.WorldPosition(), Donya::Vector3{ scale, 0.2f } );
 		}
 
-		// DirectionalLight source
-		if ( 1 )
+		// Light source for shadow map
+		if ( drawLightSource )
 		{
 			constexpr float lineLength = 24.0f;
 
@@ -821,7 +841,7 @@ void SceneGame::Draw( float elapsedTime )
 		}
 
 		// PointLight source
-		if ( 1 )
+		if ( drawPointLights )
 		{
 			const auto &plr = PointLightStorage::Get().GetStorage();
 
@@ -1201,7 +1221,8 @@ void SceneGame::AssignCameraPos()
 	const Donya::Vector3 basePos
 	{
 		cameraPos.x,
-		( pCurrentRoom ) ? pCurrentRoom->GetArea().Max().y : cameraPos.y,
+		// ( pCurrentRoom ) ? pCurrentRoom->GetArea().Max().y : cameraPos.y,
+		cameraPos.y,
 		cameraPos.z,
 	};
 	lightCamera.SetPosition( basePos + data.shadowMap.posOffset );
@@ -1221,7 +1242,8 @@ void SceneGame::CameraUpdate( float elapsedTime )
 		const Donya::Vector3 basePos
 		{
 			cameraPos.x,
-			( pCurrentRoom ) ? pCurrentRoom->GetArea().Max().y : cameraPos.y,
+			// ( pCurrentRoom ) ? pCurrentRoom->GetArea().Max().y : cameraPos.y,
+			cameraPos.y,
 			cameraPos.z,
 		};
 		lightCamera.SetPosition( basePos + data.shadowMap.posOffset );
@@ -1325,7 +1347,7 @@ void SceneGame::CameraUpdate( float elapsedTime )
 #endif // !DEBUG_MODE
 }
 
-Donya::Vector4x4 SceneGame::CalcLightViewProjectionMatrix() const
+Donya::Vector4x4 SceneGame::CalcLightViewMatrix() const
 {
 	const Donya::Vector3 lightPos = lightCamera.GetPosition();
 
@@ -1361,7 +1383,7 @@ Donya::Vector4x4 SceneGame::CalcLightViewProjectionMatrix() const
 	view._41 = -lightPos.x;
 	view._42 = -lightPos.y;
 	view._43 = -lightPos.z;
-	return view * lightCamera.GetProjectionMatrix();
+	return view;
 }
 
 void SceneGame::PlayerInit()
@@ -2065,6 +2087,18 @@ void SceneGame::UseImGui( float elapsedTime )
 	ImGui::SetNextWindowBgAlpha( 0.6f );
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
+
+	ImGui::Checkbox( u8"		点光源可視化",		&drawPointLights	);
+	ImGui::Checkbox( u8"[ALT+L]	影用光源の可視化",	&drawLightSource	);
+	ImGui::Checkbox( u8"[F4]	光視点にする",		&projectLightCamera	);
+	if ( Donya::Keyboard::Trigger( 'L' ) && Donya::Keyboard::Press( VK_MENU ) )
+	{
+		drawLightSource = !drawLightSource;
+	}
+	if ( Donya::Keyboard::Trigger( VK_F4 ) )
+	{
+		projectLightCamera = !projectLightCamera;
+	}
 
 	sceneParam.ShowImGuiNode( u8"ゲームシーンのパラメータ" );
 
