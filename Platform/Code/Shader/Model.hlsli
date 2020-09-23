@@ -9,6 +9,8 @@ struct VS_OUT
 	float4		tsEyeVec	: NORMAL1;		// (vertex->camera) vector in tangent space
 	float2		texCoord	: TEXCOORD0;
 	float2		shadowMapUV	: TEXCOORD1;
+	
+	float4 tsNormal : NORMAL2;
 };
 
 cbuffer CBPerScene : register( b0 )
