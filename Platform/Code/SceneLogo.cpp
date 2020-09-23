@@ -1,25 +1,66 @@
 #include "SceneLogo.h"
 
+#include "Donya/Blend.h"
 #include "Donya/Constant.h"
 #include "Donya/Donya.h"		// Use ClearViews()
 #include "Donya/Keyboard.h"
 #include "Donya/Sprite.h"
 
+#if DEBUG_MODE
+#include "Donya/UseImGui.h"
+#endif // DEBUG_MODE
+
 #include "Common.h"
 #include "Fader.h"
 #include "FilePath.h"
 
+#define USE_REAL_TIME_BASE	( true )
+#define USE_FADE_TRANSITION	( false )
 
 namespace
 {
-	constexpr int	FADE_IN_FRAME	= 20;
-	constexpr int	WAIT_FRAME		= 45;
-	constexpr int	FADE_OUT_FRAME	= 20;
+	namespace SkipInput
+	{
+		constexpr int keyboard[]
+		{
+			VK_RETURN,
+			VK_SHIFT,
+			VK_SPACE,
+			'Z',
+			'X',
+		};
+		constexpr Donya::Gamepad::Button xinput[]
+		{
+			Donya::Gamepad::Button::A,
+			Donya::Gamepad::Button::B,
+			Donya::Gamepad::Button::X,
+			Donya::Gamepad::Button::Y,
+			Donya::Gamepad::Button::START,
+			Donya::Gamepad::Button::SELECT,
+		};
+	}
 
-	constexpr float	FADE_IN_SPEED	= 1.0f / scast<float>( FADE_IN_FRAME  );
-	constexpr float	FADE_OUT_SPEED	= 1.0f / scast<float>( FADE_OUT_FRAME );
+	namespace Base
+	{
+		constexpr int	IN_FRAME	= 20;
+		constexpr int	WAIT_FRAME	= 45;
+		constexpr int	OUT_FRAME	= 20;
+	}
+
+#if USE_REAL_TIME_BASE
+	constexpr float	FADE_IN_TIME	= scast<float>( Base::IN_FRAME	) / 60.0f;
+	constexpr float	WAIT_TIME		= scast<float>( Base::WAIT_FRAME) / 60.0f;
+	constexpr float	FADE_OUT_TIME	= scast<float>( Base::OUT_FRAME	) / 60.0f;
+	constexpr float	FADE_IN_SPEED	= 1.0f / FADE_IN_TIME;
+	constexpr float	FADE_OUT_SPEED	= 1.0f / FADE_OUT_TIME;
+#else
+	constexpr int	FADE_IN_TIME	= Base::IN_FRAME;
+	constexpr int	WAIT_TIME		= Base::WAIT_FRAME;
+	constexpr int	FADE_OUT_TIME	= Base::OUT_FRAME;
+	constexpr float	FADE_IN_SPEED	= 1.0f / scast<float>( FADE_IN_TIME  );
+	constexpr float	FADE_OUT_SPEED	= 1.0f / scast<float>( FADE_OUT_TIME );
+#endif // USE_REAL_TIME_BASE
 }
-
 
 void SceneLogo::Init()
 {
@@ -39,21 +80,28 @@ void SceneLogo::Init()
 	}
 
 	showIndex	= 0;
-	timer		= 0;
 	alpha		= 0.0f;
 	scale		= 1.0f;
-}
+	frameTimer	= 0;
+	secondTimer	= 0;
 
+	InitFadeIn();
+}
 void SceneLogo::Uninit()
 {
 
 }
-
 Scene::Result SceneLogo::Update( float elapsedTime )
 {
-	if ( Donya::Keyboard::Trigger( VK_RETURN ) )
+	controller.Update();
+
+	if ( WannaSkip() && status != State::END )
 	{
-		if ( status != State::FADE_OUT && status != State::END )
+		if ( status == State::FADE_OUT )
+		{
+			AdvanceLogoIndexOrEnd();
+		}
+		else
 		{
 			InitFadeOut();
 		}
@@ -67,13 +115,28 @@ Scene::Result SceneLogo::Update( float elapsedTime )
 	default: break;
 	}
 
+#if USE_IMGUI
+	if ( ImGui::BeginIfAllowed() )
+	{
+	#if USE_REAL_TIME_BASE
+		ImGui::DragFloat( u8"タイマー", &secondTimer, 0.01f );
+	#else
+		ImGui::DragInt( u8"タイマー", &frameTimer );
+	#endif // USE_REAL_TIME_BASE
+
+		ImGui::SliderFloat( u8"アルファ", &alpha, 0.0f, 1.0f );
+
+		ImGui::End();
+	}
+#endif // USE_IMGUI
+
 	return ReturnResult();
 }
-
 void SceneLogo::Draw( float elapsedTime )
 {
 	ClearBackGround();
 
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 	Donya::Sprite::DrawExt
 	(
 		sprites[showIndex],
@@ -84,19 +147,68 @@ void SceneLogo::Draw( float elapsedTime )
 	);
 }
 
+bool SceneLogo::WannaSkip() const
+{
+	for ( const auto &key : SkipInput::keyboard )
+	{
+		if ( Donya::Keyboard::Trigger( key ) ) { return true; }
+	}
+
+	if ( !controller.IsConnected() ) { return false; }
+	// else
+
+	for ( const auto &button : SkipInput::xinput )
+	{
+		if ( controller.Trigger( button ) ) { return true; }
+	}
+
+	return false;
+}
+bool SceneLogo::HasRemainLogo() const
+{
+	constexpr int logoCount = scast<int>( showLogos.size() );
+	return ( showIndex < logoCount );
+}
+
+void SceneLogo::AdvanceLogoIndexOrEnd()
+{
+	showIndex++;
+
+	if ( HasRemainLogo() )
+	{
+		// Show next logo
+		InitFadeIn();
+	}
+	else
+	{
+		// Goto next scene
+		showIndex = scast<int>( showLogos.size() ) - 1;
+		InitEnd();
+	}
+}
+
 void SceneLogo::InitFadeIn()
 {
-	timer  = 0;
-	alpha  = 0.0f;
-	status = State::FADE_IN;
+	alpha		= 0.0f;
+	status		= State::FADE_IN;
+	frameTimer	= 0;
+	secondTimer	= 0;
 }
 void SceneLogo::UpdateFadeIn( float elapsedTime )
 {
-	timer++;
+	bool done = false;
 
-	alpha += FADE_IN_SPEED;
+#if USE_REAL_TIME_BASE
+	secondTimer	+= elapsedTime;
+	alpha		+= FADE_IN_SPEED * elapsedTime;
+	done		= ( FADE_IN_TIME <= secondTimer );
+#else
+	frameTimer	+= 1;
+	alpha		+= FADE_IN_SPEED;
+	done		= ( FADE_IN_TIME <= frameTimer );
+#endif // USE_REAL_TIME_BASE
 
-	if ( FADE_IN_FRAME <= timer )
+	if ( done )
 	{
 		InitWait();
 	}
@@ -104,15 +216,24 @@ void SceneLogo::UpdateFadeIn( float elapsedTime )
 
 void SceneLogo::InitWait()
 {
-	timer  = 0;
-	alpha  = 1.0f;
-	status = State::WAIT;
+	alpha		= 1.0f;
+	status		= State::WAIT;
+	frameTimer	= 0;
+	secondTimer	= 0;
 }
 void SceneLogo::UpdateWait( float elapsedTime )
 {
-	timer++;
+	bool done = false;
 
-	if ( WAIT_FRAME <= timer )
+#if USE_REAL_TIME_BASE
+	secondTimer	+= elapsedTime;
+	done		= ( WAIT_TIME <= secondTimer );
+#else
+	frameTimer	+= 1;
+	done		= ( WAIT_TIME <= frameTimer );
+#endif // USE_REAL_TIME_BASE
+
+	if ( done )
 	{
 		InitFadeOut();
 	}
@@ -120,41 +241,42 @@ void SceneLogo::UpdateWait( float elapsedTime )
 
 void SceneLogo::InitFadeOut()
 {
-	timer  = 0;
-	alpha  = 1.0f;
-	status = State::FADE_OUT;
+	alpha		= 1.0f;
+	status		= State::FADE_OUT;
+	frameTimer	= 0;
+	secondTimer	= 0;
 }
 void SceneLogo::UpdateFadeOut( float elapsedTime )
 {
-	timer++;
+	bool done = false;
 
-	alpha -= FADE_OUT_SPEED;
+#if USE_REAL_TIME_BASE
+	secondTimer	+= elapsedTime;
+	alpha		-= FADE_OUT_SPEED * elapsedTime;
+	done		= ( FADE_OUT_TIME <= secondTimer );
+#else
+	frameTimer	+= 1;
+	alpha		-= FADE_OUT_SPEED;
+	done		= ( FADE_OUT_TIME <= frameTimer );
+#endif // USE_REAL_TIME_BASE
 
-	if ( FADE_OUT_FRAME <= timer )
+	if ( done )
 	{
-		showIndex++;
-
-		constexpr int logoCount = scast<int>( showLogos.size() );
-		if ( logoCount <= showIndex )
-		{
-			showIndex = logoCount - 1;
-			InitEnd();
-		}
-		else
-		{
-			InitFadeIn();
-		}
+		AdvanceLogoIndexOrEnd();
 	}
 }
 
 void SceneLogo::InitEnd()
 {
-	timer  = 0;
-	alpha  = 0.0f;
-	scale  = 1.0f;
-	status = State::END;
+	alpha		= 0.0f;
+	scale		= 1.0f;
+	status		= State::END;
+	frameTimer	= 0;
+	secondTimer	= 0;
 
-	// StartFade();
+#if USE_FADE_TRANSITION
+	StartFade();
+#endif // USE_FADE_TRANSITION
 }
 
 void SceneLogo::ClearBackGround() const
@@ -163,7 +285,6 @@ void SceneLogo::ClearBackGround() const
 	constexpr FLOAT BG_COLOR[4]{ gray.x, gray.y, gray.z, 1.0f };
 	Donya::ClearViews( BG_COLOR );
 }
-
 void SceneLogo::StartFade() const
 {
 	Fader::Configuration config{};
@@ -175,7 +296,11 @@ void SceneLogo::StartFade() const
 
 Scene::Result SceneLogo::ReturnResult()
 {
+#if USE_FADE_TRANSITION
+	if ( Fader::Get().IsClosed() )
+#else
 	if ( status == State::END )
+#endif // USE_FADE_TRANSITION
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
