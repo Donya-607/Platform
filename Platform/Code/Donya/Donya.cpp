@@ -1096,15 +1096,17 @@ namespace Donya
 
 	void ResetPipelineStages()
 	{
+		ID3D11ShaderResourceView *pNullSRV = nullptr;
+
 		smg->d3d11.immediateContext->IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, NULL );
 		smg->d3d11.immediateContext->IASetInputLayout( NULL );
 
 		smg->d3d11.immediateContext->VSSetShader( NULL, NULL, NULL );
-		smg->d3d11.immediateContext->VSSetShaderResources( NULL, NULL, NULL );
+		smg->d3d11.immediateContext->VSSetShaderResources( 0U, 1U, &pNullSRV );
 
-		smg->d3d11.immediateContext->PSSetSamplers( NULL, NULL, NULL );
 		smg->d3d11.immediateContext->PSSetShader( NULL, NULL, NULL );
-		smg->d3d11.immediateContext->PSSetShaderResources( NULL, NULL, NULL );
+		smg->d3d11.immediateContext->PSSetSamplers( 0U, 1U, NULL );
+		smg->d3d11.immediateContext->PSSetShaderResources( 0U, 1U, &pNullSRV );
 	}
 
 	void SystemUpdate()
