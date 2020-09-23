@@ -584,6 +584,17 @@ void SceneGame::Draw( float elapsedTime )
 	const Donya::Vector4x4 LVP = CalcLightViewProjectionMatrix();
 	const auto &data = FetchParameter();
 
+	// Draw the back-ground
+	if ( pSky )
+	{
+		pScreenSurface->SetRenderTarget();
+		pScreenSurface->SetViewport();
+		
+		pSky->Draw( iCamera.GetPosition(), VP );
+
+		Donya::Surface::ResetRenderTarget();
+	}
+
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
 	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
@@ -624,20 +635,6 @@ void SceneGame::Draw( float elapsedTime )
 
 	pScreenSurface->SetRenderTarget();
 	pScreenSurface->SetViewport();
-#if DEBUG_MODE
-	pRenderer->DeactivateSamplerNormal();
-	pRenderer->DeactivateSamplerModel();
-	Donya::Rasterizer::Deactivate();
-	Donya::DepthStencil::Deactivate();
-	if ( pSky )
-	{
-		pSky->Draw( iCamera.GetPosition(), VP );
-	}
-	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
-	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
-	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
-	pRenderer->ActivateSamplerNormal( Donya::Sampler::Defined::Point_Wrap );
-#endif // DEBUG_MODE
 	// Draw normal scene with shadow map
 	{
 		pRenderer->ActivateConstantScene();
@@ -2006,15 +2003,22 @@ namespace
 			ImGui::TreePop();
 		}
 	};
-	static GuiWindow adjustWindow{ { 194.0f, 510.0f }, { 364.0f, 300.0f } };
-	static GuiWindow playerWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
-	static GuiWindow enemyWindow { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
-	static GuiWindow bossWindow  { {   0.0f,   0.0f }, { 360.0f, 180.0f } };
+	static GuiWindow adjustWindow	{ { 194.0f, 510.0f }, { 364.0f, 300.0f } };
+	static GuiWindow debugTeller	{ {  96.0f, -32.0f }, { 128.0f,  16.0f } };
+	static GuiWindow playerWindow	{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
+	static GuiWindow enemyWindow	{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
+	static GuiWindow bossWindow		{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static bool enableFloatWindow = true;
 	static GuiWindow testTileWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 }
 void SceneGame::UseImGui( float elapsedTime )
 {
+	if ( nowDebugMode )
+	{
+		debugTeller.SetNextWindow();
+		if ( ImGui::BeginIfAllowed( u8"DEBUG:ON" ) ) { ImGui::End(); }
+	}
+
 	UseScreenSpaceImGui();
 
 	// Choose a room by mouse
