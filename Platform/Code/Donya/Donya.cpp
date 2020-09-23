@@ -1096,7 +1096,8 @@ namespace Donya
 
 	void ResetPipelineStages()
 	{
-		ID3D11ShaderResourceView *pNullSRV = nullptr;
+		ID3D11ShaderResourceView	*pNullSRV		= nullptr;
+		ID3D11SamplerState			*pNullSampler	= nullptr;
 
 		smg->d3d11.immediateContext->IASetIndexBuffer( NULL, DXGI_FORMAT_UNKNOWN, NULL );
 		smg->d3d11.immediateContext->IASetInputLayout( NULL );
@@ -1105,7 +1106,7 @@ namespace Donya
 		smg->d3d11.immediateContext->VSSetShaderResources( 0U, 1U, &pNullSRV );
 
 		smg->d3d11.immediateContext->PSSetShader( NULL, NULL, NULL );
-		smg->d3d11.immediateContext->PSSetSamplers( 0U, 1U, NULL );
+		smg->d3d11.immediateContext->PSSetSamplers( 0U, 1U, &pNullSampler );
 		smg->d3d11.immediateContext->PSSetShaderResources( 0U, 1U, &pNullSRV );
 	}
 
