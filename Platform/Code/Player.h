@@ -90,6 +90,7 @@ public:
 		Donya::Vector2	moveVelocity;	// Unit velocity
 		bool			useJump = false;
 		bool			useShot = false;
+		bool			useDash = false;
 	};
 	enum class MotionKind
 	{
@@ -256,7 +257,7 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowGrabbingLadder( const Player &instance ) const override { return true; }
+		bool NowGrabbingLadder( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI

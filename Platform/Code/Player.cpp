@@ -862,6 +862,7 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 
 	// Deformity of MoveVertical()
 	{
+		// Jump condition and resolve vs slide condition
 		if ( input.useJump && inst.Jumpable() && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 		{
 			if ( Donya::SignBit( input.moveVelocity.y ) < 0 )
@@ -880,6 +881,12 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 		}
 		else
 		{
+			// TODO: Prevent keep pressing
+			if ( input.useDash && inst.onGround )
+			{
+				gotoSlide = true;
+			}
+
 			inst.Fall( elapsedTime, input );
 		}
 	}
@@ -1218,10 +1225,9 @@ void Player::GrabLadder::Uninit( Player &inst )
 	inst.pTargetLadder.reset();
 	inst.UpdateOrientation( /* lookingRight = */ ( inst.lookingSign < 0.0f ) ? false : true );
 
+	// Adjust the position onto a ladder
 	if ( releaseWay == ReleaseWay::Climb )
 	{
-		// Adjust the position onto a ladder
-
 		Donya::Vector3 grabPos = grabArea.WorldPosition();
 		grabPos.y += grabArea.size.y;
 
@@ -1239,8 +1245,12 @@ void Player::GrabLadder::Uninit( Player &inst )
 		inst.hurtBox.pos	= inst.body.pos;
 		grabArea.pos		= inst.body.pos;
 
+		inst.onGround = true; // Do not play the landing SE
 		inst.Landing();
 	}
+
+	// Cancel the grab motion
+	inst.motionManager.Update( inst, 0.0001f, /* stopAnimation = */ true );
 }
 void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
 {
@@ -1275,6 +1285,13 @@ void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terra
 	// We must apply world position to other boxes also
 	inst.hurtBox.pos	= inst.body.pos;
 	grabArea.pos		= inst.body.pos;
+}
+bool Player::GrabLadder::NowGrabbingLadder( const Player &inst ) const
+{
+	// Prioritize an other motion if now releasing
+	if ( ShouldChangeMover( inst ) ) { return false; }
+	// else
+	return true;
 }
 bool Player::GrabLadder::ShouldChangeMover( const Player &inst ) const
 {

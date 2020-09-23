@@ -1090,6 +1090,7 @@ void SceneGame::AssignCurrentInput()
 	bool pressDown	= false;
 	bool pressJump	= false;
 	bool pressShot	= false;
+	bool pressDash	= false;
 
 	// TODO: To be changeable the input key or button
 
@@ -1102,8 +1103,9 @@ void SceneGame::AssignCurrentInput()
 		pressRight	= controller.Press( Button::RIGHT	) || controller.PressStick( Direction::RIGHT	);
 		pressUp		= controller.Press( Button::UP		) || controller.PressStick( Direction::UP		);
 		pressDown	= controller.Press( Button::DOWN	) || controller.PressStick( Direction::DOWN		);
-		pressJump	= controller.Press( Button::A );
-		pressShot	= controller.Press( Button::B );
+		pressJump	= controller.Press( Button::A  ) || controller.Press( Button::X  );
+		pressShot	= controller.Press( Button::B  ) || controller.Press( Button::Y  );
+		pressDash	= controller.Press( Button::LT ) || controller.Press( Button::RT );
 	}
 	else
 	{
@@ -1113,6 +1115,7 @@ void SceneGame::AssignCurrentInput()
 		pressDown	= Donya::Keyboard::Press( VK_DOWN	);
 		pressJump	= Donya::Keyboard::Press( VK_SHIFT	);
 		pressShot	= Donya::Keyboard::Press( 'Z' );
+		pressDash	= Donya::Keyboard::Press( 'A' );
 	}
 
 	currentInput.Clear();
@@ -1122,6 +1125,7 @@ void SceneGame::AssignCurrentInput()
 	if ( pressDown	) { currentInput.inputDirection.y -= 1.0f; } // World space direction
 	currentInput.pressJump = pressJump;
 	currentInput.pressShot = pressShot;
+	currentInput.pressDash = pressDash;
 }
 
 void SceneGame::CameraInit()
@@ -1413,6 +1417,7 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 	input.moveVelocity	= currentInput.inputDirection;
 	input.useJump		= currentInput.pressJump;
 	input.useShot		= currentInput.pressShot;
+	input.useDash		= currentInput.pressDash;
 
 	pPlayer->Update( elapsedTime, input, terrain );
 
