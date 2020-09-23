@@ -316,8 +316,9 @@ namespace Donya
 			{
 				struct Light
 				{
-					Donya::Vector4	diffuseColor;	// The W component is an intensity, so should be greater than zero.
-					Donya::Vector4	specularColor;	// The W component is an intensity, so should be greater than zero.
+					Donya::Vector4	ambientColor { 0.0f, 0.0f, 0.0f, 1.0f };	// The W component is an intensity, so should be greater than zero.
+					Donya::Vector4	diffuseColor { 1.0f, 1.0f, 1.0f, 1.0f };	// The W component is an intensity, so should be greater than zero.
+					Donya::Vector4	specularColor{ 0.0f, 0.0f, 0.0f, 1.0f };	// The W component is an intensity, so should be greater than zero.
 				};
 				struct DirectionalLight
 				{

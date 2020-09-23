@@ -3,6 +3,7 @@
 
 struct Light
 {
+	float4		ambientColor;	// W is Intensity
 	float4		diffuseColor;	// W is Intensity
 	float4		specularColor;	// W is Intensity
 };

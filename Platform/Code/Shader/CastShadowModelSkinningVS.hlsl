@@ -19,7 +19,7 @@ cbuffer CBPerMesh : register( b2 )
 	float4x4	cbBoneTransforms[MAX_BONE_COUNT];
 };
 
-// Without the normal
+// Position only
 void ApplyBoneMatrices( float4 boneWeights, uint4 boneIndices, inout float4 inoutPosition )
 {
 	const float4 inPosition	= float4( inoutPosition.xyz, 1.0f );

@@ -114,6 +114,10 @@ namespace PerScene
 
 		if ( 1 <= version )
 		{
+			archive( cereal::make_nvp( "ambientColor", var.ambientColor ) );
+		}
+		if ( 2 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -151,6 +155,6 @@ namespace PerScene
 }
 }
 }
-CEREAL_CLASS_VERSION( Donya::Model::Constants::PerScene::Light,				0 )
+CEREAL_CLASS_VERSION( Donya::Model::Constants::PerScene::Light,				1 )
 CEREAL_CLASS_VERSION( Donya::Model::Constants::PerScene::DirectionalLight,	0 )
 CEREAL_CLASS_VERSION( Donya::Model::Constants::PerScene::PointLight,		0 )

@@ -153,7 +153,8 @@ namespace ImGui
 			if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
 
-			ImGui::ColorEdit4( u8"ディフューズ・色",	&p->diffuseColor.x	);
+			ImGui::ColorEdit4( u8"アンビエント",		&p->ambientColor.x	);
+			ImGui::ColorEdit4( u8"ディフューズ",		&p->diffuseColor.x	);
 			ImGui::ColorEdit3( u8"スペキュラ・色",	&p->specularColor.x	);
 			ImGui::DragFloat ( u8"スペキュラ・強度",	&p->specularColor.w, 0.01f );
 			p->specularColor.w = std::max( 0.0f, p->specularColor.w );

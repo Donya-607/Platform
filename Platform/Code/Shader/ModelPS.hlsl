@@ -40,7 +40,7 @@ float4 main( VS_OUT pin ) : SV_TARGET
 							(
 								cbDirLight.light, pin.tsLightVec.xyz,
 								tsNormal, pin.tsEyeVec.xyz,
-								cbDiffuse.rgb, cbSpecular.rgb, cbSpecular.w
+								cbAmbient, cbDiffuse.rgb, cbSpecular.rgb, cbSpecular.w
 							);
 	for ( uint i = 0; i < cbPointLightCount; ++i )
 	{
@@ -49,7 +49,7 @@ float4 main( VS_OUT pin ) : SV_TARGET
 			(
 				cbPointLights[i],
 				pin.wsPos.xyz, tsNormal.xyz, pin.tsEyeVec.xyz,
-				cbDiffuse.rgb, cbSpecular.rgb, cbSpecular.w
+				cbAmbient, cbDiffuse.rgb, cbSpecular.rgb, cbSpecular.w
 			);
 	}
 			totalLight		+= cbAmbient.rgb * cbAmbient.w;

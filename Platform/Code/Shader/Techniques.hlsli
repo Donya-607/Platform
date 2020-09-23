@@ -151,11 +151,12 @@ float BlinnPhong( float3 nwsNormal, float3 nwsToLightVec, float3 nwsToEyeVec, fl
 // Argument.nwsToLightVec : The light vector of normalized world space. this vector is "position -> light".
 // Argument.nwsNormal : The normal of normalized world space.
 // Argument.nwsToEyeVec : The eye vector of normalized world space. this vector is "position -> eye".
+// Argument.ambient : The ambient color. The W component will be used as intensity.
 // Argument.diffuse : The diffuse color.
 // Argument.specular : The specular color.
 // Argument.shininess : The specular power. Must be greater than zero.
 // Returns : Color that influenced by light.
-float3 CalcLightInfluence( Light light, float3 nwsToLightVec, float3 nwsNormal, float3 nwsEyeVec, float3 diffuse, float3 specular, float shininess )
+float3 CalcLightInfluence( Light light, float3 nwsToLightVec, float3 nwsNormal, float3 nwsEyeVec, float4 ambient, float3 diffuse, float3 specular, float shininess )
 {
 	float	diffuseFactor	= HalfLambert( nwsNormal, nwsToLightVec );
 	//		diffuseFactor	= pow( diffuseFactor, 2.0f );
@@ -164,21 +165,24 @@ float3 CalcLightInfluence( Light light, float3 nwsToLightVec, float3 nwsNormal, 
 	float	specularFactor	= Phong( nwsNormal, nwsToLightVec, nwsEyeVec, shininess, light.specularColor.w );
 	float3	specularColor	= specular.rgb * specularFactor;
 
+	float3	Ka				= ambient.rgb * ambient.w;
+	float3	La				= light.ambientColor.rgb * light.ambientColor.w;
 	float3	Kd				= diffuseColor;
-	float3	Id				= light.diffuseColor.rgb * light.diffuseColor.w;
+	float3	Ld				= light.diffuseColor.rgb * light.diffuseColor.w;
 	float3	Ks				= specularColor;
-	float3	Is				= light.specularColor.rgb;
-	return	( Kd * Id ) + ( Ks * Is );
+	float3	Ls				= light.specularColor.rgb;
+	return	( Ka * La ) + ( Kd * Ld ) + ( Ks * Ls );
 }
 // Calculate color that influenced by point light.
 // Argument.wsPixelPos : The pixel position of world space.
 // Argument.nwsNormal : Normalized World-space vector of pixel's normal.
 // Argument.nwsEyeVec : Normalized World-space vector that is (camera.pos - pixel.pos).
+// Argument.ambient : The ambient color. The W component will be used as intensity.
 // Argument.diffuse : The diffuse color.
 // Argument.specular : The specular color.
 // Argument.shininess : The specular power. Must be greater than zero.
 // Returns : Color that influenced by light, or zero(0,0,0) if the distance from wsPixelPos is greater than range of plight.
-float3 CalcPointLightInfl( PointLight plight, const float3 wsPixelPos, const float3 nwsNormal, const float3 nwsEyeVec, float3 diffuse, float3 specular, float shininess )
+float3 CalcPointLightInfl( PointLight plight, const float3 wsPixelPos, const float3 nwsNormal, const float3 nwsEyeVec, float4 ambient, float3 diffuse, float3 specular, float shininess )
 {	
 	// See http://ogldev.atspace.co.uk/www/tutorial20/tutorial20.html
 	
@@ -191,7 +195,7 @@ float3 CalcPointLightInfl( PointLight plight, const float3 wsPixelPos, const flo
 	
 	float3	nLightVec		= normalize( lightVec );
 	
-	float3	lightColor		= CalcLightInfluence( plight.light, nLightVec, nwsNormal, nwsEyeVec, diffuse, specular, shininess );
+	float3	lightColor		= CalcLightInfluence( plight.light, nLightVec, nwsNormal, nwsEyeVec, ambient, diffuse, specular, shininess );
 	
 	float	attenuation		= plight.attenuation.x +
 							  plight.attenuation.y * distance +
