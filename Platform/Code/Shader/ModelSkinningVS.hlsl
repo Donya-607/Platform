@@ -69,6 +69,5 @@ VS_OUT main( VS_IN vin )
 	vout.tsEyeVec		=  normalize( mul( cbEyePosition - vout.wsPos, VT ) );
 	vout.texCoord		=  vin.texCoord;
 	vout.shadowMapUV	=  NDCToTexCoord( vout.lssPosNDC.xy );
-	vout.tsNormal = normalize( mul( vin.normal, mul( W, VT ) ) );
 	return vout;
 }

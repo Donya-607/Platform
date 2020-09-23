@@ -31,9 +31,7 @@ float4 main( VS_OUT pin ) : SV_TARGET
 	float4	normalMapColor	= normalMap.Sample( normalMapSampler, pin.texCoord );
 			normalMapColor	= SRGBToLinear( normalMapColor );
 	float3	tsNormal		= normalize( SampledToNormal( normalMapColor.xyz ) );
-	// return float4( tsNormal - normalize( pin.tsNormal.xyz ), 1.0f); // Always outputs yellow?
-	// return float4( normalize( pin.tsNormal.xyz ), 1.0f ); // Always outputs BLUE
-	return float4( normalize( normalMapColor.xyz ), 1.0f );
+	
 	float4	diffuseMapColor	= diffuseMap.Sample( diffuseMapSampler, pin.texCoord );
 			diffuseMapColor	= SRGBToLinear( diffuseMapColor );
 	float	diffuseMapAlpha	= diffuseMapColor.a;
