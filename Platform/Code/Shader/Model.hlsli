@@ -1,5 +1,7 @@
 #include "Struct.hlsli"
 
+// The Tangent Space can be transformed from view space.
+// World -> View -> Tangent
 struct VS_OUT
 {
 	float4		svPos		: SV_POSITION;

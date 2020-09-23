@@ -112,6 +112,24 @@ Scene::Result SceneOver::Update( float elapsedTime )
 
 	controller.Update();
 
+	if ( !Fader::Get().IsExist() )
+	{
+		bool shouldSkip = false;
+		if ( controller.IsConnected() )
+		{
+			shouldSkip = controller.Trigger( Donya::Gamepad::Button::A );
+		}
+		else
+		{
+			shouldSkip = Donya::Keyboard::Trigger( 'Z' );
+		}
+
+		if ( shouldSkip )
+		{
+			StartFade();
+		}
+	}
+
 	CameraUpdate();
 
 	return ReturnResult();

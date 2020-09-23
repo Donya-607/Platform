@@ -1,5 +1,6 @@
 #include "Sky.h"
 
+#include "Donya/Quaternion.h"
 #include "Donya/Template.h"	// Use Donya::Clamp()
 #include "Donya/Useful.h"
 
