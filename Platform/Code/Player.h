@@ -104,6 +104,7 @@ public:
 		Shot,
 		LadderShotLeft,
 		LadderShotRight,
+		Brace,
 
 		MotionCount
 	};
@@ -128,7 +129,7 @@ private:
 		bool					shouldPoseShot = false;
 	public:
 		void Init();
-		void Update( Player &instance, float elapsedTime, bool stopAnimation = false );
+		void Update( Player &instance, Input input, float elapsedTime, bool stopAnimation = false );
 		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW ) const;
 	public:
 		void QuitShotMotion();
@@ -140,7 +141,7 @@ private:
 		int  ToMotionIndex( MotionKind kind ) const;
 		void AssignPose( MotionKind kind );
 		bool ShouldEnableLoop( MotionKind kind ) const;
-		MotionKind CalcNowKind( Player &instance, float elapsedTime ) const;
+		MotionKind CalcNowKind( Player &instance, Input input, float elapsedTime ) const;
 	};
 	class ShotManager
 	{
@@ -194,7 +195,7 @@ private:
 	protected:
 		virtual void AssignBodyParameter( Player &instance );
 	protected:
-		void MotionUpdate( Player &instance, float elapsedTime, bool stopAnimation = false );
+		void MotionUpdate( Player &instance, Input input, float elapsedTime, bool stopAnimation = false );
 		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
 		void MoveOnlyVertical( Player &instance, float elapsedTime, const Map &terrain );
 	};

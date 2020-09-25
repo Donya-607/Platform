@@ -34,6 +34,7 @@ namespace
 		"Shot",
 		"LadderShotLeft",
 		"LadderShotRight",
+		"Brace",
 	};
 
 	static std::shared_ptr<ModelHelper::SkinningSet> pModel{};
@@ -435,10 +436,10 @@ void Player::MotionManager::Init()
 	shotAnimator.DisableLoop();
 	shouldPoseShot = false;
 }
-void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAnimation )
+void Player::MotionManager::Update( Player &inst, Input input, float elapsedTime, bool stopAnimation )
 {
 	prevKind = currKind;
-	currKind = CalcNowKind( inst, elapsedTime );
+	currKind = CalcNowKind( inst, input, elapsedTime );
 	if ( currKind != prevKind )
 	{
 		model.animator.ResetTimer();
@@ -656,20 +657,24 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 {
 	switch ( kind )
 	{
-	case MotionKind::Idle:		return true;
-	case MotionKind::Run:		return true;
-	case MotionKind::Slide:		return true;
-	case MotionKind::Jump_Rise:	return false;
-	case MotionKind::Jump_Fall:	return false;
-	case MotionKind::KnockBack:	return false;
-	case MotionKind::GrabLadder:return true;
+	case MotionKind::Idle:				return true;
+	case MotionKind::Run:				return true;
+	case MotionKind::Slide:				return true;
+	case MotionKind::Jump_Rise:			return false;
+	case MotionKind::Jump_Fall:			return false;
+	case MotionKind::KnockBack:			return false;
+	case MotionKind::GrabLadder:		return true;
+	case MotionKind::Shot:				return false;
+	case MotionKind::LadderShotLeft:	return false;
+	case MotionKind::LadderShotRight:	return false;
+	case MotionKind::Brace:				return true;
 	default: break;
 	}
 
 	_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
 	return false;
 }
-Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elapsedTime ) const
+Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, Input input, float elapsedTime ) const
 {
 	// Continue same motion if the game time is pausing
 	if ( IsZero( elapsedTime ) ) { return currKind; }
@@ -694,6 +699,8 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 	}
 	// else
 	if ( nowMoving ) { return MotionKind::Run;	}
+	// else
+	if ( input.moveVelocity.y < 0.0f ) { return MotionKind::Brace; }
 	// else
 	return MotionKind::Idle;
 }
@@ -800,9 +807,9 @@ void Player::MoverBase::Init( Player &inst )
 {
 	AssignBodyParameter( inst );
 }
-void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime, bool stopAnimation )
+void Player::MoverBase::MotionUpdate( Player &inst, Input input, float elapsedTime, bool stopAnimation )
 {
-	inst.motionManager.Update( inst, elapsedTime, stopAnimation );
+	inst.motionManager.Update( inst, input, elapsedTime, stopAnimation );
 }
 void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -926,7 +933,7 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 		}
 	}
 
-	MotionUpdate( inst, elapsedTime );
+	MotionUpdate( inst, input, elapsedTime );
 }
 void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1017,7 +1024,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 
 	inst.ShotIfRequested( elapsedTime, input );
 
-	MotionUpdate( inst, elapsedTime );
+	MotionUpdate( inst, input, elapsedTime );
 }
 void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1250,7 +1257,13 @@ void Player::GrabLadder::Uninit( Player &inst )
 	}
 
 	// Cancel the grab motion
-	inst.motionManager.Update( inst, 0.0001f, /* stopAnimation = */ true );
+	Input empty{};
+	if ( releaseWay == ReleaseWay::Dismount )
+	{
+		// To be Brace motion
+		empty.moveVelocity.y = -0.1f;
+	}
+	MotionUpdate( inst, empty, 0.0001f, /* stopAnimation = */ true );
 }
 void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
 {
@@ -1275,7 +1288,7 @@ void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, c
 
 	const bool  pause = IsZero( inst.velocity.y );
 	const float sign  = Donya::SignBitF( inst.velocity.y );
-	MotionUpdate( inst, ( pause ) ? elapsedTime : elapsedTime * sign, pause );
+	MotionUpdate( inst, input, ( pause ) ? elapsedTime : elapsedTime * sign, pause );
 }
 void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1413,7 +1426,7 @@ void Player::KnockBack::Update( Player &inst, float elapsedTime, Input input, co
 	Input emptyInput{}; // Discard the input for a resistance of gravity.
 	inst.Fall( elapsedTime, emptyInput );
 
-	MotionUpdate( inst, elapsedTime );
+	MotionUpdate( inst, input, elapsedTime );
 }
 void Player::KnockBack::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
