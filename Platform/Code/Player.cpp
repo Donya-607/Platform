@@ -1416,8 +1416,8 @@ void Player::KnockBack::Init( Player &inst )
 
 	inst.motionManager.QuitShotMotion();
 	
-	timer = 0.0f;
-	motionSpeed = ( inst.prevBracingStatus ) ? 2.0f : 1.0f;
+	timer		= 0.0f;
+	motionSpeed	= ( inst.prevBracingStatus ) ? 2.0f : 1.0f; // TODO: Replace the "2.0f" to some parameter
 }
 void Player::KnockBack::Uninit( Player &inst )
 {
