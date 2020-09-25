@@ -933,12 +933,17 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 		}
 	}
 
+	braceOneself = ( input.moveVelocity.y < 0.0f && inst.onGround && IsZero( inst.velocity.x ) );
 	MotionUpdate( inst, input, elapsedTime );
 }
 void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
+}
+bool Player::Normal::NowBracing( const Player &inst ) const
+{
+	return braceOneself;
 }
 bool Player::Normal::ShouldChangeMover( const Player &inst ) const
 {
@@ -1402,7 +1407,7 @@ void Player::KnockBack::Init( Player &inst )
 	const bool knockedFromRight = ( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight );
 	inst.UpdateOrientation( knockedFromRight );
 
-	if ( !inst.prevSlidingStatus )
+	if ( !inst.prevSlidingStatus && !inst.prevBracingStatus )
 	{
 		const float impulseSign = ( knockedFromRight ) ? -1.0f : 1.0f;
 		inst.velocity.x  = Parameter().Get().knockBackSpeed * impulseSign;
@@ -1412,6 +1417,7 @@ void Player::KnockBack::Init( Player &inst )
 	inst.motionManager.QuitShotMotion();
 	
 	timer = 0.0f;
+	motionSpeed = ( inst.prevBracingStatus ) ? 2.0f : 1.0f;
 }
 void Player::KnockBack::Uninit( Player &inst )
 {
@@ -1421,12 +1427,12 @@ void Player::KnockBack::Uninit( Player &inst )
 }
 void Player::KnockBack::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
 {
-	timer += elapsedTime;
+	timer += elapsedTime * motionSpeed;
 
 	Input emptyInput{}; // Discard the input for a resistance of gravity.
 	inst.Fall( elapsedTime, emptyInput );
 
-	MotionUpdate( inst, input, elapsedTime );
+	MotionUpdate( inst, input, elapsedTime * motionSpeed );
 }
 void Player::KnockBack::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1571,6 +1577,7 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 	}
 
 	prevSlidingStatus = pMover->NowSliding( *this );
+	prevBracingStatus = pMover->NowBracing( *this );
 }
 void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {

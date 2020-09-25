@@ -185,6 +185,7 @@ private:
 		virtual bool NowSliding( const Player &instance ) const { return false; }
 		virtual bool NowKnockBacking( const Player &instance ) const { return false; }
 		virtual bool NowGrabbingLadder( const Player &instance ) const { return false; }
+		virtual bool NowBracing( const Player &instance ) const { return false; }
 		virtual bool NowMiss( const Player &instance ) const { return false; }
 		virtual bool Drawable( const Player &instance ) const { return true; }
 		virtual bool ShouldChangeMover( const Player &instance ) const = 0;
@@ -202,11 +203,13 @@ private:
 	class Normal : public MoverBase
 	{
 	private:
-		bool gotoSlide  = false;
-		bool gotoLadder = false;
+		bool gotoSlide		= false;
+		bool gotoLadder		= false;
+		bool braceOneself	= false;
 	public:
 		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		bool NowBracing( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -276,7 +279,8 @@ private:
 	class KnockBack : public MoverBase
 	{
 	private:
-		float timer = 0.0f;
+		float timer			= 0.0f;
+		float motionSpeed	= 1.0f;
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
@@ -318,8 +322,10 @@ private:
 	float						lookingSign				= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
 	float						keepJumpSecond			= 0.0f;
 	bool						wasReleasedJumpInput	= false;
-	bool						prevSlidingStatus		= false;
 	bool						onGround				= false;
+	// TODO: These status variables can be combine by replace to MotionKind value
+	bool						prevSlidingStatus		= false;
+	bool						prevBracingStatus		= false;
 
 	struct DamageDesc
 	{
