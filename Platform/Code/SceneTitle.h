@@ -103,7 +103,7 @@ private:
 	void	AssignCameraPos();
 	void	CameraUpdate( float elapsedTime );
 
-	Donya::Vector4x4 CalcLightViewProjectionMatrix() const;
+	Donya::Vector4x4 CalcLightViewMatrix() const;
 
 	void	PlayerInit();
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );

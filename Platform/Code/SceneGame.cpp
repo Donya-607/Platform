@@ -52,8 +52,7 @@ namespace
 
 #if USE_IMGUI
 	static bool projectLightCamera	= false;
-	static bool drawLightSource		= true;
-	static bool drawPointLights		= false;
+	static bool drawLightSources	= false;
 #endif // USE_IMGUI
 }
 
@@ -80,10 +79,10 @@ namespace
 			Donya::Vector3	color;			// RGB
 			float			bias = 0.03f;	// Ease an acne
 
-			Donya::Vector3	posOffset;		// From the camera position
+			float			offsetDistance	= 10.0f;				// From the player position
 			Donya::Vector3	projectDirection{  0.0f,  0.0f,  1.0f };
 			Donya::Vector3	projectDistance { 10.0f, 10.0f, 50.0f };// [m]
-			float			nearDistance = 1.0f;					// Z near is this. Z far is projectDistance.z.
+			float			nearDistance	= 1.0f;					// Z near is this. Z far is projectDistance.z.
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -93,7 +92,7 @@ namespace
 				(
 					CEREAL_NVP( color			),
 					CEREAL_NVP( bias			),
-					CEREAL_NVP( posOffset		),
+					CEREAL_NVP( offsetDistance	),
 					CEREAL_NVP( projectDirection),
 					CEREAL_NVP( projectDistance	),
 					CEREAL_NVP( nearDistance	)
@@ -164,16 +163,17 @@ namespace
 
 			if ( ImGui::TreeNode( u8"シャドウマップ関連" ) )
 			{
-				ImGui::ColorEdit3( u8"影の色",						&shadowMap.color.x );
-				ImGui::DragFloat ( u8"アクネ用のバイアス",			&shadowMap.bias,				0.01f );
-				ImGui::DragFloat3( u8"光源の座標（カメラからの相対）",	&shadowMap.posOffset.x,			1.0f  );
-				ImGui::DragFloat3( u8"写す方向（単位ベクトル）",		&shadowMap.projectDirection.x,	0.01f );
-				ImGui::DragFloat3( u8"写す範囲ＸＹＺ",				&shadowMap.projectDistance.x,	1.0f  );
-				ImGui::DragFloat ( u8"Z-Near",						&shadowMap.nearDistance,		1.0f  );
+				ImGui::ColorEdit3( u8"影の色",					&shadowMap.color.x );
+				ImGui::DragFloat ( u8"アクネ用のバイアス",		&shadowMap.bias,				0.01f );
+				ImGui::DragFloat ( u8"自機からの距離",			&shadowMap.offsetDistance,		0.1f  );
+				ImGui::DragFloat3( u8"写す方向（単位ベクトル）",	&shadowMap.projectDirection.x,	0.01f );
+				ImGui::DragFloat3( u8"写す範囲ＸＹＺ",			&shadowMap.projectDistance.x,	1.0f  );
+				ImGui::DragFloat ( u8"Z-Near",					&shadowMap.nearDistance,		1.0f  );
 
-				shadowMap.projectDistance.x = std::max( 0.1f, shadowMap.projectDistance.x );
-				shadowMap.projectDistance.y = std::max( 0.1f, shadowMap.projectDistance.y );
-				shadowMap.projectDistance.z = std::max( shadowMap.nearDistance + 1.0f, shadowMap.projectDistance.z );
+				shadowMap.offsetDistance	= std::max( 0.01f, shadowMap.offsetDistance );
+				shadowMap.projectDistance.x	= std::max( 0.01f, shadowMap.projectDistance.x );
+				shadowMap.projectDistance.y	= std::max( 0.01f, shadowMap.projectDistance.y );
+				shadowMap.projectDistance.z	= std::max( shadowMap.nearDistance + 1.0f, shadowMap.projectDistance.z );
 
 				static bool alwaysNormalize = false;
 				if ( ImGui::Button( u8"写す方向を正規化" ) || alwaysNormalize )
@@ -542,11 +542,11 @@ void SceneGame::Draw( float elapsedTime )
 	if ( !AreRenderersReady() ) { return; }
 	// else
 
-	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector3 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix )
+	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix )
 	{
 		Donya::Model::Constants::PerScene::Common constant{};
 		constant.directionalLight	= directionalLight;
-		constant.eyePosition		= Donya::Vector4{ eyePos, 1.0f };
+		constant.eyePosition		= eyePos;
 		constant.viewMatrix			= viewProjectionMatrix;
 		constant.viewProjMatrix		= viewProjectionMatrix;
 		pRenderer->UpdateConstant( constant );
@@ -588,18 +588,22 @@ void SceneGame::Draw( float elapsedTime )
 	};
 	
 #if DEBUG_MODE
-		  Donya::Vector4x4 V = iCamera.CalcViewMatrix();
-		  Donya::Vector4x4 VP = V * iCamera.GetProjectionMatrix();
+		  Donya::Vector4   cameraPos = Donya::Vector4{ iCamera.GetPosition(), 1.0f };
+		  Donya::Vector4x4 V	= iCamera.CalcViewMatrix();
+		  Donya::Vector4x4 VP	= V * iCamera.GetProjectionMatrix();
 	if ( projectLightCamera )
 	{
-		V = CalcLightViewMatrix();
-		VP = V * lightCamera.GetProjectionMatrix();
+		cameraPos = Donya::Vector4{ lightCamera.GetPosition(), 1.0f };
+		V	= CalcLightViewMatrix();
+		VP	= V * lightCamera.GetProjectionMatrix();
 	}
 #else
+	const Donya::Vector4   cameraPos = Donya::Vector4{ iCamera.GetPosition(), 1.0f };
 	const Donya::Vector4x4 V   = iCamera.CalcViewMatrix();
 	const Donya::Vector4x4 VP  = V * iCamera.GetProjectionMatrix();
 #endif // DEBUG_MODE
 
+	const Donya::Vector4   lightPos = Donya::Vector4{ lightCamera.GetPosition(), 1.0f };
 	const Donya::Vector4x4 LV  = CalcLightViewMatrix();
 	const Donya::Vector4x4 LVP = LV * lightCamera.GetProjectionMatrix();
 	const auto &data = FetchParameter();
@@ -610,7 +614,7 @@ void SceneGame::Draw( float elapsedTime )
 		pScreenSurface->SetRenderTarget();
 		pScreenSurface->SetViewport();
 		
-		pSky->Draw( iCamera.GetPosition(), VP );
+		pSky->Draw( cameraPos.XYZ(), VP );
 
 		Donya::Surface::ResetRenderTarget();
 	}
@@ -624,7 +628,7 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
 		tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
-		UpdateSceneConstant( tmpDirLight, lightCamera.GetPosition(), LV, LVP );
+		UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP );
 	}
 	pShadowMap->SetRenderTarget();
 	pShadowMap->SetViewport();
@@ -640,8 +644,8 @@ void SceneGame::Draw( float elapsedTime )
 
 	// Update scene and shadow constants
 	{
-		UpdateSceneConstant( data.directionalLight, iCamera.GetPosition(), V, VP );
-
+		UpdateSceneConstant( data.directionalLight, cameraPos, V, VP );
+		
 		RenderingHelper::ShadowConstant constant{};
 		constant.lightProjMatrix	= LVP;
 		constant.shadowColor		= data.shadowMap.color;
@@ -652,7 +656,6 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
 	}
-
 	pScreenSurface->SetRenderTarget();
 	pScreenSurface->SetViewport();
 	// Draw normal scene with shadow map
@@ -759,7 +762,7 @@ void SceneGame::Draw( float elapsedTime )
 	if ( pPlayer ) { pPlayer->DrawMeter(); }
 
 #if DEBUG_MODE
-	// if ( Common::IsShowCollision() )
+	// Some visualizing
 	{
 		static Donya::Geometric::Line line{ 512U };
 		static bool shouldInitializeLine = true;
@@ -801,47 +804,43 @@ void SceneGame::Draw( float elapsedTime )
 		}
 
 		// Light source for shadow map
-		if ( drawLightSource )
+		if ( drawLightSources )
 		{
 			constexpr float lineLength = 24.0f;
+			const auto lookDirection = data.shadowMap.projectDirection.Unit();
+			
+			auto DrawAxisBox = [&]( const Donya::Quaternion &orientation, Donya::Color::Code frontLineColor, Donya::Color::Code otherLineColor )
+			{
+				struct Bundle { Donya::Vector3 dir; Donya::Color::Code color; };
+				const Bundle directions[]
+				{
+					{ orientation.LocalRight(),	otherLineColor	},
+					{ orientation.LocalUp(),	otherLineColor	},
+					{ orientation.LocalFront(),	frontLineColor	},
+				};
+				const Donya::Vector3 start = lightPos.XYZ();
+				
+				for ( const auto &it : directions )
+				{
+					line.Reserve
+					(
+						start, start + ( it.dir * lineLength ),
+						Donya::Vector4{ Donya::Color::MakeColor( it.color ), 1.0f }
+					);
+				}
 
-			const auto lightPos = lightCamera.GetPosition();
-			const auto lightDir = data.shadowMap.projectDirection.Unit();
+				constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( frontLineColor ), 0.8f };
 
-			auto lineColor  = Donya::Color::Code::FUCHSIA;
-			auto lineColor4 = Donya::Vector4{ Donya::Color::MakeColor( lineColor ), 1.0f };
-			line.Reserve( lightPos, lightPos + ( lightDir * lineLength ), lineColor4 );
-
-			/*
-			Donya::Quaternion lookAt = Donya::Quaternion::LookAt
-			(
-				Donya::Quaternion::Identity(), lightDir
-			);
-			*/
-			Donya::Quaternion lookAt = Donya::Quaternion::LookAt
-			(
-				Donya::Quaternion::Identity(), lightDir,
-				Donya::Quaternion::Freeze::Up
-			);
-			lookAt = Donya::Quaternion::LookAt
-			(
-				lookAt, lightDir,
-				Donya::Quaternion::Freeze::Right
-			);
-			lineColor = Donya::Color::Code::DARK_GRAY;
-			lineColor4 = Donya::Vector4{ Donya::Color::MakeColor( lineColor ), 1.0f };
-			//line.Reserve( lightPos, lightPos + ( lookAt.LocalFront()	* lineLength * 0.5f ), lineColor4 );
-			line.Reserve( lightPos, lightPos + ( lookAt.LocalUp()		* lineLength * 0.5f ), lineColor4 );
-			line.Reserve( lightPos, lightPos + ( lookAt.LocalRight()	* lineLength * 0.5f ), lineColor4 );
-
-			constexpr auto  color = Donya::Color::Code::OLIVE;
-			constexpr float alpha = 1.0f;
-			constant.drawColor = Donya::Vector4{ Donya::Color::MakeColor( color ), alpha };
-			DrawCube( lightPos, Donya::Vector3{ 1.0f, 1.0f, 1.0f }, lookAt );
+				constexpr Donya::Vector3 scale{ 1.0f, 1.0f, 1.0f };
+				DrawCube( start, scale, orientation );
+			};
+			
+			const Donya::Quaternion rawViewRot = lightCamera.GetOrientation();
+			DrawAxisBox( rawViewRot, Donya::Color::Code::MAGENTA, Donya::Color::Code::DARK_GRAY );
 		}
 
 		// PointLight source
-		if ( drawPointLights )
+		if ( drawLightSources )
 		{
 			const auto &plr = PointLightStorage::Get().GetStorage();
 
@@ -1137,7 +1136,7 @@ void SceneGame::CameraInit()
 	iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
 	iCamera.SetScreenSize( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
 
-	lightCamera.Init( Donya::ICamera::Mode::Free );
+	lightCamera.Init( Donya::ICamera::Mode::Look );
 	lightCamera.SetZRange( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
 	lightCamera.SetScreenSize( data.shadowMap.projectDistance.XY() );
 
@@ -1221,15 +1220,10 @@ void SceneGame::AssignCameraPos()
 	iCamera.SetPosition  ( cameraPos );
 	iCamera.SetFocusPoint( focusPos + data.camera.offsetFocus );
 	
-	const Room *pCurrentRoom = ( pHouse ) ? pHouse->FindRoomOrNullptr( currentRoomID ) : nullptr;
-	const Donya::Vector3 basePos
-	{
-		cameraPos.x,
-		// ( pCurrentRoom ) ? pCurrentRoom->GetArea().Max().y : cameraPos.y,
-		cameraPos.y,
-		cameraPos.z,
-	};
-	lightCamera.SetPosition( basePos + data.shadowMap.posOffset );
+	const Donya::Vector3 playerPos	= ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+	const Donya::Vector3 offset		= -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
+	lightCamera.SetPosition  ( playerPos + offset );
+	lightCamera.SetFocusPoint( playerPos );
 }
 void SceneGame::CameraUpdate( float elapsedTime )
 {
@@ -1240,17 +1234,15 @@ void SceneGame::CameraUpdate( float elapsedTime )
 	{
 		iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
 		iCamera.SetProjectionPerspective();
-
-		const auto cameraPos = previousCameraPos;
-		const Room *pCurrentRoom = ( pHouse ) ? pHouse->FindRoomOrNullptr( currentRoomID ) : nullptr;
-		const Donya::Vector3 basePos
+		
+		if ( nowDebugMode ) // Don't call AssignCameraPos() when debug-mode
 		{
-			cameraPos.x,
-			// ( pCurrentRoom ) ? pCurrentRoom->GetArea().Max().y : cameraPos.y,
-			cameraPos.y,
-			cameraPos.z,
-		};
-		lightCamera.SetPosition( basePos + data.shadowMap.posOffset );
+			const Donya::Vector3 playerPos	= ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+			const Donya::Vector3 offset		= -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
+			lightCamera.SetPosition  ( playerPos + offset );
+			lightCamera.SetFocusPoint( playerPos );
+		}
+
 		lightCamera.SetZRange( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
 		lightCamera.SetScreenSize( data.shadowMap.projectDistance.XY() );
 		lightCamera.SetProjectionOrthographic();
@@ -1353,41 +1345,7 @@ void SceneGame::CameraUpdate( float elapsedTime )
 
 Donya::Vector4x4 SceneGame::CalcLightViewMatrix() const
 {
-	const Donya::Vector3 lightPos = lightCamera.GetPosition();
-
-	const Donya::Vector3 lookDirection = FetchParameter().shadowMap.projectDirection.Unit();
-#define DISALLOW_ROLL ( true )
-#if DISALLOW_ROLL
-	Donya::Quaternion lookAt = Donya::Quaternion::LookAt
-	(
-		Donya::Quaternion::Identity(), lookDirection,
-		Donya::Quaternion::Freeze::Up
-	);
-	lookAt = Donya::Quaternion::LookAt
-	(
-		lookAt, lookDirection,
-		Donya::Quaternion::Freeze::Right
-	);
-	/*
-	lookAt.RotateBy
-	(
-		Donya::Quaternion::Make
-		(
-			lookAt.LocalRight(),
-			atan2f( -lookDirection.y, lookDirection.z )
-		)
-	);
-	*/
-#else
-	Donya::Quaternion lookAt = Donya::Quaternion::LookAt( Donya::Vector3::Front(), lookDirection );
-#endif // DISALLOW_ROLL
-#undef DISALLOW_ROLL
-
-	Donya::Vector4x4 view = lookAt.Conjugate().MakeRotationMatrix();
-	view._41 = -lightPos.x;
-	view._42 = -lightPos.y;
-	view._43 = -lightPos.z;
-	return view;
+	return lightCamera.CalcViewMatrix();
 }
 
 void SceneGame::PlayerInit()
@@ -2089,21 +2047,21 @@ void SceneGame::UseImGui( float elapsedTime )
 					: pHouse->FindRoomOrNullptr( choiceID );
 	}
 
-	ImGui::SetNextWindowBgAlpha( 0.6f );
-	if ( !ImGui::BeginIfAllowed() ) { return; }
-	// else
-
-	ImGui::Checkbox( u8"		点光源可視化",		&drawPointLights	);
-	ImGui::Checkbox( u8"[ALT+L]	影用光源の可視化",	&drawLightSource	);
-	ImGui::Checkbox( u8"[F4]	光視点にする",		&projectLightCamera	);
 	if ( Donya::Keyboard::Trigger( 'L' ) && Donya::Keyboard::Press( VK_MENU ) )
 	{
-		drawLightSource = !drawLightSource;
+		drawLightSources = !drawLightSources;
 	}
 	if ( Donya::Keyboard::Trigger( VK_F4 ) )
 	{
 		projectLightCamera = !projectLightCamera;
 	}
+
+	ImGui::SetNextWindowBgAlpha( 0.6f );
+	if ( !ImGui::BeginIfAllowed() ) { return; }
+	// else
+
+	ImGui::Checkbox( u8"[ALT+L]	光源の可視化",	&drawLightSources	);
+	ImGui::Checkbox( u8"[F4]	光視点にする",	&projectLightCamera	);
 
 	sceneParam.ShowImGuiNode( u8"ゲームシーンのパラメータ" );
 

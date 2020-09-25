@@ -54,6 +54,7 @@ Quaternion MakeLookAtRotation( const Donya::Vector3 &nFront, const Donya::Vector
 	: Donya::Quaternion::Make( rotAxis, rotAngle );
 }
 
+// HACK: It may incorrect. We should freeze by the euler angle.
 Quaternion FreezeRotation( const Donya::Quaternion &rotation, Quaternion::Freeze freeze )
 {
 	Donya::Quaternion rot = rotation;
@@ -333,6 +334,7 @@ namespace Donya
 			*( Q[2] ) = ( M._12 - M._21 ) * extract;
 			*( Q[3] ) = component;
 			break;
+		default: break;
 		}
 
 		return rv;

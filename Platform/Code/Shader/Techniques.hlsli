@@ -207,7 +207,7 @@ float3 CalcPointLightInfl( PointLight plight, const float3 wsPixelPos, const flo
 // Calculate shadowing percent.
 // Argument.lsPixelDepth : Light-source space depth of current pixel.
 // Argument.lsShadowMapDepth : Light-source space nearest depth of stored.
-// Returns : Shadow factor. 0.0f ~ 1.0f.
+// Returns : Shadow factor. 0.0f:StrongShadow ~ 1.0f:NoShadow.
 float CalcShadowFactor( float lsPixelDepth, float lsShadowMapDepth )
 {
 	float	shadowColor		= max ( lsPixelDepth, lsShadowMapDepth );

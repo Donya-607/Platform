@@ -308,11 +308,13 @@ namespace Donya
 	}
 	void Surface::SetRenderTargetShaderResourcePS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
 	{
+		assert( this );
 		SetDefaultIfNull( &pImmediateContext );
 		pImmediateContext->PSSetShaderResources( slot, 1U, pRTSRV.GetAddressOf() );
 	}
 	void Surface::SetDepthStencilShaderResourcePS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
 	{
+		assert( this );
 		SetDefaultIfNull( &pImmediateContext );
 		pImmediateContext->PSSetShaderResources( slot, 1U, pDSSRV.GetAddressOf() );
 	}
