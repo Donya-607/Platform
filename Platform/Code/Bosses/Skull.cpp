@@ -328,9 +328,9 @@ namespace Boss
 		desc.position				+= inst.body.WorldPosition(); // Local space to World space
 		desc.owner					=  inst.hurtBox.id;
 
-		desc.direction				= ( input.wsTargetPos - desc.position ).Unit();
+		const auto  direction		= ( input.wsTargetPos - desc.position ).Unit();
 		const float &increment		= data.shotDegreeIncrement;
-		const float actualDegree	= desc.direction.XY().Degree();
+		const float actualDegree	= direction.XY().Degree();
 		const float roundDegree		= std::roundf( actualDegree );
 		const float remain			= fmodf( roundDegree, increment );
 
@@ -338,20 +338,22 @@ namespace Boss
 
 		/*
 		The angles interval set
-		from:
-		|---|---|---|---|
-		to:
-		--|---|---|---|--
+		from:	|---|---|---|---|
+		to:		--|---|---|---|--
 		*/
 		if ( increment * 0.5f < fabsf( remain ) )
 		{
 			resultDegree += increment;
 		}
 
+		// Handle the -180.0f as +180.0f,
+		// And be not down the shot direction.
+		resultDegree = fabsf( resultDegree );
+
 		const int dirSign = Donya::SignBit( inst.orientation.LocalFront().x );
 		const auto &limit = data.shotDegreeLimit;
 		resultDegree = ( dirSign < 0 )
-		? Donya::Clamp( resultDegree, 180.0f - limit.x, 180.0f - limit.y )
+		? Donya::Clamp( resultDegree, 180.0f - limit.y, 180.0f - limit.x )
 		: Donya::Clamp( resultDegree, limit.x, limit.y );
 
 		desc.direction.x = cosf( ToRadian( resultDegree ) );
