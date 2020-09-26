@@ -270,11 +270,16 @@ void SceneGame::Init()
 	pPlayerIniter = std::make_unique<PlayerInitializer>();
 	pPlayerIniter->LoadParameter( stageNumber );
 
-	InitStage( stageNumber );
+	pMap = std::make_unique<Map>();
+
+	InitStage( stageNumber, /* reloadModel = */ true );
 }
 void SceneGame::Uninit()
 {
 	UninitStage();
+
+	if ( pMap ) { pMap->ReleaseModel(); }
+	pMap.reset();
 
 	// Donya::Sound::Stop( Music::BGM_Game );
 }
@@ -313,10 +318,11 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	PointLightStorage::Get().Clear();
 
 
+	// Re-try the same stage
 	if ( Fader::Get().IsClosed() && nextScene == Scene::Type::Game )
 	{
 		UninitStage();
-		InitStage( stageNumber );
+		InitStage( stageNumber, /* reloadModel = */ false );
 	}
 
 	
@@ -998,7 +1004,7 @@ Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 	return nowScreen;
 }
 
-void SceneGame::InitStage( int stageNo )
+void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 {
 	status = State::StrategyStage;
 
@@ -1034,8 +1040,7 @@ void SceneGame::InitStage( int stageNo )
 	// The calculation of screen space uses camera's view and projection matrix, so must calc it after CameraInit().
 	currentScreen = CalcCurrentScreenPlane();
 
-	pMap = std::make_unique<Map>();
-	pMap->Init( stageNo );
+	if ( pMap ) { pMap->Init( stageNo, reloadMapModel ); }
 
 	auto &enemyAdmin = Enemy::Admin::Get();
 	enemyAdmin.ClearInstances();
@@ -1070,11 +1075,12 @@ void SceneGame::UninitStage()
 	if ( pHouse			) { pHouse->Uninit();			}
 	if ( pBossContainer	) { pBossContainer->Uninit();	}
 	if ( pPlayer		) { pPlayer->Uninit();			}
-	pMap.reset();
 	pClearEvent.reset();
 	pBossContainer.reset();
 	pHouse.reset();
 	pPlayer.reset();
+
+	// Don't reset the "pMap" because for holding the model of Map
 
 	Bullet::Admin::Get().ClearInstances();
 	Enemy::Admin::Get().ClearInstances();
@@ -1907,14 +1913,15 @@ Scene::Result SceneGame::ReturnResult()
 	}
 #endif // DEBUG_MODE
 
-	// TODO: Temporary condition, should fix this
-	if ( Fader::Get().IsClosed() && nextScene != Scene::Type::Null )
+	// The case of Scene::Type::Game will process at Update()
+	if ( Fader::Get().IsClosed() && nextScene != Scene::Type::Null && nextScene != Scene::Type::Game )
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
 		change.sceneType = nextScene;
 		return change;
 	}
+	// else
 
 	bool requestPause	= controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT ) || Donya::Keyboard::Trigger( 'P' );
 	bool allowPause		= !Fader::Get().IsExist();

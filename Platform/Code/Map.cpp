@@ -269,15 +269,18 @@ namespace
 		return true;
 	}
 }
-bool Map::Init( int stageNumber )
+bool Map::Init( int stageNumber, bool reloadModel )
 {
 	bool succeeded = true, result = true;
 
 	result = LoadMap( stageNumber, IOFromBinaryFile );
 	if ( !result ) { succeeded = false; }
 
-	result = LoadStageModel( &pModel, stageNumber );
-	if ( !result ) { succeeded = false; }
+	if ( reloadModel )
+	{
+		result = LoadStageModel( &pModel, stageNumber );
+		if ( !result ) { succeeded = false; }
+	}
 
 #if DEBUG_MODE
 	// If a user was changed only a json file, the user wanna apply the changes to binary file also.
@@ -317,8 +320,6 @@ bool Map::Init( int stageNumber )
 }
 void Map::Uninit()
 {
-	pModel.reset();
-
 	ForEach
 	(
 		[]( ElementType &pElement )
@@ -375,6 +376,10 @@ void Map::DrawHitBoxes( const Donya::Collision::Box3F &wsScreen, RenderingHelper
 			pElement->DrawHitBox( pRenderer, matVP );
 		}
 	);
+}
+void Map::ReleaseModel()
+{
+	pModel.reset();
 }
 const std::vector<std::vector<Map::ElementType>> &Map::GetTiles() const
 {

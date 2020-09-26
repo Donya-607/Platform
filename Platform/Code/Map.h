@@ -121,12 +121,13 @@ private:
 	}
 	static constexpr const char *ID = "Map";
 public:
-	bool Init( int stageNumber );
+	bool Init( int stageNumber, bool reloadModel );
 	void Uninit();
 	void Update( float elapsedTime );
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBoxes( const Donya::Collision::Box3F &wsScreenHitBox, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
+	void ReleaseModel();
 	/// <summary>
 	/// Returns tiles forming as: [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
 	/// </summary>

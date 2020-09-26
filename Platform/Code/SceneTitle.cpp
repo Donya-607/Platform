@@ -303,7 +303,7 @@ void SceneTitle::Init()
 		currentScreen = CalcCurrentScreenPlane();
 
 		pMap = std::make_unique<Map>();
-		pMap->Init( stageNo );
+		pMap->Init( stageNo, /* reloadModel = */ true );
 
 		auto &enemyAdmin = Enemy::Admin::Get();
 		enemyAdmin.ClearInstances();
