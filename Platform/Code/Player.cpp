@@ -471,7 +471,7 @@ int  Player::InputManager::UseShotIndex() const
 {
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		if ( curr.useShots[i] && !prev.useShots[i] )
+		if ( curr.useShots[i] )
 		{
 			return i;
 		}
@@ -812,9 +812,11 @@ void Player::ShotManager::Update( float elapsedTime, const InputManager &input )
 	if ( input.UseShot() )
 	{
 		if ( nowTrigger )
-		{ currChargeSecond = 0.0f; }
-		else
-		{ currChargeSecond += elapsedTime; }
+		{
+			currChargeSecond = 0.0f;
+		}
+
+		currChargeSecond += elapsedTime;
 	}
 	else
 	{
