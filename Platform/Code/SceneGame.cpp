@@ -1065,12 +1065,14 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 
 	pClearEvent = std::make_unique<ClearEvent>();
 	pClearEvent->Init( stageNo );
+	isThereClearEvent = pClearEvent->IsThereIn( currentRoomID );
 
 	pBossContainer = std::make_unique<Boss::Container>();
 	pBossContainer->Init( stageNo );
 #if DEBUG_MODE
 	pBossContainer->SaveBosses( stageNo, true );
 #endif // DEBUG_MODE
+	isThereBoss = pBossContainer->IsThereIn( currentRoomID );
 
 	Bullet::Admin::Get().ClearInstances();
 

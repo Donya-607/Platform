@@ -509,6 +509,67 @@ bool Player::InputManager::Jumpable( int jumpInputIndex ) const
 	// else
 	return wasReleasedJumps[jumpInputIndex];
 }
+#if USE_IMGUI
+void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+	// else
+
+	auto ShowInput = []( const std::string &nodeCaption, Input *p )
+	{
+		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+		// else
+
+		ImGui::SliderFloat2( u8"スティック", &p->moveVelocity.x, -1.0f, 1.0f );
+
+		for ( int i = 0; i < Input::variationCount; ++i )
+		{
+			const std::string caption = u8"useJumps" + Donya::MakeArraySuffix( i );
+			ImGui::Checkbox(  caption.c_str(), &p->useJumps[i] );
+			ImGui::SameLine();
+		}
+		ImGui::Text( u8"" );
+
+		for ( int i = 0; i < Input::variationCount; ++i )
+		{
+			const std::string caption = u8"useShots" + Donya::MakeArraySuffix( i );
+			ImGui::Checkbox(  caption.c_str(), &p->useShots[i] );
+			ImGui::SameLine();
+		}
+		ImGui::Text( u8"" );
+		
+		for ( int i = 0; i < Input::variationCount; ++i )
+		{
+			const std::string caption = u8"useDashes" + Donya::MakeArraySuffix( i );
+			ImGui::Checkbox(  caption.c_str(), &p->useDashes[i] );
+			ImGui::SameLine();
+		}
+		ImGui::Text( u8"" );
+
+		ImGui::TreePop();
+	};
+	ShowInput( u8"前回のフレーム", &prev );
+	ShowInput( u8"現在のフレーム", &curr );
+
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		const std::string caption = u8"ジャンプ長押し秒数" + Donya::MakeArraySuffix( i );
+		ImGui::DragFloat( caption.c_str(), &keepJumpSeconds[i], 0.01f );
+		ImGui::SameLine();
+	}
+	ImGui::Text( u8"" );
+
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		const std::string caption = u8"ジャンプ入力を離したか" + Donya::MakeArraySuffix( i );
+		ImGui::Checkbox(  caption.c_str(), &wasReleasedJumps[i] );
+		ImGui::SameLine();
+	}
+	ImGui::Text( u8"" );
+
+	ImGui::TreePop();
+}
+#endif // USE_IMGUI
 
 void Player::MotionManager::Init()
 {
@@ -813,6 +874,9 @@ void Player::ShotManager::Update( float elapsedTime, const InputManager &input )
 	{
 		if ( nowTrigger )
 		{
+			// Reset it, but do not set zero(below addition will prevent zero).
+			// If set zero, shot condition will regard as "triggered" in next loop
+			// because the "prevChargeSecond" will be zero by this.
 			currChargeSecond = 0.0f;
 		}
 
@@ -1404,11 +1468,23 @@ void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, c
 
 	ShotProcess( inst, elapsedTime, input );
 
-	releaseWay = JudgeWhetherToRelease( inst, elapsedTime, input, terrain );
-
 	const bool  pause = IsZero( inst.velocity.y );
 	const float sign  = Donya::SignBitF( inst.velocity.y );
-	MotionUpdate( inst, input, ( pause ) ? elapsedTime : elapsedTime * sign, pause );
+	MotionUpdate
+	(
+		inst,
+		input, 
+		( pause )
+		? elapsedTime // For update the shot motion only
+		: elapsedTime * sign,
+		pause
+	);
+
+	// The "releaseWay" must be update after MotionUpdate().
+	// Because if it is not None(i.e. ShouldChangeMover() is true),
+	// the MotionUpdate() assigns some not ladder motion, then may update some motion as reverse.
+	// Reverse playing of motion is undesirable, so I must prevent that.
+	releaseWay = JudgeWhetherToRelease( inst, elapsedTime, input, terrain );
 }
 void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1478,18 +1554,19 @@ Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player
 	// else
 
 	const int jumpInputIndex = inst.inputManager.UseJumpIndex();
+	const auto &currentInput = inst.inputManager.Current();
 	auto &wasReleasedJumpInputs = inst.inputManager.WasReleasedJumpInput();
 	if ( !inst.inputManager.UseJump() )
 	{
-		for ( auto &wasReleased : wasReleasedJumpInputs )
-		{
-			wasReleased = true;
-		}
+		wasReleasedJumpInputs.fill( true );
 	}
-	else
-	if ( wasReleasedJumpInputs[jumpInputIndex] && !IsZero( elapsedTime ) )
+	else // Condition of releasing by jump input
+	if ( wasReleasedJumpInputs[jumpInputIndex] && inst.velocity.y <= 0.0f && !IsZero( elapsedTime ) )
 	{
-		wasReleasedJumpInputs[jumpInputIndex] = false; // Prevent the grab-release loop by press keeping the jump and the up input
+		// Prevent the grab-release loop by press keeping the jump and the up input
+		wasReleasedJumpInputs[jumpInputIndex] = false;
+		// Disallow gravity resistance
+		inst.inputManager.KeepSecondJumpInput()[jumpInputIndex] = Parameter().Get().resistableSeconds;
 		return ReleaseWay::Release;
 	}
 	// else
@@ -2123,6 +2200,10 @@ void Player::Fall( float elapsedTime, Input input )
 			}
 		}
 	}
+	else
+	{
+		inputManager.WasReleasedJumpInput().fill( true );
+	}
 
 	const float applyGravity =	( resistGravity )
 								? data.gravity * data.gravityResistance
@@ -2168,22 +2249,14 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 
 	ImGui::DragInt		( u8"現在の体力",					&currentHP );
 	ImGui::Text			( u8"現在のステート：%s",				pMover->GetMoverName().c_str() );
+	ImGui::Text			( u8"現在のモーション：%s",			KIND_NAMES[scast<int>( motionManager.CurrentKind() )] );
 
 	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );
 	ImGui::Checkbox		( u8"地上にいるか",					&onGround );
-	auto &keepJumpSeconds		= inputManager.KeepSecondJumpInput();
-	auto &wasReleasedJumpInputs	= inputManager.WasReleasedJumpInput();
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		const std::string caption = u8"ジャンプを入力し続けている秒数" + Donya::MakeArraySuffix( i );
-		ImGui::DragFloat( caption.c_str(), &keepJumpSeconds[i], 0.01f );
-	}
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		const std::string caption = u8"ジャンプ入力を離したか" + Donya::MakeArraySuffix( i );
-		ImGui::Checkbox( caption.c_str(), &wasReleasedJumpInputs[i] );
-	}
+
+	inputManager.ShowImGuiNode( u8"入力状態" );
+
 	bool tmp{};
 	tmp = pMover->NowKnockBacking( *this );
 	ImGui::Checkbox		( u8"のけぞり中か",					&tmp );

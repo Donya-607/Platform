@@ -161,6 +161,10 @@ private:
 		{ return wasReleasedJumps; }
 		const std::array<bool,  Input::variationCount> &WasReleasedJumpInput() const
 		{ return wasReleasedJumps; }
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const std::string &nodeCaption );
+	#endif // USE_IMGUI
 	};
 	class MotionManager
 	{
@@ -178,6 +182,8 @@ private:
 		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW, const Donya::Vector3 &blendColor, float blendAlpha ) const;
 	public:
 		void QuitShotMotion();
+	public:
+		MotionKind CurrentKind() const { return currKind; }
 	private:
 		void UpdateShotMotion( Player &instance, float elapsedTime );
 		void ApplyPartMotion( Player &instance, float elapsedTime, MotionKind useMotion, const ModelHelper::PartApply &partData );
@@ -368,8 +374,6 @@ private:
 	std::weak_ptr<const Tile>	pTargetLadder{};				// It only used for initialization of Player::GrabLadder as reference
 	int							currentHP				= 1;
 	float						lookingSign				= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
-	//float						keepJumpSecond			= 0.0f;
-	//bool						wasReleasedJumpInput	= false;
 	bool						onGround				= false;
 	// TODO: These status variables can be combine by replace to MotionKind value
 	bool						prevSlidingStatus		= false;
