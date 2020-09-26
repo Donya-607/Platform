@@ -107,6 +107,8 @@ namespace
 		ShadowMap shadowMap;
 
 		BloomApplier::Parameter bloomParam;
+
+		Donya::Vector2 deadZone{ 0.3f, 0.3f }; // The stick input is valid if the value greater than this
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -141,6 +143,10 @@ namespace
 				archive( CEREAL_NVP( bloomParam ) );
 			}
 			if ( 6 <= version )
+			{
+				archive( CEREAL_NVP( deadZone ) );
+			}
+			if ( 7 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -196,6 +202,12 @@ namespace
 
 				ImGui::TreePop();
 			}
+
+			if ( ImGui::TreeNode( u8"その他" ) )
+			{
+				ImGui::SliderFloat2( u8"スティックのデッドゾーン", &deadZone.x, 0.0f, 1.0f );
+				ImGui::TreePop();
+			}
 		}
 	#endif // USE_IMGUI
 	};
@@ -232,7 +244,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				5 )
+CEREAL_CLASS_VERSION( SceneParam,				6 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
@@ -1103,13 +1115,16 @@ void SceneGame::AssignCurrentInput()
 	{
 		using Button	= Donya::Gamepad::Button;
 		using Direction	= Donya::Gamepad::StickDirection;
+
+		const auto &deadZone = FetchParameter().deadZone;
+		const auto stick = controller.LeftStick();
 		
-		pressLeft	= controller.Press( Button::LEFT	) || controller.PressStick( Direction::LEFT		);
-		pressRight	= controller.Press( Button::RIGHT	) || controller.PressStick( Direction::RIGHT	);
-		pressUp		= controller.Press( Button::UP		) || controller.PressStick( Direction::UP		);
-		pressDown	= controller.Press( Button::DOWN	) || controller.PressStick( Direction::DOWN		);
-		pressJump	= controller.Press( Button::A  ) || controller.Press( Button::X  );
-		pressShot	= controller.Press( Button::B  ) || controller.Press( Button::Y  );
+		pressLeft	= controller.Press( Button::LEFT	) || ( stick.x <= -deadZone.x );
+		pressRight	= controller.Press( Button::RIGHT	) || ( stick.x >= +deadZone.x );
+		pressUp		= controller.Press( Button::UP		) || ( stick.y >= +deadZone.y );
+		pressDown	= controller.Press( Button::DOWN	) || ( stick.y <= -deadZone.y );
+		pressJump	= controller.Press( Button::A  ) || controller.Press( Button::B  );
+		pressShot	= controller.Press( Button::X  ) || controller.Press( Button::Y  );
 		pressDash	= controller.Press( Button::LT ) || controller.Press( Button::RT );
 	}
 	else
