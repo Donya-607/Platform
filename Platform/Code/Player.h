@@ -130,7 +130,7 @@ private:
 	public:
 		void Init();
 		void Update( Player &instance, Input input, float elapsedTime, bool stopAnimation = false );
-		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW ) const;
+		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW, const Donya::Vector3 &blendColor, float blendAlpha ) const;
 	public:
 		void QuitShotMotion();
 	private:

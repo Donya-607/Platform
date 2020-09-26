@@ -320,13 +320,16 @@ namespace Boss
 	void Skull::Shot::Fire( Skull &inst, float elapsedTime, const Input &input ) const
 	{
 		const auto &data = Parameter::GetSkull();
+		const Donya::Vector3 wsPos	=  inst.body.WorldPosition();
 
-		Bullet::FireDesc desc		= data.shotDesc;
+		Bullet::FireDesc desc		=  data.shotDesc;
 		desc.kind					=  data.shotDesc.kind;
 		desc.initialSpeed			=  data.shotDesc.initialSpeed;
 		desc.position				=  inst.orientation.RotateVector( data.shotDesc.position );
-		desc.position				+= inst.body.WorldPosition(); // Local space to World space
+		desc.position				+= wsPos; // Local space to World space
 		desc.owner					=  inst.hurtBox.id;
+
+		// In this method, the 0.0f degree means right, the 90.0f degree means up.
 
 		const auto  direction		= ( input.wsTargetPos - desc.position ).Unit();
 		const float &increment		= data.shotDegreeIncrement;
@@ -346,15 +349,22 @@ namespace Boss
 			resultDegree += increment;
 		}
 
-		// Handle the -180.0f as +180.0f,
-		// And be not down the shot direction.
-		resultDegree = fabsf( resultDegree );
-
 		const int dirSign = Donya::SignBit( inst.orientation.LocalFront().x );
 		const auto &limit = data.shotDegreeLimit;
-		resultDegree = ( dirSign < 0 )
-		? Donya::Clamp( resultDegree, 180.0f - limit.y, 180.0f - limit.x )
-		: Donya::Clamp( resultDegree, limit.x, limit.y );
+		if ( resultDegree < 0.0f )
+		{
+			// To be not down the shot direction.
+			// Adjust to lower limit.
+			resultDegree = ( dirSign < 0 )
+			? 180.0f - limit.x
+			: limit.x;
+		}
+		else
+		{
+			resultDegree = ( dirSign < 0 )
+			? Donya::Clamp( resultDegree, 180.0f - limit.y, 180.0f - limit.x )
+			: Donya::Clamp( resultDegree, limit.x, limit.y );
+		}
 
 		desc.direction.x = cosf( ToRadian( resultDegree ) );
 		desc.direction.y = sinf( ToRadian( resultDegree ) );

@@ -217,14 +217,15 @@ namespace Boss
 		if ( !pRenderer			) { return; }
 		if ( !model.pResource	) { return; }
 		if ( NowDead()			) { return; }
-		if ( !invincibleTimer.Drawable( GetInvincibleInterval() ) ) { return; }
 		// else
 
 		const Donya::Vector3 &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
 		const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
 
+		const float alpha = ( invincibleTimer.Drawable( GetInvincibleInterval() ) ) ? 1.0f : 0.0f;
+
 		Donya::Model::Constants::PerModel::Common modelConstant{};
-		modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+		modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, alpha };
 		modelConstant.worldMatrix	= W;
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();

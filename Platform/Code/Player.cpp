@@ -461,7 +461,7 @@ void Player::MotionManager::Update( Player &inst, Input input, float elapsedTime
 
 	UpdateShotMotion( inst, elapsedTime );
 }
-void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &W ) const
+void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &W, const Donya::Vector3 &color, float alpha ) const
 {
 	if ( !pRenderer ) { return; }
 	if ( !model.pResource )
@@ -472,7 +472,7 @@ void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vecto
 	// else
 
 	Donya::Model::Constants::PerModel::Common modelConstant{};
-	modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+	modelConstant.drawColor		= Donya::Vector4{ color, alpha };
 	modelConstant.worldMatrix	= W;
 	pRenderer->UpdateConstant( modelConstant );
 	pRenderer->ActivateConstantModel();
@@ -1598,13 +1598,15 @@ void Player::Draw( RenderingHelper *pRenderer ) const
 		_ASSERT_EXPR( 0, L"Error: Player's mover is not assigned!" );
 		return;
 	}
-	if ( !pMover->Drawable( *this ) || !invincibleTimer.Drawable() ) { return; }
+	if ( !pMover->Drawable( *this ) ) { return; }
 	// else
 
 	const Donya::Vector3   &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
 	const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
 
-	motionManager.Draw( pRenderer, W );
+	constexpr Donya::Vector3 basicColor{ 1.0f, 1.0f, 1.0f };
+	const float alpha = ( invincibleTimer.Drawable() ) ? 1.0f : 0.0f;
+	motionManager.Draw( pRenderer, W, basicColor, alpha );
 }
 void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused ) const
 {
