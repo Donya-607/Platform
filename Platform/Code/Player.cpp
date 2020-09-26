@@ -425,6 +425,91 @@ void PlayerParam::ShowImGuiNode()
 }
 #endif // USE_IMGUI
 
+void Player::InputManager::Init()
+{
+	prev = Input::GenerateEmpty();
+	curr = Input::GenerateEmpty();
+	keepJumpSeconds.fill( 0.0f );
+	wasReleasedJumps.fill( false );
+}
+void Player::InputManager::Update( float elapsedTime, const Input input )
+{
+	prev = curr;
+	curr = input;
+
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		float &sec = keepJumpSeconds[i];
+		sec = ( curr.useJumps[i] ) ? sec + elapsedTime : 0.0f;
+
+		if ( !curr.useJumps[i] )
+		{
+			wasReleasedJumps[i] = true;
+		}
+	}
+}
+int  Player::InputManager::UseJumpIndex() const
+{
+	int		minimumIndex	= -1;
+	float	minimumSecond	= FLT_MAX;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( !curr.useJumps[i] ) { continue; }
+		// else
+
+		const float &sec	= keepJumpSeconds[i];
+		if ( sec <= minimumSecond )
+		{
+			minimumIndex	= i;
+			minimumSecond	= sec;
+		}
+	}
+
+	return minimumIndex;
+}
+int  Player::InputManager::UseShotIndex() const
+{
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( curr.useShots[i] && !prev.useShots[i] )
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+int  Player::InputManager::UseDashIndex() const
+{
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( curr.useDashes[i] && !prev.useDashes[i] )
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+bool Player::InputManager::UseJump() const
+{
+	return ( 0 <= UseJumpIndex() );
+}
+bool Player::InputManager::UseShot() const
+{
+	return ( 0 <= UseShotIndex() );
+}
+bool Player::InputManager::UseDash() const
+{
+	return ( 0 <= UseDashIndex() );
+}
+bool Player::InputManager::Jumpable( int jumpInputIndex ) const
+{
+	if ( jumpInputIndex < 0 || Input::variationCount <= jumpInputIndex ) { return false; }
+	// else
+	return wasReleasedJumps[jumpInputIndex];
+}
+
 void Player::MotionManager::Init()
 {
 	prevKind = currKind = MotionKind::Jump_Fall;
@@ -707,21 +792,29 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, Input input
 
 void Player::ShotManager::Init()
 {
-	prevChargeSecond = 0.0f;
-	currChargeSecond = 0.0f;
+	chargeLevel			= ShotLevel::Normal;
+	prevChargeSecond	= 0.0f;
+	currChargeSecond	= 0.0f;
+	nowTrigger			= false;
 }
-void Player::ShotManager::Update( float elapsedTime, Input input )
+void Player::ShotManager::Update( float elapsedTime, const InputManager &input )
 {
 	prevChargeSecond = currChargeSecond;
+	nowTrigger = false;
 
 	// If calculate the charge level after update the "currChargeSecond",
 	// the level will be zero(ShotLevel::Normal) absolutely when fire timing, because that timing is the input was released.
 	// So I must calculate it before the update. It will not be late for one frame by this.
 	CalcChargeLevel();
 
-	if ( input.useShot )
+	nowTrigger = NowTriggered( input );
+
+	if ( input.UseShot() )
 	{
-		currChargeSecond += elapsedTime;
+		if ( nowTrigger )
+		{ currChargeSecond = 0.0f; }
+		else
+		{ currChargeSecond += elapsedTime; }
 	}
 	else
 	{
@@ -730,6 +823,9 @@ void Player::ShotManager::Update( float elapsedTime, Input input )
 }
 bool Player::ShotManager::IsShotRequested() const
 {
+	if ( nowTrigger ) { return true; }
+	// else
+
 	const bool prevIsZero = IsZero( prevChargeSecond );
 	const bool currIsZero = IsZero( currChargeSecond );
 
@@ -739,6 +835,20 @@ bool Player::ShotManager::IsShotRequested() const
 
 	return ( prevIsZero && !currIsZero )					// Now triggered a button
 		|| ( !prevIsZero && currIsZero && nowHighLevel );	// Now released a button, and now charging at least one.
+}
+bool Player::ShotManager::NowTriggered( const InputManager &input ) const
+{
+	const auto &prev = input.Previous();
+	const auto &curr = input.Current();
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( curr.useShots[i] && !prev.useShots[i] )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 void Player::ShotManager::CalcChargeLevel()
 {
@@ -870,8 +980,11 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 	// Deformity of MoveVertical()
 	{
 		// Jump condition and resolve vs slide condition
-		if ( input.useJump && inst.Jumpable() && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
+		if ( inst.WillUseJump() && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 		{
+			const int jumpInputIndex = inst.inputManager.UseJumpIndex();
+			assert( 0 <= jumpInputIndex && jumpInputIndex < Input::variationCount );
+
 			if ( Donya::SignBit( input.moveVelocity.y ) < 0 )
 			{
 				gotoSlide = true;
@@ -879,17 +992,17 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 				// Certainly doing Fall() if do not jump
 				inst.Fall( elapsedTime, input );
 				// But We must set the pressing flag because We wanna prevent to jump.
-				inst.wasReleasedJumpInput = false;
+				inst.inputManager.WasReleasedJumpInput()[jumpInputIndex] = false;
 			}
 			else
 			{
-				inst.Jump();
+				inst.Jump( jumpInputIndex );
 			}
 		}
 		else
 		{
 			// TODO: Prevent keep pressing
-			if ( input.useDash && inst.onGround )
+			if ( inst.inputManager.UseDash() && inst.onGround )
 			{
 				gotoSlide = true;
 			}
@@ -993,7 +1106,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 	const bool slideIsEnd			=  ( Parameter().Get().slideMoveSeconds <= timer )
 									|| ( moveToBackward )
 									|| ( !inst.onGround )
-									|| ( input.useJump && inst.Jumpable() )
+									|| ( inst.WillUseJump() )
 									;
 	if ( slideIsEnd && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 	{
@@ -1362,10 +1475,19 @@ Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player
 	}
 	// else
 
-	if ( !input.useJump ) { inst.wasReleasedJumpInput = true; }
-	if ( input.useJump && inst.wasReleasedJumpInput && !IsZero( elapsedTime ) )
+	const int jumpInputIndex = inst.inputManager.UseJumpIndex();
+	auto &wasReleasedJumpInputs = inst.inputManager.WasReleasedJumpInput();
+	if ( !inst.inputManager.UseJump() )
 	{
-		inst.wasReleasedJumpInput = false; // Prevent the grab-release loop by press keeping the jump and the up input
+		for ( auto &wasReleased : wasReleasedJumpInputs )
+		{
+			wasReleased = true;
+		}
+	}
+	else
+	if ( wasReleasedJumpInputs[jumpInputIndex] && !IsZero( elapsedTime ) )
+	{
+		wasReleasedJumpInputs[jumpInputIndex] = false; // Prevent the grab-release loop by press keeping the jump and the up input
 		return ReleaseWay::Release;
 	}
 	// else
@@ -1502,6 +1624,7 @@ void Player::Init( const PlayerInitializer &initializer )
 	body.pos			= initializer.GetWorldInitialPos();
 	hurtBox.pos			= body.pos;
 	velocity			= 0.0f;
+	inputManager.Init();
 	motionManager.Init();
 	shotManager.Init();
 	currentHP			= data.maxHP;
@@ -1550,9 +1673,11 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 	}
 #endif // USE_IMGUI
 
+	inputManager.Update( elapsedTime, input );
+
 	hurtBox.UpdateIgnoreList( elapsedTime );
 
-	shotManager.Update( elapsedTime, input );
+	shotManager.Update( elapsedTime, inputManager );
 
 	if ( !pMover )
 	{
@@ -1902,9 +2027,9 @@ void Player::MoveHorizontal( float elapsedTime, Input input )
 }
 void Player::MoveVertical  ( float elapsedTime, Input input )
 {
-	if ( input.useJump && Jumpable() && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
+	if ( WillUseJump() && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 	{
-		Jump();
+		Jump( inputManager.UseJumpIndex() );
 	}
 	else
 	{
@@ -1956,36 +2081,45 @@ void Player::UpdateOrientation( bool lookingRight )
 		Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
 	);
 }
-void Player::Jump()
+void Player::Jump( int inputIndex )
 {
 	const auto &data = Parameter().Get();
 
-	onGround				= false;
-	velocity.y				= data.jumpStrength;
-	keepJumpSecond			= 0.0f;
-	wasReleasedJumpInput	= false;
+	onGround	= false;
+	velocity.y	= data.jumpStrength;
+	inputManager.KeepSecondJumpInput()[inputIndex]	= 0.0f;
+	inputManager.WasReleasedJumpInput()[inputIndex]	= false;
 	Donya::Sound::Play( Music::Player_Jump );
 }
-bool Player::Jumpable() const
+bool Player::Jumpable( int inputIndex ) const
 {
-	return ( onGround && wasReleasedJumpInput ) ? true : false;
+	return ( onGround && inputManager.Jumpable( inputIndex ) ) ? true : false;
+}
+bool Player::WillUseJump() const
+{
+	const int jumpInputIndex = inputManager.UseJumpIndex();
+	if ( 0 <= jumpInputIndex && Jumpable( jumpInputIndex ) )
+	{
+		return true;
+	}
+	// else
+	return false;
 }
 void Player::Fall( float elapsedTime, Input input )
 {
 	const auto &data = Parameter().Get();
 
 	bool resistGravity = false;
-	if ( input.useJump && !wasReleasedJumpInput )
+	const int jumpInputIndex = inputManager.UseJumpIndex();
+	if ( 0 <= jumpInputIndex )
 	{
-		keepJumpSecond += elapsedTime;
-		if ( keepJumpSecond < data.resistableSeconds )
+		if ( !inputManager.WasReleasedJumpInput()[jumpInputIndex] )
 		{
-			resistGravity = true;
+			if ( inputManager.KeepSecondJumpInput()[jumpInputIndex] < data.resistableSeconds )
+			{
+				resistGravity = true;
+			}
 		}
-	}
-	else
-	{
-		wasReleasedJumpInput = true;
 	}
 
 	const float applyGravity =	( resistGravity )
@@ -2035,9 +2169,19 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 
 	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );
-	ImGui::DragFloat	( u8"ジャンプを入力し続けている秒数",	&keepJumpSecond, 0.01f );
-	ImGui::Checkbox		( u8"ジャンプ入力を離したか",			&wasReleasedJumpInput );
 	ImGui::Checkbox		( u8"地上にいるか",					&onGround );
+	auto &keepJumpSeconds		= inputManager.KeepSecondJumpInput();
+	auto &wasReleasedJumpInputs	= inputManager.WasReleasedJumpInput();
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		const std::string caption = u8"ジャンプを入力し続けている秒数" + Donya::MakeArraySuffix( i );
+		ImGui::DragFloat( caption.c_str(), &keepJumpSeconds[i], 0.01f );
+	}
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		const std::string caption = u8"ジャンプ入力を離したか" + Donya::MakeArraySuffix( i );
+		ImGui::Checkbox( caption.c_str(), &wasReleasedJumpInputs[i] );
+	}
 	bool tmp{};
 	tmp = pMover->NowKnockBacking( *this );
 	ImGui::Checkbox		( u8"のけぞり中か",					&tmp );

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <memory>
 #include <vector>
 
@@ -34,16 +35,16 @@ private:
 	struct Input
 	{
 		Donya::Vector2 inputDirection; // Controller's stick or directional-pad, or keyboard's arrow key.
-		bool pressJump = false; // Current frame.
-		bool pressShot = false; // Current frame.
-		bool pressDash = false; // Current frame.
+		std::array<bool, Player::Input::variationCount> pressJumps{};  // Current frame.
+		std::array<bool, Player::Input::variationCount> pressShots{};  // Current frame.
+		std::array<bool, Player::Input::variationCount> pressDashes{}; // Current frame.
 	public:
 		void Clear()
 		{
 			inputDirection = 0.0f;
-			pressJump = false;
-			pressShot = false;
-			pressDash = false;
+			pressJumps.fill( false );
+			pressShots.fill( false );
+			pressDashes.fill( false );
 		}
 	};
 	struct Scroll

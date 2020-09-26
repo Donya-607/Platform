@@ -1281,8 +1281,8 @@ void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 
 	Player::Input input{};
 	input.moveVelocity	= { 0.0f, 0.0f };
-	input.useJump		= false;
-	input.useShot		= false;
+	input.useJumps.fill( false );
+	input.useShots.fill( false );
 
 	pPlayer->Update( elapsedTime, input, terrain );
 }

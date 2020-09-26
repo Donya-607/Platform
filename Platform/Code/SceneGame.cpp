@@ -1105,9 +1105,9 @@ void SceneGame::AssignCurrentInput()
 	bool pressRight	= false;
 	bool pressUp	= false;
 	bool pressDown	= false;
-	bool pressJump	= false;
-	bool pressShot	= false;
-	bool pressDash	= false;
+	std::array<bool, Player::Input::variationCount> pressJumps{};
+	std::array<bool, Player::Input::variationCount> pressShots{};
+	std::array<bool, Player::Input::variationCount> pressDashes{};
 
 	// TODO: To be changeable the input key or button
 
@@ -1123,9 +1123,16 @@ void SceneGame::AssignCurrentInput()
 		pressRight	= controller.Press( Button::RIGHT	) || ( stick.x >= +deadZone.x );
 		pressUp		= controller.Press( Button::UP		) || ( stick.y >= +deadZone.y );
 		pressDown	= controller.Press( Button::DOWN	) || ( stick.y <= -deadZone.y );
-		pressJump	= controller.Press( Button::A  ) || controller.Press( Button::B  );
-		pressShot	= controller.Press( Button::X  ) || controller.Press( Button::Y  );
-		pressDash	= controller.Press( Button::LT ) || controller.Press( Button::RT );
+		
+		pressJumps[0]	= controller.Press( Button::A	);
+		pressShots[0]	= controller.Press( Button::X	);
+		pressDashes[0]	= controller.Press( Button::LT	);
+		if ( 2 <= Player::Input::variationCount )
+		{
+		pressJumps[1]	= controller.Press( Button::B	);
+		pressShots[1]	= controller.Press( Button::Y	);
+		pressDashes[1]	= controller.Press( Button::RT	);
+		}
 	}
 	else
 	{
@@ -1133,9 +1140,15 @@ void SceneGame::AssignCurrentInput()
 		pressRight	= Donya::Keyboard::Press( VK_RIGHT	);
 		pressUp		= Donya::Keyboard::Press( VK_UP		);
 		pressDown	= Donya::Keyboard::Press( VK_DOWN	);
-		pressJump	= Donya::Keyboard::Press( VK_SHIFT	);
-		pressShot	= Donya::Keyboard::Press( 'Z' );
-		pressDash	= Donya::Keyboard::Press( 'A' );
+
+		pressJumps[0]	= Donya::Keyboard::Press( 'Z'	);
+		pressShots[0]	= Donya::Keyboard::Press( 'X'	);
+		pressDashes[0]	= Donya::Keyboard::Press( 'A'	);
+		if ( 2 <= Player::Input::variationCount )
+		{
+		pressJumps[1]	= Donya::Keyboard::Press( VK_RSHIFT	);
+		pressShots[1]	= Donya::Keyboard::Press( 'S'	);
+		}
 	}
 
 	currentInput.Clear();
@@ -1143,9 +1156,9 @@ void SceneGame::AssignCurrentInput()
 	if ( pressRight	) { currentInput.inputDirection.x += 1.0f; }
 	if ( pressUp	) { currentInput.inputDirection.y += 1.0f; } // World space direction
 	if ( pressDown	) { currentInput.inputDirection.y -= 1.0f; } // World space direction
-	currentInput.pressJump = pressJump;
-	currentInput.pressShot = pressShot;
-	currentInput.pressDash = pressDash;
+	currentInput.pressJumps = pressJumps;
+	currentInput.pressShots = pressShots;
+	currentInput.pressDashes = pressDashes;
 }
 
 void SceneGame::CameraInit()
@@ -1394,9 +1407,9 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 
 	Player::Input input{};
 	input.moveVelocity	= currentInput.inputDirection;
-	input.useJump		= currentInput.pressJump;
-	input.useShot		= currentInput.pressShot;
-	input.useDash		= currentInput.pressDash;
+	input.useJumps		= currentInput.pressJumps;
+	input.useShots		= currentInput.pressShots;
+	input.useDashes		= currentInput.pressDashes;
 
 	pPlayer->Update( elapsedTime, input, terrain );
 
@@ -1415,11 +1428,24 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 	if ( !pBossContainer ) { return; }
 	// else
 
+	auto Contains = []( const auto &targets, const auto &key )
+	{
+		for ( const auto &it : targets )
+		{
+			if ( it == key )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	};
+
 	Boss::Input input{};
 	input.wsTargetPos				= wsTargetPos;
 	input.controllerInputDirection	= currentInput.inputDirection;
-	input.pressJump					= currentInput.pressJump;
-	input.pressShot					= currentInput.pressShot;
+	input.pressJump					= Contains( currentInput.pressJumps, true );
+	input.pressShot					= Contains( currentInput.pressShots, true );
 
 	pBossContainer->Update( elapsedTime, input );
 }

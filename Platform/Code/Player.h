@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <functional>
 #include <memory>
 
@@ -87,10 +88,22 @@ public:
 public:
 	struct Input
 	{
-		Donya::Vector2	moveVelocity;	// Unit velocity
-		bool			useJump = false;
-		bool			useShot = false;
-		bool			useDash = false;
+		static constexpr int variationCount = 2;
+	public:
+		Donya::Vector2 moveVelocity; // Unit velocity
+		std::array<bool, variationCount> useJumps  = { false, false };
+		std::array<bool, variationCount> useShots  = { false, false };
+		std::array<bool, variationCount> useDashes = { false, false };
+	public:
+		static Input GenerateEmpty()
+		{
+			Input tmp;
+			tmp.moveVelocity = Donya::Vector2::Zero();
+			tmp.useJumps.fill( false );
+			tmp.useShots.fill( false );
+			tmp.useDashes.fill( false );
+			return tmp;
+		}
 	};
 	enum class MotionKind
 	{
@@ -117,6 +130,38 @@ public:
 		LevelCount	// Invalid
 	};
 private:
+	class InputManager
+	{
+	private:
+		Input prev;
+		Input curr;
+		std::array<float, Input::variationCount> keepJumpSeconds;
+		std::array<bool,  Input::variationCount> wasReleasedJumps;
+	public:
+		void Init();
+		void Update( float elapsedTime, const Input input );
+	public:
+		int  UseJumpIndex() const; // Return -1 if not using
+		int  UseShotIndex() const; // Return -1 if not using
+		int  UseDashIndex() const; // Return -1 if not using
+		bool UseJump() const;
+		bool UseShot() const;
+		bool UseDash() const;
+		bool Jumpable( int jumpInputIndex ) const;
+	public:
+		const Input &Previous() const
+		{ return prev; }
+		const Input &Current() const
+		{ return curr; }
+		std::array<float, Input::variationCount> &KeepSecondJumpInput()
+		{ return keepJumpSeconds; }
+		const std::array<float, Input::variationCount> &KeepSecondJumpInput()  const
+		{ return keepJumpSeconds; }
+		std::array<bool,  Input::variationCount> &WasReleasedJumpInput()
+		{ return wasReleasedJumps; }
+		const std::array<bool,  Input::variationCount> &WasReleasedJumpInput() const
+		{ return wasReleasedJumps; }
+	};
 	class MotionManager
 	{
 	private:
@@ -146,17 +191,19 @@ private:
 	class ShotManager
 	{
 	private:
-		ShotLevel chargeLevel  = ShotLevel::Normal;
-		float prevChargeSecond = 0.0f;
-		float currChargeSecond = 0.0f;
+		ShotLevel	chargeLevel			= ShotLevel::Normal;
+		float		prevChargeSecond	= 0.0f;
+		float		currChargeSecond	= 0.0f;
+		bool		nowTrigger			= false;
 	public:
 		void Init();
-		void Update( float elapsedTime, Input input );
+		void Update( float elapsedTime, const InputManager &input );
 	public:
 		bool		IsShotRequested() const;
 		float		ChargeSecond()	const { return currChargeSecond;	}
 		ShotLevel	ChargeLevel()	const { return chargeLevel;			}
 	private:
+		bool NowTriggered( const InputManager &input ) const;
 		void CalcChargeLevel();
 	};
 	class Flusher
@@ -312,6 +359,7 @@ private:
 	Donya::Collision::Box3F		hurtBox;	// VS an attack
 	using				 Actor::orientation;
 	Donya::Vector3				velocity;	// Z element is almost unused.
+	InputManager				inputManager;
 	MotionManager				motionManager;
 	ShotManager					shotManager;
 	Flusher						invincibleTimer;
@@ -320,8 +368,8 @@ private:
 	std::weak_ptr<const Tile>	pTargetLadder{};				// It only used for initialization of Player::GrabLadder as reference
 	int							currentHP				= 1;
 	float						lookingSign				= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
-	float						keepJumpSecond			= 0.0f;
-	bool						wasReleasedJumpInput	= false;
+	//float						keepJumpSecond			= 0.0f;
+	//bool						wasReleasedJumpInput	= false;
 	bool						onGround				= false;
 	// TODO: These status variables can be combine by replace to MotionKind value
 	bool						prevSlidingStatus		= false;
@@ -396,8 +444,9 @@ private:
 	bool NowShotable() const;
 	void ShotIfRequested( float elapsedTime, Input input );
 	void UpdateOrientation( bool lookingRight );
-	void Jump();
-	bool Jumpable() const;
+	void Jump( int inputIndex );
+	bool Jumpable( int inputIndex ) const;
+	bool WillUseJump() const;
 	void Fall( float elapsedTime, Input input );
 	void Landing();
 private:
