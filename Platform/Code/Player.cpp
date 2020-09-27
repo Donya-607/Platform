@@ -1082,25 +1082,45 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 	// Try to grabbing ladder if the game time is not pausing
 	if ( !gotoSlide && !IsZero( elapsedTime ) )
 	{
-		auto GotoLadderIfSpecifyTileIsLadder = [&]( const Donya::Vector3 &wsVerifyPosition )
+		auto IsLadder	= [&]( const std::shared_ptr<const Tile> &targetTile )
+		{
+			return ( targetTile && targetTile->GetID() == StageFormat::Ladder ) ? true : false;
+		};
+		auto GotoLadder	= [&]( const std::shared_ptr<const Tile> &targetTile )
+		{
+			inst.pTargetLadder	= targetTile;
+			gotoLadder			= true;
+		};
+		auto GotoLadderIfSpecifyTileIsLadder	= [&]( const Donya::Vector3 &wsVerifyPosition )
 		{
 			const auto targetTile = terrain.GetPlaceTileOrNullptr( wsVerifyPosition );
-			if ( targetTile && targetTile->GetID() == StageFormat::Ladder )
+			if ( IsLadder( targetTile ) )
 			{
-				inst.pTargetLadder = targetTile;
-				gotoLadder = true;
+				GotoLadder( targetTile );
+			}
+		};
+		auto GotoLadderIfSpecifyTilesAreLadder	= [&]( const Donya::Collision::Box3F &wsVerifyArea )
+		{
+			const auto targetTiles = terrain.GetPlaceTiles( wsVerifyArea );
+			for ( const auto &tile : targetTiles )
+			{
+				if ( IsLadder( tile ) )
+				{
+					GotoLadder( tile );
+					break;
+				}
 			}
 		};
 
 		const int verticalInputSign = Donya::SignBit( input.moveVelocity.y );
 		if ( verticalInputSign == 1 )
 		{
-			const auto centerPos = inst.GetPosition();
-			GotoLadderIfSpecifyTileIsLadder( centerPos );
-			if ( !gotoLadder )
+			const auto grabArea = inst.GetLadderGrabArea();
+			GotoLadderIfSpecifyTilesAreLadder( grabArea );
+			if ( !gotoLadder ) // If still does not grabbing
 			{
 				const Donya::Vector3 headOffset{ 0.0f, inst.body.size.y, 0.0f };
-				GotoLadderIfSpecifyTileIsLadder( centerPos + headOffset );
+				GotoLadderIfSpecifyTileIsLadder( inst.GetPosition() + headOffset );
 			}
 		}
 		else
