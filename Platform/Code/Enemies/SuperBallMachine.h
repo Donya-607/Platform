@@ -67,6 +67,7 @@ namespace Enemy
 		float				fireIntervalSecond	= 1.0f;
 		float				fireDegree			= 45.0f;		// XY axis. Right side angle. If you using it when left side, use as: "180 - reflectDegree"
 		Bullet::FireDesc	fireDesc;
+		float				initialTimerSecond	= 0.0f;
 		float				gravity				= 1.0f;
 		std::vector<float>	animePlaySpeeds;					// size() == SuperBallMachine::MotionKind::MotionCount
 	private:
@@ -93,6 +94,10 @@ namespace Enemy
 			}
 			if ( 3 <= version )
 			{
+				archive( CEREAL_NVP( initialTimerSecond ) );
+			}
+			if ( 4 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -105,4 +110,4 @@ namespace Enemy
 CEREAL_CLASS_VERSION( Enemy::SuperBallMachine, 0 )
 CEREAL_REGISTER_TYPE( Enemy::SuperBallMachine )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::SuperBallMachine )
-CEREAL_CLASS_VERSION( Enemy::SuperBallMachineParam, 2 )
+CEREAL_CLASS_VERSION( Enemy::SuperBallMachineParam, 3 )

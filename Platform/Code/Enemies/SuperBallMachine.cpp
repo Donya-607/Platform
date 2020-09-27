@@ -48,7 +48,7 @@ namespace Enemy
 		Base::Init( parameter, wsTargetPos, wsScreenHitBox );
 
 		currentMotion = MotionKind::Ready;
-		intervalTimer = 0.0f;
+		intervalTimer = Parameter::GetSuperBallMachine().initialTimerSecond;
 
 		ChangeMotion( MotionKind::Ready );
 	}
@@ -68,16 +68,23 @@ namespace Enemy
 		AssignMyBody( body.pos );
 	#endif // USE_IMGUI
 
-		velocity.y -= Parameter::GetSuperBallMachine().gravity * elapsedTime;
+		const auto &data = Parameter::GetSuperBallMachine();
+
+		velocity.y -= data.gravity * elapsedTime;
 
 		if ( currentMotion == MotionKind::Fire && model.animator.WasEnded() )
 		{
 			ChangeMotion( MotionKind::Ready );
 		}
 
+		if ( currentMotion != MotionKind::Fire )
+		{
+			intervalTimer += elapsedTime;
+		}
+
 		ShotIfNeeded( elapsedTime, wsTargetPos );
 
-		const auto   &playSpeeds		= Parameter::GetSuperBallMachine().animePlaySpeeds;
+		const auto   &playSpeeds		= data.animePlaySpeeds;
 		const size_t currentMotionIndex	= scast<size_t>( currentMotion );
 		const size_t playSpeedCount		= playSpeeds.size();
 		const float  motionAcceleration	= ( playSpeedCount <= currentMotionIndex ) ? 1.0f : playSpeeds[currentMotionIndex];
@@ -128,8 +135,6 @@ namespace Enemy
 	{
 		const auto &data = Parameter::GetSuperBallMachine();
 
-		intervalTimer += elapsedTime;
-
 		// Judging to shotable
 
 		if ( intervalTimer < data.fireIntervalSecond ) { return; }
@@ -140,6 +145,7 @@ namespace Enemy
 		capturingArea.size = data.capturingArea;
 		if ( !Donya::Collision::IsHit( wsTargetPos, capturingArea, /* considerExistFlag = */ false ) ) { return; }
 		// else
+
 
 		// Shot here
 
@@ -212,6 +218,7 @@ namespace Enemy
 		}
 
 		ImGui::DragFloat3( u8"õ“G”ÍˆÍi”¼Œaj",				&capturingArea.x,		0.01f	);
+		ImGui::DragFloat ( u8"¶¬Žž‚ÌŒo‰ß•b”",				&initialTimerSecond,	0.01f	);
 		ImGui::DragFloat ( u8"”­ŽËŠÔŠui•bj",				&fireIntervalSecond,	0.01f	);
 		ImGui::DragFloat ( u8"”­ŽËŠp“xiDegreeE‰EŒü‚«Žžj",	&fireDegree,			0.1f	);
 		ImGui::DragFloat ( u8"d—Í",							&gravity,				0.01f	);
