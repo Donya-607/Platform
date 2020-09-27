@@ -126,12 +126,15 @@ namespace Meter
 
 		// Number
 		const Donya::Vector2 ssPos = sprite.pos + data.remainNumberPosOffset;
+		const float oldDepth = Donya::Sprite::GetDrawDepth();
+		Donya::Sprite::SetDrawDepth( drawDepth );
 		pFontRenderer->DrawExt
 		(
 			std::to_wstring( amount ),
 			ssPos, sprite.origin,
 			data.remainNumberScale
 		);
+		Donya::Sprite::SetDrawDepth( oldDepth );
 
 		sprite.pos = registeredPos;
 	}
