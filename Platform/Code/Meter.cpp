@@ -194,8 +194,11 @@ namespace Meter
 
 		ShowPart( u8"ゲージ",		nullptr,				&gaugeTexOrigin,		&gaugeTexSize		);
 		ShowPart( u8"めもり",		&amountPosOffset,		&amountTexOrigin,		&amountTexSize		);
+		ImGui::Text( "" );
+
 		ShowPart( u8"アイコン：枠",	&iconFramePosOffset,	&iconFrameTexOrigin,	&iconFrameTexSize	);
 		ShowPart( u8"アイコン：写真",	&iconPicturePosOffset,	&iconPictureTexOrigin,	&iconPictureTexSize	);
+		ImGui::Text( "" );
 
 		ShowPart( u8"残機：枠",	&remainFramePosOffset, &remainFrameTexOrigin, &remainFrameTexSize );
 		ImGui::DragFloat2( u8"残機：数字・描画位置オフセット",	&remainNumberPosOffset.x	);

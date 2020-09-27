@@ -286,6 +286,10 @@ namespace Boss
 	{
 		return wantRemove;
 	}
+	int  Base::GetCurrentHP() const
+	{
+		return hp;
+	}
 	int  Base::GetRoomID() const
 	{
 		return roomID;

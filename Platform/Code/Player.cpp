@@ -1918,6 +1918,10 @@ bool Player::NowGrabbingLadder() const
 {
 	return ( pMover && pMover->NowGrabbingLadder( *this ) ) ? true : false;
 }
+int  Player::GetCurrentHP() const
+{
+	return currentHP;
+}
 Donya::Collision::Box3F	Player::GetHurtBox() const
 {
 	Donya::Collision::Box3F tmp = hurtBox;

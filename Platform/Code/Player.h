@@ -401,6 +401,7 @@ public:
 public:
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;
+	int  GetCurrentHP() const;
 	Donya::Collision::Box3F		GetHurtBox()		const;
 	Donya::Quaternion			GetOrientation()	const;
 	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F	&collidingHitBox ) const;

@@ -22,6 +22,7 @@
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
 
+#include "Bosses/Skull.h"			// Use SkullParam
 #include "Bullet.h"
 #include "Common.h"
 #include "Enemy.h"
@@ -112,6 +113,32 @@ namespace
 		BloomApplier::Parameter bloomParam;
 
 		Donya::Vector2 deadZone{ 0.3f, 0.3f }; // The stick input is valid if the value greater than this
+
+		struct MeterParam
+		{
+			Donya::Vector2	hpDrawPos;		// Left-Top, Screen space
+			Donya::Vector3	hpDrawColor{ 1.0f, 1.0f, 1.0f };
+			float			hpDrawScale = 1.0f;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( hpDrawPos	),
+					CEREAL_NVP( hpDrawColor	),
+					CEREAL_NVP( hpDrawScale	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		MeterParam playerMeter;
+		MeterParam skullMeter;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -158,6 +185,14 @@ namespace
 				);
 			}
 			if ( 8 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( playerMeter	),
+					CEREAL_NVP( skullMeter	)
+				);
+			}
+			if ( 9 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -221,6 +256,26 @@ namespace
 				ImGui::TreePop();
 			}
 
+			if ( ImGui::TreeNode( u8"メータ関連" ) )
+			{
+				auto ShowPart = []( const char *caption, MeterParam *p )
+				{
+					if ( !ImGui::TreeNode( caption ) ) { return; }
+					// else
+
+					ImGui::DragFloat2( u8"ＨＰ描画位置（左上座標）",	&p->hpDrawPos.x		);
+					ImGui::ColorEdit3( u8"ＨＰ描画色",				&p->hpDrawColor.x	);
+					ImGui::DragFloat ( u8"ＨＰ描画スケール",			&p->hpDrawScale, 0.01f );
+
+					ImGui::TreePop();
+				};
+
+				ShowPart( u8"自機",		&playerMeter	);
+				ShowPart( u8"スカル",	&skullMeter		);
+
+				ImGui::TreePop();
+			}
+
 			if ( ImGui::TreeNode( u8"その他" ) )
 			{
 				ImGui::SliderFloat2( u8"スティックのデッドゾーン", &deadZone.x, 0.0f, 1.0f );
@@ -262,7 +317,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				7 )
+CEREAL_CLASS_VERSION( SceneParam,				8 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
@@ -299,6 +354,9 @@ void SceneGame::Init()
 
 	pPlayerIniter = std::make_unique<PlayerInitializer>();
 	pPlayerIniter->LoadParameter( stageNumber );
+
+	pPlayerMeter = std::make_unique<Meter::Drawer>();
+	pSkullMeter  = std::make_unique<Meter::Drawer>();
 
 	pMap = std::make_unique<Map>();
 
@@ -340,6 +398,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	// Apply for be able to see an adjustment immediately
 	{
 		if ( pBloomer ) { pBloomer->AssignParameter( FetchParameter().bloomParam ); }
+
+		const auto &data = FetchParameter();
+		pPlayerMeter->SetDrawOption( data.playerMeter.hpDrawPos, data.playerMeter.hpDrawColor, data.playerMeter.hpDrawScale );
+		pSkullMeter->SetDrawOption( data.skullMeter.hpDrawPos, data.skullMeter.hpDrawColor, data.skullMeter.hpDrawScale );
 	}
 #endif // USE_IMGUI
 
@@ -1075,6 +1137,14 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 
 	PlayerInit();
 	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+	if ( pPlayerMeter )
+	{
+		const auto &maxHP = Player::Parameter().Get().maxHP;
+		pPlayerMeter->Init( maxHP, maxHP );
+
+		const auto &data = FetchParameter();
+		pPlayerMeter->SetDrawOption( data.playerMeter.hpDrawPos, data.playerMeter.hpDrawColor, data.playerMeter.hpDrawScale );
+	}
 
 	currentRoomID = CalcCurrentRoomID();
 	const Room  *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
@@ -1109,6 +1179,15 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	pBossContainer->SaveBosses( stageNo, true );
 #endif // DEBUG_MODE
 	isThereBoss = pBossContainer->IsThereIn( currentRoomID );
+	if ( pSkullMeter )
+	{
+		// TODO: If create another boss kind, fix this
+		const auto &maxHP = Boss::Parameter::GetSkull().hp;
+		pSkullMeter->Init( maxHP, maxHP );
+
+		const auto &data = FetchParameter();
+		pSkullMeter->SetDrawOption( data.skullMeter.hpDrawPos, data.skullMeter.hpDrawColor, data.skullMeter.hpDrawScale );
+	}
 
 	Bullet::Admin::Get().ClearInstances();
 
@@ -1459,6 +1538,11 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 	{
 		elapsedSecondsAfterMiss = 0.0f;
 	}
+
+	if ( pPlayerMeter )
+	{
+		pPlayerMeter->SetCurrent( scast<float>( pPlayer->GetCurrentHP() ) );
+	}
 }
 
 void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
@@ -1486,6 +1570,11 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 	input.pressShot					= Contains( currentInput.pressShots, true );
 
 	pBossContainer->Update( elapsedTime, input );
+
+	if ( pSkullMeter )
+	{
+		pSkullMeter->SetCurrent( scast<float>( pSkull->GetCurrentHP() ) );
+	}
 }
 
 int  SceneGame::CalcCurrentRoomID() const

@@ -154,6 +154,7 @@ namespace Boss
 	public:
 		virtual bool				NowDead()			const;
 		virtual bool				ShouldRemove()		const;
+		virtual int					GetCurrentHP()		const;
 		virtual int					GetRoomID()			const;
 		using				 Actor::GetHitBox;
 		Donya::Collision::Box3F		GetHurtBox()		const;

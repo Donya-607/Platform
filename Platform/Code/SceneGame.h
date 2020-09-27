@@ -78,6 +78,8 @@ private:
 	std::unique_ptr<Donya::Surface>		pScreenSurface;
 	std::unique_ptr<Donya::Surface>		pShadowMap;
 	std::unique_ptr<Shader>				pQuadShader;
+	std::unique_ptr<Meter::Drawer>		pPlayerMeter;
+	std::unique_ptr<Meter::Drawer>		pSkullMeter;
 	std::unique_ptr<Map>				pMap;
 	std::unique_ptr<Sky>				pSky;
 	std::unique_ptr<House>				pHouse;
