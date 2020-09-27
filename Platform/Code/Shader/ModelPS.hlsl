@@ -34,7 +34,8 @@ float4 main( VS_OUT pin ) : SV_TARGET
 	
 	float4	diffuseMapColor	= diffuseMap.Sample( diffuseMapSampler, pin.texCoord );
 			diffuseMapColor	= SRGBToLinear( diffuseMapColor );
-	float	diffuseMapAlpha	= diffuseMapColor.a;
+	float	diffuseAlpha	= diffuseMapColor.a * cbDrawColor.a;
+	clip(	diffuseAlpha );
 
 	float3	totalLight		= CalcLightInfluence
 							(
@@ -62,7 +63,7 @@ float4 main( VS_OUT pin ) : SV_TARGET
 	
 			resultColor		= lerp( cbShadowColor.rgb, resultColor, shadowFactor );
 	
-	float4	outputColor		= float4( resultColor, diffuseMapAlpha * cbDrawColor.a );
+	float4	outputColor		= float4( resultColor, diffuseAlpha );
 			outputColor.rgb	+= cbEmissive.rgb * cbEmissive.a;
 
 	return	LinearToSRGB( outputColor );
