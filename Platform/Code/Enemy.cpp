@@ -131,7 +131,18 @@ namespace Enemy
 		// else
 
 		ImGui::DragFloat3( u8"ワールド座標",	&wsPos.x, 0.01f );
-		ImGui::Checkbox  ( u8"右向きか",		&lookingRight );
+
+		ImGui::Text( u8"向き：" );
+		auto ShowRadioButton = [&]( const char *caption, LookDirection dir )
+		{
+			if ( ImGui::RadioButton( caption, lookDirection == dir ) )
+			{
+				lookDirection = dir;
+			}
+		};
+		ShowRadioButton( u8"自機を見る",	LookDirection::ToTarget	);
+		ShowRadioButton( u8"右向き",		LookDirection::Right	);
+		ShowRadioButton( u8"左向き",		LookDirection::Left		);
 
 		ImGui::TreePop();
 	}
@@ -158,7 +169,7 @@ namespace Enemy
 	}
 #endif // USE_IMGUI
 
-	void Base::Init( const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreen )
+	void Base::Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		initializer		= parameter;
 
@@ -173,7 +184,24 @@ namespace Enemy
 		velocity		= 0.0f;
 		hp				= GetInitialHP();
 		wantRemove		= false;
-		const float rotateSign = ( initializer.lookingRight ) ? 1.0f : -1.0f;
+
+		float rotateSign = 1.0f;
+		switch ( initializer.lookDirection )
+		{
+		case InitializeParam::LookDirection::ToTarget:
+			{
+				const auto dir = ( wsTargetPos - initializer.wsPos ).x;
+				rotateSign = ( Donya::SignBit( dir ) < 0 ) ? -1.0f : 1.0f;
+			}
+			break;
+		case InitializeParam::LookDirection::Right:
+			rotateSign = +1.0f;
+			break;
+		case InitializeParam::LookDirection::Left:
+			rotateSign = -1.0f;
+			break;
+		default: break;
+		}
 		orientation		= Donya::Quaternion::Make
 		(
 			Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
@@ -215,7 +243,7 @@ namespace Enemy
 			}
 			else // if ( nowWaiting && !onOutSide )
 			{
-				RespawnIfSpawnable();
+				RespawnIfSpawnable( wsTargetPos );
 			}
 
 			return;
@@ -383,7 +411,7 @@ namespace Enemy
 		onOutSidePrevious = false;
 		onOutSideCurrent  = false;
 	}
-	void Base::RespawnIfSpawnable()
+	void Base::RespawnIfSpawnable( const Donya::Vector3 &wsTargetPos )
 	{
 		if ( !NowWaiting() ) { return; }
 		if ( onOutSideCurrent || !onOutSidePrevious ) { return; }
@@ -392,7 +420,7 @@ namespace Enemy
 
 		// The "wsScreenHitBox" will be used for consideration to go to wait.
 		// So I make to do not wait as certainly by passing my body.
-		Init( GetInitializer(), GetHitBox() );
+		Init( GetInitializer(), wsTargetPos, GetHitBox() );
 	}
 	void Base::ApplyReceivedDamageIfHas()
 	{
@@ -498,7 +526,7 @@ namespace Enemy
 		}
 		enemyPtrs.clear();
 	}
-	bool Admin::LoadEnemies( int stageNumber, const Donya::Collision::Box3F &wsScreen, bool fromBinary )
+	bool Admin::LoadEnemies( int stageNumber, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen, bool fromBinary )
 	{
 		ClearInstances();
 
@@ -513,7 +541,7 @@ namespace Enemy
 		// I should call Init()
 		for ( auto &pIt : enemyPtrs )
 		{
-			if ( pIt ) { pIt->Init( pIt->GetInitializer(), wsScreen ); }
+			if ( pIt ) { pIt->Init( pIt->GetInitializer(), wsTargetPos, wsScreen ); }
 		}
 
 		return succeeded;
@@ -545,7 +573,7 @@ namespace Enemy
 		enemyPtrs.erase( itr, enemyPtrs.end() );
 	}
 #if USE_IMGUI
-	void Admin::AppendEnemy( Kind kind, const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreen )
+	void Admin::AppendEnemy( Kind kind, const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		std::shared_ptr<Base> instance = nullptr;
 
@@ -568,10 +596,10 @@ namespace Enemy
 		}
 		// else
 
-		instance->Init( parameter, wsScreen );
+		instance->Init( parameter, wsTargetPos, wsScreen );
 		enemyPtrs.emplace_back( std::move( instance ) );
 	}
-	void Admin::RemakeByCSV( const CSVLoader &loadedData, const Donya::Collision::Box3F &wsScreen )
+	void Admin::RemakeByCSV( const CSVLoader &loadedData, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		auto IsEnemyID	= []( int id )
 		{
@@ -604,10 +632,10 @@ namespace Enemy
 			// else
 
 			InitializeParam tmp;
-			tmp.lookingRight	= true;
+			tmp.lookDirection	= InitializeParam::LookDirection::ToTarget;
 			tmp.wsPos			= Map::ToWorldPos( row, column );
 			const Kind kind = scast<Kind>( id - StageFormat::EnemyStart );
-			AppendEnemy( kind, tmp, wsScreen );
+			AppendEnemy( kind, tmp, wsTargetPos, wsScreen );
 		};
 
 		for ( auto &pIt : enemyPtrs )
@@ -640,7 +668,7 @@ namespace Enemy
 		? tmp.SaveBinary( *this, filePath.c_str(), ID )
 		: tmp.SaveJSON	( *this, filePath.c_str(), ID );
 	}
-	void Admin::ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Donya::Collision::Box3F &wsScreen )
+	void Admin::ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
@@ -666,11 +694,11 @@ namespace Enemy
 		}
 		else if ( result == Op::LoadBinary )
 		{
-			LoadEnemies( stageNo, wsScreen, true );
+			LoadEnemies( stageNo, wsTargetPos, wsScreen, true );
 		}
 		else if ( result == Op::LoadJson )
 		{
-			LoadEnemies( stageNo, wsScreen, false );
+			LoadEnemies( stageNo, wsTargetPos, wsScreen, false );
 		}
 
 		ImGui::TreePop();

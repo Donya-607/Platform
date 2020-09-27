@@ -60,8 +60,15 @@ namespace Enemy
 
 	struct InitializeParam
 	{
+		enum class LookDirection
+		{
+			ToTarget,
+			Right,
+			Left
+		};
+	public:
 		Donya::Vector3	wsPos;
-		bool			lookingRight = true;
+		LookDirection	lookDirection = LookDirection::ToTarget;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -69,12 +76,16 @@ namespace Enemy
 		{
 			archive
 			(
-				CEREAL_NVP( wsPos			),
-				CEREAL_NVP( lookingRight	)
+				CEREAL_NVP( wsPos			)
+				//, CEREAL_NVP( lookingRight	)
 			);
 			if ( 1 <= version )
 			{
-				// archive();
+				archive( CEREAL_NVP( lookDirection ) );
+			}
+			if ( 2 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
 			}
 		}
 	public:
@@ -124,7 +135,7 @@ namespace Enemy
 			}
 		}
 	public:
-		virtual void Init( const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreenHitBox );
+		virtual void Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		virtual void Uninit();
 		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		virtual void PhysicUpdate( float elapsedTime, const Map &terrain );
@@ -149,7 +160,7 @@ namespace Enemy
 		bool OnOutSide() const;
 		bool NowWaiting() const;
 		void BeginWaitIfActive();
-		void RespawnIfSpawnable();
+		void RespawnIfSpawnable( const Donya::Vector3 &wsTargetPos );
 		/// <summary>
 		/// After this, the "pReceivedDamage" will be reset.
 		/// </summary>
@@ -198,7 +209,7 @@ namespace Enemy
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
 		void ClearInstances();
-		bool LoadEnemies( int stageNumber, const Donya::Collision::Box3F &wsScreenHitBox, bool fromBinary );
+		bool LoadEnemies( int stageNumber, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox, bool fromBinary );
 	public:
 		size_t GetInstanceCount() const;
 		bool IsOutOfRange( size_t instanceIndex ) const;
@@ -206,12 +217,12 @@ namespace Enemy
 	private:
 		void RemoveEnemiesIfNeeded();
 	#if USE_IMGUI
-		void AppendEnemy( Kind appendKind, const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreenHitBox );
+		void AppendEnemy( Kind appendKind, const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 	public:
-		void RemakeByCSV( const CSVLoader &loadedData, const Donya::Collision::Box3F &wsScreenHitBox );
+		void RemakeByCSV( const CSVLoader &loadedData, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		void SaveEnemies( int stageNumber, bool fromBinary );
 	public:
-		void ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Donya::Collision::Box3F &wsScreenHitBox );
+		void ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		void ShowInstanceNode( size_t instanceIndex );
 	#endif // USE_IMGUI
 	};
@@ -255,7 +266,7 @@ namespace Enemy
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Enemy::InitializeParam,	0 )
+CEREAL_CLASS_VERSION( Enemy::InitializeParam,	1 )
 CEREAL_CLASS_VERSION( Enemy::Base,				0 )
 CEREAL_REGISTER_TYPE( Enemy::Base )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Actor, Enemy::Base )

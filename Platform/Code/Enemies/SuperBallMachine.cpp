@@ -43,9 +43,9 @@ namespace Enemy
 		}
 	}
 
-	void SuperBallMachine::Init( const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreenHitBox )
+	void SuperBallMachine::Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
-		Base::Init( parameter, wsScreenHitBox );
+		Base::Init( parameter, wsTargetPos, wsScreenHitBox );
 
 		currentMotion = MotionKind::Ready;
 		intervalTimer = 0.0f;

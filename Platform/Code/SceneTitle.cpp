@@ -1406,8 +1406,10 @@ void SceneTitle::UseImGui()
 
 		auto ApplyToEnemy	= [&]( const CSVLoader &loadedData )
 		{
+			const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+
 			Enemy::Admin::Get().ClearInstances();
-			Enemy::Admin::Get().RemakeByCSV( loadedData, currentScreen );
+			Enemy::Admin::Get().RemakeByCSV( loadedData, playerPos, currentScreen );
 
 			if ( thenSave )
 			{
@@ -1612,7 +1614,8 @@ void SceneTitle::UseImGui()
 		Bullet::Parameter::Update( u8"’e‚Ìƒpƒ‰ƒ[ƒ^" );
 		ImGui::Text( "" );
 
-		Enemy::Admin::Get().ShowImGuiNode( u8"“G‚ÌŒ»İ", stageNo, currentScreen );
+		const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+		Enemy::Admin::Get().ShowImGuiNode( u8"“G‚ÌŒ»İ", stageNo, playerPos, currentScreen );
 		Enemy::Parameter::Update( u8"“G‚Ìƒpƒ‰ƒ[ƒ^" );
 		ImGui::Text( "" );
 

@@ -38,7 +38,7 @@ namespace Enemy
 			}
 		}
 	public:
-		void Init( const InitializeParam &parameter, const Donya::Collision::Box3F &wsScreenHitBox ) override;
+		void Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 		void Uninit() override;
 		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:

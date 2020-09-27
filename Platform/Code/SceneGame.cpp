@@ -434,7 +434,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		}
 	}
 
-
 	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
@@ -1045,10 +1044,10 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	The dependencies of initializations:
 	CurrentRoomID	[House, Player]
 	House - it is free
-	Enemies:		[Map]				- depends on the map for decide the initial state
+	Enemies:		[Map, Player]		- depends on the player position as target, and map for decide the initial state
 	Map:			[CurrentScreen]		- depends on an area of current screen the camera projects
 	CurrentScreen:	[Camera]			- depends on the view and projection matrix of the camera
-	Camera:			[Player, House]		- depends on the player position(camera) and room position(light camera)
+	Camera:			[Player, House]		- depends on the player position(camera), and room position(light camera)
 	Player - it is free(currently)
 	*/
 
@@ -1058,6 +1057,7 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	pHouse->Init( stageNo );
 
 	PlayerInit();
+	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 
 	currentRoomID = CalcCurrentRoomID();
 	const Room  *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
@@ -1075,7 +1075,7 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 
 	auto &enemyAdmin = Enemy::Admin::Get();
 	enemyAdmin.ClearInstances();
-	enemyAdmin.LoadEnemies( stageNo, currentScreen, IOFromBinary );
+	enemyAdmin.LoadEnemies( stageNo, playerPos, currentScreen, IOFromBinary );
 #if DEBUG_MODE
 	enemyAdmin.SaveEnemies( stageNo, true );
 #endif // DEBUG_MODE
@@ -2211,8 +2211,10 @@ void SceneGame::UseImGui( float elapsedTime )
 		};
 		auto ApplyToEnemy	= [&]( const CSVLoader &loadedData )
 		{
+			const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+
 			Enemy::Admin::Get().ClearInstances();
-			Enemy::Admin::Get().RemakeByCSV( loadedData, currentScreen );
+			Enemy::Admin::Get().RemakeByCSV( loadedData, playerPos, currentScreen );
 
 			if ( thenSave )
 			{
@@ -2432,7 +2434,8 @@ void SceneGame::UseImGui( float elapsedTime )
 		Bullet::Parameter::Update( u8"’e‚Ìƒpƒ‰ƒ[ƒ^" );
 		ImGui::Text( "" );
 
-		Enemy::Admin::Get().ShowImGuiNode( u8"“G‚ÌŒ»İ", stageNumber, currentScreen );
+		const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+		Enemy::Admin::Get().ShowImGuiNode( u8"“G‚ÌŒ»İ", stageNumber, playerPos, currentScreen );
 		Enemy::Parameter::Update( u8"“G‚Ìƒpƒ‰ƒ[ƒ^" );
 		ImGui::Text( "" );
 
