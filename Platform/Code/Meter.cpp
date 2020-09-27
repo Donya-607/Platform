@@ -82,6 +82,51 @@ namespace Meter
 		DrawGauge( drawDepth );
 		DrawAmount( drawDepth );
 	}
+	void Drawer::DrawIcon( Icon kind, float drawDepth ) const
+	{
+		const auto registeredPos	= sprite.pos;
+		const auto registeredColor	= sprite.color;
+		const auto &data = Parameter::GetMeter();
+		
+		// Frame
+		sprite.pos		+= data.iconFramePosOffset;
+		sprite.texPos	=  data.iconFrameTexOrigin;
+		sprite.texSize	=  data.iconFrameTexSize;
+		sprite.DrawPart( drawDepth );
+
+		// Picture
+		sprite.pos		+= data.iconPicturePosOffset;
+		sprite.texPos	=  data.iconPictureTexOrigin;
+		sprite.texPos.x	+= data.iconPictureTexSize.x * scast<float>( kind );
+		sprite.texSize	=  data.iconPictureTexSize;
+		sprite.color	=  Donya::Vector3{ 1.0f, 1.0f, 1.0f };
+		sprite.DrawPart( drawDepth );
+
+		sprite.pos		= registeredPos;
+		sprite.color	= registeredColor;
+	}
+	void Drawer::DrawRemain( const Donya::Font::Renderer &fontRenderer, int amount, float drawDepth ) const
+	{
+		const auto registeredPos = sprite.pos;
+		const auto &data = Parameter::GetMeter();
+		
+		// Frame
+		sprite.pos		+= data.remainFramePosOffset;
+		sprite.texPos	=  data.remainFrameTexOrigin;
+		sprite.texSize	=  data.remainFrameTexSize;
+		sprite.DrawPart( drawDepth );
+
+		// Number
+		const Donya::Vector2 ssPos = sprite.pos + data.remainNumberPosOffset;
+		fontRenderer.DrawExt
+		(
+			std::to_wstring( amount ),
+			ssPos, sprite.origin,
+			data.remainNumberScale
+		);
+
+		sprite.pos = registeredPos;
+	}
 	void Drawer::SetCurrent( float amount )
 	{
 		current = std::max( 0.0f, std::min( maxAmount, amount ) );
@@ -119,20 +164,31 @@ namespace Meter
 		drawOffset.y += reducedAmount;
 		drawOffset = drawOffset.Product( sprite.scale );
 
-		const auto oldPos = sprite.pos;
+		const auto registeredPos = sprite.pos;
 		sprite.pos += drawOffset;
 		sprite.DrawPart( drawDepth );
-		sprite.pos = oldPos;
+		sprite.pos = registeredPos;
 	}
 
 #if USE_IMGUI
 	void MeterParam::ShowImGuiNode()
 	{
-		ImGui::DragFloat2( u8"ゲージ・テクスチャ原点",			&gaugeTexOrigin.x	);
-		ImGui::DragFloat2( u8"ゲージ・切り取りサイズ（全体）",		&gaugeTexSize.x		);
-		ImGui::DragFloat2( u8"めもり・描画位置オフセット",			&amountPosOffset.x	);
-		ImGui::DragFloat2( u8"めもり・テクスチャ原点",			&amountTexOrigin.x	);
-		ImGui::DragFloat2( u8"めもり・切り取りサイズ（全体）",		&amountTexSize.x	);
+		using Type = Donya::Vector2;
+		auto ShowPart = []( const std::string &name, Type *posOffset, Type *texOrigin, Type *texSize )
+		{
+			if ( posOffset	) { ImGui::DragFloat2( ( name + u8"・描画位置オフセット"		).c_str(),		&posOffset->x	); }
+			if ( texOrigin	) { ImGui::DragFloat2( ( name + u8"・テクスチャ原点"			).c_str(),		&texOrigin->x	); }
+			if ( texSize	) { ImGui::DragFloat2( ( name + u8"・切り取りサイズ（全体）"	).c_str(),		&texSize->x		); }
+		};
+
+		ShowPart( u8"ゲージ",		nullptr,				&gaugeTexOrigin,		&gaugeTexSize		);
+		ShowPart( u8"めもり",		&amountPosOffset,		&amountTexOrigin,		&amountTexSize		);
+		ShowPart( u8"アイコン：枠",	&iconFramePosOffset,	&iconFrameTexOrigin,	&iconFrameTexSize	);
+		ShowPart( u8"アイコン：写真",	&iconPicturePosOffset,	&iconPictureTexOrigin,	&iconPictureTexSize	);
+
+		ShowPart( u8"残機：枠",	&remainFramePosOffset, &remainFrameTexOrigin, &remainFrameTexSize );
+		ImGui::DragFloat2( u8"残機：数字・描画位置オフセット",	&remainNumberPosOffset.x	);
+		ImGui::DragFloat2( u8"残機：数字・描画スケール",		&remainNumberScale.x		);
 	}
 #endif // USE_IMGUI
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Donya/Font.h"
+
 #include "UI.h"
 
 namespace Meter
@@ -26,6 +28,12 @@ namespace Meter
 
 	bool LoadResource();
 
+	enum class Icon
+	{
+		Player,
+		Skull,
+	};
+
 	class Drawer
 	{
 	private:
@@ -35,7 +43,9 @@ namespace Meter
 	public:
 		void Init( float maxAmount, float initialAmount );
 		void Update( float elapsedTime );
-		void Draw( float drawDepth = 0.0f ) const;
+		void Draw		( float drawDepth = 0.0f ) const;
+		void DrawIcon	( Icon kind, float drawDepth = 0.0f ) const;
+		void DrawRemain	( const Donya::Font::Renderer &fontRenderer, int amount, float drawDepth = 0.0f ) const;
 	public:
 		void SetCurrent( float currentAmount );
 		void SetDrawOption( const Donya::Vector2 &ssPosLeftTop, const Donya::Vector3 &drawBlendColor, const Donya::Vector2 &drawScale );
