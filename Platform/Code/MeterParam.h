@@ -59,7 +59,7 @@ namespace Meter
 					CEREAL_NVP( remainFrameTexOrigin	),
 					CEREAL_NVP( remainFrameTexSize		),
 					CEREAL_NVP( remainNumberPosOffset	),
-					CEREAL_NVP( remainNumberScale		),
+					CEREAL_NVP( remainNumberScale		)
 				);
 			}
 			if ( 2 <= version )

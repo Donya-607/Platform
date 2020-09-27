@@ -105,7 +105,7 @@ namespace Meter
 		sprite.pos		= registeredPos;
 		sprite.color	= registeredColor;
 	}
-	void Drawer::DrawRemain( const Donya::Font::Renderer &fontRenderer, int amount, float drawDepth ) const
+	void Drawer::DrawRemains( FontAttribute font, int amount, float drawDepth ) const
 	{
 		const auto registeredPos = sprite.pos;
 		const auto &data = Parameter::GetMeter();
@@ -116,9 +116,17 @@ namespace Meter
 		sprite.texSize	=  data.remainFrameTexSize;
 		sprite.DrawPart( drawDepth );
 
+		const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
+		if ( !pFontRenderer )
+		{
+			_ASSERT_EXPR( 0, L"Error: Passed font is invalid!" );
+			return;
+		}
+		// else
+
 		// Number
 		const Donya::Vector2 ssPos = sprite.pos + data.remainNumberPosOffset;
-		fontRenderer.DrawExt
+		pFontRenderer->DrawExt
 		(
 			std::to_wstring( amount ),
 			ssPos, sprite.origin,

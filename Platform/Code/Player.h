@@ -13,6 +13,7 @@
 
 #include "CSVLoader.h"
 #include "Damage.h"
+#include "FontHelper.h"
 #include "Map.h"
 #include "Meter.h"
 #include "ModelHelper.h"
@@ -394,7 +395,7 @@ public:
 
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
-	void DrawMeter( float drawDepth = 0.0f ) const;
+	void DrawMeter( FontAttribute font, float drawDepth = 0.0f ) const;
 public:
 	void RecoverHP( int recovery );
 public:

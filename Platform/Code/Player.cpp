@@ -1899,9 +1899,11 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 	}
 #endif // DEBUG_MODE
 }
-void Player::DrawMeter( float drawDepth ) const
+void Player::DrawMeter( FontAttribute font, float drawDepth ) const
 {
-	hpDrawer.Draw( drawDepth );
+	hpDrawer.Draw		( drawDepth );
+	hpDrawer.DrawIcon	( Meter::Icon::Player, drawDepth );
+	hpDrawer.DrawRemains( font, Remaining::Get(), drawDepth );
 }
 void Player::RecoverHP( int recovery )
 {

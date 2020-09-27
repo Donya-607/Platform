@@ -27,6 +27,7 @@
 #include "Enemy.h"
 #include "Fader.h"
 #include "FilePath.h"
+#include "FontHelper.h"
 #include "Item.h"
 #include "ItemParam.h"				// Use a recovery amount
 #include "Meter.h"
@@ -811,7 +812,7 @@ void SceneGame::Draw( float elapsedTime )
 	}
 #endif // DEBUG_MODE
 
-	if ( pPlayer ) { pPlayer->DrawMeter(); }
+	if ( pPlayer ) { pPlayer->DrawMeter( FontAttribute::Main ); }
 
 #if DEBUG_MODE
 	// Some visualizing
