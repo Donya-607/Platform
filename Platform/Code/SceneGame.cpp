@@ -68,6 +68,8 @@ namespace
 			Donya::Vector3 offsetFocus;						// The offset of focus from the player position
 		}
 		camera;
+		Donya::Vector2 projectScreenAreaMin{ 0.0f,						0.0f					};
+		Donya::Vector2 projectScreenAreaMax{ Common::ScreenWidthF(),	Common::ScreenHeightF()	};
 		
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
 
@@ -148,6 +150,14 @@ namespace
 			}
 			if ( 7 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( projectScreenAreaMin ),
+					CEREAL_NVP( projectScreenAreaMax )
+				);
+			}
+			if ( 8 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -161,6 +171,13 @@ namespace
 				ImGui::DragFloat ( u8"画角（Degree）",				&camera.fovDegree,		0.1f  );
 				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&camera.offsetPos.x,	0.01f );
 				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&camera.offsetFocus.x,	0.01f );
+
+				ImGui::TreePop();
+			}
+			if ( ImGui::TreeNode( u8"スクリーン範囲" ) )
+			{
+				ImGui::DragFloat2( u8"基準座標・左上",	&projectScreenAreaMin.x );
+				ImGui::DragFloat2( u8"基準座標・右下",	&projectScreenAreaMax.x );
 
 				ImGui::TreePop();
 			}
@@ -244,7 +261,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				6 )
+CEREAL_CLASS_VERSION( SceneParam,				7 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
@@ -396,6 +413,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	if ( pSky ) { pSky->Update( elapsedTime ); }
 
 	PlayerUpdate( deltaTimeForMove, mapRef );
+	// PlayerUpdate( elapsedTime, mapRef );
 	if ( data.waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
 	{
 		const int remaining = Player::Remaining::Get();
@@ -444,6 +462,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 									? FLT_MAX
 									: currentRoomArea.Max().x;
 			pPlayer->PhysicUpdate( deltaTimeForMove, mapRef, leftBorder, rightBorder );
+			// pPlayer->PhysicUpdate( elapsedTime, mapRef, leftBorder, rightBorder );
 
 			const int movedRoomID = CalcCurrentRoomID();
 			if ( movedRoomID != currentRoomID )
@@ -953,8 +972,9 @@ bool SceneGame::AreRenderersReady() const
 
 Donya::Vector4x4 SceneGame::MakeScreenTransform() const
 {
+	constexpr Donya::Vector4x4 matViewport = Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
+
 	const Donya::Vector4x4 matViewProj = iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix();
-	const Donya::Vector4x4 matViewport = Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
 	return matViewProj * matViewport;
 }
 Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
@@ -983,36 +1003,35 @@ Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 		return ( result.isIntersect ) ? result.intersection : oldPos;
 	};
 
-	constexpr Donya::Vector2 halfScreenSize
+	Donya::Vector3 nowMin{ currentScreen.Min().XY(), 0.0f };
+	Donya::Vector3 nowMax{ currentScreen.Max().XY(), 0.0f };
+
+	const auto &data = FetchParameter();
+	nowMin = CalcWorldPos( data.projectScreenAreaMin,	nowMin	);
+	nowMax = CalcWorldPos( data.projectScreenAreaMax,	nowMax	);
+
+	Donya::Vector2 wsHalfSize
 	{
-		Common::HalfScreenWidthF(),
-		Common::HalfScreenHeightF(),
+		fabsf( nowMax.x - nowMin.x ) * 0.5f,
+		fabsf( nowMax.y - nowMin.y ) * 0.5f,
 	};
-	constexpr Donya::Vector2 left	{ 0.0f,						halfScreenSize.y		};
-	constexpr Donya::Vector2 top	{ halfScreenSize.x,			0.0f					};
-	constexpr Donya::Vector2 right	{ halfScreenSize.x * 2.0f,	halfScreenSize.y		};
-	constexpr Donya::Vector2 bottom	{ halfScreenSize.x,			halfScreenSize.y * 2.0f	};
 
-	Donya::Vector3 nowLeft		{ currentScreen.Min().x,	currentScreen.pos.y,	0.0f };
-	Donya::Vector3 nowTop		{ currentScreen.pos.x,		currentScreen.Min().y,	0.0f };
-	Donya::Vector3 nowRight		{ currentScreen.Max().x,	currentScreen.pos.y,	0.0f };
-	Donya::Vector3 nowBottom	{ currentScreen.pos.x,		currentScreen.Max().y,	0.0f };
-
-	nowLeft		= CalcWorldPos( left,	nowLeft		);
-	nowTop		= CalcWorldPos( top,	nowTop		);
-	nowRight	= CalcWorldPos( right,	nowRight	);
-	nowBottom	= CalcWorldPos( bottom, nowBottom	);
-
-	const float halfWidth	= fabsf( nowRight.x - nowLeft.x ) * 0.5f;
-	const float halfHeight	= fabsf( nowBottom.y - nowTop.y ) * 0.5f;
+	const auto roomArea = pHouse->CalcRoomArea( currentRoomID );
+	if ( roomArea != Donya::Collision::Box3F::Nil() )
+	{
+		// Clamp to room area
+		wsHalfSize.x = std::min( roomArea.size.x, wsHalfSize.x );
+		wsHalfSize.y = std::min( roomArea.size.y, wsHalfSize.y );
+	}
 
 	Donya::Collision::Box3F nowScreen;
-	nowScreen.pos.x  = nowLeft.x + halfWidth;	// Specify center
-	nowScreen.pos.y  = nowTop.y  - halfHeight;	// Specify center
+	nowScreen.pos.x  = nowMin.x + wsHalfSize.x;	// Specify center
+	nowScreen.pos.y  = nowMin.y - wsHalfSize.y;	// Minus for resolve Y-plus direction between screen space and world space
 	nowScreen.pos.z  = 0.0f;
-	nowScreen.size.x = halfWidth;
-	nowScreen.size.y = halfHeight;
+	nowScreen.size.x = wsHalfSize.x;
+	nowScreen.size.y = wsHalfSize.y;
 	nowScreen.size.z = FLT_MAX;
+
 	return nowScreen;
 }
 
@@ -1206,7 +1225,7 @@ Donya::Vector3 SceneGame::ClampFocusPoint( const Donya::Vector3 &focusPoint, int
 
 	const auto min = area.Min();
 	const auto max = area.Max();
-			
+
 	const float halfAreaWidth		= ( max.x - min.x ) * 0.5f;
 	const float halfAreaHeight		= ( max.y - min.y ) * 0.5f;
 	const float halfScreenWidth		= ( currentScreen.Max().x - currentScreen.Min().x ) * 0.5f;
