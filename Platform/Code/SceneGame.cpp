@@ -660,16 +660,16 @@ void SceneGame::Draw( float elapsedTime )
 	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
 	pRenderer->ActivateSamplerNormal( Donya::Sampler::Defined::Point_Wrap );
 
-	// Update scene constant as light source
-	{
-		Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
-		tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
-		UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP );
-	}
 	pShadowMap->SetRenderTarget();
 	pShadowMap->SetViewport();
 	// Make the shadow map
 	{
+		// Update scene constant as light source
+		{
+			Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
+			tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
+			UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP );
+		}
 		pRenderer->ActivateConstantScene();
 
 		DrawObjects( DrawTarget::All, /* castShadow = */ true );
@@ -678,36 +678,48 @@ void SceneGame::Draw( float elapsedTime )
 	}
 	Donya::Surface::ResetRenderTarget();
 
-	// Update scene and shadow constants
-	{
-		const auto skyColor = ( pSky ) ? Donya::Vector4{ pSky->GetCurrentColor(), 1.0f } : Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
-		auto dir = data.directionalLight;
-		dir.light.ambientColor = Donya::Vector4::Product( dir.light.ambientColor, skyColor );
-		dir.light.diffuseColor = Donya::Vector4::Product( dir.light.diffuseColor, skyColor );
-		UpdateSceneConstant( dir, cameraPos, V, VP );
-		
-		RenderingHelper::ShadowConstant constant{};
-		constant.lightProjMatrix	= LVP;
-		constant.shadowColor		= data.shadowMap.color;
-		constant.shadowBias			= data.shadowMap.bias;
-		pRenderer->UpdateConstant( constant );
-	}
-	// Update point light constant
-	{
-		pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
-	}
 	pScreenSurface->SetRenderTarget();
 	pScreenSurface->SetViewport();
 	// Draw normal scene with shadow map
 	{
+		RenderingHelper::ShadowConstant shadowConstant{};
+
+		// Update scene and shadow constants
+		{
+			const auto skyColor = ( pSky ) ? Donya::Vector4{ pSky->GetCurrentColor(), 1.0f } : Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+			auto dir = data.directionalLight;
+			dir.light.ambientColor = Donya::Vector4::Product( dir.light.ambientColor, skyColor );
+			dir.light.diffuseColor = Donya::Vector4::Product( dir.light.diffuseColor, skyColor );
+			UpdateSceneConstant( dir, cameraPos, V, VP );
+
+			shadowConstant.lightProjMatrix	= LVP;
+			shadowConstant.shadowColor		= data.shadowMap.color;
+			shadowConstant.shadowBias		= data.shadowMap.bias;
+			pRenderer->UpdateConstant( shadowConstant );
+		}
+		// Update point light constant
+		{
+			pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
+		}
+
 		pRenderer->ActivateConstantScene();
 		pRenderer->ActivateConstantPointLight();
 		pRenderer->ActivateConstantShadow();
 		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		pRenderer->ActivateShadowMap( *pShadowMap );
 
-		constexpr DrawTarget exceptBullet = DrawTarget::All ^ DrawTarget::Bullet;
-		DrawObjects( exceptBullet, /* castShadow = */ false );
+		constexpr DrawTarget option = DrawTarget::All ^ DrawTarget::Bullet ^ DrawTarget::Item;
+		DrawObjects( option, /* castShadow = */ false );
+
+		// Disable shadow
+		{
+			pRenderer->DeactivateConstantShadow();
+			shadowConstant.shadowBias = 1.0f; // Make the pixel to nearest
+			pRenderer->UpdateConstant( shadowConstant );
+			pRenderer->ActivateConstantShadow();
+		}
+
+		DrawObjects( DrawTarget::Item, /* castShadow = */ false );
 
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_Write );
 		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
