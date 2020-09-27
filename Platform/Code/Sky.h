@@ -66,6 +66,8 @@ public:
 private:
 	Donya::Vector3 CalcCurrentColor( float hour ) const;
 public:
+	Donya::Vector3 GetCurrentColor() const;
+public:
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI

@@ -119,6 +119,10 @@ Donya::Vector3 Sky::CalcCurrentColor( float hour ) const
 	}
 	return color;
 }
+Donya::Vector3 Sky::GetCurrentColor() const
+{
+	return drawColor;
+}
 
 #if USE_IMGUI
 void Sky::ShowImGuiNode( const std::string &nodeCaption )

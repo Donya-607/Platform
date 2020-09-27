@@ -680,7 +680,11 @@ void SceneGame::Draw( float elapsedTime )
 
 	// Update scene and shadow constants
 	{
-		UpdateSceneConstant( data.directionalLight, cameraPos, V, VP );
+		const auto skyColor = ( pSky ) ? Donya::Vector4{ pSky->GetCurrentColor(), 1.0f } : Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+		auto dir = data.directionalLight;
+		dir.light.ambientColor = Donya::Vector4::Product( dir.light.ambientColor, skyColor );
+		dir.light.diffuseColor = Donya::Vector4::Product( dir.light.diffuseColor, skyColor );
+		UpdateSceneConstant( dir, cameraPos, V, VP );
 		
 		RenderingHelper::ShadowConstant constant{};
 		constant.lightProjMatrix	= LVP;
