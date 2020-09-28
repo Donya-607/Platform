@@ -616,6 +616,9 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		pPlayer->KillMeIfCollideToKillAreas( deltaTimeForMove, mapRef );
 	}
 
+	if ( pPlayerMeter ) { pPlayerMeter->Update( elapsedTime ); }
+	if ( pSkullMeter  ) { pSkullMeter->Update( elapsedTime );  }
+
 	return ReturnResult();
 }
 

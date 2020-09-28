@@ -150,6 +150,9 @@ private:
 		bool UseDash() const;
 		bool Jumpable( int jumpInputIndex ) const;
 	public:
+		void Overwrite( const Input overwrite );
+		void OverwritePrevious( const Input overwrite );
+	public:
 		const Input &Previous() const
 		{ return prev; }
 		const Input &Current() const
@@ -179,7 +182,7 @@ private:
 		bool					shouldPoseShot = false;
 	public:
 		void Init();
-		void Update( Player &instance, Input input, float elapsedTime, bool stopAnimation = false );
+		void Update( Player &instance, float elapsedTime, bool stopAnimation = false );
 		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW, const Donya::Vector3 &blendColor, float blendAlpha ) const;
 	public:
 		void QuitShotMotion();
@@ -193,7 +196,7 @@ private:
 		int  ToMotionIndex( MotionKind kind ) const;
 		void AssignPose( MotionKind kind );
 		bool ShouldEnableLoop( MotionKind kind ) const;
-		MotionKind CalcNowKind( Player &instance, Input input, float elapsedTime ) const;
+		MotionKind CalcNowKind( Player &instance, float elapsedTime ) const;
 	};
 	class ShotManager
 	{
@@ -234,7 +237,7 @@ private:
 	public:
 		virtual void Init( Player &instance );
 		virtual void Uninit( Player &instance ) {}
-		virtual void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) = 0;
+		virtual void Update( Player &instance, float elapsedTime, const Map &terrain ) = 0;
 		virtual void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) = 0;
 		virtual bool NowSliding( const Player &instance ) const { return false; }
 		virtual bool NowKnockBacking( const Player &instance ) const { return false; }
@@ -250,7 +253,7 @@ private:
 	protected:
 		virtual void AssignBodyParameter( Player &instance );
 	protected:
-		void MotionUpdate( Player &instance, Input input, float elapsedTime, bool stopAnimation = false );
+		void MotionUpdate( Player &instance, float elapsedTime, bool stopAnimation = false );
 		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
 		void MoveOnlyVertical( Player &instance, float elapsedTime, const Map &terrain );
 	};
@@ -261,7 +264,7 @@ private:
 		bool gotoLadder		= false;
 		bool braceOneself	= false;
 	public:
-		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 		bool NowBracing( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
@@ -285,7 +288,7 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 		bool NowSliding( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
@@ -313,7 +316,7 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 		bool NowGrabbingLadder( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
@@ -326,9 +329,9 @@ private:
 		void LookToFront( Player &instance );
 	private:
 		bool NowUnderShotLag() const;
-		void ShotProcess( Player &instance, float elapsedTime, Input input );
+		void ShotProcess( Player &instance, float elapsedTime );
 	private:
-		ReleaseWay JudgeWhetherToRelease( Player &instance, float elapsedTime, Input input, const Map &terrain ) const;
+		ReleaseWay JudgeWhetherToRelease( Player &instance, float elapsedTime, const Map &terrain ) const;
 	};
 	class KnockBack : public MoverBase
 	{
@@ -338,7 +341,7 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 		bool NowKnockBacking( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
@@ -351,7 +354,7 @@ private:
 	{
 	public:
 		void Init( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, Input input, const Map &terrain ) override;
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 		bool NowMiss( const Player &instance ) const override { return true; }
 		bool Drawable( const Player &instance ) const override;
@@ -370,7 +373,6 @@ private:
 	MotionManager				motionManager;
 	ShotManager					shotManager;
 	Flusher						invincibleTimer;
-	Meter::Drawer				hpDrawer;
 	std::unique_ptr<MoverBase>	pMover					= nullptr;
 	std::weak_ptr<const Tile>	pTargetLadder{};				// It only used for initialization of Player::GrabLadder as reference
 	int							currentHP				= 1;
@@ -395,7 +397,6 @@ public:
 
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
-	void DrawMeter( FontAttribute font, float drawDepth = 0.0f ) const;
 public:
 	void RecoverHP( int recovery );
 public:
@@ -445,15 +446,15 @@ private:
 	using Actor::MoveY;
 	using Actor::MoveZ;
 	using Actor::DrawHitBox;
-	void MoveHorizontal( float elapsedTime, Input input );
-	void MoveVertical  ( float elapsedTime, Input input );
+	void MoveHorizontal( float elapsedTime );
+	void MoveVertical  ( float elapsedTime );
 	bool NowShotable() const;
-	void ShotIfRequested( float elapsedTime, Input input );
+	void ShotIfRequested( float elapsedTime );
 	void UpdateOrientation( bool lookingRight );
 	void Jump( int inputIndex );
 	bool Jumpable( int inputIndex ) const;
 	bool WillUseJump() const;
-	void Fall( float elapsedTime, Input input );
+	void Fall( float elapsedTime );
 	void Landing();
 private:
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;

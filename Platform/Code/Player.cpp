@@ -369,15 +369,6 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::TreePop();
 	}
 
-	if ( ImGui::TreeNode( u8"ÉÅÅ[É^ê›íË" ) )
-	{
-		ImGui::DragFloat2( u8"ÇgÇoï`âÊà íuÅiç∂è„ç¿ïWÅj",	&hpDrawPos.x	);
-		ImGui::ColorEdit3( u8"ÇgÇoï`âÊêF",				&hpDrawColor.x	);
-		ImGui::DragFloat ( u8"ÇgÇoï`âÊÉXÉPÅ[Éã",			&hpDrawScale	);
-
-		ImGui::TreePop();
-	}
-
 	ImGui::Helper::ShowAABBNode( u8"ínå`Ç∆ÇÃìñÇΩÇËîªíË", &hitBox  );
 	ImGui::Helper::ShowAABBNode( u8"çUåÇÇ∆ÇÃãÚÇÁÇ¢îªíË", &hurtBox );
 	ImGui::Helper::ShowAABBNode( u8"ÉXÉâÉCÉhíÜÅEínå`Ç∆ÇÃìñÇΩÇËîªíË", &slideHitBox  );
@@ -509,6 +500,14 @@ bool Player::InputManager::Jumpable( int jumpInputIndex ) const
 	// else
 	return wasReleasedJumps[jumpInputIndex];
 }
+void Player::InputManager::Overwrite( const Input overwrite )
+{
+	curr = overwrite;
+}
+void Player::InputManager::OverwritePrevious( const Input overwrite )
+{
+	prev = overwrite;
+}
 #if USE_IMGUI
 void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
 {
@@ -582,10 +581,10 @@ void Player::MotionManager::Init()
 	shotAnimator.DisableLoop();
 	shouldPoseShot = false;
 }
-void Player::MotionManager::Update( Player &inst, Input input, float elapsedTime, bool stopAnimation )
+void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAnimation )
 {
 	prevKind = currKind;
-	currKind = CalcNowKind( inst, input, elapsedTime );
+	currKind = CalcNowKind( inst, elapsedTime );
 	if ( currKind != prevKind )
 	{
 		model.animator.ResetTimer();
@@ -820,7 +819,7 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 	_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
 	return false;
 }
-Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, Input input, float elapsedTime ) const
+Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elapsedTime ) const
 {
 	// Continue same motion if the game time is pausing
 	if ( IsZero( elapsedTime ) ) { return currKind; }
@@ -846,6 +845,7 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, Input input
 	// else
 	if ( nowMoving ) { return MotionKind::Run;	}
 	// else
+	const auto &input = inst.inputManager.Current();
 	if ( input.moveVelocity.y < 0.0f ) { return MotionKind::Brace; }
 	// else
 	return MotionKind::Idle;
@@ -983,9 +983,9 @@ void Player::MoverBase::Init( Player &inst )
 {
 	AssignBodyParameter( inst );
 }
-void Player::MoverBase::MotionUpdate( Player &inst, Input input, float elapsedTime, bool stopAnimation )
+void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime, bool stopAnimation )
 {
-	inst.motionManager.Update( inst, input, elapsedTime, stopAnimation );
+	inst.motionManager.Update( inst, elapsedTime, stopAnimation );
 }
 void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1039,9 +1039,11 @@ void Player::MoverBase::AssignBodyParameter( Player &inst )
 	inst.hurtBox	= inst.GetNormalBody( /* ofHurtBox = */ true  );
 }
 
-void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
+void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
-	inst.MoveHorizontal( elapsedTime, input );
+	const auto &input = inst.inputManager.Current();
+
+	inst.MoveHorizontal( elapsedTime );
 
 	// Deformity of MoveVertical()
 	{
@@ -1056,7 +1058,7 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 				gotoSlide = true;
 
 				// Certainly doing Fall() if do not jump
-				inst.Fall( elapsedTime, input );
+				inst.Fall( elapsedTime );
 				// But We must set the pressing flag because We wanna prevent to jump.
 				inst.inputManager.WasReleasedJumpInput()[jumpInputIndex] = false;
 			}
@@ -1073,11 +1075,11 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 				gotoSlide = true;
 			}
 
-			inst.Fall( elapsedTime, input );
+			inst.Fall( elapsedTime );
 		}
 	}
 
-	inst.ShotIfRequested( elapsedTime, input );
+	inst.ShotIfRequested( elapsedTime );
 
 	// Try to grabbing ladder if the game time is not pausing
 	if ( !gotoSlide && !IsZero( elapsedTime ) )
@@ -1133,7 +1135,7 @@ void Player::Normal::Update( Player &inst, float elapsedTime, Input input, const
 	}
 
 	braceOneself = ( input.moveVelocity.y < 0.0f && inst.onGround && IsZero( inst.velocity.x ) );
-	MotionUpdate( inst, input, elapsedTime );
+	MotionUpdate( inst, elapsedTime );
 }
 void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1183,9 +1185,11 @@ void Player::Slide::Uninit( Player &inst )
 
 	inst.velocity.x = 0.0f;
 }
-void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
+void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
 	timer += elapsedTime;
+
+	const auto &input = inst.inputManager.Current();
 
 	const int  horizontalInputSign	= Donya::SignBit( input.moveVelocity.x );
 	const bool moveToBackward		=  ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( slideSign ) );
@@ -1224,11 +1228,11 @@ void Player::Slide::Update( Player &inst, float elapsedTime, Input input, const 
 	}
 
 	// If the jump was triggered in here, the "slideIsEnd" is also true.
-	inst.MoveVertical( elapsedTime, input );
+	inst.MoveVertical( elapsedTime );
 
-	inst.ShotIfRequested( elapsedTime, input );
+	inst.ShotIfRequested( elapsedTime );
 
-	MotionUpdate( inst, input, elapsedTime );
+	MotionUpdate( inst, elapsedTime );
 }
 void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1467,9 +1471,10 @@ void Player::GrabLadder::Uninit( Player &inst )
 		// To be Brace motion
 		empty.moveVelocity.y = -0.1f;
 	}
-	MotionUpdate( inst, empty, 0.0001f, /* stopAnimation = */ true );
+	inst.inputManager.Overwrite( empty );
+	MotionUpdate( inst, 0.0001f, /* stopAnimation = */ true );
 }
-void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
+void Player::GrabLadder::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
 	inst.velocity = 0.0f;
 
@@ -1479,21 +1484,21 @@ void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, c
 		std::max( 0.0f, shotLagSecond );
 	}
 
-	const auto &data = Parameter().Get();
+	const auto &data  = Parameter().Get();
+	const auto &input = inst.inputManager.Current();
 
 	if ( !NowUnderShotLag() )
 	{
 		inst.velocity.y = data.ladderMoveSpeed * input.moveVelocity.y;
 	}
 
-	ShotProcess( inst, elapsedTime, input );
+	ShotProcess( inst, elapsedTime );
 
 	const bool  pause = IsZero( inst.velocity.y );
 	const float sign  = Donya::SignBitF( inst.velocity.y );
 	MotionUpdate
 	(
 		inst,
-		input, 
 		( pause )
 		? elapsedTime // For update the shot motion only
 		: elapsedTime * sign,
@@ -1504,7 +1509,7 @@ void Player::GrabLadder::Update( Player &inst, float elapsedTime, Input input, c
 	// Because if it is not None(i.e. ShouldChangeMover() is true),
 	// the MotionUpdate() assigns some not ladder motion, then may update some motion as reverse.
 	// Reverse playing of motion is undesirable, so I must prevent that.
-	releaseWay = JudgeWhetherToRelease( inst, elapsedTime, input, terrain );
+	releaseWay = JudgeWhetherToRelease( inst, elapsedTime, terrain );
 }
 void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1545,13 +1550,14 @@ bool Player::GrabLadder::NowUnderShotLag() const
 {
 	return ( 0.0f < shotLagSecond ) ? true : false;
 }
-void Player::GrabLadder::ShotProcess( Player &inst, float elapsedTime, Input input )
+void Player::GrabLadder::ShotProcess( Player &inst, float elapsedTime )
 {
 	const bool wantShot = ( inst.shotManager.IsShotRequested() && inst.NowShotable() );
 	if ( !wantShot ) { return; }
 	// else
 
-	const auto &data = Parameter().Get();
+	const auto &data  = Parameter().Get();
+	const auto &input = inst.inputManager.Current();
 	shotLagSecond = data.ladderShotLagSecond;
 
 	const int sideInputSign = Donya::SignBit( input.moveVelocity.x );
@@ -1560,9 +1566,9 @@ void Player::GrabLadder::ShotProcess( Player &inst, float elapsedTime, Input inp
 		inst.lookingSign = scast<float>( sideInputSign );
 	}
 
-	inst.ShotIfRequested( elapsedTime, input );
+	inst.ShotIfRequested( elapsedTime );
 }
-Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player &inst, float elapsedTime, Input input, const Map &terrain ) const
+Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player &inst, float elapsedTime, const Map &terrain ) const
 {
 	if ( releaseWay != ReleaseWay::None ) { return releaseWay; }
 	// else
@@ -1646,14 +1652,15 @@ void Player::KnockBack::Uninit( Player &inst )
 
 	inst.velocity.x = 0.0f;
 }
-void Player::KnockBack::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
+void Player::KnockBack::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
 	timer += elapsedTime * motionSpeed;
 
 	Input emptyInput{}; // Discard the input for a resistance of gravity.
-	inst.Fall( elapsedTime, emptyInput );
+	inst.inputManager.Overwrite( emptyInput );
+	inst.Fall( elapsedTime );
 
-	MotionUpdate( inst, input, elapsedTime * motionSpeed );
+	MotionUpdate( inst, elapsedTime * motionSpeed );
 }
 void Player::KnockBack::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -1682,7 +1689,7 @@ void Player::Miss::Init( Player &inst )
 
 	Donya::Sound::Play( Music::Player_Miss );
 }
-void Player::Miss::Update( Player &inst, float elapsedTime, Input input, const Map &terrain )
+void Player::Miss::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
 	// Overwrite forcely
 	inst.body.exist		= false;
@@ -1730,10 +1737,6 @@ void Player::Init( const PlayerInitializer &initializer )
 	prevSlidingStatus	= false;
 	onGround			= false;
 
-	const float gaugeAmount = scast<float>( data.maxHP );
-	hpDrawer.Init( gaugeAmount, gaugeAmount );
-	hpDrawer.SetDrawOption( data.hpDrawPos, data.hpDrawColor, data.hpDrawScale );
-	
 	AssignMover<Normal>();
 }
 void Player::Uninit()
@@ -1767,8 +1770,6 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 
 		body.offset		= orientation.RotateVector( body.offset		);
 		hurtBox.offset	= orientation.RotateVector( hurtBox.offset	);
-
-		hpDrawer.SetDrawOption( data.hpDrawPos, data.hpDrawColor, data.hpDrawScale );
 	}
 #endif // USE_IMGUI
 
@@ -1790,10 +1791,7 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 
 	hurtBox.exist = ( invincibleTimer.NowWorking() ) ? false : true;
 
-	hpDrawer.SetCurrent( scast<float>( currentHP ) );
-	hpDrawer.Update( elapsedTime );
-
-	pMover->Update( *this, elapsedTime, input, terrain );
+	pMover->Update( *this, elapsedTime, terrain );
 	if ( pMover->ShouldChangeMover( *this ) )
 	{
 		auto ChangeMethod = pMover->GetChangeStateMethod( *this );
@@ -1898,12 +1896,6 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 		}
 	}
 #endif // DEBUG_MODE
-}
-void Player::DrawMeter( FontAttribute font, float drawDepth ) const
-{
-	hpDrawer.Draw		( drawDepth );
-	hpDrawer.DrawIcon	( Meter::Icon::Player, drawDepth );
-	hpDrawer.DrawRemains( font, Remaining::Get(), drawDepth );
 }
 void Player::RecoverHP( int recovery )
 {
@@ -2116,10 +2108,11 @@ bool Player::WillCollideToAroundTiles( const Donya::Collision::Box3F &body, cons
 
 	return false;
 }
-void Player::MoveHorizontal( float elapsedTime, Input input )
+void Player::MoveHorizontal( float elapsedTime )
 {
 	const auto &data = Parameter().Get();
 
+	const auto &input = inputManager.Current();
 	const float  movement = data.moveSpeed * input.moveVelocity.x;
 	velocity.x = movement;
 
@@ -2130,7 +2123,7 @@ void Player::MoveHorizontal( float elapsedTime, Input input )
 		UpdateOrientation( /* lookingRight = */ ( lookingSign < 0.0f ) ? false : true );
 	}
 }
-void Player::MoveVertical  ( float elapsedTime, Input input )
+void Player::MoveVertical  ( float elapsedTime )
 {
 	if ( WillUseJump() && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 	{
@@ -2138,7 +2131,7 @@ void Player::MoveVertical  ( float elapsedTime, Input input )
 	}
 	else
 	{
-		Fall( elapsedTime, input );
+		Fall( elapsedTime );
 	}
 }
 bool Player::NowShotable() const
@@ -2147,7 +2140,7 @@ bool Player::NowShotable() const
 	const bool generatable	= ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
 	return ( generatable && movable ) ? true : false;
 }
-void Player::ShotIfRequested( float elapsedTime, Input input )
+void Player::ShotIfRequested( float elapsedTime )
 {
 	if ( !shotManager.IsShotRequested() ) { return; }
 	if ( !NowShotable() ) { return; }
@@ -2210,7 +2203,7 @@ bool Player::WillUseJump() const
 	// else
 	return false;
 }
-void Player::Fall( float elapsedTime, Input input )
+void Player::Fall( float elapsedTime )
 {
 	const auto &data = Parameter().Get();
 
