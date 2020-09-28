@@ -874,7 +874,17 @@ void SceneGame::Draw( float elapsedTime )
 	}
 #endif // DEBUG_MODE
 
-	if ( pPlayer ) { pPlayer->DrawMeter( FontAttribute::Main ); }
+	if ( isThereBoss && pSkullMeter )
+	{
+		pSkullMeter->Draw();
+		pSkullMeter->DrawIcon( Meter::Icon::Skull );
+	}
+	if ( pPlayer && pPlayerMeter )
+	{
+		pPlayerMeter->Draw();
+		pPlayerMeter->DrawIcon( Meter::Icon::Player );
+		pPlayerMeter->DrawRemains( FontAttribute::Main, Player::Remaining::Get() );
+	}
 
 #if DEBUG_MODE
 	// Some visualizing
@@ -1139,7 +1149,7 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 	if ( pPlayerMeter )
 	{
-		const auto &maxHP = Player::Parameter().Get().maxHP;
+		const float maxHP = scast<float>( Player::Parameter().Get().maxHP );
 		pPlayerMeter->Init( maxHP, maxHP );
 
 		const auto &data = FetchParameter();
@@ -1182,7 +1192,7 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	if ( pSkullMeter )
 	{
 		// TODO: If create another boss kind, fix this
-		const auto &maxHP = Boss::Parameter::GetSkull().hp;
+		const float maxHP = scast<float>( Boss::Parameter::GetSkull().hp );
 		pSkullMeter->Init( maxHP, maxHP );
 
 		const auto &data = FetchParameter();
@@ -1573,7 +1583,11 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 
 	if ( pSkullMeter )
 	{
-		pSkullMeter->SetCurrent( scast<float>( pSkull->GetCurrentHP() ) );
+		const auto pBoss = pBossContainer->GetBossOrNullptr( currentRoomID );
+		if ( pBoss )
+		{
+			pSkullMeter->SetCurrent( scast<float>( pBoss->GetCurrentHP() ) );
+		}
 	}
 }
 
