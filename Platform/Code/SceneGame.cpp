@@ -982,7 +982,7 @@ void SceneGame::Draw( float elapsedTime )
 				DrawCube( plr.lights[i].wsPos, scale );
 			}
 		}
-		
+
 		line.Flush( VP );
 	}
 #endif // DEBUG_MODE

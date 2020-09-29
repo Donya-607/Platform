@@ -331,23 +331,43 @@ void PlayerParam::ShowImGuiNode()
 	}
 
 	constexpr size_t levelCount = scast<size_t>( Player::ShotLevel::LevelCount );
-	if ( chargeSeconds.size() != levelCount )
+	if ( chargeParams.size() != levelCount )
 	{
-		chargeSeconds.resize( levelCount, 1.0f );
+		PerChargeLevel defaultArg{};
+		chargeParams.resize( levelCount, defaultArg );
+	}
+	if ( ImGui::TreeNode( u8"チャージごとの設定" ) )
+	{
+		auto Show = [&]( const char *nodeCaption, PerChargeLevel *p )
+		{
+			if ( !ImGui::TreeNode( nodeCaption ) ) { return; }
+			// else
+
+			ImGui::DragFloat	( u8"チャージ秒数",		&p->chargeSecond,			0.01f );
+			ImGui::DragFloat	( u8"発光周期（秒）",		&p->emissiveCycleSecond,	0.01f );
+			ImGui::SliderFloat	( u8"最低発光値",		&p->emissiveMinBias,		0.0f, 1.0f );
+			ImGui::ColorEdit3	( u8"発光色（最大時）",	&p->emissiveColor.x );
+			ImGui::Helper::ShowEaseParam( u8"発光のイージング設定", &p->emissiveEaseKind, &p->emissiveEaseType );
+
+			// It will used as denominator
+			p->emissiveCycleSecond = std::max( 0.001f, p->emissiveCycleSecond );
+
+			ImGui::TreePop();
+		};
+
+		Show( u8"通常", &chargeParams[scast<int>( Player::ShotLevel::Normal	)] );
+		Show( u8"強化", &chargeParams[scast<int>( Player::ShotLevel::Tough	)] );
+		Show( u8"最大", &chargeParams[scast<int>( Player::ShotLevel::Strong	)] );
+
+		// Disable Normal because it will be applied in always
+		auto &normal = chargeParams[scast<int>( Player::ShotLevel::Normal )];
+		normal.chargeSecond  = 0.0f;
+		normal.emissiveColor = Donya::Vector3::Zero();
+
+		ImGui::TreePop();
 	}
 	if ( ImGui::TreeNode( u8"ショット設定" ) )
 	{
-		if ( ImGui::TreeNode( u8"チャージ秒数設定" ) )
-		{
-			ImGui::DragFloat( u8"通常", &chargeSeconds[scast<int>( Player::ShotLevel::Normal )], 0.1f );
-			chargeSeconds[scast<int>( Player::ShotLevel::Normal )] = 0.0f;
-
-			ImGui::DragFloat( u8"強化", &chargeSeconds[scast<int>( Player::ShotLevel::Tough  )], 0.1f );
-			ImGui::DragFloat( u8"最大", &chargeSeconds[scast<int>( Player::ShotLevel::Strong )], 0.1f );
-
-			ImGui::TreePop();
-		}
-
 		fireParam.ShowImGuiNode( u8"発射情報" );
 		ImGui::DragInt( u8"画面内に出せる弾数",	&maxBusterCount );
 

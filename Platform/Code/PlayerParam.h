@@ -8,6 +8,7 @@
 #include <cereal/types/vector.hpp>
 
 #include "Donya/Collision.h"
+#include "Donya/Easing.h"
 #include "Donya/Serializer.h"
 #include "Donya/UseImGui.h"		// use US_IMGUI macro
 
@@ -35,18 +36,48 @@ public:
 	float	knockBackSpeed		= 1.0f;		// X speed
 	float	invincibleSeconds	= 2.0f;
 	float	flushingInterval	= 0.1f;		// Seconds
-	Donya::Collision::Box3F	hitBox;			// VS a terrain
-	Donya::Collision::Box3F	hurtBox;		// VS an attack(e.g. enemy)
-	Donya::Collision::Box3F	slideHitBox;	// VS a terrain when sliding
-	Donya::Collision::Box3F	slideHurtBox;	// VS an attack(e.g. enemy) when sliding
-	Donya::Collision::Box3F	ladderGrabArea;	// It using for considering to continue to grab the ladder
-	Bullet::FireDesc		fireParam;
-	std::vector<float>		chargeSeconds;	// It size() == Player::ShotLevel::LevelCount
-	std::vector<float>		animePlaySpeeds;// It size() == Player::MotionKind::MotionCount
+	Donya::Collision::Box3F		hitBox;			// VS a terrain
+	Donya::Collision::Box3F		hurtBox;		// VS an attack(e.g. enemy)
+	Donya::Collision::Box3F		slideHitBox;	// VS a terrain when sliding
+	Donya::Collision::Box3F		slideHurtBox;	// VS an attack(e.g. enemy) when sliding
+	Donya::Collision::Box3F		ladderGrabArea;	// It using for considering to continue to grab the ladder
+	Bullet::FireDesc			fireParam;
+	std::vector<float>			animePlaySpeeds;// It size() == Player::MotionKind::MotionCount
 
-	ModelHelper::PartApply	normalLeftArm;
-	ModelHelper::PartApply	ladderLeftArm;
-	ModelHelper::PartApply	ladderRightArm;
+	ModelHelper::PartApply		normalLeftArm;
+	ModelHelper::PartApply		ladderLeftArm;
+	ModelHelper::PartApply		ladderRightArm;
+
+	struct PerChargeLevel
+	{
+		float				chargeSecond		= 0.0f;
+		float				emissiveCycleSecond	= 1.0f; // Cycle of the sinf()
+		float				emissiveMinBias		= 0.0f; // Minimum value of the factor of color
+		Donya::Easing::Kind	emissiveEaseKind	= Donya::Easing::Kind::Linear;
+		Donya::Easing::Type	emissiveEaseType	= Donya::Easing::Type::Out;
+		Donya::Vector3		emissiveColor{ 0.0f, 0.0f, 0.0f }; // Max lighten color
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( chargeSecond		),
+				CEREAL_NVP( emissiveCycleSecond	),
+				CEREAL_NVP( emissiveMinBias		),
+				CEREAL_NVP( emissiveEaseKind	),
+				CEREAL_NVP( emissiveEaseType	),
+				CEREAL_NVP( emissiveColor		)
+			);
+
+			if ( 1 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
+		}
+	};
+	std::vector<PerChargeLevel>	chargeParams;// It size() == Player::ShotLevel::LevelCount
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -95,17 +126,13 @@ private:
 		}
 		if ( 5 <= version )
 		{
-			archive( CEREAL_NVP( chargeSeconds ) );
-		}
-		if ( 6 <= version )
-		{
 			archive
 			(
 				CEREAL_NVP( maxRemainCount		),
 				CEREAL_NVP( initialRemainCount	)
 			);
 		}
-		if ( 7 <= version )
+		if ( 6 <= version )
 		{
 			archive
 			(
@@ -114,11 +141,11 @@ private:
 				CEREAL_NVP( ladderGrabArea		)
 			);
 		}
-		if ( 8 <= version )
+		if ( 7 <= version )
 		{
 			archive( CEREAL_NVP( animePlaySpeeds ) );
 		}
-		if ( 9 <= version )
+		if ( 8 <= version )
 		{
 			archive
 			(
@@ -126,6 +153,10 @@ private:
 				CEREAL_NVP( ladderLeftArm  ),
 				CEREAL_NVP( ladderRightArm )
 			);
+		}
+		if ( 9 <= version )
+		{
+			archive( CEREAL_NVP( chargeParams ) );
 		}
 		if ( 10 <= version )
 		{
