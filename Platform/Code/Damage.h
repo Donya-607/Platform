@@ -16,11 +16,12 @@ namespace Definition
 		/// </summary>
 		enum class Type
 		{
-			None	= 0,
-			Buster	= 1 << 0,
-			Pierce	= 1 << 1,	// If an other is broken by damage, a breaker object is not receive an impact.
+			None		= 0,
+			Buster		= 1 << 0,
+			Pierce		= 1 << 1,	// If an other is broken by damage, a breaker object is not receive an impact.
+			ForcePierce = 1 << 2,	// Always pierce an other even if can not break that.
 		};
-		static constexpr int TypeCount = 2; // Except the None
+		static constexpr int TypeCount = 3; // Except the None
 	public:
 		/// <summary>
 		/// GetContainName( Buster | XXX ) returns "[Buster][XXX]".

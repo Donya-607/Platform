@@ -389,6 +389,10 @@ namespace Bullet
 	}
 	void Base::CollidedToObject( bool otherIsBroken ) const
 	{
+		const bool isSolid = Definition::Damage::Contain( Definition::Damage::Type::ForcePierce, damage.type );
+		if ( isSolid ) { return; }
+		// else
+
 		const bool pierceable = Definition::Damage::Contain( Definition::Damage::Type::Pierce, damage.type );
 		if ( otherIsBroken && pierceable ) { return; }
 		// else
