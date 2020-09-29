@@ -138,9 +138,8 @@ namespace Boss
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
 		private:
-			Donya::Vector3 CalcCurrentShieldPosition( Skull &instance ) const;
-			void GenerateShieldIfNull( Skull &instance );
-			void ReleaseShieldIfHas( Skull &instance );
+			Donya::Vector3 CalcCurrentShieldPosition( const Skull &instance ) const;
+			void GenerateShield( const Skull &instance, float lifeTimeSecond ) const;
 		};
 		class Run : public MoverBase
 		{
@@ -175,7 +174,6 @@ namespace Boss
 		Donya::Vector3					aimingPos;		// Used for store the target pos of some timing
 		MotionManager					motionManager;
 		std::unique_ptr<MoverBase>		pMover  = nullptr;
-		std::unique_ptr<Bullet::Base>	pShield = nullptr;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -202,7 +200,6 @@ namespace Boss
 		float				GetInvincibleInterval()	const override;
 		Kind				GetKind()				const override;
 		Definition::Damage	GetTouchDamage()		const override;
-		bool				NowProtecting()			const override;
 	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;

@@ -153,6 +153,7 @@ namespace Boss
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
 		virtual bool				NowDead()			const;
+		virtual bool				NowProtecting()		const;
 		virtual bool				ShouldRemove()		const;
 		virtual int					GetCurrentHP()		const;
 		virtual int					GetRoomID()			const;
@@ -168,7 +169,6 @@ namespace Boss
 		virtual Kind				GetKind()			const = 0;
 		InitializeParam				GetInitializer()	const;
 		virtual Definition::Damage	GetTouchDamage()	const = 0;
-		virtual bool				NowProtecting()		const;
 		virtual void				GiveDamage( const Definition::Damage &damage ) const;
 		/// <summary>
 		/// GiveDamage() is not apply damage as immediately, so if you wanna know to will dead by GiveDamage(), you should use this instead of NowDead().

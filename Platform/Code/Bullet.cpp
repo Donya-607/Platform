@@ -273,6 +273,7 @@ namespace Bullet
 	#endif // USE_IMGUI
 
 		body.UpdateIgnoreList( elapsedTime );
+		hitSphere.UpdateIgnoreList( elapsedTime );
 
 		secondToRemove -= elapsedTime;
 		if ( secondToRemove <= 0.0f )
@@ -296,11 +297,14 @@ namespace Bullet
 	}
 	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
-		const auto movement = velocity * elapsedTime;
-		Solid::Move( movement, {}, {} );
+		const auto oldPos	= body.pos;
+		const auto movement	= velocity * elapsedTime;
+		Solid::Move( movement, {}, {} ); // It moves the "body" only
+
+		const auto delta = body.pos - oldPos;
 
 		// Move() moves only the "body", so apply here.
-		hitSphere.pos = body.pos;
+		hitSphere.pos += delta;
 	}
 	void Base::Draw( RenderingHelper *pRenderer ) const
 	{
@@ -623,7 +627,7 @@ namespace Bullet
 	{
 		generateRequests.emplace_back( parameter );
 	}
-	void Admin::Delegate( std::shared_ptr<Base> &pBullet )
+	void Admin::Delegate( std::shared_ptr<Base> &&pBullet )
 	{
 		delegateRequests.emplace_back( std::move( pBullet ) );
 	}

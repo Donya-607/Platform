@@ -489,8 +489,7 @@ namespace Boss
 	{
 		inst.velocity	= 0.0f;
 		inst.motionManager.ChangeMotion( inst, MotionKind::Shield_Ready );
-		ReleaseShieldIfHas( inst );
-
+		
 		nowProtected	= false;
 		timer			= 0.0f;
 
@@ -533,15 +532,16 @@ namespace Boss
 		if ( data.shieldBeginLagSecond <= timer && timer < protectSecond )
 		{
 			if ( !nowProtected )
-			{ inst.motionManager.ChangeMotion( inst, MotionKind::Shield_Expand ); }
+			{
+				GenerateShield( inst, protectSecond - timer );
+				inst.motionManager.ChangeMotion( inst, MotionKind::Shield_Expand );
+			}
 
 			nowProtected = true;
-			GenerateShieldIfNull( inst );
 		}
 		else
 		{
 			nowProtected = false;
-			ReleaseShieldIfHas( inst );
 		}
 
 		if ( inst.motionManager.CurrentMotionKind() == MotionKind::Shield_Expand )
@@ -572,12 +572,6 @@ namespace Boss
 				inst.aimingPos = destination;
 			}
 		}
-
-		if ( inst.pShield )
-		{
-			inst.pShield->Update( elapsedTime, inst.roomArea );
-			inst.pShield->SetWorldPosition( CalcCurrentShieldPosition( inst ) );
-		}
 	}
 	bool Skull::Shield::ShouldChangeMover( const Skull &inst ) const
 	{
@@ -593,34 +587,25 @@ namespace Boss
 		return u8"ÉVÅ[ÉãÉh";
 	}
 #endif // USE_IMGUI
-	Donya::Vector3 Skull::Shield::CalcCurrentShieldPosition( Skull &inst ) const
+	Donya::Vector3 Skull::Shield::CalcCurrentShieldPosition( const Skull &inst ) const
 	{
 		Donya::Vector3 tmp;
 		tmp =  inst.orientation.RotateVector( Parameter::GetSkull().shieldPosOffset );
 		tmp += inst.body.WorldPosition(); // Local space to World space
 		return tmp;
 	}
-	void Skull::Shield::GenerateShieldIfNull( Skull &inst )
+	void Skull::Shield::GenerateShield( const Skull &inst, float lifeTimeSecond ) const
 	{
-		if ( inst.pShield ) { return; }
-		// else
-
 		Bullet::FireDesc desc;
 		desc.kind			= Bullet::Kind::SkullShield;
 		desc.initialSpeed	= 0.0f;
 		desc.direction		= Donya::Vector3::Zero();
 		desc.position		= CalcCurrentShieldPosition( inst );
 		
-		inst.pShield = std::make_unique<Bullet::SkullShield>();
-		inst.pShield->Init( desc );
-	}
-	void Skull::Shield::ReleaseShieldIfHas( Skull &inst )
-	{
-		if ( !inst.pShield ) { return; }
-		// else
-
-		inst.pShield->Uninit();
-		inst.pShield.reset();
+		std::shared_ptr<Bullet::Base> pShield = std::make_shared<Bullet::SkullShield>();
+		pShield->Init( desc );
+		pShield->SetLifeTime( lifeTimeSecond );
+		Bullet::Admin::Get().Delegate( std::move( pShield ) );
 	}
 
 	void Skull::Run::Init( Skull &inst )
@@ -765,20 +750,10 @@ namespace Boss
 	void Skull::Draw( RenderingHelper *pRenderer ) const
 	{
 		Base::Draw( pRenderer );
-
-		if ( pShield )
-		{
-			pShield->Draw( pRenderer );
-		}
 	}
 	void Skull::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 	{
 		Base::DrawHitBox( pRenderer, matVP );
-
-		if ( pShield )
-		{
-			pShield->DrawHitBox( pRenderer, matVP );
-		}
 	}
 	float Skull::GetInvincibleSecond() const
 	{
@@ -796,10 +771,6 @@ namespace Boss
 	Definition::Damage Skull::GetTouchDamage() const
 	{
 		return Parameter::GetSkull().touchDamage;
-	}
-	bool Skull::NowProtecting() const
-	{
-		return ( pShield ) ? true : false;
 	}
 	int  Skull::GetInitialHP() const
 	{

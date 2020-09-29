@@ -282,6 +282,10 @@ namespace Boss
 	{
 		return isDead;
 	}
+	bool Base::NowProtecting() const
+	{
+		return false; // Usually
+	}
 	bool Base::ShouldRemove() const
 	{
 		return wantRemove;
@@ -305,10 +309,6 @@ namespace Boss
 	InitializeParam Base::GetInitializer() const
 	{
 		return initializer;
-	}
-	bool Base::NowProtecting() const
-	{
-		return false;
 	}
 	void Base::GiveDamage( const Definition::Damage &damage ) const
 	{
