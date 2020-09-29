@@ -464,9 +464,13 @@ namespace Bullet
 	void Base::CollidedProcess()
 	{
 		wasCollided		= false;
-		wantRemove		= true;
-		body.exist		= false;
-		hitSphere.exist	= false;
+
+		if ( Destructible() )
+		{
+			wantRemove		= true;
+			body.exist		= false;
+			hitSphere.exist	= false;
+		}
 	}
 	void Base::ProtectedProcess()
 	{

@@ -1678,10 +1678,7 @@ void SceneGame::Collision_BulletVSBullet()
 			pB = bulletAdmin.GetInstanceOrNullptr( j );
 			if ( !pB ) { continue; }
 			// else
-
-			// Do collide if either one of bullet is destructible
-			if ( !pA->Destructible() && !pB->Destructible() ) { continue; }
-
+			
 			const bool ownerB = IsPlayerBullet( playerID, pB );
 			if ( ownerA == ownerB ) { continue; }
 			// else
