@@ -213,8 +213,11 @@ namespace Boss
 		}
 		// else
 
-		// Jump detection(trigger timing only)
-		if ( input.pressShot && !inst.previousInput.pressShot )
+		// Jump detection(trigger or release)
+		if	(
+				input.pressShot && !inst.previousInput.pressShot || 
+				!input.pressShot && inst.previousInput.pressShot
+			)
 		{
 			if ( IsContinuingSameAction( inst ) && PrevActionIs( Behavior::Jump ) )
 			{
