@@ -6,6 +6,7 @@
 #include "Donya/Sound.h"
 #include "Donya/Template.h"	// Use AppendVector()
 #if DEBUG_MODE
+#include "Donya/Keyboard.h"
 #include "Donya/Useful.h"	// Use ShowMessageBox
 #endif // DEBUG_MODE
 
@@ -1530,13 +1531,6 @@ void Player::GrabLadder::Uninit( Player &inst )
 	}
 
 	// Cancel the grab motion
-	Input empty{};
-	if ( releaseWay == ReleaseWay::Dismount )
-	{
-		// To be Brace motion
-		empty.moveVelocity.y = -0.1f;
-	}
-	inst.inputManager.Overwrite( empty );
 	MotionUpdate( inst, 0.0001f, /* stopAnimation = */ true );
 }
 void Player::GrabLadder::Update( Player &inst, float elapsedTime, const Map &terrain )
@@ -1721,8 +1715,6 @@ void Player::KnockBack::Update( Player &inst, float elapsedTime, const Map &terr
 {
 	timer += elapsedTime * motionSpeed;
 
-	Input emptyInput{}; // Discard the input for a resistance of gravity.
-	inst.inputManager.Overwrite( emptyInput );
 	inst.Fall( elapsedTime );
 
 	MotionUpdate( inst, elapsedTime * motionSpeed );
@@ -2274,8 +2266,9 @@ void Player::Fall( float elapsedTime )
 	const auto &data = Parameter().Get();
 
 	bool resistGravity = false;
+	const bool canResist = !( pMover && pMover->NowKnockBacking( *this ) );
 	const int jumpInputIndex = inputManager.UseJumpIndex();
-	if ( 0 <= jumpInputIndex )
+	if ( 0 <= jumpInputIndex && canResist )
 	{
 		if ( !inputManager.WasReleasedJumpInput()[jumpInputIndex] )
 		{
