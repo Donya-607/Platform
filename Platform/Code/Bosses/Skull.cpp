@@ -597,10 +597,13 @@ namespace Boss
 	void Skull::Shield::GenerateShield( const Skull &inst, float lifeTimeSecond ) const
 	{
 		Bullet::FireDesc desc;
-		desc.kind			= Bullet::Kind::SkullShield;
-		desc.initialSpeed	= 0.0f;
-		desc.direction		= Donya::Vector3::Zero();
-		desc.position		= CalcCurrentShieldPosition( inst );
+		desc.kind				= Bullet::Kind::SkullShield;
+		desc.initialSpeed		= 0.0f;
+		desc.direction			= Donya::Vector3::Zero();
+		desc.position			= CalcCurrentShieldPosition( inst );
+		desc.pAdditionalDamage	= std::make_shared<Definition::Damage>();
+		desc.pAdditionalDamage->amount	=  0;
+		desc.pAdditionalDamage->type	|= Definition::Damage::Type::ForcePierce;
 		
 		std::shared_ptr<Bullet::Base> pShield = std::make_shared<Bullet::SkullShield>();
 		pShield->Init( desc );

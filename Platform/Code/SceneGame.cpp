@@ -1637,9 +1637,18 @@ void SceneGame::Collision_BulletVSBullet()
 
 	std::shared_ptr<const Bullet::Base> pA = nullptr;
 	std::shared_ptr<const Bullet::Base> pB = nullptr;
-	auto HitProcess = [&]()
+	auto HitProcess = [&]( const auto &hitBoxA, const auto &hitBoxB  )
 	{
 		if ( !pA || !pB ) { return; }
+		// else
+
+		using Dmg = Definition::Damage;
+
+		const bool protectibleA = Dmg::Contain( Dmg::Type::Protection, pA->GetDamage().type );
+		const bool protectibleB = Dmg::Contain( Dmg::Type::Protection, pB->GetDamage().type );
+		if ( protectibleA ) { pB->ProtectedBy( hitBoxA ); }
+		if ( protectibleB ) { pA->ProtectedBy( hitBoxB ); }
+		if ( protectibleA || protectibleB ) { return; }
 		// else
 
 		const bool destructibleA = pA->Destructible();
@@ -1659,10 +1668,10 @@ void SceneGame::Collision_BulletVSBullet()
 		if ( !pA ) { continue; }
 		// else
 
-		const auto aabbA   = pA->GetHitBox();
-		const auto sphereA = pA->GetHitSphere();
+		const auto aabbA	= pA->GetHitBox();
+		const auto sphereA	= pA->GetHitSphere();
 
-		const bool ownerA  = IsPlayerBullet( playerID, pA );
+		const bool ownerA	= IsPlayerBullet( playerID, pA );
 
 		for ( size_t j = i + 1; j < bulletCount; ++j )
 		{
@@ -1677,29 +1686,32 @@ void SceneGame::Collision_BulletVSBullet()
 			if ( ownerA == ownerB ) { continue; }
 			// else
 
+			const auto aabbB	= pA->GetHitBox();
+			const auto sphereB	= pA->GetHitSphere();
+
 			if ( aabbA.exist )
 			{
-				if ( Donya::Collision::IsHit( aabbA, pB->GetHitBox() ) )
+				if ( Donya::Collision::IsHit( aabbA, aabbB ) )
 				{
-					HitProcess(); continue;
+					HitProcess( aabbA, aabbB ); continue;
 				}
 				// else
-				if ( Donya::Collision::IsHit( aabbA, pB->GetHitSphere() ) )
+				if ( Donya::Collision::IsHit( aabbA, sphereB ) )
 				{
-					HitProcess(); continue;
+					HitProcess( aabbA, sphereB ); continue;
 				}
 			}
 			else
 			if ( sphereA.exist )
 			{
-				if ( Donya::Collision::IsHit( sphereA, pB->GetHitBox() ) )
+				if ( Donya::Collision::IsHit( sphereA, aabbB ) )
 				{
-					HitProcess(); continue;
+					HitProcess( sphereA, aabbB ); continue;
 				}
 				// else
-				if ( Donya::Collision::IsHit( sphereA, pB->GetHitSphere() ) )
+				if ( Donya::Collision::IsHit( sphereA, sphereB ) )
 				{
-					HitProcess(); continue;
+					HitProcess( sphereA, sphereB ); continue;
 				}
 			}
 		}

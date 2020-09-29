@@ -13,6 +13,7 @@ namespace Definition
 		if ( scast<int>( value & Type::Buster		) != 0 ) { str += "[Buster]";		}
 		if ( scast<int>( value & Type::Pierce		) != 0 ) { str += "[Pierce]";		}
 		if ( scast<int>( value & Type::ForcePierce	) != 0 ) { str += "[ForcePierce]";	}
+		if ( scast<int>( value & Type::Protection	) != 0 ) { str += "[Protection]";	}
 		return str;
 	}
 	Damage::Type Damage::Add( Type lhs, Type rhs )
@@ -35,6 +36,7 @@ namespace Definition
 			Type::Buster,
 			Type::Pierce,
 			Type::ForcePierce,
+			Type::Protection,
 		};
 
 		std::array<bool, TypeCount> states;
@@ -48,6 +50,7 @@ namespace Definition
 			"Buster",
 			"Pierce",
 			"ForcePierce",
+			"Protection",
 		};
 		for ( int i = 0; i < TypeCount; ++i )
 		{

@@ -20,8 +20,9 @@ namespace Definition
 			Buster		= 1 << 0,
 			Pierce		= 1 << 1,	// If an other is broken by damage, a breaker object is not receive an impact.
 			ForcePierce = 1 << 2,	// Always pierce an other even if can not break that.
+			Protection	= 1 << 3,	// Protect an other bullet
 		};
-		static constexpr int TypeCount = 3; // Except the None
+		static constexpr int TypeCount = 4; // Except the None
 	public:
 		/// <summary>
 		/// GetContainName( Buster | XXX ) returns "[Buster][XXX]".
