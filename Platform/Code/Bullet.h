@@ -156,6 +156,7 @@ namespace Bullet
 	public:
 		virtual bool Destructible() const;
 		virtual bool ShouldRemove() const;
+		virtual bool WasProtected() const;
 		virtual bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
 		virtual void CollidedToObject( bool otherIsBroken ) const;
 		virtual void ProtectedBy( const Donya::Collision::Box3F		&protectObjectBody ) const;

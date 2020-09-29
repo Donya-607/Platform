@@ -1637,15 +1637,18 @@ void SceneGame::Collision_BulletVSBullet()
 
 	std::shared_ptr<const Bullet::Base> pA = nullptr;
 	std::shared_ptr<const Bullet::Base> pB = nullptr;
-	auto HitProcess = [&]( const auto &hitBoxA, const auto &hitBoxB  )
+	auto Protectible	= []( const std::shared_ptr<const Bullet::Base> &pBullet )
+	{
+		using D = Definition::Damage;
+		return ( pBullet ) ? D::Contain( D::Type::Protection, pBullet->GetDamage().type ) : false;
+	};
+	auto HitProcess		= [&]( const auto &hitBoxA, const auto &hitBoxB  )
 	{
 		if ( !pA || !pB ) { return; }
 		// else
 
-		using Dmg = Definition::Damage;
-
-		const bool protectibleA = Dmg::Contain( Dmg::Type::Protection, pA->GetDamage().type );
-		const bool protectibleB = Dmg::Contain( Dmg::Type::Protection, pB->GetDamage().type );
+		const bool protectibleA = Protectible( pA );
+		const bool protectibleB = Protectible( pB );
 		if ( protectibleA ) { pB->ProtectedBy( hitBoxA ); }
 		if ( protectibleB ) { pA->ProtectedBy( hitBoxB ); }
 		if ( protectibleA || protectibleB ) { return; }
@@ -1656,7 +1659,6 @@ void SceneGame::Collision_BulletVSBullet()
 		pA->CollidedToObject( destructibleB );
 		pB->CollidedToObject( destructibleA );
 
-		// TODO: Consider to protect
 		// TODO: Play hit SE
 	};
 
@@ -1666,27 +1668,39 @@ void SceneGame::Collision_BulletVSBullet()
 	{
 		pA = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pA ) { continue; }
+
+		// Disallow collision between a protected bullet.
+		// Because if allowed hitting to multiple objects in the same timing,
+		// the protection attribute does not affect to some another object that collided in the same timing.
+		// That bullet's collision will be disabled at next update, but I wanna apply immediately.
+		if ( pA->WasProtected() ) { continue; }
 		// else
 
-		const auto aabbA	= pA->GetHitBox();
-		const auto sphereA	= pA->GetHitSphere();
+		const auto aabbA		= pA->GetHitBox();
+		const auto sphereA		= pA->GetHitSphere();
 
-		const bool ownerA	= IsPlayerBullet( playerID, pA );
+		const bool ownerA		= IsPlayerBullet( playerID, pA );
+		const bool protectibleA	= Protectible( pA );
 
 		for ( size_t j = i + 1; j < bulletCount; ++j )
 		{
 			pB = bulletAdmin.GetInstanceOrNullptr( j );
 			if ( !pB ) { continue; }
-			if ( pA == pB )
-			{
-				continue;
-			}
 			// else
-			
-			const bool ownerB = IsPlayerBullet( playerID, pB );
+			if ( pB->WasProtected() ) { continue; }
+			// else
+
+			const bool ownerB		= IsPlayerBullet( playerID, pB );
+			const bool protectibleB	= Protectible( pB );
 			if ( ownerA == ownerB ) { continue; }
 			// else
 
+			// Do collide if either one of bullet is destructible or protectible
+			const bool wantCollide	=  pA->Destructible()	|| pB->Destructible()
+									|| protectibleA			|| protectibleB;
+			if ( !wantCollide ) { continue; }
+			// else
+			
 			const auto aabbB	= pB->GetHitBox();
 			const auto sphereB	= pB->GetHitSphere();
 
@@ -1757,6 +1771,8 @@ void SceneGame::Collision_BulletVSBoss()
 	{
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pBullet ) { continue; }
+		// else
+		if ( pBullet->WasProtected() ) { continue; }
 		// else
 
 		if ( !IsPlayerBullet( playerID, pBullet ) ) { continue; }
@@ -1886,6 +1902,8 @@ void SceneGame::Collision_BulletVSEnemy()
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pBullet ) { continue; }
 		// else
+		if ( pBullet->WasProtected() ) { continue; }
+		// else
 
 		if ( IsEnemyBullet( playerID, pBullet ) ) { continue; }
 		// else
@@ -1928,6 +1946,8 @@ void SceneGame::Collision_BulletVSPlayer()
 	{
 		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pBullet ) { continue; }
+		// else
+		if ( pBullet->WasProtected() ) { continue; }
 		// else
 
 		if ( IsPlayerBullet( playerID, pBullet ) ) { continue; }

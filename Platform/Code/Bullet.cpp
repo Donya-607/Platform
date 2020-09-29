@@ -379,6 +379,10 @@ namespace Bullet
 	{
 		return wantRemove;
 	}
+	bool Base::WasProtected() const
+	{
+		return ( wasProtected != ProtectedInfo::None ) ? true : false;
+	}
 	bool Base::OnOutSide( const Donya::Collision::Box3F &wsScreen ) const
 	{
 		// I am not consider an unused hit box(size or radius is zero) in here,
@@ -464,13 +468,9 @@ namespace Bullet
 	void Base::CollidedProcess()
 	{
 		wasCollided		= false;
-
-		if ( Destructible() )
-		{
-			wantRemove		= true;
-			body.exist		= false;
-			hitSphere.exist	= false;
-		}
+		wantRemove		= true;
+		body.exist		= false;
+		hitSphere.exist	= false;
 	}
 	void Base::ProtectedProcess()
 	{
