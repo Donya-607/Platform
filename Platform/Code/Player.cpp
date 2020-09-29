@@ -1002,10 +1002,19 @@ void Player::ShotManager::CalcEmissiveColor()
 		return;
 	}
 	// else
+	if ( IsZero( pParam->emissiveCycleSecond ) )
+	{
+		_ASSERT_EXPR( 0, L"Error: Division by zero!" );
+		emissiveColor = defaultColor;
+		return;
+	}
+	// else
 
 	const float angle		= ToRadian( currChargeSecond * 360.0f );
-	const float sin_01		= ( sinf( angle * pParam->emissiveCycleSecond ) + 1.0f ) * 0.5f;
-	const float easeFactor	= std::max( pParam->emissiveMinBias, sin_01 );
+	const float cycleSpeed	= 1.0f / pParam->emissiveCycleSecond;
+	const float sin_01		= ( sinf( angle * cycleSpeed ) + 1.0f ) * 0.5f;
+	const float sinRange	= 1.0f - pParam->emissiveMinBias;
+	const float easeFactor	= ( sin_01 * sinRange ) + pParam->emissiveMinBias;
 	const float colorFactor = Donya::Easing::Ease( pParam->emissiveEaseKind, pParam->emissiveEaseType, easeFactor );
 
 	emissiveColor.x = pParam->emissiveColor.x * colorFactor;
@@ -1894,8 +1903,9 @@ void Player::Draw( RenderingHelper *pRenderer ) const
 	const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
 
 	constexpr Donya::Vector3 basicColor{ 1.0f, 1.0f, 1.0f };
+	const     Donya::Vector3 emissiveColor = shotManager.EmissiveColor();
 	const float alpha = ( invincibleTimer.Drawable() ) ? 1.0f : 0.0f;
-	motionManager.Draw( pRenderer, W, basicColor, alpha );
+	motionManager.Draw( pRenderer, W, basicColor + emissiveColor, alpha );
 }
 void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused ) const
 {

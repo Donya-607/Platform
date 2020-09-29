@@ -210,9 +210,10 @@ private:
 		void Init();
 		void Update( float elapsedTime, const InputManager &input );
 	public:
-		bool		IsShotRequested() const;
-		float		ChargeSecond()	const { return currChargeSecond;	}
-		ShotLevel	ChargeLevel()	const { return chargeLevel;			}
+		bool			IsShotRequested()	const;
+		float			ChargeSecond()		const { return currChargeSecond;	}
+		ShotLevel		ChargeLevel()		const { return chargeLevel;			}
+		Donya::Vector3	EmissiveColor()		const { return emissiveColor;		}
 	private:
 		bool NowTriggered( const InputManager &input ) const;
 		void CalcChargeLevel();
