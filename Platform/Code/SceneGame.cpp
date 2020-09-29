@@ -1677,14 +1677,18 @@ void SceneGame::Collision_BulletVSBullet()
 		{
 			pB = bulletAdmin.GetInstanceOrNullptr( j );
 			if ( !pB ) { continue; }
+			if ( pA == pB )
+			{
+				continue;
+			}
 			// else
 			
 			const bool ownerB = IsPlayerBullet( playerID, pB );
 			if ( ownerA == ownerB ) { continue; }
 			// else
 
-			const auto aabbB	= pA->GetHitBox();
-			const auto sphereB	= pA->GetHitSphere();
+			const auto aabbB	= pB->GetHitBox();
+			const auto sphereB	= pB->GetHitSphere();
 
 			if ( aabbA.exist )
 			{
