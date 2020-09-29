@@ -274,6 +274,12 @@ namespace Bullet
 
 		body.UpdateIgnoreList( elapsedTime );
 
+		secondToRemove -= elapsedTime;
+		if ( secondToRemove <= 0.0f )
+		{
+			wantRemove = true;
+		}
+
 		if ( wasCollided )
 		{
 			CollidedProcess();
@@ -443,6 +449,10 @@ namespace Bullet
 	{
 		velocity = newVelocity;
 	}
+	void Base::SetLifeTime( float second )
+	{
+		secondToRemove = second;
+	}
 	void Base::CollidedProcess()
 	{
 		wasCollided		= false;
@@ -541,6 +551,7 @@ namespace Bullet
 	{
 		GenerateRequestedFires();
 		generateRequests.clear();
+		delegateRequests.clear();
 
 		for ( auto &pIt : bulletPtrs )
 		{
@@ -612,6 +623,10 @@ namespace Bullet
 	{
 		generateRequests.emplace_back( parameter );
 	}
+	void Admin::Delegate( std::shared_ptr<Base> &pBullet )
+	{
+		delegateRequests.emplace_back( std::move( pBullet ) );
+	}
 	size_t Admin::GetInstanceCount() const
 	{
 		return bulletPtrs.size();
@@ -652,6 +667,12 @@ namespace Bullet
 		{
 			Append( it );
 		}
+
+		for ( auto &it : delegateRequests )
+		{
+			bulletPtrs.emplace_back( std::move( it ) );
+		}
+		delegateRequests.clear(); // Clear moved elements
 	}
 	void Admin::RemoveInstancesIfNeeds()
 	{

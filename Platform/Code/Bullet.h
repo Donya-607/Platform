@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <float.h>				// Use FLT_MAX
 
 #undef max
 #undef min
@@ -127,6 +128,7 @@ namespace Bullet
 		Donya::Vector3					velocity;	// [m/s]
 		Donya::Quaternion				orientation;
 		Definition::Damage				damage;
+		float							secondToRemove	= FLT_MAX;
 
 		bool							wantRemove		= false;
 		mutable bool					wasCollided		= false;
@@ -168,6 +170,7 @@ namespace Bullet
 	public:
 		virtual void SetWorldPosition( const Donya::Vector3 &wsPos );
 		virtual void SetVelocity( const Donya::Vector3 &newVelocity );
+		virtual void SetLifeTime( float second );
 	protected:
 		/// <summary>
 		/// It will be called when update if it was collided to some object.
@@ -202,6 +205,7 @@ namespace Bullet
 	private: // shared_ptr<> make be able to copy
 		std::vector<std::shared_ptr<Base>>	bulletPtrs;
 		std::vector<FireDesc>				generateRequests;
+		std::vector<std::shared_ptr<Base>>	delegateRequests;
 	private:
 		Admin() = default;
 	public:
@@ -212,6 +216,7 @@ namespace Bullet
 	public:
 		void ClearInstances();
 		void RequestFire( const FireDesc &parameter );
+		void Delegate( std::shared_ptr<Base> &pBullet );
 	public:
 		size_t GetInstanceCount() const;
 		bool IsOutOfRange( size_t instanceIndex ) const;

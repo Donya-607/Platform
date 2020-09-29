@@ -43,7 +43,6 @@ namespace Boss
 			bool AssignPose( Skull &instance, MotionKind kind );
 			bool ShouldEnableLoop( MotionKind kind ) const;
 		};
-	private:
 		class MoverBase
 		{
 		public:

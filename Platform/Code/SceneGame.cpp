@@ -877,16 +877,22 @@ void SceneGame::Draw( float elapsedTime )
 	}
 #endif // DEBUG_MODE
 
-	if ( isThereBoss && pSkullMeter )
+	// Draw HP meters
 	{
-		pSkullMeter->Draw();
-		pSkullMeter->DrawIcon( Meter::Icon::Skull );
-	}
-	if ( pPlayer && pPlayerMeter )
-	{
-		pPlayerMeter->Draw();
-		pPlayerMeter->DrawIcon( Meter::Icon::Player );
-		pPlayerMeter->DrawRemains( FontAttribute::Main, Player::Remaining::Get() );
+		// DrawRemains() will change the sprite from the meter's,
+		// So I prioritize the boss's meter that doesn't use DrawRemains().
+
+		if ( isThereBoss && pSkullMeter )
+		{
+			pSkullMeter->Draw();
+			pSkullMeter->DrawIcon( Meter::Icon::Skull );
+		}
+		if ( pPlayer && pPlayerMeter )
+		{
+			pPlayerMeter->Draw();
+			pPlayerMeter->DrawIcon( Meter::Icon::Player );
+			pPlayerMeter->DrawRemains( FontAttribute::Main, Player::Remaining::Get() );
+		}
 	}
 
 #if DEBUG_MODE
