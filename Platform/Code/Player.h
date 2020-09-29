@@ -205,7 +205,8 @@ private:
 		float			prevChargeSecond	= 0.0f;
 		float			currChargeSecond	= 0.0f;
 		bool			nowTrigger			= false;
-		Donya::Vector3	emissiveColor{ 0.0f, 0.0f, 0.0f }; // By charge
+		Donya::Vector3	emissiveColor	{ 0.0f, 0.0f, 0.0f }; // By charge
+		Donya::Vector3	destColor		{ 0.0f, 0.0f, 0.0f }; // By charge
 	public:
 		void Init();
 		void Update( float elapsedTime, const InputManager &input );
@@ -216,8 +217,8 @@ private:
 		Donya::Vector3	EmissiveColor()		const { return emissiveColor;		}
 	private:
 		bool NowTriggered( const InputManager &input ) const;
-		void CalcChargeLevel();
-		void CalcEmissiveColor();
+		ShotLevel		CalcChargeLevel();
+		Donya::Vector3	CalcEmissiveColor();
 	};
 	class Flusher
 	{
