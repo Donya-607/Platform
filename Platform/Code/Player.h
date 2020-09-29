@@ -201,10 +201,11 @@ private:
 	class ShotManager
 	{
 	private:
-		ShotLevel	chargeLevel			= ShotLevel::Normal;
-		float		prevChargeSecond	= 0.0f;
-		float		currChargeSecond	= 0.0f;
-		bool		nowTrigger			= false;
+		ShotLevel		chargeLevel			= ShotLevel::Normal;
+		float			prevChargeSecond	= 0.0f;
+		float			currChargeSecond	= 0.0f;
+		bool			nowTrigger			= false;
+		Donya::Vector3	emissiveColor{ 0.0f, 0.0f, 0.0f }; // By charge
 	public:
 		void Init();
 		void Update( float elapsedTime, const InputManager &input );
@@ -215,6 +216,7 @@ private:
 	private:
 		bool NowTriggered( const InputManager &input ) const;
 		void CalcChargeLevel();
+		void CalcEmissiveColor();
 	};
 	class Flusher
 	{

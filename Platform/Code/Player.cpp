@@ -887,6 +887,7 @@ void Player::ShotManager::Update( float elapsedTime, const InputManager &input )
 	// the level will be zero(ShotLevel::Normal) absolutely when fire timing, because that timing is the input was released.
 	// So I must calculate it before the update. It will not be late for one frame by this.
 	CalcChargeLevel();
+	CalcEmissiveColor();
 
 	nowTrigger = NowTriggered( input );
 
@@ -938,7 +939,7 @@ bool Player::ShotManager::NowTriggered( const InputManager &input ) const
 }
 void Player::ShotManager::CalcChargeLevel()
 {
-	const auto &data = Parameter().Get();
+	const auto &chargeParams = Parameter().Get().chargeParams;
 
 	constexpr std::array<ShotLevel, 2> compareHighLevels
 	{
@@ -946,7 +947,7 @@ void Player::ShotManager::CalcChargeLevel()
 		ShotLevel::Tough,
 	};
 
-	if ( data.chargeSeconds.size() < compareHighLevels.size() )
+	if ( chargeParams.size() < compareHighLevels.size() )
 	{
 		chargeLevel = ShotLevel::Normal;
 	}
@@ -955,15 +956,61 @@ void Player::ShotManager::CalcChargeLevel()
 		bool assigned = false;
 		for ( const auto &it : compareHighLevels )
 		{
-			if ( data.chargeSeconds[scast<int>( it )] <= currChargeSecond )
+			if ( chargeParams[scast<int>( it )].chargeSecond <= currChargeSecond )
 			{
-				chargeLevel = it;
-				assigned = true;
+				chargeLevel	= it;
+				assigned	= true;
 				break;
 			}
 		}
 		if ( !assigned ) { chargeLevel = ShotLevel::Normal; }
 	}
+}
+void Player::ShotManager::CalcEmissiveColor()
+{
+	constexpr size_t paramCount = scast<size_t>( Player::ShotLevel::LevelCount );
+	constexpr Donya::Vector3 defaultColor = Donya::Vector3::Zero();
+	
+	const auto &chargeParams = Parameter().Get().chargeParams;
+
+	if ( chargeParams.size() != paramCount )
+	{
+		emissiveColor = defaultColor;
+		return;
+	}
+	// else
+
+	const PlayerParam::PerChargeLevel *pParam = nullptr;
+
+	// Iterate by high-level
+	const auto end = chargeParams.crend();
+	for ( auto itr = chargeParams.crbegin(); itr != end; ++itr )
+	{
+		if ( currChargeSecond < itr->chargeSecond ) { continue; }
+		// else
+
+		pParam = &( *itr );
+		break;
+	}
+
+	if ( !pParam ) { return; }
+	// else
+
+	if ( pParam->emissiveColor == defaultColor )
+	{
+		emissiveColor = defaultColor;
+		return;
+	}
+	// else
+
+	const float angle		= ToRadian( currChargeSecond * 360.0f );
+	const float sin_01		= ( sinf( angle * pParam->emissiveCycleSecond ) + 1.0f ) * 0.5f;
+	const float easeFactor	= std::max( pParam->emissiveMinBias, sin_01 );
+	const float colorFactor = Donya::Easing::Ease( pParam->emissiveEaseKind, pParam->emissiveEaseType, easeFactor );
+
+	emissiveColor.x = pParam->emissiveColor.x * colorFactor;
+	emissiveColor.y = pParam->emissiveColor.y * colorFactor;
+	emissiveColor.z = pParam->emissiveColor.z * colorFactor;
 }
 
 void Player::Flusher::Start( float flushingSeconds )
