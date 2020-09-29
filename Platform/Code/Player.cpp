@@ -573,19 +573,15 @@ void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
 
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		const std::string caption = u8"ジャンプ長押し秒数" + Donya::MakeArraySuffix( i );
-		ImGui::DragFloat( caption.c_str(), &keepJumpSeconds[i], 0.01f );
-		ImGui::SameLine();
+		const std::string caption = u8"ジャンプ長押し秒数" + Donya::MakeArraySuffix( i ) + u8":%5.3f";
+		ImGui::Text( caption.c_str(), keepJumpSeconds[i] );
 	}
-	ImGui::Text( u8"" );
-
+	
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		const std::string caption = u8"ジャンプ入力を離したか" + Donya::MakeArraySuffix( i );
-		ImGui::Checkbox(  caption.c_str(), &wasReleasedJumps[i] );
-		ImGui::SameLine();
+		const std::string caption = u8"ジャンプ入力を離したか" + Donya::MakeArraySuffix( i ) + u8":%5.3f";
+		ImGui::Checkbox( caption.c_str(), &wasReleasedJumps[i] );
 	}
-	ImGui::Text( u8"" );
 
 	ImGui::TreePop();
 }
@@ -659,7 +655,7 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 		shouldPoseShot = false;
 	}
 
-	if ( inst.shotManager.IsShotRequested() && inst.NowShotable() )
+	if ( inst.shotManager.IsShotRequested() && inst.NowShotable( elapsedTime ) )
 	{
 		shouldPoseShot = true;
 		shotAnimator.ResetTimer();
@@ -1611,7 +1607,7 @@ bool Player::GrabLadder::NowUnderShotLag() const
 }
 void Player::GrabLadder::ShotProcess( Player &inst, float elapsedTime )
 {
-	const bool wantShot = ( inst.shotManager.IsShotRequested() && inst.NowShotable() );
+	const bool wantShot = ( inst.shotManager.IsShotRequested() && inst.NowShotable( elapsedTime ) );
 	if ( !wantShot ) { return; }
 	// else
 
@@ -2192,16 +2188,19 @@ void Player::MoveVertical  ( float elapsedTime )
 		Fall( elapsedTime );
 	}
 }
-bool Player::NowShotable() const
+bool Player::NowShotable( float elapsedTime ) const
 {
+	if ( IsZero( elapsedTime ) ) { return false; } // If game time is pausing
+	// else
+
 	const bool movable		= ( pMover && !pMover->NowKnockBacking( *this ) );
 	const bool generatable	= ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
 	return ( generatable && movable ) ? true : false;
 }
 void Player::ShotIfRequested( float elapsedTime )
 {
-	if ( !shotManager.IsShotRequested() ) { return; }
-	if ( !NowShotable() ) { return; }
+	if ( !shotManager.IsShotRequested()	) { return; }
+	if ( !NowShotable( elapsedTime )	) { return; }
 	// else
 
 	const auto &data = Parameter().Get();
