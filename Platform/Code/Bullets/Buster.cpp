@@ -140,8 +140,8 @@ namespace Bullet
 	{
 		const auto *pLevel = GetParamLevelOrNullptr( chargeLevel );
 		body.pos	= wsPos;
-		body.offset	= ( pLevel ) ? orientation.RotateVector( pLevel->basic.hitBoxOffset	)	: Donya::Vector3::Zero();
-		body.size	= ( pLevel ) ? orientation.RotateVector( pLevel->basic.hitBoxSize	)	: Donya::Vector3::Zero();
+		body.offset	= ( pLevel ) ? orientation.RotateVector( pLevel->basic.hitBoxOffset ) : Donya::Vector3::Zero();
+		body.size	= ( pLevel ) ? pLevel->basic.hitBoxSize : Donya::Vector3::Zero();
 	}
 #if USE_IMGUI
 	void Buster::ShowImGuiNode( const std::string &nodeCaption )

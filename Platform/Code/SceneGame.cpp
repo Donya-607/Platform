@@ -1615,7 +1615,7 @@ namespace
 		// else
 
 		const auto bulletAABB	= pBullet->GetHitBox();
-		const auto bulletSphere	= pBullet->GetHitBox();
+		const auto bulletSphere	= pBullet->GetHitSphere();
 		const auto activeOwnerID= ( bulletSphere.exist ) ? bulletSphere.ownerID : bulletAABB.ownerID;
 		return ( activeOwnerID == playerCollisionID ) ? true : false;
 	}
@@ -1740,7 +1740,7 @@ void SceneGame::Collision_BulletVSBoss()
 		if ( !pBullet ) { continue; }
 		// else
 
-		if ( IsEnemyBullet( playerID, pBullet ) ) { continue; }
+		if ( !IsPlayerBullet( playerID, pBullet ) ) { continue; }
 		// else
 
 		// The bullet's hit box is only either AABB or Sphere is valid
