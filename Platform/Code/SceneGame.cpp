@@ -1629,6 +1629,113 @@ namespace
 	{
 		return !IsPlayerBullet( playerCollisionID, pBullet );
 	}
+
+	enum class SubtractorState
+	{
+		Not,
+		HasBox,
+		HasSphere
+	};
+	SubtractorState HasSubtractor( const std::shared_ptr<const Bullet::Base> &pBullet )
+	{
+		using State = SubtractorState;
+
+		if ( !pBullet ) { return State::Not; }
+		// else
+
+		if ( pBullet->GetHitBoxSubtractor().exist ) { return State::HasBox; }
+		// else
+
+		if ( pBullet->GetHitSphereSubtractor().exist ) { return State::HasBox; }
+		// else
+
+		return State::Not;
+	}
+
+	template<typename ObjectHitBox, typename BulletHitBox>
+	bool IsHit( const ObjectHitBox &objHitBox, const std::shared_ptr<const Bullet::Base> &pBullet, const BulletHitBox &bulletHitBox, bool considerExistFlag = true )
+	{
+		namespace Col = Donya::Collision;
+
+		const SubtractorState hasSubtract = HasSubtractor( pBullet );
+
+		// Do not use subtraction version
+		if ( hasSubtract == SubtractorState::Not )
+		{
+			return Col::IsHit( objHitBox, bulletHitBox, considerExistFlag );
+		}
+		// else
+
+		// Can not use subtraction version
+		if ( !pBullet )
+		{
+			return Col::IsHit( objHitBox, bulletHitBox, considerExistFlag );
+		}
+		// else
+
+		auto IsHitImpl = [&]( const auto &hitBoxSubtractor )
+		{
+			const Col::Solid<BulletHitBox, decltype( hitBoxSubtractor )> a
+			{
+				bulletHitBox,
+				hitBoxSubtractor
+			};
+			return Col::IsHitVSSubtracted( objHitBox, a, considerExistFlag );
+		};
+
+		if ( hasSubtract == SubtractorState::HasBox )
+		{
+			return IsHitImpl( pBullet->GetHitBoxSubtractor() );
+		}
+		// else
+		if ( hasSubtract == SubtractorState::HasSphere )
+		{
+			return IsHitImpl( pBullet->GetHitSphereSubtractor() );
+		}
+		// else
+
+		_ASSERT_EXPR( 0, L"Error: Unexpected condition!" );
+		return false;
+	}
+	template<typename HitBoxA, typename HitBoxB>
+	bool IsHit( const std::shared_ptr<const Bullet::Base> &pBulletA, const HitBoxA &hitBoxA, const std::shared_ptr<const Bullet::Base> &pBulletB, const HitBoxB &hitBoxB, bool considerExistFlag = true )
+	{
+		if ( !pBulletA || !pBulletB ) { return false; }
+		// else
+
+		namespace Col = Donya::Collision;
+
+		const SubtractorState subA = HasSubtractor( pBulletA );
+		const SubtractorState subB = HasSubtractor( pBulletB );
+
+		// Do not use subtraction version
+		if ( subA == SubtractorState::Not && subB == SubtractorState::Not )
+		{
+			return Col::IsHit( hitBoxA, hitBoxB );
+		}
+		// else
+		
+		// Do not support yet
+		if ( subA != SubtractorState::Not && subB != SubtractorState::Not )
+		{
+			_ASSERT_EXPR( 0, L"Error: Not supporting condition!" );
+			return Col::IsHit( hitBoxA, hitBoxB );
+		}
+		// else
+
+		if ( subA != SubtractorState::Not )
+		{
+			return IsHit( hitBoxB, pBulletA, hitBoxA, considerExistFlag );
+		}
+		// else
+		if ( subB != SubtractorState::Not )
+		{
+			return IsHit( hitBoxA, pBulletB, hitBoxB, considerExistFlag );
+		}
+		// else
+		_ASSERT_EXPR( 0, L"Error: Unexpected condition!" );
+		return false;
+	}
 }
 void SceneGame::Collision_BulletVSBullet()
 {
@@ -1642,7 +1749,7 @@ void SceneGame::Collision_BulletVSBullet()
 		using D = Definition::Damage;
 		return ( pBullet ) ? D::Contain( D::Type::Protection, pBullet->GetDamage().type ) : false;
 	};
-	auto HitProcess		= [&]( const auto &hitBoxA, const auto &hitBoxB  )
+	auto HitProcess		= [&]( const auto &hitBoxA, const auto &hitBoxB )
 	{
 		if ( !pA || !pB ) { return; }
 		// else
@@ -1661,7 +1768,7 @@ void SceneGame::Collision_BulletVSBullet()
 
 		// TODO: Play hit SE
 	};
-
+	
 	const auto playerID = ExtractPlayerID( pPlayer );
 
 	for ( size_t i = 0; i < bulletCount; ++i )
@@ -1706,27 +1813,31 @@ void SceneGame::Collision_BulletVSBullet()
 
 			if ( aabbA.exist )
 			{
-				if ( Donya::Collision::IsHit( aabbA, aabbB ) )
+				if ( IsHit( pA, aabbA, pB, aabbB ) )
 				{
-					HitProcess( aabbA, aabbB ); continue;
+					HitProcess( aabbA, aabbB );
+					continue;
 				}
 				// else
-				if ( Donya::Collision::IsHit( aabbA, sphereB ) )
+				if ( IsHit( pA, aabbA, pB, sphereB ) )
 				{
-					HitProcess( aabbA, sphereB ); continue;
+					HitProcess( aabbA, sphereB );
+					continue;
 				}
 			}
 			else
 			if ( sphereA.exist )
 			{
-				if ( Donya::Collision::IsHit( sphereA, aabbB ) )
+				if ( IsHit( pA, sphereA, pB, aabbB ) )
 				{
-					HitProcess( sphereA, aabbB ); continue;
+					HitProcess( sphereA, aabbB );
+					continue;
 				}
 				// else
-				if ( Donya::Collision::IsHit( sphereA, sphereB ) )
+				if ( IsHit( pA, sphereA, pB, sphereB ) )
 				{
-					HitProcess( sphereA, sphereB ); continue;
+					HitProcess( sphereA, sphereB );
+					continue;
 				}
 			}
 		}
@@ -1781,14 +1892,14 @@ void SceneGame::Collision_BulletVSBoss()
 		// The bullet's hit box is only either AABB or Sphere is valid
 		// (Invalid one's exist flag will false, so IsHit() will returns false)
 
-		if ( Donya::Collision::IsHit( bossBody, pBullet->GetHitBox() ) )
+		if ( IsHit( bossBody, pBullet, pBullet->GetHitBox() ) )
 		{
 			HitProcess();
 			continue;
 		}
 		// else
 
-		if ( Donya::Collision::IsHit( bossBody, pBullet->GetHitSphere() ) )
+		if ( IsHit( bossBody, pBullet, pBullet->GetHitSphere() ) )
 		{
 			HitProcess();
 			continue;
@@ -1809,11 +1920,7 @@ void SceneGame::Collision_BulletVSEnemy()
 		const auto result = std::find( collidedEnemyIndices.begin(), collidedEnemyIndices.end(), enemyIndex );
 		return ( result != collidedEnemyIndices.end() );
 	};
-	auto IsHitImpl						= [&]( const auto &a, const auto &b )
-	{
-		return Donya::Collision::IsHit( a, b );
-	};
-	auto FindCollidingEnemyOrNullptr	= [&]( const auto &otherHitBox )
+	auto FindCollidingEnemyOrNullptr	= [&]( const std::shared_ptr<const Bullet::Base> &pOtherBullet, const auto &otherHitBox )
 	{
 		std::shared_ptr<const Enemy::Base> pEnemy = nullptr;
 		for ( size_t i = 0; i < enemyCount; ++i )
@@ -1825,7 +1932,7 @@ void SceneGame::Collision_BulletVSEnemy()
 			if ( !pEnemy ) { continue; }
 			// else
 
-			if ( IsHitImpl( pEnemy->GetHurtBox(), otherHitBox ) )
+			if ( IsHit( pEnemy->GetHurtBox(), pOtherBullet, otherHitBox ) )
 			{
 				collidedEnemyIndices.emplace_back( i );
 				return pEnemy;
@@ -1874,7 +1981,7 @@ void SceneGame::Collision_BulletVSEnemy()
 
 		result.pierced = true;
 
-		pOther = FindCollidingEnemyOrNullptr( bulletBody );
+		pOther = FindCollidingEnemyOrNullptr( pBullet, bulletBody );
 		while ( pOther )
 		{
 			result.collided = true;
@@ -1889,7 +1996,7 @@ void SceneGame::Collision_BulletVSEnemy()
 				result.pierced = false;
 			}
 
-			pOther = FindCollidingEnemyOrNullptr( bulletBody );
+			pOther = FindCollidingEnemyOrNullptr( pBullet, bulletBody );
 		}
 
 		return result;
@@ -1914,8 +2021,8 @@ void SceneGame::Collision_BulletVSEnemy()
 		// else
 
 		const auto result	= ( otherAABB.exist )
-							? Process( otherAABB   )
-							: Process( otherSphere );
+							? Process( otherAABB	)
+							: Process( otherSphere	);
 		if ( result.collided )
 		{
 			pBullet->CollidedToObject( result.pierced );
@@ -1954,7 +2061,7 @@ void SceneGame::Collision_BulletVSPlayer()
 		// else
 
 		bulletAABB = pBullet->GetHitBox();
-		if ( Donya::Collision::IsHit( playerBody, bulletAABB ) )
+		if ( IsHit( playerBody, pBullet, bulletAABB ) )
 		{
 			pPlayer->GiveDamage( pBullet->GetDamage(), bulletAABB );
 			pBullet->CollidedToObject( pPlayer->WillDie() );
@@ -1963,7 +2070,7 @@ void SceneGame::Collision_BulletVSPlayer()
 		// else
 
 		bulletSphere = pBullet->GetHitSphere();
-		if ( Donya::Collision::IsHit( playerBody, bulletSphere ) )
+		if ( IsHit( playerBody, pBullet, bulletSphere ) )
 		{
 			pPlayer->GiveDamage( pBullet->GetDamage(), bulletSphere );
 			pBullet->CollidedToObject( pPlayer->WillDie() );

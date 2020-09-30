@@ -298,8 +298,8 @@ namespace Donya
 		template<typename LHS, typename RHS>
 		struct Solid
 		{
-			const LHS *lhs = nullptr;
-			const LHS *rhs = nullptr;
+			const LHS lhs;
+			const RHS rhs;
 		};
 
 		namespace Impl
@@ -311,17 +311,16 @@ namespace Donya
 			bool IsHitVSSubtracted( const HitBox &a, const Solid<OtherLHS, OtherRHS> &b, bool considerExistFlag = true )
 			{
 				// Requirement
-				if ( !b.lhs || !IsHit( a, *b.lhs, considerExistFlag ) ) { return false; }
+				if ( !IsHit( a, b.lhs, considerExistFlag ) ) { return false; }
 				// else
 
 				// Subtract process is not necessary if the a does not touch to b's rhs
-				if ( !b.rhs									) { return true; }
-				if ( considerExistFlag && !b.rhs->exist		) { return true; }
-				if ( !IsHit( a, *b.rhs, considerExistFlag )	) { return true; }
+				if ( considerExistFlag && !b.rhs.exist		) { return true; }
+				if ( !IsHit( a, b.rhs, considerExistFlag )	) { return true; }
 				// else
 
 				// "a" and "b" does not collide if the b.rhs(subtractor) fully includes the "a".
-				if ( IsFullyInclude( a, *b.rhs, /* considerExistFlag = */ false ) ) { return false; }
+				if ( IsFullyInclude( a, b.rhs, /* considerExistFlag = */ false ) ) { return false; }
 				// else
 
 				return true;
