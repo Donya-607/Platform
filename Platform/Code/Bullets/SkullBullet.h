@@ -64,6 +64,7 @@ namespace Bullet
 		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 		void Draw( RenderingHelper *pRenderer ) const override;
 	public:
+		Donya::Collision::Sphere3F GetHitSphereSubtractor() const override;
 		Kind GetKind() const override;
 	private:
 		Definition::Damage GetDamageParameter() const override;
@@ -74,9 +75,10 @@ namespace Bullet
 	{
 	public:
 		BasicParam			basic;
-		int					partCount		= 4;
-		float				rotateDegree	= 1.0f; // per second
-		float				drawPartOffset	= 1.0f;
+		int					partCount			= 4;
+		float				rotateDegree		= 1.0f; // per second
+		float				drawPartOffset		= 1.0f;
+		float				subtractorRadius	= 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -91,6 +93,15 @@ namespace Bullet
 					CEREAL_NVP( rotateDegree	),
 					CEREAL_NVP( drawPartOffset	)
 				);
+
+				if ( 2 <= version )
+				{
+					archive( CEREAL_NVP( subtractorRadius ) );
+				}
+				if ( 3 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
 			}
 			return;
 
@@ -113,4 +124,4 @@ namespace Bullet
 	};
 }
 CEREAL_CLASS_VERSION( Bullet::SkullBusterParam, 1 )
-CEREAL_CLASS_VERSION( Bullet::SkullShieldParam, 1 )
+CEREAL_CLASS_VERSION( Bullet::SkullShieldParam, 2 )

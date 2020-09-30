@@ -124,6 +124,13 @@ namespace Bullet
 			pRenderer->DeactivateConstantModel();
 		}
 	}
+	Donya::Collision::Sphere3F SkullShield::GetHitSphereSubtractor() const
+	{
+		Donya::Collision::Sphere3F tmp = hitSphere;
+		tmp.radius = Parameter::GetSkullShield().subtractorRadius;
+		tmp.exist  = true; // It represents the subtractor is valid
+		return tmp;
+	}
 	Kind SkullShield::GetKind() const
 	{
 		return Kind::SkullShield;
@@ -148,8 +155,11 @@ namespace Bullet
 	void SkullShieldParam::ShowImGuiNode()
 	{
 		basic.ShowImGuiNode( u8"”Ä—pİ’è" );
-		ImGui::DragFloat ( u8"‰ñ“]Šp“x(degree)",			&rotateDegree,		1.0f );
-		ImGui::DragFloat ( u8"ƒp[ƒcˆÊ’u‚Ì”¼Œa",			&drawPartOffset,	0.01f );
+		ImGui::DragFloat ( u8"‰ñ“]Šp“x(degree)",		&rotateDegree,		1.0f );
+		ImGui::DragFloat ( u8"ƒp[ƒcˆÊ’u‚Ì”¼Œa",		&drawPartOffset,	0.01f );
+
+		ImGui::DragFloat ( u8"Œ¸ZŒ‹‡”»’è‚Ì”¼Œa",	&subtractorRadius,	0.01f );
+		subtractorRadius = std::max( 0.0f, subtractorRadius );
 	}
 #endif // USE_IMGUI
 }
