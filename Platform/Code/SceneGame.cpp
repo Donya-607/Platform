@@ -1646,7 +1646,7 @@ namespace
 		if ( pBullet->GetHitBoxSubtractor().exist ) { return State::HasBox; }
 		// else
 
-		if ( pBullet->GetHitSphereSubtractor().exist ) { return State::HasBox; }
+		if ( pBullet->GetHitSphereSubtractor().exist ) { return State::HasSphere; }
 		// else
 
 		return State::Not;

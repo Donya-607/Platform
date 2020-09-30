@@ -1,5 +1,8 @@
 #include "SkullBullet.h"
 
+#include "../Donya/RenderingStates.h"
+
+#include "../Common.h"
 #include "../Parameter.h"
 
 namespace Bullet
@@ -123,6 +126,49 @@ namespace Bullet
 
 			pRenderer->DeactivateConstantModel();
 		}
+	}
+	void SkullShield::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) const
+	{
+		if ( !Common::IsShowCollision() || !pRenderer ) { return; }
+		// else
+
+	#if DEBUG_MODE
+		constexpr Donya::Vector4 hitColor{ 0.4f, 0.8f, 0.9f, 0.6f };
+		constexpr Donya::Vector4 subColor{ 0.3f, 0.3f, 0.1f, 0.6f };
+		constexpr Donya::Vector3 lightDir = -Donya::Vector3::Up();
+
+		Donya::Model::Sphere::Constant constant;
+		constant.matViewProj		= VP;
+		constant.lightDirection		= lightDir;
+
+		const auto wsPos = hitSphere.WorldPosition();
+		Donya::Vector4x4 baseWorld = Donya::Vector4x4::MakeTranslation( wsPos.x, wsPos.y, wsPos.z );
+
+		pRenderer->ActivateShaderSphere();
+		pRenderer->ActivateRasterizerSphere();
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_Write );
+		
+		auto Draw = [&]( float radius, const Donya::Vector4 &color )
+		{
+			baseWorld._11 = radius * 2.0f;
+			baseWorld._22 = radius * 2.0f;
+			baseWorld._33 = radius * 2.0f;
+			constant.matWorld	= baseWorld;
+			constant.drawColor	= color;
+			pRenderer->UpdateConstant( constant );
+			pRenderer->ActivateConstantSphere();
+
+			pRenderer->DrawSphere();
+
+			pRenderer->DeactivateConstantSphere();
+		};
+		Draw( hitSphere.radius, hitColor );
+		Draw( Parameter::GetSkullShield().subtractorRadius, subColor );
+
+		Donya::DepthStencil::Deactivate();
+		pRenderer->DeactivateRasterizerSphere();
+		pRenderer->DeactivateShaderSphere();
+	#endif // DEBUG_MODE
 	}
 	Donya::Collision::Sphere3F SkullShield::GetHitSphereSubtractor() const
 	{

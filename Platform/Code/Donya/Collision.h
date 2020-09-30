@@ -320,7 +320,7 @@ namespace Donya
 				// else
 
 				// "a" and "b" does not collide if the b.rhs(subtractor) fully includes the "a".
-				if ( IsFullyInclude( a, b.rhs, /* considerExistFlag = */ false ) ) { return false; }
+				if ( IsFullyInclude( b.rhs, a, /* considerExistFlag = */ false ) ) { return false; }
 				// else
 
 				return true;

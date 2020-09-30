@@ -63,6 +63,7 @@ namespace Bullet
 		void Uninit() override;
 		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 		void Draw( RenderingHelper *pRenderer ) const override;
+		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
 	public:
 		Donya::Collision::Sphere3F GetHitSphereSubtractor() const override;
 		Kind GetKind() const override;
