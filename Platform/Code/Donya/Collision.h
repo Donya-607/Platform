@@ -277,6 +277,75 @@ namespace Donya
 		bool IsHit( const Sphere2F &a, const Box2F &b, bool considerExistFlag = true );
 		bool IsHit( const Box3F &a, const Sphere3F &b, bool considerExistFlag = true );
 		bool IsHit( const Sphere3F &a, const Box3F &b, bool considerExistFlag = true );
+		
+		/// <summary>
+		/// Return true if the "a" includes the "b" fully
+		/// </summary>
+		bool IsFullyInclude( const Box3F &a, const Box3F &b, bool considerExistFlag = true );
+		/// <summary>
+		/// Return true if the "a" includes the "b" fully
+		/// </summary>
+		bool IsFullyInclude( const Box3F &a, const Sphere3F &b, bool considerExistFlag = true );
+		/// <summary>
+		/// Return true if the "a" includes the "b" fully
+		/// </summary>
+		bool IsFullyInclude( const Sphere3F &a, const Box3F &b, bool considerExistFlag = true );
+		/// <summary>
+		/// Return true if the "a" includes the "b" fully
+		/// </summary>
+		bool IsFullyInclude( const Sphere3F &a, const Sphere3F &b, bool considerExistFlag = true );
+		
+		template<typename LHS, typename RHS>
+		struct Solid
+		{
+			const LHS *lhs = nullptr;
+			const LHS *rhs = nullptr;
+		};
+
+		namespace Impl
+		{
+			/// <summary>
+			/// a VS ( b.lhs - b.rhs )
+			/// </summary>
+			template<typename HitBox, typename OtherLHS, typename OtherRHS>
+			bool IsHitVSSubtracted( const HitBox &a, const Solid<OtherLHS, OtherRHS> &b, bool considerExistFlag = true )
+			{
+				// Requirement
+				if ( !b.lhs || !IsHit( a, *b.lhs, considerExistFlag ) ) { return false; }
+				// else
+
+				// Subtract process is not necessary if the a does not touch to b's rhs
+				if ( !b.rhs									) { return true; }
+				if ( considerExistFlag && !b.rhs->exist		) { return true; }
+				if ( !IsHit( a, *b.rhs, considerExistFlag )	) { return true; }
+				// else
+
+				// "a" and "b" does not collide if the b.rhs(subtractor) fully includes the "a".
+				if ( IsFullyInclude( a, *b.rhs, /* considerExistFlag = */ false ) ) { return false; }
+				// else
+
+				return true;
+			}
+		}
+
+		/// <summary>
+		/// a VS ( b.lhs - b.rhs )
+		/// </summary>
+		template<typename OtherLHS, typename OtherRHS>
+		bool IsHitVSSubtracted( const Box3F &a, const Solid<OtherLHS, OtherRHS> &b, bool considerExistFlag = true )
+		{
+			return Impl::IsHitVSSubtracted( a, b, considerExistFlag );
+		}
+		/// <summary>
+		/// a VS ( b.lhs - b.rhs )
+		/// </summary>
+		template<typename OtherLHS, typename OtherRHS>
+		bool IsHitVSSubtracted( const Sphere3F &a, const Solid<OtherLHS, OtherRHS> &b, bool considerExistFlag = true )
+		{
+			return Impl::IsHitVSSubtracted( a, b, considerExistFlag );
+		}
+
+		// TODO: Implement the IsFullyInclude() and IsHitVSSubtracted() in 2D type and interger type
 
 		Donya::Int2 FindClosestPoint( const Donya::Int2 &from, const Box2 &to );
 		Donya::Int2 FindClosestPoint( const Box2 &from, const Donya::Int2 &to );

@@ -165,11 +165,11 @@ namespace Bullet
 		virtual void ProtectedByImpl( float distLeft, float distRight ) const;
 	public:
 		using						 Solid::GetHitBox;
-		virtual Donya::Collision::Sphere3F	GetHitSphere()		const;
-		virtual Donya::Collision::Box3F		GetHitBoxNot()		const;
-		virtual Donya::Collision::Sphere3F	GetHitSphereNot()	const;
-		virtual Kind						GetKind()			const = 0;
-		Definition::Damage					GetDamage()			const;
+		virtual Donya::Collision::Sphere3F	GetHitSphere()				const;
+		virtual Donya::Collision::Box3F		GetHitBoxSubtractor()		const;
+		virtual Donya::Collision::Sphere3F	GetHitSphereSubtractor()	const;
+		virtual Kind						GetKind()					const = 0;
+		Definition::Damage					GetDamage()					const;
 	public:
 		virtual void SetWorldPosition( const Donya::Vector3 &wsPos );
 		virtual void SetVelocity( const Donya::Vector3 &newVelocity );

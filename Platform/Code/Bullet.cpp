@@ -445,9 +445,17 @@ namespace Bullet
 						? ProtectedInfo::ByRightSide
 						: ProtectedInfo::ByLeftSide;
 	}
-	Donya::Collision::Sphere3F Base::GetHitSphere() const
+	Donya::Collision::Sphere3F	Base::GetHitSphere()			const
 	{
 		return hitSphere;
+	}
+	Donya::Collision::Box3F		Base::GetHitBoxSubtractor()		const
+	{
+		return Donya::Collision::Box3F::Nil(); // Usually do not use
+	}
+	Donya::Collision::Sphere3F	Base::GetHitSphereSubtractor()	const
+	{
+		return Donya::Collision::Sphere3F::Nil(); // Usually do not use
 	}
 	Definition::Damage Base::GetDamage() const
 	{

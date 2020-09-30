@@ -250,10 +250,10 @@ namespace Donya
 
 			const auto wsPosB = b.WorldPosition();
 			const auto closestPoint = FindClosestPoint( a, wsPosB );
-			const auto diff  = wsPosB - closestPoint;
-			const auto lenSq = diff.LengthSq();
-			const auto radSq = b.radius * b.radius;
-			return ( lenSq <= radSq );
+			const auto diff   = wsPosB - closestPoint;
+			const auto lenSq  = diff.LengthSq();
+			const auto radSq  = b.radius * b.radius;
+			return ( lenSq   <= radSq );
 		}
 
 		bool IsHit( const Box2 &a, const Sphere2 &b, bool consider )
@@ -305,6 +305,113 @@ namespace Donya
 			return IsHitBoxSphere( b, a );
 		}
 
+		template<typename Box>
+		bool IsFullyIncludeBox( const Box &a, const Box &b, unsigned int dimension )
+		{
+			// All a.minimum must be less-eq than b.minimum
+			const auto minA = a.Min();
+			const auto minB = b.Min();
+			for ( unsigned int i = 0; i < dimension; ++i )
+			{
+				if ( minB[i] < minA[i] ) { return false; }
+			}
+			
+			// All a.maximum must be greater-eq than b.maximum
+			const auto maxA = a.Max();
+			const auto maxB = b.Max();
+			for ( unsigned int i = 0; i < dimension; ++i )
+			{
+				if ( maxA[i] < maxB[i] ) { return false; }
+			}
+
+			return true;
+		}
+		template<typename Sphere>
+		bool IsFullyIncludeSphere( const Sphere &a, const Sphere &b )
+		{
+			// The a can not be include the b
+			if ( a.radius < b.radius ) { return false; }
+			// else
+
+			// The b's outer point must be near to a.position than a's outer point
+			const auto wsPosA = a.WorldPosition();
+			const auto wsPosB = b.WorldPosition();
+			const auto distSq = ( wsPosB - wsPosA ).LengthSq();
+			const auto outerDistSqA = a.radius * a.radius;
+			const auto outerDistSqB = distSq + ( b.radius * b.radius );
+			return ( outerDistSqB <= outerDistSqA );
+		}
+		template<typename Box, typename Sphere>
+		bool IsFullyIncludeBoxSphere( const Box &a, const Sphere &b, unsigned int dimension )
+		{
+			const auto wsPosA = a.WorldPosition();
+			const auto wsPosB = b.WorldPosition();
+
+			if ( wsPosA == wsPosB )
+			{
+				// The a's smallest size must be greater-eq than b's radius
+				unsigned int smallestAxis = 0;
+				float smallestSize = FLT_MAX;
+				for ( unsigned int i = 0; i < dimension; ++i )
+				{
+					float size = a.size[i];
+					if (  size < smallestSize )
+					{
+						smallestAxis = i;
+						smallestSize = size;
+					}
+				}
+
+				return ( b.radius <= a.size[smallestAxis] );
+			}
+			// else
+
+			// The a must include the b's outer point
+			const auto diff = wsPosB - wsPosA;
+			const auto outerDist = diff.Length() + b.radius;
+			const auto outerPoint = wsPosA + ( diff.Unit() * outerDist );
+			return IsHitBox( a, outerPoint, dimension );
+		}
+		template<typename Sphere, typename Box>
+		bool IsFullyIncludeSphereBox( const Sphere &a, const Box &b )
+		{
+			// The a must contain the all vertices of the b
+			// All vertices can be represented by min and max
+
+			const auto min = b.Min();
+			if ( !IsHit( a, min ) ) { return false; }
+			// else
+			const auto max = b.Max();
+			if ( !IsHit( a, max ) ) { return false; }
+			// else
+			return true;
+		}
+
+		bool IsFullyInclude( const Box3F &a, const Box3F &b, bool consider )
+		{
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsFullyIncludeBox( a, b, 3U );
+		}
+		bool IsFullyInclude( const Box3F &a, const Sphere3F &b, bool consider )
+		{
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsFullyIncludeBoxSphere( a, b, 3U );
+		}
+		bool IsFullyInclude( const Sphere3F &a, const Box3F &b, bool consider )
+		{
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsFullyIncludeSphereBox( a, b );
+		}
+		bool IsFullyInclude( const Sphere3F &a, const Sphere3F &b, bool consider )
+		{
+			if ( consider && ( !a.exist || !b.exist ) ) { return false; }
+			// else
+			return IsFullyIncludeSphere( a, b );
+		}
+		
 		template<typename Box, typename Coord>
 		Coord FindClosestPointBox( const Box &from, const Coord &to, unsigned int dimension )
 		{
