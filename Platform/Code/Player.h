@@ -217,9 +217,9 @@ private:
 		Donya::Vector3	destColor		{ 0.0f, 0.0f, 0.0f }; // By charge
 	public:
 		void Init();
-		void Update( float elapsedTime, const InputManager &input );
+		void Update( const Player &instance, float elapsedTime, const InputManager &input );
 	public:
-		bool			IsShotRequested()	const;
+		bool			IsShotRequested( const Player &instance ) const;
 		float			ChargeSecond()		const { return currChargeSecond;	}
 		ShotLevel		ChargeLevel()		const { return chargeLevel;			}
 		Donya::Vector3	EmissiveColor()		const { return emissiveColor;		}
@@ -391,7 +391,8 @@ private:
 		virtual void Uninit( Player &instance );
 		virtual void Update( Player &instance );
 	public:
-		virtual bool Chargable() const;
+		virtual bool Chargeable() const = 0;
+		virtual bool AllowFireByRelease( ShotLevel nowChargeLevel ) const = 0;
 		virtual void Fire( Player &instance, const InputManager &input ) const = 0;
 	public:
 		virtual GunKind GetKind() const = 0;
@@ -399,6 +400,8 @@ private:
 	class BusterGun : public GunBase
 	{
 	public:
+		bool Chargeable() const override;
+		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
 		void Fire( Player &instance, const InputManager &input ) const override;
 	public:
 		GunKind GetKind() const override
@@ -411,6 +414,8 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance ) override;
 	public:
+		bool Chargeable() const override;
+		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
 		void Fire( Player &instance, const InputManager &input ) const override;
 	public:
 		GunKind GetKind() const override

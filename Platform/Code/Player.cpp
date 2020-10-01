@@ -665,7 +665,7 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 		shouldPoseShot = false;
 	}
 
-	if ( inst.shotManager.IsShotRequested() && inst.NowShotable( elapsedTime ) )
+	if ( inst.shotManager.IsShotRequested( inst ) && inst.NowShotable( elapsedTime ) )
 	{
 		shouldPoseShot = true;
 		shotAnimator.ResetTimer();
@@ -885,7 +885,7 @@ void Player::ShotManager::Init()
 	currChargeSecond	= 0.0f;
 	nowTrigger			= false;
 }
-void Player::ShotManager::Update( float elapsedTime, const InputManager &input )
+void Player::ShotManager::Update( const Player &inst, float elapsedTime, const InputManager &input )
 {
 	prevChargeSecond = currChargeSecond;
 	nowTrigger = false;
@@ -900,7 +900,8 @@ void Player::ShotManager::Update( float elapsedTime, const InputManager &input )
 
 	nowTrigger = NowTriggered( input );
 
-	if ( input.UseShot() )
+	const bool chargeable = ( inst.pGun && inst.pGun->Chargeable() );
+	if ( chargeable && input.UseShot() )
 	{
 		if ( nowTrigger )
 		{
@@ -917,20 +918,20 @@ void Player::ShotManager::Update( float elapsedTime, const InputManager &input )
 		currChargeSecond = 0.0f;
 	}
 }
-bool Player::ShotManager::IsShotRequested() const
+bool Player::ShotManager::IsShotRequested( const Player &inst ) const
 {
 	if ( nowTrigger ) { return true; }
 	// else
 
-	const bool prevIsZero = IsZero( prevChargeSecond );
-	const bool currIsZero = IsZero( currChargeSecond );
+	const bool prevIsZero	= IsZero( prevChargeSecond );
+	const bool currIsZero	= IsZero( currChargeSecond );
+	const bool triggered	= ( prevIsZero && !currIsZero );
+	const bool released		= ( !prevIsZero && currIsZero );
 
-	// I wanna fire a charge shot by release,
-	// but I don't wanna fire the normal shot by release.
-	const bool nowHighLevel = ( chargeLevel != ShotLevel::Normal && chargeLevel != ShotLevel::LevelCount );
+	const bool allowReleaseFire = ( inst.pGun && inst.pGun->AllowFireByRelease( chargeLevel ) );
 
-	return ( prevIsZero && !currIsZero )					// Now triggered a button
-		|| ( !prevIsZero && currIsZero && nowHighLevel );	// Now released a button, and now charging at least one.
+	return ( triggered )
+		|| ( allowReleaseFire && released );
 }
 bool Player::ShotManager::NowTriggered( const InputManager &input ) const
 {
@@ -1617,7 +1618,7 @@ bool Player::GrabLadder::NowUnderShotLag() const
 }
 void Player::GrabLadder::ShotProcess( Player &inst, float elapsedTime )
 {
-	const bool wantShot = ( inst.shotManager.IsShotRequested() && inst.NowShotable( elapsedTime ) );
+	const bool wantShot = ( inst.shotManager.IsShotRequested( inst ) && inst.NowShotable( elapsedTime ) );
 	if ( !wantShot ) { return; }
 	// else
 
@@ -1798,6 +1799,17 @@ void Player::GunBase::Update( Player &inst )
 	// No op
 }
 
+bool Player::BusterGun::Chargeable() const
+{
+	return true;
+}
+bool Player::BusterGun::AllowFireByRelease( ShotLevel chargeLevel ) const
+{
+	// I wanna fire a charge shot by release,
+	// but I don't wanna fire the normal shot by release.
+	const bool nowHighLevel = ( chargeLevel != ShotLevel::Normal && chargeLevel != ShotLevel::LevelCount );
+	return nowHighLevel;
+}
 void Player::BusterGun::Fire( Player &inst, const InputManager &input ) const
 {	
 	const auto &data = Parameter().Get();
@@ -1840,6 +1852,14 @@ void Player::ShieldGun::Update( Player &inst )
 	{
 		inst.pBullet->SetWorldPosition( CalcShieldPosition( inst ) );
 	}
+}
+bool Player::ShieldGun::Chargeable() const
+{
+	return false;
+}
+bool Player::ShieldGun::AllowFireByRelease( ShotLevel nowChargeLevel ) const
+{
+	return false;
 }
 void Player::ShieldGun::Fire( Player &inst, const InputManager &input ) const
 {
@@ -1988,7 +2008,7 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 
 	hurtBox.UpdateIgnoreList( elapsedTime );
 
-	shotManager.Update( elapsedTime, inputManager );
+	shotManager.Update( *this, elapsedTime, inputManager );
 
 	if ( !pMover )
 	{
@@ -2369,8 +2389,8 @@ bool Player::NowShotable( float elapsedTime ) const
 }
 void Player::ShotIfRequested( float elapsedTime )
 {
-	if ( !shotManager.IsShotRequested()	) { return; }
-	if ( !NowShotable( elapsedTime )	) { return; }
+	if ( !shotManager.IsShotRequested( *this )	) { return; }
+	if ( !NowShotable( elapsedTime )			) { return; }
 	// else
 
 	const auto &data = Parameter().Get();
