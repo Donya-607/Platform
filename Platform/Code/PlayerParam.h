@@ -50,12 +50,12 @@ public:
 
 	struct PerChargeLevel
 	{
-		float				chargeSecond		= 0.0f;
-		float				emissiveCycleSecond	= 1.0f; // Cycle of the sinf()
-		float				emissiveMinBias		= 0.0f; // Minimum value of the factor of color
-		Donya::Easing::Kind	emissiveEaseKind	= Donya::Easing::Kind::Linear;
-		Donya::Easing::Type	emissiveEaseType	= Donya::Easing::Type::Out;
-		Donya::Vector3		emissiveColor{ 0.0f, 0.0f, 0.0f }; // Max lighten color
+		float					chargeSecond		= 0.0f;
+		float					emissiveCycleSecond	= 1.0f; // Cycle of the sinf()
+		float					emissiveMinBias		= 0.0f; // Minimum value of the factor of color
+		Donya::Easing::Kind		emissiveEaseKind	= Donya::Easing::Kind::Linear;
+		Donya::Easing::Type		emissiveEaseType	= Donya::Easing::Type::Out;
+		Donya::Vector3			emissiveColor{ 0.0f, 0.0f, 0.0f }; // Max lighten color
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -77,7 +77,10 @@ public:
 			}
 		}
 	};
-	std::vector<PerChargeLevel>	chargeParams;// It size() == Player::ShotLevel::LevelCount
+	std::vector<PerChargeLevel>	chargeParams;	// It size() == Player::ShotLevel::LevelCount
+
+	float						shieldThrowSpeed = 1.0f;
+	Donya::Vector3				shieldPosOffset{ 0.0f, 0.0f, 0.0f };
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -160,6 +163,14 @@ private:
 		}
 		if ( 10 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( shieldThrow		),
+				CEREAL_NVP( shieldPosOffset	)
+			);
+		}
+		if ( 11 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -168,4 +179,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 9 )
+CEREAL_CLASS_VERSION( PlayerParam, 10 )

@@ -643,9 +643,9 @@ namespace Bullet
 	{
 		generateRequests.emplace_back( parameter );
 	}
-	void Admin::Delegate( std::shared_ptr<Base> &&pBullet )
+	void Admin::Delegate( const std::shared_ptr<Base> &pBullet )
 	{
-		delegateRequests.emplace_back( std::move( pBullet ) );
+		delegateRequests.emplace_back( pBullet );
 	}
 	size_t Admin::GetInstanceCount() const
 	{

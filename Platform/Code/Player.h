@@ -11,6 +11,7 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+#include "Bullet.h"
 #include "CSVLoader.h"
 #include "Damage.h"
 #include "FontHelper.h"
@@ -130,6 +131,13 @@ public:
 
 		LevelCount	// Invalid
 	};
+	enum class ShotKind
+	{
+		Buster,
+		Shield,
+
+		ShotKindCount,
+	};
 private:
 	class InputManager
 	{
@@ -234,6 +242,7 @@ private:
 		/// </summary>
 		bool NowWorking() const;
 	};
+#pragma region Mover
 	class MoverBase
 	{
 	public:
@@ -368,23 +377,67 @@ private:
 		std::string GetMoverName() const override { return u8"É~ÉX"; }
 	#endif // USE_IMGUI
 	};
+// Mover
+#pragma endregion
+#pragma region Shoter
+	class ShotBase
+	{
+	private:
+		ShotKind kind = ShotKind::Buster;
+	public:
+		virtual void Init( Player &instance );
+		virtual void Uninit( Player &instance );
+		virtual void Update( Player &instance );
+	public:
+		virtual void Fire( Player &instance, const InputManager &input ) const = 0;
+	public:
+		virtual ShotKind GetKind() const = 0;
+	};
+	class BusterShot : ShotBase
+	{
+	public:
+		void Fire( Player &instance, const InputManager &input ) const override;
+	public:
+		ShotKind GetKind() const override
+		{ return ShotKind::Buster; }
+	};
+	class ShieldShot : ShotBase
+	{
+	public:
+		void Init( Player &instance ) override;
+		void Uninit( Player &instance ) override;
+		void Update( Player &instance ) override;
+	public:
+		void Fire( Player &instance, const InputManager &input ) const override;
+	public:
+		ShotKind GetKind() const override
+		{ return ShotKind::Shield; }
+	private:
+		Donya::Vector3 CalcThrowDirection( const Player &instance, const InputManager &input ) const;
+		Donya::Vector3 CalcShieldPosition( const Player &instance ) const;
+		void GenerateShield( Player &instance ) const;
+	};
+// Shoter
+#pragma endregion
 private:
-	using				 Actor::body;		// VS a terrain
-	Donya::Collision::Box3F		hurtBox;	// VS an attack
-	using				 Actor::orientation;
-	Donya::Vector3				velocity;	// Z element is almost unused.
-	InputManager				inputManager;
-	MotionManager				motionManager;
-	ShotManager					shotManager;
-	Flusher						invincibleTimer;
-	std::unique_ptr<MoverBase>	pMover					= nullptr;
-	std::weak_ptr<const Tile>	pTargetLadder{};				// It only used for initialization of Player::GrabLadder as reference
-	int							currentHP				= 1;
-	float						lookingSign				= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
-	bool						onGround				= false;
+	using					 Actor::body;		// VS a terrain
+	Donya::Collision::Box3F			hurtBox;	// VS an attack
+	using					 Actor::orientation;
+	Donya::Vector3					velocity;	// Z element is almost unused.
+	InputManager					inputManager;
+	MotionManager					motionManager;
+	ShotManager						shotManager;
+	Flusher							invincibleTimer;
+	std::unique_ptr<MoverBase>		pMover					= nullptr;
+	std::unique_ptr<ShotBase>		pShoter					= nullptr;
+	std::shared_ptr<Bullet::Base>	pBullet					= nullptr;
+	std::weak_ptr<const Tile>		pTargetLadder{};				// It only used for initialization of Player::GrabLadder as reference
+	int								currentHP				= 1;
+	float							lookingSign				= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
+	bool							onGround				= false;
 	// TODO: These status variables can be combine by replace to MotionKind value
-	bool						prevSlidingStatus		= false;
-	bool						prevBracingStatus		= false;
+	bool							prevSlidingStatus		= false;
+	bool							prevBracingStatus		= false;
 
 	struct DamageDesc
 	{
@@ -400,6 +453,7 @@ public:
 	void PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
 
 	void Draw( RenderingHelper *pRenderer ) const;
+	void DrawBullet( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
 public:
 	void RecoverHP( int recovery );
@@ -437,6 +491,18 @@ private:
 
 		pMover = std::make_unique<Mover>();
 		pMover->Init( *this );
+	}
+	template<class Shoter>
+	void AssignShoter()
+	{
+		if ( pShoter )
+		{
+			pShoter->Uninit( *this );
+			pShoter.reset();
+		}
+
+		pShoter = std::make_unique<Shoter>();
+		pShoter->Init( *this );
 	}
 private:
 	void AssignCurrentBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;

@@ -219,7 +219,7 @@ namespace Bullet
 	public:
 		void ClearInstances();
 		void RequestFire( const FireDesc &parameter );
-		void Delegate( std::shared_ptr<Base> &&pBullet );
+		void Delegate( const std::shared_ptr<Base> &pBullet );
 	public:
 		size_t GetInstanceCount() const;
 		bool IsOutOfRange( size_t instanceIndex ) const;

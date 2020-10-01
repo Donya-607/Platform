@@ -1,19 +1,20 @@
 #include "Player.h"
 
-#include <algorithm>		// Use std::find()
+#include <algorithm>				// Use std::find()
 
 #include "Donya/Loader.h"
 #include "Donya/Sound.h"
-#include "Donya/Template.h"	// Use AppendVector()
+#include "Donya/Template.h"			// Use AppendVector()
 #if DEBUG_MODE
 #include "Donya/Keyboard.h"
-#include "Donya/Useful.h"	// Use ShowMessageBox
+#include "Donya/Useful.h"			// Use ShowMessageBox
 #endif // DEBUG_MODE
 
-#include "Bullets/Buster.h"	// Use Buster::GetLivingCount()
+#include "Bullets/Buster.h"			// Use Buster::GetLivingCount()
+#include "Bullets/SkullBullet.h"	// Use Buster::SkullShield
 #include "Common.h"
 #include "FilePath.h"
-#include "Map.h"			// Use Map::ToWorldPos()
+#include "Map.h"					// Use Map::ToWorldPos()
 #include "Music.h"
 #include "Parameter.h"
 #include "PlayerParam.h"
@@ -302,6 +303,46 @@ void Player::UpdateParameter( const std::string &nodeCaption )
 }
 void PlayerParam::ShowImGuiNode()
 {
+	if ( ImGui::TreeNode( u8"汎用設定" ) )
+	{
+		ImGui::DragInt  ( u8"最大体力",				&maxHP						);
+		ImGui::DragInt  ( u8"最大残機数",			&maxRemainCount				);
+		ImGui::DragInt  ( u8"初期残機数",			&initialRemainCount			);
+		ImGui::DragFloat( u8"移動速度",				&moveSpeed,			0.01f	);
+		ImGui::DragFloat( u8"スライディング速度",		&slideMoveSpeed,	0.01f	);
+		ImGui::DragFloat( u8"スライディング秒数",		&slideMoveSeconds,	0.01f	);
+		ImGui::DragFloat( u8"ジャンプ力",			&jumpStrength,		0.01f	);
+		ImGui::DragFloat( u8"重力",					&gravity,			0.01f	);
+		ImGui::SliderFloat( u8"重力抵抗力",			&gravityResistance,	0.0f, 1.0f );
+		ImGui::DragFloat( u8"重力抵抗可能秒数",		&resistableSeconds,	0.01f	);
+		ImGui::DragFloat( u8"最高落下速度",			&maxFallSpeed,		0.01f	);
+		ImGui::DragFloat( u8"のけぞる秒数",			&knockBackSeconds,	0.01f	);
+		ImGui::DragFloat( u8"のけぞり速度",			&knockBackSpeed,	0.01f	);
+		ImGui::DragFloat( u8"無敵秒数",				&invincibleSeconds,	0.01f	);
+		ImGui::DragFloat( u8"無敵中点滅間隔（秒）",	&flushingInterval,	0.01f	);
+
+		auto MakePositive	= []( float *v )
+		{
+			*v = std::max( 0.001f, *v );
+		};
+		maxHP				= std::max( 1, maxHP				);
+		maxRemainCount		= std::max( 1, maxRemainCount		);
+		initialRemainCount	= std::max( 1, initialRemainCount	);
+		MakePositive( &moveSpeed			);
+		MakePositive( &slideMoveSpeed		);
+		MakePositive( &slideMoveSeconds		);
+		MakePositive( &jumpStrength			);
+		MakePositive( &gravity				);
+		MakePositive( &resistableSeconds	);
+		MakePositive( &maxFallSpeed			);
+		MakePositive( &knockBackSeconds		);
+		MakePositive( &knockBackSpeed		);
+		MakePositive( &invincibleSeconds	);
+		MakePositive( &flushingInterval		);
+		
+		ImGui::TreePop();
+	}
+
 	constexpr size_t motionCount = scast<size_t>( Player::MotionKind::MotionCount );
 	if ( animePlaySpeeds.size() != motionCount )
 	{
@@ -371,8 +412,17 @@ void PlayerParam::ShowImGuiNode()
 	{
 		fireParam.ShowImGuiNode( u8"発射情報" );
 		ImGui::DragInt( u8"画面内に出せる弾数",	&maxBusterCount );
-
 		maxBusterCount = std::max( 1, maxBusterCount );
+
+		if ( ImGui::TreeNode( u8"特殊・シールド" ) )
+		{
+			ImGui::DragFloat ( u8"投擲時の初速",			&shieldThrowSpeed,	0.01f );
+			ImGui::DragFloat3( u8"生成位置オフセット",	&shieldPosOffset.x,	0.01f );
+
+			shieldThrowSpeed = std::max( 0.0f, shieldThrowSpeed );
+
+			ImGui::TreePop();
+		}
 
 		ImGui::TreePop();
 	}
@@ -394,46 +444,6 @@ void PlayerParam::ShowImGuiNode()
 	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定", &hurtBox );
 	ImGui::Helper::ShowAABBNode( u8"スライド中・地形との当たり判定", &slideHitBox  );
 	ImGui::Helper::ShowAABBNode( u8"スライド中・攻撃との喰らい判定", &slideHurtBox );
-
-	if ( ImGui::TreeNode( u8"汎用設定" ) )
-	{
-		ImGui::DragInt  ( u8"最大体力",				&maxHP						);
-		ImGui::DragInt  ( u8"最大残機数",			&maxRemainCount				);
-		ImGui::DragInt  ( u8"初期残機数",			&initialRemainCount			);
-		ImGui::DragFloat( u8"移動速度",				&moveSpeed,			0.01f	);
-		ImGui::DragFloat( u8"スライディング速度",		&slideMoveSpeed,	0.01f	);
-		ImGui::DragFloat( u8"スライディング秒数",		&slideMoveSeconds,	0.01f	);
-		ImGui::DragFloat( u8"ジャンプ力",			&jumpStrength,		0.01f	);
-		ImGui::DragFloat( u8"重力",					&gravity,			0.01f	);
-		ImGui::SliderFloat( u8"重力抵抗力",			&gravityResistance,	0.0f, 1.0f );
-		ImGui::DragFloat( u8"重力抵抗可能秒数",		&resistableSeconds,	0.01f	);
-		ImGui::DragFloat( u8"最高落下速度",			&maxFallSpeed,		0.01f	);
-		ImGui::DragFloat( u8"のけぞる秒数",			&knockBackSeconds,	0.01f	);
-		ImGui::DragFloat( u8"のけぞり速度",			&knockBackSpeed,	0.01f	);
-		ImGui::DragFloat( u8"無敵秒数",				&invincibleSeconds,	0.01f	);
-		ImGui::DragFloat( u8"無敵中点滅間隔（秒）",	&flushingInterval,	0.01f	);
-
-		auto MakePositive	= []( float *v )
-		{
-			*v = std::max( 0.001f, *v );
-		};
-		maxHP				= std::max( 1, maxHP				);
-		maxRemainCount		= std::max( 1, maxRemainCount		);
-		initialRemainCount	= std::max( 1, initialRemainCount	);
-		MakePositive( &moveSpeed			);
-		MakePositive( &slideMoveSpeed		);
-		MakePositive( &slideMoveSeconds		);
-		MakePositive( &jumpStrength			);
-		MakePositive( &gravity				);
-		MakePositive( &resistableSeconds	);
-		MakePositive( &maxFallSpeed			);
-		MakePositive( &knockBackSeconds		);
-		MakePositive( &knockBackSpeed		);
-		MakePositive( &invincibleSeconds	);
-		MakePositive( &flushingInterval		);
-		
-		ImGui::TreePop();
-	}
 }
 #endif // USE_IMGUI
 
@@ -1772,6 +1782,149 @@ std::function<void()> Player::Miss::GetChangeStateMethod( Player &inst ) const
 // region Mover
 #pragma endregion
 
+#pragma region Shoter
+
+void Player::ShotBase::Init( Player &inst )
+{
+	kind = GetKind();
+	inst.pBullet.reset();
+}
+void Player::ShotBase::Uninit( Player &inst )
+{
+	// No op
+}
+void Player::ShotBase::Update( Player &inst )
+{
+	// No op
+}
+
+void Player::BusterShot::Fire( Player &inst, const InputManager &input ) const
+{	
+	const auto &data = Parameter().Get();
+
+	const Donya::Quaternion lookingRotation = Donya::Quaternion::Make
+	(
+		Donya::Vector3::Up(), ToRadian( 90.0f ) * inst.lookingSign
+	);
+
+	Bullet::FireDesc desc = data.fireParam;
+	desc.direction	=  ( inst.lookingSign < 0.0f ) ? -Donya::Vector3::Right() : Donya::Vector3::Right();
+	desc.position	=  lookingRotation.RotateVector( desc.position ); // Rotate the local space offset
+	desc.position	+= inst.GetPosition(); // Convert to world space
+	desc.owner		=  inst.hurtBox.id;
+
+	const ShotLevel level = inst.shotManager.ChargeLevel();
+	if ( level != ShotLevel::Normal && level != ShotLevel::LevelCount )
+	{
+		using Dmg = Definition::Damage;
+		desc.pAdditionalDamage			= std::make_shared<Dmg>();
+		desc.pAdditionalDamage->amount	= scast<int>( level );
+		desc.pAdditionalDamage->type	= Dmg::Type::Pierce;
+	}
+		
+	Bullet::Admin::Get().RequestFire( desc );
+	Donya::Sound::Play( Music::Player_Shot );
+}
+
+void Player::ShieldShot::Init( Player &inst )
+{
+	ShotBase::Init( inst );
+}
+void Player::ShieldShot::Uninit( Player &inst )
+{
+	inst.pBullet.reset();
+}
+void Player::ShieldShot::Update( Player &inst )
+{
+	if ( inst.pBullet )
+	{
+		inst.pBullet->SetWorldPosition( CalcShieldPosition( inst ) );
+	}
+}
+void Player::ShieldShot::Fire( Player &inst, const InputManager &input ) const
+{
+	if ( !inst.pBullet )
+	{
+		GenerateShield( inst );
+		return;
+	}
+	// else
+
+	// Throw the shield
+	const Donya::Vector3 direction = CalcThrowDirection( inst, input );
+	inst.pBullet->SetVelocity( direction * Parameter().Get().shieldThrowSpeed );
+	Bullet::Admin::Get().Delegate( inst.pBullet );
+	inst.pBullet.reset();
+
+	// TODO: Play SE of ShiledThrow
+	Donya::Sound::Play( Music::Player_Shot );
+}
+Donya::Vector3 Player::ShieldShot::CalcThrowDirection( const Player &inst, const InputManager &input ) const
+{
+	const Donya::Vector2 stick = input.Current().moveVelocity.Unit();
+	if ( stick.IsZero() ) { return inst.orientation.LocalFront(); }
+	// else
+
+	// Convert to 4 directions(right, up, left, down)
+
+	constexpr std::array<Donya::Vector3, 4> directions
+	{
+		Donya::Vector3::Right(),
+		Donya::Vector3::Up(),
+		-Donya::Vector3::Right(),
+		-Donya::Vector3::Up()
+	};
+	constexpr int   directionCount = scast<int>( directions.size() );
+	constexpr float degreeInterval = 360.0f / directionCount;
+	constexpr float halfInterval   = degreeInterval * 0.5f;
+
+	// 0-deg is right, CCW
+	const float degree = fmodf( stick.Degree() + 360.0f, 360.0f ); // -180.0f ~ +180.0f -> 0 ~ 360.0f
+
+	int intervalCount  = scast<int>( degree / degreeInterval );
+	intervalCount %= directions.size(); // Wrap around the over 360.0f degree
+
+	// It will be 0.0f or 90.0f or 180.0f or 270.0f
+	float correctedDegree = 90.0f * scast<float>( intervalCount );
+	// Make the border as diagonally,
+	// So it will be -45.0f or 45.0f or 135.0f or 225.0f
+	correctedDegree -= halfInterval;
+	if ( correctedDegree < 0.0f ) { correctedDegree += 360.0f; }
+
+	for ( int i = 0; i < directionCount; ++i )
+	{
+		const float border = ( scast<float>( i ) * degreeInterval ) + halfInterval;
+		if ( correctedDegree < border )
+		{
+			return directions[i];
+		}
+	}
+
+	// Arounded
+	return directions[0];
+}
+Donya::Vector3 Player::ShieldShot::CalcShieldPosition( const Player &inst ) const
+{
+	Donya::Vector3 tmp;
+	tmp =  inst.orientation.RotateVector( Parameter().Get().shieldPosOffset );
+	tmp += inst.body.WorldPosition(); // Local space to World space
+	return tmp;
+}
+void Player::ShieldShot::GenerateShield( Player &inst ) const
+{
+	Bullet::FireDesc desc{};
+	desc.kind			= Bullet::Kind::SkullShield;
+	desc.initialSpeed	= 0.0f;
+	desc.direction		= Donya::Vector3::Zero();
+	desc.position		= CalcShieldPosition( inst );
+	desc.owner			= inst.hurtBox.id;
+	inst.pBullet = std::make_unique<Bullet::SkullShield>();
+	inst.pBullet->Init( desc );
+}
+
+// Shoter
+#pragma endregion
+
 void Player::Init( const PlayerInitializer &initializer )
 {
 	const bool shouldLookingToRight = initializer.ShouldLookingRight();
@@ -1888,6 +2041,13 @@ void Player::Draw( RenderingHelper *pRenderer ) const
 	const float alpha = ( invincibleTimer.Drawable() ) ? 1.0f : 0.0f;
 	motionManager.Draw( pRenderer, W, basicColor + emissiveColor, alpha );
 }
+void Player::DrawBullet( RenderingHelper *pRenderer ) const
+{
+	if ( pBullet )
+	{
+		pBullet->Draw( pRenderer );
+	}
+}
 void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused ) const
 {
 	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
@@ -1952,6 +2112,11 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 			DrawProcess( body, bodyColor );
 			DrawProcess( hurt, hurtColor );
 		}
+	}
+
+	if ( pBullet )
+	{
+		pBullet->DrawHitBox( pRenderer, matVP );
 	}
 #endif // DEBUG_MODE
 }
