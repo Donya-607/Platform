@@ -513,6 +513,18 @@ int  Player::InputManager::UseDashIndex() const
 
 	return -1;
 }
+int  Player::InputManager::ShiftGunIndex() const
+{
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( curr.shiftGuns[i] && !prev.shiftGuns[i] )
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
 bool Player::InputManager::UseJump() const
 {
 	return ( 0 <= UseJumpIndex() );
@@ -524,6 +536,11 @@ bool Player::InputManager::UseShot() const
 bool Player::InputManager::UseDash() const
 {
 	return ( 0 <= UseDashIndex() );
+}
+int  Player::InputManager::ShiftGun() const
+{
+	const int index = ShiftGunIndex();
+	return (  index < 0 ) ? 0 : curr.shiftGuns[index];
 }
 bool Player::InputManager::Jumpable( int jumpInputIndex ) const
 {
@@ -1794,7 +1811,7 @@ void Player::GunBase::Uninit( Player &inst )
 {
 	// No op
 }
-void Player::GunBase::Update( Player &inst )
+void Player::GunBase::Update( Player &inst, float elapsedTime )
 {
 	// No op
 }
@@ -1846,10 +1863,18 @@ void Player::ShieldGun::Uninit( Player &inst )
 {
 	inst.pBullet.reset();
 }
-void Player::ShieldGun::Update( Player &inst )
+void Player::ShieldGun::Update( Player &inst, float elapsedTime )
 {
 	if ( inst.pBullet )
 	{
+		const auto &shieldParam = Bullet::Parameter::GetSkullShield();
+
+		// The screen area will be used to consider "is there outside of the screen?"
+		// So I specify the player's position for regarded as inside the screen certainly.
+		Donya::Collision::Box3F screenArea = inst.GetNormalBody( /* ofHurtBox = */ false );
+		screenArea.size += shieldParam.basic.hitBoxSize;
+		screenArea.exist = true;
+		inst.pBullet->Update( elapsedTime, screenArea );
 		inst.pBullet->SetWorldPosition( CalcShieldPosition( inst ) );
 	}
 }
@@ -2028,6 +2053,9 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 		auto ChangeMethod = pMover->GetChangeStateMethod( *this );
 		ChangeMethod();
 	}
+
+	ShiftGunIfNeeded();
+	pGun->Update( *this, elapsedTime );
 
 	prevSlidingStatus = pMover->NowSliding( *this );
 	prevBracingStatus = pMover->NowBracing( *this );
@@ -2282,6 +2310,22 @@ void Player::ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain )
 
 	pReceivedDamage.reset();
 }
+void Player::AssignGunByKind( GunKind kind )
+{
+	_ASSERT_EXPR( 2 == scast<int>( GunKind::GunCount ), L"Please add the new kind's case to switch statement!" );
+
+	switch ( kind )
+	{
+	case GunKind::Buster:
+		AssignGun<BusterGun>();
+		return;
+	case GunKind::Shield:
+		AssignGun<ShieldGun>();
+		return;
+	default: _ASSERT_EXPR( 0, L"Unexpected Kind of Gun!" );
+		return;
+	}
+}
 void Player::AssignCurrentBodyInfo( Donya::Collision::Box3F *p, bool useHurtBox ) const
 {
 	p->pos			= ( useHurtBox ) ? hurtBox.pos			: body.pos;
@@ -2389,34 +2433,37 @@ bool Player::NowShotable( float elapsedTime ) const
 }
 void Player::ShotIfRequested( float elapsedTime )
 {
+	if ( !pGun									) { return; }
 	if ( !shotManager.IsShotRequested( *this )	) { return; }
 	if ( !NowShotable( elapsedTime )			) { return; }
 	// else
 
-	const auto &data = Parameter().Get();
+	pGun->Fire( *this, inputManager );
 
-	const Donya::Quaternion lookingRotation = Donya::Quaternion::Make
-	(
-		Donya::Vector3::Up(), ToRadian( 90.0f ) * lookingSign
-	);
+	//const auto &data = Parameter().Get();
 
-	Bullet::FireDesc desc = data.fireParam;
-	desc.direction	=  ( lookingSign < 0.0f ) ? -Donya::Vector3::Right() : Donya::Vector3::Right();
-	desc.position	=  lookingRotation.RotateVector( desc.position ); // Rotate the local space offset
-	desc.position	+= GetPosition(); // Convert to world space
-	desc.owner		=  hurtBox.id;
+	//const Donya::Quaternion lookingRotation = Donya::Quaternion::Make
+	//(
+	//	Donya::Vector3::Up(), ToRadian( 90.0f ) * lookingSign
+	//);
 
-	const ShotLevel level = shotManager.ChargeLevel();
-	if ( level != ShotLevel::Normal && level != ShotLevel::LevelCount )
-	{
-		using Dmg = Definition::Damage;
-		desc.pAdditionalDamage			= std::make_shared<Dmg>();
-		desc.pAdditionalDamage->amount	= scast<int>( level );
-		desc.pAdditionalDamage->type	= Dmg::Type::Pierce;
-	}
-		
-	Bullet::Admin::Get().RequestFire( desc );
-	Donya::Sound::Play( Music::Player_Shot );
+	//Bullet::FireDesc desc = data.fireParam;
+	//desc.direction	=  ( lookingSign < 0.0f ) ? -Donya::Vector3::Right() : Donya::Vector3::Right();
+	//desc.position	=  lookingRotation.RotateVector( desc.position ); // Rotate the local space offset
+	//desc.position	+= GetPosition(); // Convert to world space
+	//desc.owner		=  hurtBox.id;
+
+	//const ShotLevel level = shotManager.ChargeLevel();
+	//if ( level != ShotLevel::Normal && level != ShotLevel::LevelCount )
+	//{
+	//	using Dmg = Definition::Damage;
+	//	desc.pAdditionalDamage			= std::make_shared<Dmg>();
+	//	desc.pAdditionalDamage->amount	= scast<int>( level );
+	//	desc.pAdditionalDamage->type	= Dmg::Type::Pierce;
+	//}
+	//	
+	//Bullet::Admin::Get().RequestFire( desc );
+	//Donya::Sound::Play( Music::Player_Shot );
 }
 void Player::UpdateOrientation( bool lookingRight )
 {
@@ -2492,6 +2539,24 @@ void Player::Landing()
 
 	velocity.y = 0.0f;
 }
+void Player::ShiftGunIfNeeded()
+{
+	if ( !pGun ) { return; }
+	// else
+
+	const int shiftSign = inputManager.ShiftGun();
+	if ( !shiftSign ) { return; }
+	// else
+
+	constexpr int kindCount = scast<int>( GunKind::GunCount );
+
+	int index = scast<int>( pGun->GetKind() );
+	index += shiftSign;
+	if ( index <  0			) { index = kindCount - 1; }
+	if ( index >= kindCount	) { index = 0; }
+
+	AssignGunByKind( scast<GunKind>( index ) );
+}
 Donya::Vector4x4 Player::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 {
 	Donya::Vector4x4 W{};
@@ -2517,6 +2582,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::DragInt		( u8"現在の体力",					&currentHP );
 	ImGui::Text			( u8"現在のステート：%s",				pMover->GetMoverName().c_str() );
 	ImGui::Text			( u8"現在のモーション：%s",			KIND_NAMES[scast<int>( motionManager.CurrentKind() )] );
+	ImGui::Text			( u8"現在の銃口：%d",					pGun->GetKind() );
 
 	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );

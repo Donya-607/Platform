@@ -682,7 +682,11 @@ void SceneGame::Draw( float elapsedTime )
 		if ( Drawable( Kind::Boss	) && pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
 		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );	}
 		if ( Drawable( Kind::Item	) ) { Item::Admin::Get().Draw( pRenderer.get() );	}
-		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() ); }
+		if ( Drawable( Kind::Bullet	) )
+		{
+			Bullet::Admin::Get().Draw( pRenderer.get() );
+			if ( pPlayer ) { pPlayer->DrawBullet( pRenderer.get() ); }
+		}
 
 		( castShadow )
 		? pRenderer->DeactivateShaderShadowSkinning()
@@ -1244,6 +1248,7 @@ void SceneGame::AssignCurrentInput()
 	std::array<bool, Player::Input::variationCount> pressJumps{};
 	std::array<bool, Player::Input::variationCount> pressShots{};
 	std::array<bool, Player::Input::variationCount> pressDashes{};
+	std::array<int,  Player::Input::variationCount> shiftGuns{};
 
 	// TODO: To be changeable the input key or button
 
@@ -1263,6 +1268,7 @@ void SceneGame::AssignCurrentInput()
 		pressJumps[0]	= controller.Press( Button::A	);
 		pressShots[0]	= controller.Press( Button::X	);
 		pressDashes[0]	= controller.Press( Button::LT	);
+		shiftGuns[0]	= controller.Press( Button::PRESS_R	);
 		if ( 2 <= Player::Input::variationCount )
 		{
 		pressJumps[1]	= controller.Press( Button::B	);
@@ -1280,6 +1286,7 @@ void SceneGame::AssignCurrentInput()
 		pressJumps[0]	= Donya::Keyboard::Press( 'Z'	);
 		pressShots[0]	= Donya::Keyboard::Press( 'X'	);
 		pressDashes[0]	= Donya::Keyboard::Press( 'A'	);
+		shiftGuns[0]	= Donya::Keyboard::Press( 'C'	);
 		if ( 2 <= Player::Input::variationCount )
 		{
 		pressJumps[1]	= Donya::Keyboard::Press( VK_RSHIFT	);
@@ -1292,9 +1299,10 @@ void SceneGame::AssignCurrentInput()
 	if ( pressRight	) { currentInput.inputDirection.x += 1.0f; }
 	if ( pressUp	) { currentInput.inputDirection.y += 1.0f; } // World space direction
 	if ( pressDown	) { currentInput.inputDirection.y -= 1.0f; } // World space direction
-	currentInput.pressJumps = pressJumps;
-	currentInput.pressShots = pressShots;
-	currentInput.pressDashes = pressDashes;
+	currentInput.pressJumps		= pressJumps;
+	currentInput.pressShots		= pressShots;
+	currentInput.pressDashes	= pressDashes;
+	currentInput.shiftGuns		= shiftGuns;
 }
 
 void SceneGame::CameraInit()
@@ -1546,6 +1554,7 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 	input.useJumps		= currentInput.pressJumps;
 	input.useShots		= currentInput.pressShots;
 	input.useDashes		= currentInput.pressDashes;
+	input.shiftGuns		= currentInput.shiftGuns;
 
 	pPlayer->Update( elapsedTime, input, terrain );
 

@@ -35,9 +35,10 @@ private:
 	struct Input
 	{
 		Donya::Vector2 inputDirection; // Controller's stick or directional-pad, or keyboard's arrow key.
-		std::array<bool, Player::Input::variationCount> pressJumps{};  // Current frame.
-		std::array<bool, Player::Input::variationCount> pressShots{};  // Current frame.
-		std::array<bool, Player::Input::variationCount> pressDashes{}; // Current frame.
+		std::array<bool, Player::Input::variationCount> pressJumps{};	// Current frame.
+		std::array<bool, Player::Input::variationCount> pressShots{};	// Current frame.
+		std::array<bool, Player::Input::variationCount> pressDashes{};	// Current frame.
+		std::array<int,  Player::Input::variationCount> shiftGuns{};	// Positive:Change to next, Negative:Change to previous
 	public:
 		void Clear()
 		{
@@ -45,6 +46,7 @@ private:
 			pressJumps.fill( false );
 			pressShots.fill( false );
 			pressDashes.fill( false );
+			shiftGuns.fill( false );
 		}
 	};
 	struct Scroll

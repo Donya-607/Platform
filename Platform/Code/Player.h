@@ -96,6 +96,7 @@ public:
 		std::array<bool, variationCount> useJumps  = { false, false };
 		std::array<bool, variationCount> useShots  = { false, false };
 		std::array<bool, variationCount> useDashes = { false, false };
+		std::array<int,  variationCount> shiftGuns = { false, false }; // Positive:Change to next, Negative:Change to previous
 	public:
 		static Input GenerateEmpty()
 		{
@@ -104,6 +105,7 @@ public:
 			tmp.useJumps.fill( false );
 			tmp.useShots.fill( false );
 			tmp.useDashes.fill( false );
+			tmp.shiftGuns.fill( false );
 			return tmp;
 		}
 	};
@@ -153,9 +155,11 @@ private:
 		int  UseJumpIndex() const; // Return -1 if not using
 		int  UseShotIndex() const; // Return -1 if not using
 		int  UseDashIndex() const; // Return -1 if not using
+		int  ShiftGunIndex() const; // Return -1 if not using
 		bool UseJump() const;
 		bool UseShot() const;
 		bool UseDash() const;
+		int  ShiftGun() const;
 		bool Jumpable( int jumpInputIndex ) const;
 	public:
 		void Overwrite( const Input overwrite );
@@ -389,7 +393,7 @@ private:
 	public:
 		virtual void Init( Player &instance );
 		virtual void Uninit( Player &instance );
-		virtual void Update( Player &instance );
+		virtual void Update( Player &instance, float elapsedTime );
 	public:
 		virtual bool Chargeable() const = 0;
 		virtual bool AllowFireByRelease( ShotLevel nowChargeLevel ) const = 0;
@@ -412,7 +416,7 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance ) override;
+		void Update( Player &instance, float elapsedTime ) override;
 	public:
 		bool Chargeable() const override;
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
@@ -512,6 +516,7 @@ private:
 		pGun = std::make_unique<Gun>();
 		pGun->Init( *this );
 	}
+	void AssignGunByKind( GunKind kind );
 private:
 	void AssignCurrentBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
 	Donya::Collision::Box3F GetNormalBody ( bool ofHurtBox ) const;
@@ -534,6 +539,7 @@ private:
 	bool WillUseJump() const;
 	void Fall( float elapsedTime );
 	void Landing();
+	void ShiftGunIfNeeded();
 private:
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 public:
