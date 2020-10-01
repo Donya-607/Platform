@@ -1782,23 +1782,23 @@ std::function<void()> Player::Miss::GetChangeStateMethod( Player &inst ) const
 // region Mover
 #pragma endregion
 
-#pragma region Shoter
+#pragma region Gun
 
-void Player::ShotBase::Init( Player &inst )
+void Player::GunBase::Init( Player &inst )
 {
 	kind = GetKind();
 	inst.pBullet.reset();
 }
-void Player::ShotBase::Uninit( Player &inst )
+void Player::GunBase::Uninit( Player &inst )
 {
 	// No op
 }
-void Player::ShotBase::Update( Player &inst )
+void Player::GunBase::Update( Player &inst )
 {
 	// No op
 }
 
-void Player::BusterShot::Fire( Player &inst, const InputManager &input ) const
+void Player::BusterGun::Fire( Player &inst, const InputManager &input ) const
 {	
 	const auto &data = Parameter().Get();
 
@@ -1826,22 +1826,22 @@ void Player::BusterShot::Fire( Player &inst, const InputManager &input ) const
 	Donya::Sound::Play( Music::Player_Shot );
 }
 
-void Player::ShieldShot::Init( Player &inst )
+void Player::ShieldGun::Init( Player &inst )
 {
-	ShotBase::Init( inst );
+	GunBase::Init( inst );
 }
-void Player::ShieldShot::Uninit( Player &inst )
+void Player::ShieldGun::Uninit( Player &inst )
 {
 	inst.pBullet.reset();
 }
-void Player::ShieldShot::Update( Player &inst )
+void Player::ShieldGun::Update( Player &inst )
 {
 	if ( inst.pBullet )
 	{
 		inst.pBullet->SetWorldPosition( CalcShieldPosition( inst ) );
 	}
 }
-void Player::ShieldShot::Fire( Player &inst, const InputManager &input ) const
+void Player::ShieldGun::Fire( Player &inst, const InputManager &input ) const
 {
 	if ( !inst.pBullet )
 	{
@@ -1859,7 +1859,7 @@ void Player::ShieldShot::Fire( Player &inst, const InputManager &input ) const
 	// TODO: Play SE of ShiledThrow
 	Donya::Sound::Play( Music::Player_Shot );
 }
-Donya::Vector3 Player::ShieldShot::CalcThrowDirection( const Player &inst, const InputManager &input ) const
+Donya::Vector3 Player::ShieldGun::CalcThrowDirection( const Player &inst, const InputManager &input ) const
 {
 	const Donya::Vector2 stick = input.Current().moveVelocity.Unit();
 	if ( stick.IsZero() ) { return inst.orientation.LocalFront(); }
@@ -1903,14 +1903,14 @@ Donya::Vector3 Player::ShieldShot::CalcThrowDirection( const Player &inst, const
 	// Arounded
 	return directions[0];
 }
-Donya::Vector3 Player::ShieldShot::CalcShieldPosition( const Player &inst ) const
+Donya::Vector3 Player::ShieldGun::CalcShieldPosition( const Player &inst ) const
 {
 	Donya::Vector3 tmp;
 	tmp =  inst.orientation.RotateVector( Parameter().Get().shieldPosOffset );
 	tmp += inst.body.WorldPosition(); // Local space to World space
 	return tmp;
 }
-void Player::ShieldShot::GenerateShield( Player &inst ) const
+void Player::ShieldGun::GenerateShield( Player &inst ) const
 {
 	Bullet::FireDesc desc{};
 	desc.kind			= Bullet::Kind::SkullShield;
@@ -1922,7 +1922,7 @@ void Player::ShieldShot::GenerateShield( Player &inst ) const
 	inst.pBullet->Init( desc );
 }
 
-// Shoter
+// Gun
 #pragma endregion
 
 void Player::Init( const PlayerInitializer &initializer )
@@ -1948,6 +1948,7 @@ void Player::Init( const PlayerInitializer &initializer )
 	onGround			= false;
 
 	AssignMover<Normal>();
+	AssignGun<BusterGun>();
 }
 void Player::Uninit()
 {

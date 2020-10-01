@@ -165,8 +165,8 @@ private:
 		{
 			archive
 			(
-				CEREAL_NVP( shieldThrow		),
-				CEREAL_NVP( shieldPosOffset	)
+				CEREAL_NVP( shieldThrowSpeed	),
+				CEREAL_NVP( shieldPosOffset		)
 			);
 		}
 		if ( 11 <= version )

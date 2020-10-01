@@ -131,12 +131,12 @@ public:
 
 		LevelCount	// Invalid
 	};
-	enum class ShotKind
+	enum class GunKind
 	{
 		Buster,
 		Shield,
 
-		ShotKindCount,
+		GunCount,
 	};
 private:
 	class InputManager
@@ -379,29 +379,32 @@ private:
 	};
 // Mover
 #pragma endregion
-#pragma region Shoter
-	class ShotBase
+#pragma region Gun
+	class GunBase
 	{
 	private:
-		ShotKind kind = ShotKind::Buster;
+		GunKind kind = GunKind::Buster;
+	public:
+		virtual ~GunBase() = default;
 	public:
 		virtual void Init( Player &instance );
 		virtual void Uninit( Player &instance );
 		virtual void Update( Player &instance );
 	public:
+		virtual bool Chargable() const;
 		virtual void Fire( Player &instance, const InputManager &input ) const = 0;
 	public:
-		virtual ShotKind GetKind() const = 0;
+		virtual GunKind GetKind() const = 0;
 	};
-	class BusterShot : ShotBase
+	class BusterGun : public GunBase
 	{
 	public:
 		void Fire( Player &instance, const InputManager &input ) const override;
 	public:
-		ShotKind GetKind() const override
-		{ return ShotKind::Buster; }
+		GunKind GetKind() const override
+		{ return GunKind::Buster; }
 	};
-	class ShieldShot : ShotBase
+	class ShieldGun : public GunBase
 	{
 	public:
 		void Init( Player &instance ) override;
@@ -410,14 +413,14 @@ private:
 	public:
 		void Fire( Player &instance, const InputManager &input ) const override;
 	public:
-		ShotKind GetKind() const override
-		{ return ShotKind::Shield; }
+		GunKind GetKind() const override
+		{ return GunKind::Shield; }
 	private:
 		Donya::Vector3 CalcThrowDirection( const Player &instance, const InputManager &input ) const;
 		Donya::Vector3 CalcShieldPosition( const Player &instance ) const;
 		void GenerateShield( Player &instance ) const;
 	};
-// Shoter
+// Gun
 #pragma endregion
 private:
 	using					 Actor::body;		// VS a terrain
@@ -429,7 +432,7 @@ private:
 	ShotManager						shotManager;
 	Flusher							invincibleTimer;
 	std::unique_ptr<MoverBase>		pMover					= nullptr;
-	std::unique_ptr<ShotBase>		pShoter					= nullptr;
+	std::unique_ptr<GunBase>		pGun					= nullptr;
 	std::shared_ptr<Bullet::Base>	pBullet					= nullptr;
 	std::weak_ptr<const Tile>		pTargetLadder{};				// It only used for initialization of Player::GrabLadder as reference
 	int								currentHP				= 1;
@@ -492,17 +495,17 @@ private:
 		pMover = std::make_unique<Mover>();
 		pMover->Init( *this );
 	}
-	template<class Shoter>
-	void AssignShoter()
+	template<class Gun>
+	void AssignGun()
 	{
-		if ( pShoter )
+		if ( pGun )
 		{
-			pShoter->Uninit( *this );
-			pShoter.reset();
+			pGun->Uninit( *this );
+			pGun.reset();
 		}
 
-		pShoter = std::make_unique<Shoter>();
-		pShoter->Init( *this );
+		pGun = std::make_unique<Gun>();
+		pGun->Init( *this );
 	}
 private:
 	void AssignCurrentBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
