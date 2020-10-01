@@ -208,7 +208,7 @@ namespace Bullet
 	private: // shared_ptr<> make be able to copy
 		std::vector<std::shared_ptr<Base>>	bulletPtrs;
 		std::vector<FireDesc>				generateRequests;
-		std::vector<std::shared_ptr<Base>>	delegateRequests;
+		std::vector<std::shared_ptr<Base>>	copyRequests;
 	private:
 		Admin() = default;
 	public:
@@ -219,11 +219,13 @@ namespace Bullet
 	public:
 		void ClearInstances();
 		void RequestFire( const FireDesc &parameter );
-		void Delegate( const std::shared_ptr<Base> &pBullet );
+		void AddCopy( const std::shared_ptr<Base> &pBullet );
 	public:
 		size_t GetInstanceCount() const;
 		bool IsOutOfRange( size_t instanceIndex ) const;
 		std::shared_ptr<const Base> GetInstanceOrNullptr( size_t instanceIndex ) const;
+		std::shared_ptr<Base> FindInstanceOrNullptr( const std::shared_ptr<Base> &pBullet );
+		std::shared_ptr<const Base> FindInstanceOrNullptr( const std::shared_ptr<Base> &pBullet ) const;
 	private:
 		void GenerateRequestedFires();
 		void RemoveInstancesIfNeeds();

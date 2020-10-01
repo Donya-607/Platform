@@ -265,8 +265,8 @@ namespace Bullet
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
 		{
-			const bool useAABB		= ( !hitSphere.exist	);
-			const bool useSphere	= ( !body.exist			);
+			const bool useAABB		= !hitSphere.exist;
+			const bool useSphere	= !body.exist;
 			if ( useAABB	) { AssignBodyParameter( body.pos		); }
 			if ( useSphere	) { AssignBodyParameter( hitSphere.pos	); }
 		}
@@ -312,7 +312,7 @@ namespace Bullet
 		if ( !model.pResource	) { return; }
 		// else
 
-		const bool useAABB = ( !hitSphere.exist );
+		const bool useAABB = !hitSphere.exist;
 		// I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
 		const Donya::Vector3   &drawPos	= ( useAABB ) ? body.pos : hitSphere.pos;
 		const Donya::Vector4x4 W		= MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
@@ -336,8 +336,8 @@ namespace Bullet
 		constexpr Donya::Vector4 color{ 1.0f, 1.0f, 1.0f, 0.6f };
 		constexpr Donya::Vector3 lightDir = -Donya::Vector3::Up();
 
-		const bool useAABB		= ( !hitSphere.exist	);
-		const bool useSphere	= ( !body.exist			);
+		const bool useAABB		= !hitSphere.exist;
+		const bool useSphere	= !body.exist;
 		if ( !useAABB && !useSphere ) { return; }
 		// else
 
@@ -521,8 +521,8 @@ namespace Bullet
 		// else
 		orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), direction );
 		
-		const bool useAABB		= ( !hitSphere.exist	);
-		const bool useSphere	= ( !body.exist			);
+		const bool useAABB		= !hitSphere.exist;
+		const bool useSphere	= !body.exist;
 		if ( useAABB	) { AssignBodyParameter( body.pos		); }
 		if ( useSphere	) { AssignBodyParameter( hitSphere.pos	); }
 	}
@@ -571,7 +571,7 @@ namespace Bullet
 	{
 		GenerateRequestedFires();
 		generateRequests.clear();
-		delegateRequests.clear();
+		copyRequests.clear();
 
 		for ( auto &pIt : bulletPtrs )
 		{
@@ -643,9 +643,9 @@ namespace Bullet
 	{
 		generateRequests.emplace_back( parameter );
 	}
-	void Admin::Delegate( const std::shared_ptr<Base> &pBullet )
+	void Admin::AddCopy( const std::shared_ptr<Base> &pBullet )
 	{
-		delegateRequests.emplace_back( pBullet );
+		copyRequests.emplace_back( pBullet );
 	}
 	size_t Admin::GetInstanceCount() const
 	{
@@ -660,6 +660,44 @@ namespace Bullet
 		if ( IsOutOfRange( instanceIndex ) ) { return nullptr; }
 		// else
 		return bulletPtrs[instanceIndex];
+	}
+	namespace
+	{
+		template<typename ReturnType>
+		std::shared_ptr<ReturnType> FindInstanceOrNullptrImpl( const std::vector<std::shared_ptr<Base>> &rangeA, const std::vector<std::shared_ptr<Base>> &rangeB, const std::shared_ptr<Base> &key )
+		{
+			if ( !key ) { return nullptr; }
+			// else
+
+			for ( const auto &it : rangeA )
+			{
+				// Compare only the address of managed object
+				if ( it.get() == key.get() )
+				{
+					return it;
+				}
+			}
+			for ( const auto &it : rangeB )
+			{
+				// Compare only the address of managed object
+				if ( it.get() == key.get() )
+				{
+					return it;
+				}
+			}
+
+			return nullptr;
+		}
+	}
+	std::shared_ptr<Base> Admin::FindInstanceOrNullptr( const std::shared_ptr<Base> &pBullet )
+	{
+		// This method may come before the generation of requests
+		return FindInstanceOrNullptrImpl<Base>( bulletPtrs, copyRequests, pBullet );
+	}
+	std::shared_ptr<const Base> Admin::FindInstanceOrNullptr( const std::shared_ptr<Base> &pBullet ) const
+	{
+		// This method may come before the generation of requests
+		return FindInstanceOrNullptrImpl<const Base>( bulletPtrs, copyRequests, pBullet );
 	}
 	void Admin::GenerateRequestedFires()
 	{
@@ -688,11 +726,10 @@ namespace Bullet
 			Append( it );
 		}
 
-		for ( auto &it : delegateRequests )
+		for ( auto &it : copyRequests )
 		{
 			bulletPtrs.emplace_back( std::move( it ) );
 		}
-		delegateRequests.clear(); // Clear moved elements
 	}
 	void Admin::RemoveInstancesIfNeeds()
 	{

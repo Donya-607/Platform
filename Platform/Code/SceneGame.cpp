@@ -682,11 +682,7 @@ void SceneGame::Draw( float elapsedTime )
 		if ( Drawable( Kind::Boss	) && pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
 		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );	}
 		if ( Drawable( Kind::Item	) ) { Item::Admin::Get().Draw( pRenderer.get() );	}
-		if ( Drawable( Kind::Bullet	) )
-		{
-			Bullet::Admin::Get().Draw( pRenderer.get() );
-			if ( pPlayer ) { pPlayer->DrawBullet( pRenderer.get() ); }
-		}
+		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() );}
 
 		( castShadow )
 		? pRenderer->DeactivateShaderShadowSkinning()
@@ -1727,7 +1723,6 @@ namespace
 		// Do not support yet
 		if ( subA != SubtractorState::Not && subB != SubtractorState::Not )
 		{
-			_ASSERT_EXPR( 0, L"Error: Not supporting condition!" );
 			return Col::IsHit( hitBoxA, hitBoxB );
 		}
 		// else

@@ -1827,7 +1827,7 @@ bool Player::BusterGun::AllowFireByRelease( ShotLevel chargeLevel ) const
 	const bool nowHighLevel = ( chargeLevel != ShotLevel::Normal && chargeLevel != ShotLevel::LevelCount );
 	return nowHighLevel;
 }
-void Player::BusterGun::Fire( Player &inst, const InputManager &input ) const
+void Player::BusterGun::Fire( Player &inst, const InputManager &input )
 {	
 	const auto &data = Parameter().Get();
 
@@ -1858,6 +1858,8 @@ void Player::BusterGun::Fire( Player &inst, const InputManager &input ) const
 void Player::ShieldGun::Init( Player &inst )
 {
 	GunBase::Init( inst );
+
+	takeShield = false;
 }
 void Player::ShieldGun::Uninit( Player &inst )
 {
@@ -1865,18 +1867,30 @@ void Player::ShieldGun::Uninit( Player &inst )
 }
 void Player::ShieldGun::Update( Player &inst, float elapsedTime )
 {
-	if ( inst.pBullet )
-	{
-		const auto &shieldParam = Bullet::Parameter::GetSkullShield();
+	if ( !takeShield ) { return; }
+	// else
 
-		// The screen area will be used to consider "is there outside of the screen?"
-		// So I specify the player's position for regarded as inside the screen certainly.
-		Donya::Collision::Box3F screenArea = inst.GetNormalBody( /* ofHurtBox = */ false );
-		screenArea.size += shieldParam.basic.hitBoxSize;
-		screenArea.exist = true;
-		inst.pBullet->Update( elapsedTime, screenArea );
-		inst.pBullet->SetWorldPosition( CalcShieldPosition( inst ) );
+	if ( !inst.pBullet ) { return; }
+	// else
+
+	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
+	if ( !pInstance )
+	{
+		// The handle has been invalided
+		takeShield = false;
+		inst.pBullet.reset();
+		return;
 	}
+	// else
+
+	const auto &shieldParam = Bullet::Parameter::GetSkullShield();
+
+	// The screen area will be used to consider "is there outside of the screen?"
+	// So I specify the player's position for regarded as inside the screen certainly.
+	Donya::Collision::Box3F screenArea = inst.GetNormalBody( /* ofHurtBox = */ false );
+	screenArea.size += shieldParam.basic.hitBoxSize;
+	screenArea.exist = true;
+	pInstance->SetWorldPosition( CalcShieldPosition( inst ) );
 }
 bool Player::ShieldGun::Chargeable() const
 {
@@ -1886,7 +1900,7 @@ bool Player::ShieldGun::AllowFireByRelease( ShotLevel nowChargeLevel ) const
 {
 	return false;
 }
-void Player::ShieldGun::Fire( Player &inst, const InputManager &input ) const
+void Player::ShieldGun::Fire( Player &inst, const InputManager &input )
 {
 	if ( !inst.pBullet )
 	{
@@ -1895,12 +1909,18 @@ void Player::ShieldGun::Fire( Player &inst, const InputManager &input ) const
 	}
 	// else
 
-	// Throw the shield
-	const Donya::Vector3 direction = CalcThrowDirection( inst, input );
-	inst.pBullet->SetVelocity( direction * Parameter().Get().shieldThrowSpeed );
-	Bullet::Admin::Get().Delegate( inst.pBullet );
-	inst.pBullet.reset();
+	// Throw the taking shield
+	if ( !takeShield ) { return; }
+	// else
+	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
+	if ( !pInstance ) { return; }
+	// else
 
+	const Donya::Vector3 direction = CalcThrowDirection( inst, input );
+	pInstance->SetVelocity( direction * Parameter().Get().shieldThrowSpeed );
+	takeShield = false;
+	inst.pBullet.reset(); // Also release the handle
+	
 	// TODO: Play SE of ShiledThrow
 	Donya::Sound::Play( Music::Player_Shot );
 }
@@ -1955,7 +1975,7 @@ Donya::Vector3 Player::ShieldGun::CalcShieldPosition( const Player &inst ) const
 	tmp += inst.body.WorldPosition(); // Local space to World space
 	return tmp;
 }
-void Player::ShieldGun::GenerateShield( Player &inst ) const
+void Player::ShieldGun::GenerateShield( Player &inst )
 {
 	Bullet::FireDesc desc{};
 	desc.kind			= Bullet::Kind::SkullShield;
@@ -1965,6 +1985,11 @@ void Player::ShieldGun::GenerateShield( Player &inst ) const
 	desc.owner			= inst.hurtBox.id;
 	inst.pBullet = std::make_unique<Bullet::SkullShield>();
 	inst.pBullet->Init( desc );
+	Bullet::Admin::Get().AddCopy( inst.pBullet );
+
+	takeShield = true;
+	// TODO: Play SE of GeneraeShiled
+	Donya::Sound::Play( Music::Player_Shot );
 }
 
 // Gun
@@ -2089,13 +2114,6 @@ void Player::Draw( RenderingHelper *pRenderer ) const
 	const     Donya::Vector3 emissiveColor = shotManager.EmissiveColor();
 	const float alpha = ( invincibleTimer.Drawable() ) ? 1.0f : 0.0f;
 	motionManager.Draw( pRenderer, W, basicColor + emissiveColor, alpha );
-}
-void Player::DrawBullet( RenderingHelper *pRenderer ) const
-{
-	if ( pBullet )
-	{
-		pBullet->Draw( pRenderer );
-	}
 }
 void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused ) const
 {

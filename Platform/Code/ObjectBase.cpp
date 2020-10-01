@@ -405,6 +405,10 @@ void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor 
 
 		body.pos[axis] += movement;
 
+		// Do not affect
+		if ( !body.exist ) { return; }
+		// else
+
 		const Donya::Collision::Box3F movedBody = body;
 
 		// Makes an actor that moved by me will ignore me.

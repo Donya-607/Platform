@@ -608,7 +608,7 @@ namespace Boss
 		std::shared_ptr<Bullet::Base> pShield = std::make_shared<Bullet::SkullShield>();
 		pShield->Init( desc );
 		pShield->SetLifeTime( lifeTimeSecond );
-		Bullet::Admin::Get().Delegate( std::move( pShield ) );
+		Bullet::Admin::Get().AddCopy( std::move( pShield ) );
 	}
 
 	void Skull::Run::Init( Skull &inst )

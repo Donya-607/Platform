@@ -397,7 +397,7 @@ private:
 	public:
 		virtual bool Chargeable() const = 0;
 		virtual bool AllowFireByRelease( ShotLevel nowChargeLevel ) const = 0;
-		virtual void Fire( Player &instance, const InputManager &input ) const = 0;
+		virtual void Fire( Player &instance, const InputManager &input ) = 0;
 	public:
 		virtual GunKind GetKind() const = 0;
 	};
@@ -406,13 +406,15 @@ private:
 	public:
 		bool Chargeable() const override;
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
-		void Fire( Player &instance, const InputManager &input ) const override;
+		void Fire( Player &instance, const InputManager &input ) override;
 	public:
 		GunKind GetKind() const override
 		{ return GunKind::Buster; }
 	};
 	class ShieldGun : public GunBase
 	{
+	private:
+		bool takeShield = false;
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
@@ -420,14 +422,14 @@ private:
 	public:
 		bool Chargeable() const override;
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
-		void Fire( Player &instance, const InputManager &input ) const override;
+		void Fire( Player &instance, const InputManager &input ) override;
 	public:
 		GunKind GetKind() const override
 		{ return GunKind::Shield; }
 	private:
 		Donya::Vector3 CalcThrowDirection( const Player &instance, const InputManager &input ) const;
 		Donya::Vector3 CalcShieldPosition( const Player &instance ) const;
-		void GenerateShield( Player &instance ) const;
+		void GenerateShield( Player &instance );
 	};
 // Gun
 #pragma endregion
@@ -465,7 +467,6 @@ public:
 	void PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
 
 	void Draw( RenderingHelper *pRenderer ) const;
-	void DrawBullet( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
 public:
 	void RecoverHP( int recovery );
