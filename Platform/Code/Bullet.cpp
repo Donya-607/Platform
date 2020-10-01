@@ -267,8 +267,11 @@ namespace Bullet
 		{
 			const bool useAABB		= !hitSphere.exist;
 			const bool useSphere	= !body.exist;
-			if ( useAABB	) { AssignBodyParameter( body.pos		); }
-			if ( useSphere	) { AssignBodyParameter( hitSphere.pos	); }
+			if ( !useAABB || !useSphere ) // Except both true
+			{
+				if ( useAABB	) { AssignBodyParameter( body.pos		); }
+				if ( useSphere	) { AssignBodyParameter( hitSphere.pos	); }
+			}
 		}
 	#endif // USE_IMGUI
 
