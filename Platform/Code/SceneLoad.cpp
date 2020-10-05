@@ -216,19 +216,38 @@ void SceneLoad::Init()
 		{
 			// ID, FilePath, isEnableLoop
 
-			// { ID::BGM_Title,				"./Data/Sounds/BGM/.wav",					true	},
+			Bundle{ ID::BGM_Title,				"./Data/Sounds/BGM/Title.ogg",					true	},
+			Bundle{ ID::BGM_Game,				"./Data/Sounds/BGM/Game.ogg",					true	},
+			Bundle{ ID::BGM_Boss,				"./Data/Sounds/BGM/BossBattle.ogg",				true	},
+			Bundle{ ID::BGM_Over,				"./Data/Sounds/BGM/GameOver.ogg",				true	},
+			Bundle{ ID::BGM_Result,				"./Data/Sounds/BGM/Result.ogg",					true	},
 
-			Bundle{ ID::Bullet_HitBuster,	"./Data/Sounds/SE/Bullet/HitBuster.wav",	false	},
+			Bundle{ ID::Boss_Appear,			"./Data/Sounds/SE/Boss/BossPerformance.ogg",	false	},
+			Bundle{ ID::Boss_Defeated,			"./Data/Sounds/SE/Boss/BossDefeated.ogg",		false	},
+
+			Bundle{ ID::Bullet_HitBuster,		"./Data/Sounds/SE/Bullet/Hit_Buster.wav",		false	},
+			Bundle{ ID::Bullet_Protected,		"./Data/Sounds/SE/Bullet/Protected.wav",		false	},
+			Bundle{ ID::Bullet_ShotBuster,		"./Data/Sounds/SE/Bullet/Shot_Buster.wav",		false	},
+			Bundle{ ID::Bullet_ShotShield,		"./Data/Sounds/SE/Bullet/Shot_Shield.wav",		false	},
 			
-			Bundle{ ID::Player_Damage,		"./Data/Sounds/SE/Player/Damage.wav",		false	},
-			Bundle{ ID::Player_Jump,		"./Data/Sounds/SE/Player/Jump.wav",			false	},
-			Bundle{ ID::Player_Landing,		"./Data/Sounds/SE/Player/Landing.wav",		false	},
-			Bundle{ ID::Player_Miss,		"./Data/Sounds/SE/Player/Miss.wav",			false	},
-			Bundle{ ID::Player_Shot,		"./Data/Sounds/SE/Player/Shot.wav",			false	},
-
+			Bundle{ ID::Charge_Complete,		"./Data/Sounds/SE/Effect/Charge_Complete.wav",	false	},
+			Bundle{ ID::Charge_Loop,			"./Data/Sounds/SE/Effect/Charge_Loop.wav",		false	},
+			Bundle{ ID::Charge_Start,			"./Data/Sounds/SE/Effect/Charge_Start.wav",		false	},
+			
+			Bundle{ ID::Player_1UP,				"./Data/Sounds/SE/Player/ExtraLife.wav",		false	},
+			Bundle{ ID::Player_Damage,			"./Data/Sounds/SE/Player/Damage.wav",			false	},
+			Bundle{ ID::Player_Dash,			"./Data/Sounds/SE/Player/Dash.wav",				false	},
+			Bundle{ ID::Player_Jump,			"./Data/Sounds/SE/Player/Jump.wav",				false	},
+			Bundle{ ID::Player_Landing,			"./Data/Sounds/SE/Player/Landing.wav",			false	},
+			Bundle{ ID::Player_Miss,			"./Data/Sounds/SE/Player/Miss.wav",				false	},
+			
+			Bundle{ ID::RecoverHP,				"./Data/Sounds/SE/Effect/RecoverHP.wav",		false	},
+			
+			Bundle{ ID::SuperBallMachine_Shot,	"./Data/Sounds/SE/Enemy/SBM_Shot.wav",			false	},
+			
 			#if DEBUG_MODE
-			Bundle{ ID::DEBUG_Strong,		"./Data/Sounds/SE/_DEBUG/Strong.wav",		false	},
-			Bundle{ ID::DEBUG_Weak,			"./Data/Sounds/SE/_DEBUG/Weak.wav",			false	},
+			Bundle{ ID::DEBUG_Strong,			"./Data/Sounds/SE/_DEBUG/Strong.wav",			false	},
+			Bundle{ ID::DEBUG_Weak,				"./Data/Sounds/SE/_DEBUG/Weak.wav",				false	},
 			#endif // DEBUG_MODE
 		};
 
