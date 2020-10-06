@@ -205,14 +205,14 @@ void SceneLoad::Init()
 		struct Bundle
 		{
 			ID			id;
-			std::string	filePath;
+			const char	*filePath;
 			bool		isEnableLoop;
 		public:
-			Bundle( ID id, const char *filePath, bool isEnableLoop )
+			constexpr Bundle( ID id, const char *filePath, bool isEnableLoop )
 				: id( id ), filePath( filePath ), isEnableLoop( isEnableLoop ) {}
 		};
 
-		const std::array<Bundle, ID::MUSIC_COUNT> bundles
+		constexpr std::array<Bundle, ID::MUSIC_COUNT> bundles
 		{
 			// ID, FilePath, isEnableLoop
 
@@ -234,7 +234,7 @@ void SceneLoad::Init()
 			Bundle{ ID::Bullet_ShotSkullBuster,		"./Data/Sounds/SE/Bullet/Shot_Skull_Buster.wav",	false	},
 			
 			Bundle{ ID::Charge_Complete,			"./Data/Sounds/SE/Effect/Charge_Complete.wav",		false	},
-			Bundle{ ID::Charge_Loop,				"./Data/Sounds/SE/Effect/Charge_Loop.wav",			false	},
+			Bundle{ ID::Charge_Loop,				"./Data/Sounds/SE/Effect/Charge_Loop.wav",			true	},
 			Bundle{ ID::Charge_Start,				"./Data/Sounds/SE/Effect/Charge_Start.wav",			false	},
 			
 			Bundle{ ID::Player_1UP,					"./Data/Sounds/SE/Player/ExtraLife.wav",			false	},

@@ -219,6 +219,7 @@ private:
 		bool			nowTrigger			= false;
 		Donya::Vector3	emissiveColor	{ 0.0f, 0.0f, 0.0f }; // By charge
 		Donya::Vector3	destColor		{ 0.0f, 0.0f, 0.0f }; // By charge
+		bool			playingChargeSE		= false;
 	public:
 		void Init();
 		void Update( const Player &instance, float elapsedTime, const InputManager &input );
@@ -231,6 +232,8 @@ private:
 		bool NowTriggered( const InputManager &input ) const;
 		ShotLevel		CalcChargeLevel();
 		Donya::Vector3	CalcEmissiveColor();
+		void PlayLoopSEIfNeeded();
+		void StopLoopSEIfNeeded();
 	};
 	class Flusher
 	{

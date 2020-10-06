@@ -903,6 +903,8 @@ void Player::ShotManager::Init()
 	prevChargeSecond	= 0.0f;
 	currChargeSecond	= 0.0f;
 	nowTrigger			= false;
+
+	StopLoopSEIfNeeded();
 }
 void Player::ShotManager::Update( const Player &inst, float elapsedTime, const InputManager &input )
 {
@@ -931,10 +933,12 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 		}
 
 		currChargeSecond += elapsedTime;
+		PlayLoopSEIfNeeded();
 	}
 	else
 	{
 		currChargeSecond = 0.0f;
+		StopLoopSEIfNeeded();
 	}
 }
 bool Player::ShotManager::IsShotRequested( const Player &inst ) const
@@ -1036,6 +1040,22 @@ Donya::Vector3 Player::ShotManager::CalcEmissiveColor()
 	const float colorFactor = Donya::Easing::Ease( pParam->emissiveEaseKind, pParam->emissiveEaseType, easeFactor );
 
 	return pParam->emissiveColor.Product( colorFactor );
+}
+void Player::ShotManager::PlayLoopSEIfNeeded()
+{
+	if ( playingChargeSE ) { return; }
+	// else
+
+	playingChargeSE = true;
+	Donya::Sound::Play( Music::Charge_Loop );
+}
+void Player::ShotManager::StopLoopSEIfNeeded()
+{
+	if ( !playingChargeSE ) { return; }
+	// else
+
+	playingChargeSE = false;
+	Donya::Sound::Stop( Music::Charge_Loop, /* isEnableForAll = */ true );
 }
 
 void Player::Flusher::Start( float flushingSeconds )
