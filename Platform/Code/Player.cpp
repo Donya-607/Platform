@@ -284,6 +284,8 @@ void Player::Remaining::Increment()
 {
 	const auto &maxCount = Parameter().Get().maxRemainCount;
 	count = std::min( maxCount, count + 1 );
+
+	Donya::Sound::Play( Music::Player_1UP );
 }
 
 ParamOperator<PlayerParam> Player::paramInstance{ "Player" };
@@ -1268,6 +1270,8 @@ void Player::Slide::Init( Player &inst )
 	inst.velocity.y = 0.0f;
 	inst.velocity.z = 0.0f;
 	inst.UpdateOrientation( /* lookingRight = */ ( slideSign < 0.0f ) ? false : true );
+
+	Donya::Sound::Play( Music::Player_Dash );
 }
 void Player::Slide::Uninit( Player &inst )
 {
@@ -1904,24 +1908,12 @@ void Player::ShieldGun::Fire( Player &inst, const InputManager &input )
 {
 	if ( !inst.pBullet )
 	{
-		GenerateShield( inst );
+		ExpandShield( inst, input );
 		return;
 	}
 	// else
 
-	// Throw the taking shield
-	if ( !takeShield ) { return; }
-	// else
-	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
-	if ( !pInstance ) { return; }
-	// else
-
-	const Donya::Vector3 direction = CalcThrowDirection( inst, input );
-	pInstance->SetVelocity( direction * Parameter().Get().shieldThrowSpeed );
-	takeShield = false;
-	inst.pBullet.reset(); // Also release the handle
-	
-	Donya::Sound::Play( Music::Bullet_ShotShield );
+	ThrowShield( inst, input );
 }
 Donya::Vector3 Player::ShieldGun::CalcThrowDirection( const Player &inst, const InputManager &input ) const
 {
@@ -1974,7 +1966,7 @@ Donya::Vector3 Player::ShieldGun::CalcShieldPosition( const Player &inst ) const
 	tmp += inst.body.WorldPosition(); // Local space to World space
 	return tmp;
 }
-void Player::ShieldGun::GenerateShield( Player &inst )
+void Player::ShieldGun::ExpandShield( Player &inst, const InputManager &input )
 {
 	Bullet::FireDesc desc{};
 	desc.kind			= Bullet::Kind::SkullShield;
@@ -1987,8 +1979,24 @@ void Player::ShieldGun::GenerateShield( Player &inst )
 	Bullet::Admin::Get().AddCopy( inst.pBullet );
 
 	takeShield = true;
-	// TODO: Play SE of GeneraeShiled
-	Donya::Sound::Play( Music::Player_Shot );
+
+	Donya::Sound::Play( Music::Bullet_ShotShield_Expand );
+}
+void Player::ShieldGun::ThrowShield( Player &inst, const InputManager &input )
+{
+	if ( !takeShield ) { return; }
+	// else
+
+	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
+	if ( !pInstance ) { return; } // The handle has been invalided
+	// else
+
+	const Donya::Vector3 direction = CalcThrowDirection( inst, input );
+	pInstance->SetVelocity( direction * Parameter().Get().shieldThrowSpeed );
+	takeShield = false;
+	inst.pBullet.reset(); // Also release the handle
+
+	Donya::Sound::Play( Music::Bullet_ShotShield_Throw );
 }
 
 // Gun

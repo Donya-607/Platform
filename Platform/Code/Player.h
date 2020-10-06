@@ -429,7 +429,8 @@ private:
 	private:
 		Donya::Vector3 CalcThrowDirection( const Player &instance, const InputManager &input ) const;
 		Donya::Vector3 CalcShieldPosition( const Player &instance ) const;
-		void GenerateShield( Player &instance );
+		void ExpandShield( Player &instance, const InputManager &input );
+		void ThrowShield( Player &instance, const InputManager &input );
 	};
 // Gun
 #pragma endregion
