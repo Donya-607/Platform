@@ -1769,8 +1769,6 @@ void SceneGame::Collision_BulletVSBullet()
 		const bool destructibleB = pB->Destructible();
 		pA->CollidedToObject( destructibleB );
 		pB->CollidedToObject( destructibleA );
-
-		// TODO: Play hit SE
 	};
 	
 	const auto playerID = ExtractPlayerID( pPlayer );
@@ -1870,13 +1868,11 @@ void SceneGame::Collision_BulletVSBoss()
 		if ( pBoss->NowProtecting() )
 		{
 			pBullet->ProtectedBy( bossBody );
-			// TODO: Play protection SE
 		}
 		else
 		{
 			pBoss->GiveDamage( pBullet->GetDamage() );
 			pBullet->CollidedToObject( pBoss->WillDie() );
-			// TODO: Play hit SE
 		}
 	};
 

@@ -16,6 +16,8 @@ namespace Bullet
 	public:
 		Kind GetKind() const override;
 	private:
+		void PlayCollidedSE() const override;
+	private:
 		Definition::Damage GetDamageParameter() const override;
 		void AssignBodyParameter( const Donya::Vector3 &wsPos ) override;
 	};
@@ -67,6 +69,8 @@ namespace Bullet
 	public:
 		Donya::Collision::Sphere3F GetHitSphereSubtractor() const override;
 		Kind GetKind() const override;
+	private:
+		void PlayCollidedSE() const override;
 	private:
 		Definition::Damage GetDamageParameter() const override;
 		void AssignBodyParameter( const Donya::Vector3 &wsPos ) override;

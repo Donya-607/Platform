@@ -1,5 +1,7 @@
 #include "SuperBallMachine.h"
 
+#include "../Donya/Sound.h"
+#include "../Music.h"
 #include "../Parameter.h"
 
 namespace Enemy
@@ -175,6 +177,8 @@ namespace Enemy
 
 		Bullet::Admin::Get().RequestFire( desc );
 		ChangeMotion( MotionKind::Fire );
+
+		Donya::Sound::Play( Music::SuperBallMachine_Shot );
 	}
 #if USE_IMGUI
 	bool SuperBallMachine::ShowImGuiNode( const std::string &nodeCaption )

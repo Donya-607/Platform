@@ -21,6 +21,8 @@ namespace Bullet
 		bool Destructible() const override;
 		Kind GetKind() const override;
 	private:
+		void PlayCollidedSE() const override;
+	private:
 		Definition::Damage GetDamageParameter() const override;
 		void AssignBodyParameter( const Donya::Vector3 &wsPos ) override;
 	};

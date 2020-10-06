@@ -1,5 +1,8 @@
 #include "SuperBall.h"
 
+#include "../Donya/Sound.h"
+
+#include "../Music.h"
 #include "../Parameter.h"
 
 namespace Bullet
@@ -96,6 +99,11 @@ namespace Bullet
 	Kind SuperBall::GetKind() const
 	{
 		return Kind::SuperBall;
+	}
+	void SuperBall::PlayCollidedSE() const
+	{
+		// TODO: Change to a designated SE
+		Donya::Sound::Play( Music::Bullet_HitBuster );
 	}
 	Definition::Damage SuperBall::GetDamageParameter() const
 	{

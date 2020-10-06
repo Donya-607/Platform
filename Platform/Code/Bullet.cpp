@@ -476,12 +476,18 @@ namespace Bullet
 	{
 		secondToRemove = second;
 	}
+	void Base::PlayProtectedSE() const
+	{
+		Donya::Sound::Play( Music::Bullet_Protected );
+	}
 	void Base::CollidedProcess()
 	{
 		wasCollided		= false;
 		wantRemove		= true;
 		body.exist		= false;
 		hitSphere.exist	= false;
+
+		PlayCollidedSE();
 	}
 	void Base::ProtectedProcess()
 	{
@@ -503,6 +509,8 @@ namespace Bullet
 		// The orientation is not change
 
 		wasProtected	= ProtectedInfo::Processed;
+
+		PlayProtectedSE();
 	}
 	void Base::InitBody( const FireDesc &parameter )
 	{

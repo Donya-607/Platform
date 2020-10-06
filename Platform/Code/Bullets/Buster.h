@@ -33,6 +33,8 @@ namespace Bullet
 		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
 		Kind GetKind() const override;
+	public:
+		void PlayCollidedSE() const override;
 	private:
 		Definition::Damage GetDamageParameter() const override;
 		void AssignBodyParameter( const Donya::Vector3 &wsPos ) override;

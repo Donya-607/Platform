@@ -1,5 +1,8 @@
 #include "Buster.h"
 
+#include "../Donya/Sound.h"
+
+#include "../Music.h"
 #include "../Parameter.h"
 #include "../PointLightStorage.h"
 
@@ -121,6 +124,10 @@ namespace Bullet
 	Kind Buster::GetKind() const
 	{
 		return Kind::Buster;
+	}
+	void Buster::PlayCollidedSE() const
+	{
+		Donya::Sound::Play( Music::Bullet_HitBuster );
 	}
 	Definition::Damage Buster::GetDamageParameter() const
 	{

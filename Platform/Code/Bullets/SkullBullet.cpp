@@ -1,8 +1,10 @@
 #include "SkullBullet.h"
 
 #include "../Donya/RenderingStates.h"
+#include "../Donya/Sound.h"
 
 #include "../Common.h"
+#include "../Music.h"
 #include "../Parameter.h"
 
 namespace Bullet
@@ -56,6 +58,10 @@ namespace Bullet
 	Kind SkullBuster::GetKind() const
 	{
 		return Kind::SkullBuster;
+	}
+	void SkullBuster::PlayCollidedSE() const
+	{
+		Donya::Sound::Play( Music::Bullet_HitBuster );
 	}
 	Definition::Damage SkullBuster::GetDamageParameter() const
 	{
@@ -180,6 +186,10 @@ namespace Bullet
 	Kind SkullShield::GetKind() const
 	{
 		return Kind::SkullShield;
+	}
+	void SkullShield::PlayCollidedSE() const
+	{
+		Donya::Sound::Play( Music::Bullet_HitShield );
 	}
 	Definition::Damage SkullShield::GetDamageParameter() const
 	{
