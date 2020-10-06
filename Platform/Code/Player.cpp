@@ -1057,7 +1057,8 @@ Donya::Vector3 Player::ShotManager::CalcEmissiveColor()
 }
 void Player::ShotManager::PlayLoopSEIfNeeded()
 {
-	if ( playingChargeSE ) { return; }
+	if ( playingChargeSE					) { return; }
+	if ( chargeLevel == ShotLevel::Normal	) { return; }
 	// else
 
 	playingChargeSE = true;
