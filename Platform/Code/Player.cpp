@@ -911,6 +911,8 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 	prevChargeSecond = currChargeSecond;
 	nowTrigger = false;
 
+	ShotLevel oldChargeLevel = chargeLevel;
+
 	// If calculate the charge level after update the "currChargeSecond",
 	// the level will be zero(ShotLevel::Normal) absolutely when fire timing, because that timing is the input was released.
 	// So I must calculate it before the update. It will not be late for one frame by this.
@@ -918,6 +920,18 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 	destColor	= CalcEmissiveColor();
 	// TODO: Replace the time(0.3f) to some parameter
 	emissiveColor = Donya::Lerp( emissiveColor, destColor, 0.3f );
+
+	if ( oldChargeLevel != chargeLevel )
+	{
+		if ( chargeLevel == ShotLevel::Tough )
+		{
+			Donya::Sound::Play( Music::Charge_Start );
+		}
+		if ( chargeLevel == ShotLevel::Strong )
+		{
+			Donya::Sound::Play( Music::Charge_Complete );
+		}
+	}
 
 	nowTrigger = NowTriggered( input );
 
