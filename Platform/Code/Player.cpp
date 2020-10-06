@@ -1852,7 +1852,7 @@ void Player::BusterGun::Fire( Player &inst, const InputManager &input )
 	}
 		
 	Bullet::Admin::Get().RequestFire( desc );
-	Donya::Sound::Play( Music::Player_Shot );
+	Donya::Sound::Play( Music::Bullet_ShotBuster );
 }
 
 void Player::ShieldGun::Init( Player &inst )
@@ -1921,8 +1921,7 @@ void Player::ShieldGun::Fire( Player &inst, const InputManager &input )
 	takeShield = false;
 	inst.pBullet.reset(); // Also release the handle
 	
-	// TODO: Play SE of ShiledThrow
-	Donya::Sound::Play( Music::Player_Shot );
+	Donya::Sound::Play( Music::Bullet_ShotShield );
 }
 Donya::Vector3 Player::ShieldGun::CalcThrowDirection( const Player &inst, const InputManager &input ) const
 {

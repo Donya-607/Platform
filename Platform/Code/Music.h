@@ -16,9 +16,12 @@ namespace Music
 		Boss_Defeated,
 
 		Bullet_HitBuster,
+		Bullet_HitShield,
 		Bullet_Protected,
 		Bullet_ShotBuster,
-		Bullet_ShotShield,
+		Bullet_ShotShield_Expand,
+		Bullet_ShotShield_Throw,
+		Bullet_ShotSkullBuster,
 
 		Charge_Complete,
 		Charge_Loop,
@@ -32,6 +35,10 @@ namespace Music
 		Player_Miss,
 		
 		RecoverHP,
+
+		Skull_Landing,
+		Skull_Jump,
+		Skull_Roar,
 
 		SuperBallMachine_Shot,
 		
