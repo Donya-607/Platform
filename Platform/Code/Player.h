@@ -221,6 +221,8 @@ private:
 		Donya::Vector3	destColor		{ 0.0f, 0.0f, 0.0f }; // By charge
 		bool			playingChargeSE		= false;
 	public:
+		~ShotManager();
+	public:
 		void Init();
 		void Update( const Player &instance, float elapsedTime, const InputManager &input );
 	public:
@@ -232,8 +234,8 @@ private:
 		bool NowTriggered( const InputManager &input ) const;
 		ShotLevel		CalcChargeLevel();
 		Donya::Vector3	CalcEmissiveColor();
-		void PlayLoopSEIfNeeded();
-		void StopLoopSEIfNeeded();
+		void PlayLoopSEIfStopping();
+		void StopLoopSEIfPlaying( bool forcely = false );
 	};
 	class Flusher
 	{

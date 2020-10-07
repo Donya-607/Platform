@@ -897,6 +897,10 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 	return MotionKind::Idle;
 }
 
+Player::ShotManager::~ShotManager()
+{
+	StopLoopSEIfPlaying( /* forcely = */ true );
+}
 void Player::ShotManager::Init()
 {
 	chargeLevel			= ShotLevel::Normal;
@@ -904,7 +908,7 @@ void Player::ShotManager::Init()
 	currChargeSecond	= 0.0f;
 	nowTrigger			= false;
 
-	StopLoopSEIfNeeded();
+	StopLoopSEIfPlaying();
 }
 void Player::ShotManager::Update( const Player &inst, float elapsedTime, const InputManager &input )
 {
@@ -947,12 +951,12 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 		}
 
 		currChargeSecond += elapsedTime;
-		PlayLoopSEIfNeeded();
+		PlayLoopSEIfStopping();
 	}
 	else
 	{
 		currChargeSecond = 0.0f;
-		StopLoopSEIfNeeded();
+		StopLoopSEIfPlaying();
 	}
 }
 bool Player::ShotManager::IsShotRequested( const Player &inst ) const
@@ -1055,7 +1059,7 @@ Donya::Vector3 Player::ShotManager::CalcEmissiveColor()
 
 	return pParam->emissiveColor.Product( colorFactor );
 }
-void Player::ShotManager::PlayLoopSEIfNeeded()
+void Player::ShotManager::PlayLoopSEIfStopping()
 {
 	if ( playingChargeSE					) { return; }
 	if ( chargeLevel == ShotLevel::Normal	) { return; }
@@ -1064,9 +1068,9 @@ void Player::ShotManager::PlayLoopSEIfNeeded()
 	playingChargeSE = true;
 	Donya::Sound::Play( Music::Charge_Loop );
 }
-void Player::ShotManager::StopLoopSEIfNeeded()
+void Player::ShotManager::StopLoopSEIfPlaying( bool forcely )
 {
-	if ( !playingChargeSE ) { return; }
+	if ( !playingChargeSE && !forcely ) { return; }
 	// else
 
 	playingChargeSE = false;
