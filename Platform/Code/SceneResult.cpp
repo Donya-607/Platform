@@ -71,10 +71,7 @@ CEREAL_CLASS_VERSION( SceneParam, 0 )
 
 void SceneResult::Init()
 {
-	// Donya::Sound::Play( Music::BGM_Game );
-#if DEBUG_MODE
-	// Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
-#endif // DEBUG_MODE
+	Donya::Sound::Play( Music::BGM_Result );
 
 	bool result{};
 
@@ -82,7 +79,7 @@ void SceneResult::Init()
 }
 void SceneResult::Uninit()
 {
-	// Donya::Sound::Stop( Music::BGM_Game );
+	Donya::Sound::Stop( Music::BGM_Result );
 }
 
 Scene::Result SceneResult::Update( float elapsedTime )

@@ -322,7 +322,7 @@ CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
 {
-	// Donya::Sound::Play( Music::BGM_Game );
+	Donya::Sound::Play( Music::BGM_Game );
 #if DEBUG_MODE
 	// Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
 #endif // DEBUG_MODE
@@ -356,7 +356,6 @@ void SceneGame::Init()
 	pPlayerIniter->LoadParameter( stageNumber );
 
 	pPlayerMeter = std::make_unique<Meter::Drawer>();
-	pSkullMeter  = std::make_unique<Meter::Drawer>();
 
 	pMap = std::make_unique<Map>();
 
@@ -369,7 +368,7 @@ void SceneGame::Uninit()
 	if ( pMap ) { pMap->ReleaseModel(); }
 	pMap.reset();
 
-	// Donya::Sound::Stop( Music::BGM_Game );
+	Donya::Sound::Stop( Music::BGM_Game );
 }
 
 Scene::Result SceneGame::Update( float elapsedTime )
@@ -400,8 +399,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		if ( pBloomer ) { pBloomer->AssignParameter( FetchParameter().bloomParam ); }
 
 		const auto &data = FetchParameter();
-		pPlayerMeter->SetDrawOption( data.playerMeter.hpDrawPos, data.playerMeter.hpDrawColor, data.playerMeter.hpDrawScale );
-		pSkullMeter->SetDrawOption( data.skullMeter.hpDrawPos, data.skullMeter.hpDrawColor, data.skullMeter.hpDrawScale );
+		if ( pPlayerMeter ) { pPlayerMeter->SetDrawOption( data.playerMeter.hpDrawPos, data.playerMeter.hpDrawColor, data.playerMeter.hpDrawScale ); }
+		if ( pSkullMeter  ) { pSkullMeter->SetDrawOption( data.skullMeter.hpDrawPos, data.skullMeter.hpDrawColor, data.skullMeter.hpDrawScale ); }
 	}
 #endif // USE_IMGUI
 
@@ -1159,7 +1158,7 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	if ( pPlayerMeter )
 	{
 		const float maxHP = scast<float>( Player::Parameter().Get().maxHP );
-		pPlayerMeter->Init( maxHP, maxHP );
+		pPlayerMeter->Init( maxHP, maxHP, maxHP );
 
 		const auto &data = FetchParameter();
 		pPlayerMeter->SetDrawOption( data.playerMeter.hpDrawPos, data.playerMeter.hpDrawColor, data.playerMeter.hpDrawScale );
@@ -1198,15 +1197,7 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	pBossContainer->SaveBosses( stageNo, true );
 #endif // DEBUG_MODE
 	isThereBoss = pBossContainer->IsThereIn( currentRoomID );
-	if ( pSkullMeter )
-	{
-		// TODO: If create another boss kind, fix this
-		const float maxHP = scast<float>( Boss::Parameter::GetSkull().hp );
-		pSkullMeter->Init( maxHP, maxHP );
-
-		const auto &data = FetchParameter();
-		pSkullMeter->SetDrawOption( data.skullMeter.hpDrawPos, data.skullMeter.hpDrawColor, data.skullMeter.hpDrawScale );
-	}
+	pSkullMeter.reset(); // If there a boss, it will be initialized at BossUpdate()
 
 	Bullet::Admin::Get().ClearInstances();
 
@@ -1227,6 +1218,8 @@ void SceneGame::UninitStage()
 	pBossContainer.reset();
 	pHouse.reset();
 	pPlayer.reset();
+
+	pSkullMeter.reset();
 
 	// Don't reset the "pMap" because for holding the model of Map
 
@@ -1565,7 +1558,7 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 
 	if ( pPlayerMeter )
 	{
-		pPlayerMeter->SetCurrent( scast<float>( pPlayer->GetCurrentHP() ) );
+		pPlayerMeter->SetDestination( scast<float>( pPlayer->GetCurrentHP() ) );
 	}
 }
 
@@ -1595,13 +1588,24 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 
 	pBossContainer->Update( elapsedTime, input );
 
-	if ( pSkullMeter )
+	const auto pBoss = pBossContainer->GetBossOrNullptr( currentRoomID );
+	if ( pBoss )
 	{
-		const auto pBoss = pBossContainer->GetBossOrNullptr( currentRoomID );
-		if ( pBoss )
+		const float currentBossHP = scast<float>( pBoss->GetCurrentHP() );
+
+		if ( !pSkullMeter )
 		{
-			pSkullMeter->SetCurrent( scast<float>( pBoss->GetCurrentHP() ) );
+			pSkullMeter = std::make_unique<Meter::Drawer>();
+
+			// TODO: If create another boss kind, fix this
+			const float maxHP = scast<float>( Boss::Parameter::GetSkull().hp );
+			pSkullMeter->Init( maxHP, 0.0f, currentBossHP );
+
+			const auto &data = FetchParameter();
+			pSkullMeter->SetDrawOption( data.skullMeter.hpDrawPos, data.skullMeter.hpDrawColor, data.skullMeter.hpDrawScale );
 		}
+
+		pSkullMeter->SetDestination( currentBossHP );
 	}
 }
 

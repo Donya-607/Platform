@@ -31,6 +31,8 @@ namespace Meter
 
 		Donya::Vector2 remainNumberPosOffset{  0.0f,  0.0f }; // From "remainFramePosOffset"
 		Donya::Vector2 remainNumberScale	{  1.0f,  1.0f };
+
+		float recoveryAmount = 30.0f; // Per second
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -64,6 +66,10 @@ namespace Meter
 			}
 			if ( 2 <= version )
 			{
+				archive( CEREAL_NVP( recoveryAmount ) );
+			}
+			if ( 3 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -73,4 +79,4 @@ namespace Meter
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Meter::MeterParam, 1 )
+CEREAL_CLASS_VERSION( Meter::MeterParam, 2 )

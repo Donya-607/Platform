@@ -37,16 +37,17 @@ namespace Meter
 	{
 	private:
 		float	current		= 0.0f;
+		float	destination	= 0.0f;
 		float	maxAmount	= 1.0f;
 		mutable UIObject sprite;
 	public:
-		void Init( float maxAmount, float initialAmount );
+		void Init( float maxAmount, float startAmount, float destinationAmount );
 		void Update( float elapsedTime );
 		void Draw		( float drawDepth = 0.0f ) const;
 		void DrawIcon	( Icon kind, float drawDepth = 0.0f ) const;
 		void DrawRemains( FontAttribute font, int amount, float drawDepth = 0.0f ) const;
 	public:
-		void SetCurrent( float currentAmount );
+		void SetDestination( float currentAmount );
 		void SetDrawOption( const Donya::Vector2 &ssPosLeftTop, const Donya::Vector3 &drawBlendColor, const Donya::Vector2 &drawScale );
 	private:
 		void DrawGauge( float drawDepth ) const;

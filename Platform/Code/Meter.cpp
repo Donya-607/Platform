@@ -1,9 +1,12 @@
 #include "Meter.h"
 
+#include "Donya/Sound.h"
 #include "Donya/Sprite.h"
+#include "Donya/Useful.h"	// Use Donya::SignBit()
 
 #include "FilePath.h"
 #include "MeterParam.h"
+#include "Music.h"
 #include "Parameter.h"
 
 namespace Meter
@@ -67,16 +70,41 @@ namespace Meter
 	}
 
 
-	void Drawer::Init( float max, float initial )
+	void Drawer::Init( float max, float start, float dest )
 	{
-		current			= initial;
+		current			= start;
+		destination		= dest;
 		maxAmount		= max;
 
 		sprite.AssignSpriteID( meterSpriteID );
 		sprite.origin	= { 0.0f, 0.0f };
 		sprite.color	= { 1.0f, 1.0f, 1.0f };
 	}
-	void Drawer::Update( float elapsedTime ) {}
+	void Drawer::Update( float elapsedTime )
+	{
+		const float diff = destination - current;
+		if ( Donya::SignBit( diff ) == 0 ) { return; }
+		// else
+
+
+		// Reducing is immediately
+		if ( diff < 0 )
+		{
+			current = destination;
+			return;
+		}
+		// else
+
+		// Recovering is incrementally
+		current += Parameter::GetMeter().recoveryAmount * elapsedTime;
+
+		if ( destination < current )
+		{
+			current = destination;
+		}
+
+		Donya::Sound::Play( Music::RecoverHP );
+	}
 	void Drawer::Draw( float drawDepth ) const
 	{
 		DrawGauge( drawDepth );
@@ -138,9 +166,9 @@ namespace Meter
 
 		sprite.pos = registeredPos;
 	}
-	void Drawer::SetCurrent( float amount )
+	void Drawer::SetDestination( float amount )
 	{
-		current = std::max( 0.0f, std::min( maxAmount, amount ) );
+		destination = std::max( 0.0f, std::min( maxAmount, amount ) );
 	}
 	void Drawer::SetDrawOption( const Donya::Vector2 &ssPos, const Donya::Vector3 &color, const Donya::Vector2 &scale )
 	{
@@ -203,6 +231,9 @@ namespace Meter
 		ShowPart( u8"残機：枠",	&remainFramePosOffset, &remainFrameTexOrigin, &remainFrameTexSize );
 		ImGui::DragFloat2( u8"残機：数字・描画位置オフセット",	&remainNumberPosOffset.x	);
 		ImGui::DragFloat2( u8"残機：数字・描画スケール",		&remainNumberScale.x		);
+
+		ImGui::DragFloat( u8"１秒間の回復量", &recoveryAmount );
+		recoveryAmount = std::max( 0.01f, recoveryAmount );
 	}
 #endif // USE_IMGUI
 }

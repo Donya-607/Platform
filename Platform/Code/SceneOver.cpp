@@ -71,10 +71,7 @@ CEREAL_CLASS_VERSION( SceneParam, 0 )
 
 void SceneOver::Init()
 {
-	// Donya::Sound::Play( Music::BGM_Game );
-#if DEBUG_MODE
-	// Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
-#endif // DEBUG_MODE
+	Donya::Sound::Play( Music::BGM_Over );
 
 	bool result{};
 
@@ -84,7 +81,7 @@ void SceneOver::Init()
 }
 void SceneOver::Uninit()
 {
-	// Donya::Sound::Stop( Music::BGM_Game );
+	Donya::Sound::Stop( Music::BGM_Over );
 }
 
 Scene::Result SceneOver::Update( float elapsedTime )

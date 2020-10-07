@@ -242,10 +242,7 @@ CEREAL_CLASS_VERSION( Member, 1 )
 
 void SceneTitle::Init()
 {
-	// Donya::Sound::Play( Music::BGM_Title );
-#if DEBUG_MODE
-	// Donya::Sound::AppendFadePoint( Music::BGM_Title, 2.0f, 0.0f, true ); // Too noisy.
-#endif // DEBUG_MODE
+	Donya::Sound::Play( Music::BGM_Title );
 
 	sceneParam.LoadParameter();
 
@@ -326,8 +323,6 @@ void SceneTitle::Init()
 }
 void SceneTitle::Uninit()
 {
-	//Donya::Sound::Stop( Music::BGM_Title );
-
 	if ( pMap		) { pMap->Uninit();		}
 	if ( pHouse		) { pHouse->Uninit();	}
 	if ( pPlayer	) { pPlayer->Uninit();	}
@@ -338,6 +333,8 @@ void SceneTitle::Uninit()
 	Bullet::Admin::Get().ClearInstances();
 	Enemy::Admin::Get().ClearInstances();
 	Item::Admin::Get().ClearInstances();
+
+	Donya::Sound::Stop( Music::BGM_Title );
 }
 
 Scene::Result SceneTitle::Update( float elapsedTime )
