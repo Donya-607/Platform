@@ -3,9 +3,11 @@
 #include <numeric>			// Use std::accumulate
 
 #include "../Donya/Random.h"
+#include "../Donya/Sound.h"
 
 #include "../Bullets/SkullBullet.h"
 #include "../Common.h"		// Use LargestDeltaTime()
+#include "../Music.h"
 #include "../Parameter.h"
 
 namespace Boss
@@ -375,6 +377,8 @@ namespace Boss
 		Bullet::Admin::Get().RequestFire( desc );
 
 		inst.motionManager.ChangeMotion( inst, MotionKind::Shot_Recoil, /* resetTimerIfSameMotion = */ true );
+
+		Donya::Sound::Play( Music::Bullet_ShotSkullBuster );
 	}
 
 	void Skull::Jump::Init( Skull &inst )
@@ -452,6 +456,8 @@ namespace Boss
 
 		const bool lookingRight = ( 0.0f <= horizontalDiff.x ) ? true : false;
 		inst.UpdateOrientation( lookingRight );
+
+		Donya::Sound::Play( Music::Skull_Jump );
 	}
 	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
@@ -609,6 +615,8 @@ namespace Boss
 		pShield->Init( desc );
 		pShield->SetLifeTime( lifeTimeSecond );
 		Bullet::Admin::Get().AddCopy( std::move( pShield ) );
+
+		Donya::Sound::Play( Music::Bullet_ShotShield_Expand );
 	}
 
 	void Skull::Run::Init( Skull &inst )
@@ -748,7 +756,12 @@ namespace Boss
 		}
 		// else
 
+		const bool oldOnGround = onGround;
 		pMover->PhysicUpdate( *this, elapsedTime, terrain );
+		if ( onGround && !oldOnGround )
+		{
+			Donya::Sound::Play( Music::Skull_Landing );
+		}
 	}
 	void Skull::Draw( RenderingHelper *pRenderer ) const
 	{

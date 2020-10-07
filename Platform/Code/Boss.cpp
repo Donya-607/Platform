@@ -379,7 +379,8 @@ namespace Boss
 	}
 	int  Base::MoveOnlyY( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )
 	{
-		const int collideIndex = Actor::MoveY( velocity.y * elapsedTime, solids );
+		const auto movement		= velocity * elapsedTime;
+		const int  collideIndex	= Actor::MoveY( movement.y, solids );
 		if ( collideIndex != -1 ) // If collided to any
 		{
 			// Consider as landing
@@ -390,7 +391,7 @@ namespace Boss
 
 			velocity.y = 0.0f;
 		}
-		else
+		else if ( 0.001f < fabsf( movement.y ) ) // Should not change if the movement is none
 		{
 			onGround = false;
 		}
