@@ -181,7 +181,8 @@
     <ClCompile Include="Code\Donya\UseImGui.cpp" />
     <ClCompile Include="Code\Donya\Vector.cpp" />
     <ClCompile Include="Code\Donya\WindowsUtil.cpp" />
-    <ClCompile Include="Code\Effect.cpp" />
+    <ClCompile Include="Code\Effect\Effect.cpp" />
+    <ClCompile Include="Code\Effect\EffectAdmin.cpp" />
     <ClCompile Include="Code\Enemies\SuperBallMachine.cpp" />
     <ClCompile Include="Code\Enemy.cpp" />
     <ClCompile Include="Code\Fader.cpp" />
@@ -278,7 +279,11 @@
     <ClInclude Include="Code\Donya\UseImGui.h" />
     <ClInclude Include="Code\Donya\Vector.h" />
     <ClInclude Include="Code\Donya\WindowsUtil.h" />
-    <ClInclude Include="Code\Effect.h" />
+    <ClInclude Include="Code\Effect\Effect.h" />
+    <ClInclude Include="Code\Effect\EffectAdmin.h" />
+    <ClInclude Include="Code\Effect\EffectKind.h" />
+    <ClInclude Include="Code\Effect\EffectParam.h" />
+    <ClInclude Include="Code\Effect\EffectUtil.h" />
     <ClInclude Include="Code\Enemies\SuperBallMachine.h" />
     <ClInclude Include="Code\Enemy.h" />
     <ClInclude Include="Code\Fader.h" />
