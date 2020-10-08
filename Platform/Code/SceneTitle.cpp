@@ -365,15 +365,11 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	}
 #endif // USE_IMGUI
 
-	Donya::ShowMessageBox( L"Begin SceneTitle's Update", L"Progress", MB_OK );
-
 	PointLightStorage::Get().Clear();
 
 	elapsedSecond += elapsedTime;
 
 	controller.Update();
-
-	Donya::ShowMessageBox( L"XInput's Controller Updated", L"Progress", MB_OK );
 
 	UpdateChooseItem();
 	if ( !Fader::Get().IsExist() && wasDecided )
@@ -406,8 +402,6 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
 	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
-
-	Donya::ShowMessageBox( L"All objects updated", L"Progress", MB_OK );
 
 	// PhysicUpdates
 	{
@@ -485,19 +479,11 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate( elapsedTime );
 
-	Donya::ShowMessageBox( L"SceneTitle's Update was done", L"Progress", MB_OK );
-
 	return ReturnResult();
 }
 
 void SceneTitle::Draw( float elapsedTime )
 {
-	static bool debugDisableBloom = false;
-	if ( Donya::Keyboard::Press( VK_SHIFT ) ) { debugDisableBloom = true; }
-	if ( Donya::Keyboard::Press( VK_CONTROL ) ) { debugDisableBloom = true; }
-
-	Donya::ShowMessageBox( L"Begin SceneTitle's Draw", L"Progress", MB_OK );
-
 	ClearBackGround();
 
 	if ( !AreRenderersReady() ) { return; }
@@ -611,11 +597,6 @@ void SceneTitle::Draw( float elapsedTime )
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
 
-	if ( Donya::Keyboard::Press( VK_SHIFT ) ) { debugDisableBloom = true; }
-	if ( Donya::Keyboard::Press( VK_CONTROL ) ) { debugDisableBloom = true; }
-
-	Donya::ShowMessageBox( L"Normal scene draw was done", L"Progress", MB_OK );
-
 	// Draw sprites
 	// if ( 0 )
 	{
@@ -626,48 +607,27 @@ void SceneTitle::Draw( float elapsedTime )
 		Donya::Sprite::Flush();
 	}
 
-	if ( Donya::Keyboard::Press( VK_SHIFT ) ) { debugDisableBloom = true; }
-	if ( Donya::Keyboard::Press( VK_CONTROL ) ) { debugDisableBloom = true; }
-
-	Donya::ShowMessageBox( L"Sprite draw was done", L"Progress", MB_OK );
-
 	Donya::Surface::ResetRenderTarget();
 
-	if ( Donya::Keyboard::Press( VK_SHIFT ) ) { debugDisableBloom = true; }
-	if ( Donya::Keyboard::Press( VK_CONTROL ) ) { debugDisableBloom = true; }
-
 	// Generate the buffers of bloom
-	if ( !debugDisableBloom )
 	{
-		Donya::ShowMessageBox( L"Begin bloom generation", L"Progress", MB_OK );
-
 		constexpr Donya::Vector4 black{ 0.0f, 0.0f, 0.0f, 1.0f };
 		pBloomer->ClearBuffers( black );
-
-		Donya::ShowMessageBox( L"Clear buffers was done", L"Progress", MB_OK );
 
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
 		Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
 
-		Donya::ShowMessageBox( L"Begin draw luminance", L"Progress", MB_OK );
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0 );
 		pBloomer->WriteLuminance( *pScreenSurface );
 		Donya::Sampler::ResetPS( 0 );
-		Donya::ShowMessageBox( L"End draw luminance", L"Progress", MB_OK );
 
-		Donya::ShowMessageBox( L"Begin draw blur", L"Progress", MB_OK );
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
 		pBloomer->WriteBlur();
 		Donya::Sampler::ResetPS( 0 );
-		Donya::ShowMessageBox( L"End draw blur", L"Progress", MB_OK );
 
 		Donya::Rasterizer::Deactivate();
 		Donya::DepthStencil::Deactivate();
-
-		Donya::ShowMessageBox( L"End bloom generation", L"Progress", MB_OK );
 	}
-
-	Donya::ShowMessageBox( L"Generate bloom buffer was done", L"Progress", MB_OK );
 
 	pScreenSurface->SetRenderTarget();
 	pScreenSurface->SetViewport();
@@ -728,8 +688,6 @@ void SceneTitle::Draw( float elapsedTime )
 	}
 	Donya::Surface::ResetRenderTarget();
 
-	Donya::ShowMessageBox( L"Font draw was done", L"Progress", MB_OK );
-
 	Donya::SetDefaultRenderTargets();
 
 	const Donya::Vector2 screenSurfaceSize = pScreenSurface->GetSurfaceSizeF();
@@ -760,14 +718,10 @@ void SceneTitle::Draw( float elapsedTime )
 	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 	Donya::Sampler::ResetPS( 0 );
 
-	Donya::ShowMessageBox( L"Draw scene was done", L"Progress", MB_OK );
-
 	// Add the bloom buffers
 	Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
 	pBloomer->DrawBlurBuffers( screenSurfaceSize );
 	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
-
-	Donya::ShowMessageBox( L"Addition bloom was done", L"Progress", MB_OK );
 
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
@@ -886,8 +840,6 @@ void SceneTitle::Draw( float elapsedTime )
 		line.Flush( VP );
 	}
 #endif // DEBUG_MODE
-
-	Donya::ShowMessageBox( L"End SceneTitle's draw", L"Progress", MB_OK );
 }
 
 bool SceneTitle::CreateRenderers( const Donya::Int2 &wholeScreenSize )
