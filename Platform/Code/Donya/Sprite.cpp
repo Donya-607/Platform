@@ -1060,7 +1060,8 @@ namespace Donya
 				hr = pImmediateContext->Map( pInstanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource );
 				_ASSERT_EXPR( SUCCEEDED( hr ), L"Failed : Map()" );
 
-				memcpy( mappedSubresource.pData, instances.data(), sizeof( Instance ) * reserveCount );
+				const size_t destSize = std::min( sizeof( Instance ) * reserveCount, mappedSubresource.RowPitch ); // // Usually I expect these size is same. Using smaller one is a fail-safe.
+				memcpy_s( mappedSubresource.pData, destSize, instances.data(), destSize );
 
 				pImmediateContext->Unmap( pInstanceBuffer.Get(), 0 );
 			}
@@ -1293,7 +1294,8 @@ namespace Donya
 				hr = pImmediateContext->Map( pInstanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource );
 				_ASSERT_EXPR( SUCCEEDED( hr ), L"Failed : Map()" );
 
-				memcpy( mappedSubresource.pData, instances.data(), sizeof( Rect::Instance ) * reserveCount );
+				const size_t destSize = std::min( sizeof( Rect::Instance ) * reserveCount, mappedSubresource.RowPitch ); // Usually I expect these size is same. Using smaller one is a fail-safe.
+				memcpy_s( mappedSubresource.pData, destSize, instances.data(), destSize );
 
 				pImmediateContext->Unmap( pInstanceBuffer.Get(), 0 );
 			}
@@ -1554,7 +1556,8 @@ namespace Donya
 				hr = pImmediateContext->Map( pInstanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource );
 				_ASSERT_EXPR( SUCCEEDED( hr ), L"Failed : Map()" );
 
-				memcpy( mappedSubresource.pData, instances.data(), sizeof( Circle::Instance ) * reserveCount );
+				const size_t destSize = std::min( sizeof( Circle::Instance ) * reserveCount, mappedSubresource.RowPitch ); // Usually I expect these size is same. Using smaller one is a fail-safe.
+				memcpy_s( mappedSubresource.pData, destSize, instances.data(), destSize );
 
 				pImmediateContext->Unmap( pInstanceBuffer.Get(), 0 );
 			}
@@ -2662,7 +2665,8 @@ namespace Donya
 					hr = pImmediateContext->Map( d3dVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &d3d11MappedSubresource );
 					_ASSERT_EXPR( SUCCEEDED( hr ), _TEXT( "Failed : d3dDeviceContext->Map()" ) );
 
-					memcpy_s( d3d11MappedSubresource.pData, sizeof( Single::Vertex ) * NDCVertices.size(), &NDCVertices, d3d11MappedSubresource.RowPitch );
+					const size_t destSize = std::min( sizeof( Single::Vertex ) * NDCVertices.size(), d3d11MappedSubresource.RowPitch ); // Usually I expect these size is same. Using smaller one is a fail-safe.
+					memcpy_s( d3d11MappedSubresource.pData, destSize, &NDCVertices, destSize );
 
 					pImmediateContext->Unmap( d3dVertexBuffer.Get(), 0 );
 				}

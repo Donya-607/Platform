@@ -6,6 +6,9 @@
 #include "ScreenShake.h"
 #include "Sprite.h"			// Use GetDrawDepth()
 
+#undef max
+#undef min
+
 namespace Donya
 {
 	bool Displayer::Init( ID3D11Device *pDevice )
@@ -264,7 +267,8 @@ namespace Donya
 		}
 		// else
 
-		memcpy_s( msr.pData, sizeof( Displayer::Vertex ) * NDCVertices.size(), &NDCVertices, msr.RowPitch );
+		const size_t destSize = std::min( sizeof( Displayer::Vertex ) * NDCVertices.size(), msr.RowPitch ); // Usually I expect these size is same. Using smaller one is a fail-safe.
+		memcpy_s( msr.pData, destSize, NDCVertices.data(), destSize );
 
 		pImmediateContext->Unmap( pVertexBuffer.Get(), 0 );
 
