@@ -26,7 +26,7 @@ using namespace DirectX;
 
 namespace Donya
 {
-	// TODO:埋め込みシェーダと，他のシェーダの使用を切り替えられるようにする
+	// TODO: To be changeable between the embedded shader and other shader
 
 	namespace Sprite
 	{

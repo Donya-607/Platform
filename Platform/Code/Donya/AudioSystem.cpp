@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include <WinUser.h>	// For MB_OK macro
+#include <windows.h>	// For MB_OK macro
 
 #include "Constant.h"
 #include "Useful.h"

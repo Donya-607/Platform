@@ -4,6 +4,8 @@
 #include "Donya/Color.h"
 #include "Donya/RenderingStates.h"
 
+#include "Donya/Useful.h"
+
 #if USE_IMGUI
 void  BloomApplier::Parameter::ShowImGuiNode( const std::string &nodeCaption )
 {
@@ -172,12 +174,17 @@ void  BloomApplier::WriteBlur()
 	PSBlur.Activate();
 	Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0U );
 
+	Donya::ShowMessageBox( L"Blur:Activate states", L"Progress", MB_OK );
+
 	highLuminanceSurface.SetViewport();
+
+	Donya::ShowMessageBox( L"Blur:Set viewport", L"Progress", MB_OK );
 
 	Donya::Surface *pSourceSurface = &highLuminanceSurface;
 	Donya::Surface *pOutputSurface = &blurBuffers[0].first;
 	Donya::Vector2	blurSize = baseSurfaceSize.Float();
 
+	int debugCounter = 0;
 	auto DrawProcess = [&]( const Donya::Vector2 &blurDirection )
 	{
 		if ( !pSourceSurface || !pOutputSurface ) { return; }
@@ -200,6 +207,10 @@ void  BloomApplier::WriteBlur()
 		pSourceSurface->ResetShaderResourcePS( 0U );
 
 		Donya::Surface::ResetRenderTarget();
+
+		std::wstring msg = L"Blur:DrawProcess" + std::to_wstring( debugCounter );
+		Donya::ShowMessageBox( msg.c_str(), L"Progress", MB_OK );
+		debugCounter++;
 	};
 
 	constexpr auto blurHorizontal	= Donya::Vector2::Right();

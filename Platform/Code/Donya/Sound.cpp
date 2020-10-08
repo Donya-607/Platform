@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-#include <WinUser.h>		// Use For MB_OK macro
+#include <windows.h>		// For MB_OK macro
 
 #include "fmod.hpp"
 
@@ -12,10 +12,10 @@
 #include "Constant.h"		// Use for DEBUG_MODE.
 
 #if DEBUG_MODE
+#endif // DEBUG_MODE
 
 #include "Useful.h"			// Use for OutputDebugStr().
 
-#endif // DEBUG_MODE
 
 namespace Donya
 {
