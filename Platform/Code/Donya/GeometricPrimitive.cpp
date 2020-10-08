@@ -11,6 +11,9 @@
 #include "Resource.h"
 #include "Useful.h"
 
+#undef max
+#undef min
+
 using namespace Donya;
 using namespace DirectX;
 
@@ -1173,7 +1176,8 @@ namespace Donya
 				}
 				// else
 
-				memcpy_s( mappedSubresource.pData, sizeof( TextureBoard::Vertex ) * VERTEX_COUNT, vertices.data(), mappedSubresource.RowPitch );
+				const size_t destSize = std::min( sizeof( TextureBoard::Vertex ) * VERTEX_COUNT, mappedSubresource.RowPitch ); // Usually I expect these size is same. Using smaller one is a fail-safe.
+				memcpy_s( mappedSubresource.pData, destSize, vertices.data(), destSize );
 
 				pImmediateContext->Unmap( iVertexBuffer.Get(), 0 );
 			}
@@ -1539,9 +1543,8 @@ namespace Donya
 						Vertex{ Donya::Vector3::Zero().XMFloat(),  matVP.XMFloat() },
 						Vertex{ Donya::Vector3::Front().XMFloat(), matVP.XMFloat() }
 					};
-					// const auto err = memcpy_s( msrVertex.pData, sizeof( Line::Vertex ) * currentVertices.size(), currentVertices.data(), msrVertex.RowPitch );
-					const auto err = memcpy_s( msrVertex.pData, msrVertex.RowPitch, currentVertices.data(), msrVertex.RowPitch );
-					// memcpy( msrVertex.pData, currentVertices.data(), sizeof( Vertex ) * currentVertices.size() );
+					const size_t destSize = std::min( sizeof( Line::Vertex ) * reserveCount, msrVertex.RowPitch ); // Usually I expect these size is same. Using smaller one is a fail-safe.
+					const auto err = memcpy_s( msrVertex.pData, destSize, currentVertices.data(), destSize );
 					pImmediateContext->Unmap( pVertexBuffer.Get(), 0 );
 					if ( err )
 					{
@@ -1563,9 +1566,8 @@ namespace Donya
 					}
 					// else
 
-					// Should change to this -> memcpy_s( msrInstance.pData, sizeof( Line::Instance ) * reserveCount, instances.data(), msrInstance.RowPitch );
-					// memcpy( msrInstance.pData, instances.data(), msrInstance.RowPitch );
-					const auto err = memcpy_s( msrInstance.pData, msrInstance.RowPitch, instances.data(), msrInstance.RowPitch );
+					const size_t destSize = std::min( sizeof( Line::Instance ) * reserveCount, msrInstance.RowPitch ); // Usually I expect these size is same. Using smaller one is a fail-safe.
+					const auto err = memcpy_s( msrInstance.pData, destSize, instances.data(), destSize );
 					pImmediateContext->Unmap( pInstanceBuffer.Get(), 0 );
 					if ( err )
 					{
