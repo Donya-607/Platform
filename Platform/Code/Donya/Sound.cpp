@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <WinUser.h>		// Use For MB_OK macro
+
 #include "fmod.hpp"
 
 #include "AudioSystem.h"
@@ -29,6 +31,8 @@ namespace Donya
 		{
 			pAudio			= std::make_unique<AudioSystem>();
 			pSoundHandles	= std::make_unique<SoundHandleMap>();
+
+			Donya::ShowMessageBox( L"Sound system was initialized successfully.", L"SUCCEEDED", MB_OK );
 		}
 		void Uninit()
 		{

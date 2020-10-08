@@ -118,7 +118,17 @@ namespace Donya
 	/// Call MessageBox with library's hwnd.
 	/// Returns a result of MessageBox.
 	/// </summary>
+	int ShowMessageBox( const char *textUTF8, const std::string &msgBoxCaptionUTF8, unsigned int message );
+	/// <summary>
+	/// Call MessageBox with library's hwnd.
+	/// Returns a result of MessageBox.
+	/// </summary>
 	int ShowMessageBox( const std::string &textUTF8, const std::string &msgBoxCaptionUTF8, unsigned int message );
+	/// <summary>
+	/// Call MessageBox with library's hwnd.
+	/// Returns a result of MessageBox.
+	/// </summary>
+	int ShowMessageBox( const wchar_t *text, const std::wstring &msgBoxCaption, unsigned int message );
 	/// <summary>
 	/// Call MessageBox with library's hwnd.
 	/// Returns a result of MessageBox.

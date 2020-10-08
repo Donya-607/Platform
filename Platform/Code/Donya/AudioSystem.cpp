@@ -7,6 +7,8 @@
 
 #include <string>
 
+#include <WinUser.h>	// For MB_OK macro
+
 #include "Constant.h"
 #include "Useful.h"
 
@@ -35,6 +37,8 @@ void OutputDebugFMODErrorString( FMOD_RESULT fr )
 void OutputDebugFMODErrorStringAndExit( FMOD_RESULT fr, const wchar_t *expression )
 {
 	OutputDebugFMODErrorString( fr );
+
+	Donya::ShowMessageBox( expression, L"FMOD ERROR", MB_OK );
 
 	_ASSERT_EXPR( 0, expression );
 	std::exit( EXIT_FAILURE );

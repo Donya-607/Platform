@@ -66,7 +66,7 @@ namespace Donya
 	#endif // DEBUG_MODE
 	}
 
-	int ShowMessageBox( const std::string &text, const std::string &caption, unsigned int message )
+	int ShowMessageBox( const char *text, const std::string &caption, unsigned int message )
 	{
 		return ShowMessageBox
 		(
@@ -75,15 +75,23 @@ namespace Donya
 			message
 		);
 	}
-	int ShowMessageBox( const std::wstring &text, const std::wstring &caption, unsigned int message )
+	int ShowMessageBox( const std::string &text, const std::string &caption, unsigned int message )
+	{
+		return ShowMessageBox( text.c_str(), caption, message );
+	}
+	int ShowMessageBox( const wchar_t *text, const std::wstring &caption, unsigned int message )
 	{
 		return MessageBox
 		(
 			Donya::GetHWnd(),
-			text.c_str(),
+			text,
 			caption.c_str(),
 			message
 		);
+	}
+	int ShowMessageBox( const std::wstring &text, const std::wstring &caption, unsigned int message )
+	{
+		return ShowMessageBox( text.c_str(), caption, message );
 	}
 
 	bool IsExistFile( const std::string &wholePath )
