@@ -233,10 +233,10 @@ namespace Effect
 
 	float Admin::GetEffectScale( Effect::Kind attr )
 	{
-		if ( IsOutOfRange( attr ) ) { return 0.0f; }
+		if ( IsOutOfRange( attr ) ) { return 1.0f; }
 		// else
 		const auto scales = FetchParameter().effectScales;
-		return scales[scast<size_t>( attr )];
+		return ( scales.empty() ) ? 1.0f : scales[scast<size_t>( attr )];
 	}
 	Effekseer::Effect *Admin::GetEffectOrNullptr( Effect::Kind attr )
 	{

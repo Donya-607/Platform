@@ -12,6 +12,7 @@
 class SceneLoad : public Scene
 {
 private:
+	bool finishEffects	= false;
 	bool finishModels	= false;
 	bool finishSounds	= false;
 	bool finishSprites	= false;

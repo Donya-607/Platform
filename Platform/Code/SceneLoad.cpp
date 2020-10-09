@@ -25,6 +25,7 @@
 #include "Bullet.h"
 #include "Common.h"
 #include "Enemy.h"
+#include "Effect/EffectAdmin.h"
 #include "Fader.h"
 #include "FilePath.h"
 #include "Item.h"
@@ -100,12 +101,14 @@ namespace
 }
 CEREAL_CLASS_VERSION( Member, 0 )
 
+
 #if USE_IMGUI
 namespace
 {
 	static bool stopFadeout = false;
 }
 #endif // USE_IMGUI
+
 
 void SceneLoad::Init()
 {
@@ -116,6 +119,40 @@ void SceneLoad::Init()
 	sceneParam.LoadParameter();
 	
 	constexpr auto CoInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
+	auto LoadingEffects	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	{
+		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
+		// else
+
+		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		if ( FAILED( hr ) )
+		{
+			std::lock_guard<std::mutex> lock( *pSucceedMutex );
+
+			*pFinishFlag  = true;
+			*pSucceedFlag = false;
+			return;
+		}
+		// else
+
+		bool succeeded = true;
+		constexpr size_t kindCount = scast<size_t>( Effect::Kind::KindCount );
+		for ( size_t i = 0; i < kindCount; ++i )
+		{
+			if ( !Effect::Admin::Get().LoadEffect( scast<Effect::Kind>( i ) ) )
+			{
+				succeeded = false;
+			}
+		}
+		
+		_ASSERT_EXPR( succeeded, L"Failed: Effects load is failed." );
+
+		std::lock_guard<std::mutex> lock( *pSucceedMutex );
+		*pFinishFlag  = true;
+		*pSucceedFlag = succeeded;
+
+		CoUninitialize();
+	};
 	auto LoadingModels	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
 	{
 		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
@@ -284,6 +321,9 @@ void SceneLoad::Init()
 	finishSounds	= false;
 	allSucceeded	= true;
 
+	// pThreadEffects	= std::make_unique<std::thread>( LoadingEffects,	&finishEffects,	&allSucceeded, &succeedMutex );
+	LoadingEffects( &finishEffects,	&allSucceeded, &succeedMutex );
+
 	pThreadModels	= std::make_unique<std::thread>( LoadingModels,		&finishModels,	&allSucceeded, &succeedMutex );
 	pThreadSounds	= std::make_unique<std::thread>( LoadingSounds,		&finishSounds,	&allSucceeded, &succeedMutex );
 	pThreadSprites	= std::make_unique<std::thread>( LoadingSprites,	&finishSprites,	&allSucceeded, &succeedMutex );
@@ -425,7 +465,7 @@ void SceneLoad::SpritesUpdate( float elapsedTime )
 
 bool SceneLoad::IsFinished() const
 {
-	return ( finishModels && finishSprites && finishSounds );
+	return ( finishEffects && finishModels && finishSprites && finishSounds );
 }
 
 void SceneLoad::ClearBackGround() const
@@ -480,6 +520,7 @@ void SceneLoad::UseImGui()
 				return ( v ) ? "True" : "False";
 			};
 
+			ImGui::Text( u8"終了フラグ・エフェクト[%s]",	GetBoolStr( finishEffects	).c_str() );
 			ImGui::Text( u8"終了フラグ・モデル[%s]",		GetBoolStr( finishModels	).c_str() );
 			ImGui::Text( u8"終了フラグ・スプライト[%s]",	GetBoolStr( finishSprites	).c_str() );
 			ImGui::Text( u8"終了フラグ・サウンド[%s]",	GetBoolStr( finishSounds	).c_str() );

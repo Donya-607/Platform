@@ -77,6 +77,8 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 
 	framework.Uninit();
 
+	Effect::Admin::Get().Uninit();
+
 	auto   returnValue = Donya::Uninit();
 	return returnValue;
 }
