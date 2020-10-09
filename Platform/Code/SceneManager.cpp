@@ -6,6 +6,7 @@
 #include "Donya/Sprite.h"	// For change the sprites depth.
 
 #include "Fader.h"
+#include "Effect/EffectAdmin.h"
 #include "SceneGame.h"
 #include "SceneLoad.h"
 #include "SceneLogo.h"
@@ -56,6 +57,8 @@ void SceneMng::Update( float elapsedTime )
 		ProcessMessage( message, updateCount, i );
 	}
 
+	Effect::Admin::Get().Update();
+
 	Fader::Get().Update( elapsedTime );
 }
 
@@ -68,6 +71,8 @@ void SceneMng::Draw( float elapsedTime )
 	{
 		( *it )->Draw( elapsedTime );
 	}
+
+	Effect::Admin::Get().Draw();
 
 	Donya::Sprite::SetDrawDepth( 0.0f );
 

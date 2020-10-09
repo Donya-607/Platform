@@ -20,6 +20,7 @@
 #include "Bullet.h"
 #include "Common.h"
 #include "Enemy.h"
+#include "Effect/EffectAdmin.h"
 #include "Fader.h"
 #include "FilePath.h"
 #include "FontHelper.h"
@@ -478,6 +479,9 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate( elapsedTime );
+
+	Effect::Admin::Get().SetViewMatrix( iCamera.CalcViewMatrix() );
+	Effect::Admin::Get().SetProjectionMatrix( iCamera.GetProjectionMatrix() );
 
 	return ReturnResult();
 }
@@ -1620,6 +1624,8 @@ void SceneTitle::UseImGui()
 
 		Meter::Parameter::Update( u8"メータのパラメータ" );
 		ImGui::Text( "" );
+
+		Effect::Admin::Get().ShowImGuiNode( u8"エフェクトのパラメータ" );
 
 		ImGui::TreePop();
 	}

@@ -9,6 +9,7 @@
 #include "EffekseerRendererDX11.h"
 
 #include "../Donya/Template.h"
+#include "../Donya/UseImGui.h"	// Use USE_IMGUI macro
 #include "../Donya/Vector.h"
 
 #include "EffectKind.h"
@@ -67,5 +68,9 @@ namespace Effect
 		/// Returns nullptr if specified effect was not loaded.
 		/// </summary>
 		Effekseer::Effect *GetEffectOrNullptr( Effect::Kind effectAttribute );
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const std::string &nodeCaption );
+	#endif // USE_IMGUI
 	};
 }

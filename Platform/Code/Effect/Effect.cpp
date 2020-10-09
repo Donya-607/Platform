@@ -89,6 +89,10 @@ namespace Effect
 			}
 		);
 	}
+	void Handle::SetScale( const Donya::Vector3 &scale )
+	{
+		SetScale( scale.x, scale.y, scale.z );
+	}
 	void Handle::SetRotation( float pitch, float yaw, float roll )
 	{
 		OperateIfManagerIsAvailable

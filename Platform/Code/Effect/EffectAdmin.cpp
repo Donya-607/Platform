@@ -31,29 +31,27 @@ namespace Effect
 {
 #if USE_IMGUI
 	void Param::ShowImGuiNode()
-{
-	if ( effectScales.size() != kindCount )
 	{
-		constexpr float defaultScale = 1.0f;
-		effectScales.resize( kindCount, defaultScale );
-	}
-
-	if ( ImGui::TreeNode( u8"スケール調整" ) )
-	{
-		ImGui::Text( u8"生成時に適用されます" );
-			
-		std::string caption{};
-		for ( size_t i = 0; i < kindCount; ++i )
+		if ( effectScales.size() != kindCount )
 		{
-			caption = GetEffectName( scast<Effect::Kind>( i ) );
-			ImGui::DragFloat( caption.c_str(), &effectScales[i], 0.01f );
+			constexpr float defaultScale = 1.0f;
+			effectScales.resize( kindCount, defaultScale );
 		}
 
-		ImGui::TreePop();
-	}
+		if ( ImGui::TreeNode( u8"スケール調整" ) )
+		{
+			ImGui::Text( u8"生成時に適用されます" );
+			
+			std::string caption{};
+			for ( size_t i = 0; i < kindCount; ++i )
+			{
+				caption = GetEffectName( scast<Effect::Kind>( i ) );
+				ImGui::DragFloat( caption.c_str(), &effectScales[i], 0.01f );
+			}
 
-	ImGui::TreePop();
-}
+			ImGui::TreePop();
+		}
+	}
 #endif // USE_IMGUI
 
 	Admin::Instance::Instance( Effekseer::Manager *pManager, const stdEfkString &filePath, float scale, const stdEfkString &mtlPath )
@@ -169,10 +167,6 @@ namespace Effect
 
 	void Admin::Update( float updateSpeedMagnification )
 	{
-	#if USE_IMGUI
-		effectParam.ShowImGuiNode( u8"エフェクトのパラメータ調整" );
-	#endif // USE_IMGUI
-
 		assert( wasInitialized );
 		pManager->Update( updateSpeedMagnification );
 	}
@@ -248,5 +242,12 @@ namespace Effect
 
 		return find->second->GetEffectOrNullptr();
 	}
+
+#if USE_IMGUI
+	void Admin::ShowImGuiNode( const std::string &nodeCaption )
+	{
+		effectParam.ShowImGuiNode( nodeCaption );
+	}
+#endif // USE_IMGUI
 
 }
