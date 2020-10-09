@@ -54,6 +54,7 @@ namespace Effect
 	public:
 		Effekseer::Manager *GetManagerOrNullptr() const;
 	public:
+		void LoadParameter();
 		/// <summary>
 		/// Returns true if the load was succeeded, or specified effect was already has loaded.
 		/// </summary>

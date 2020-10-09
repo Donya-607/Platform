@@ -56,10 +56,28 @@ namespace Effect
 }
 #endif // USE_IMGUI
 
+	Admin::Instance::Instance( Effekseer::Manager *pManager, const stdEfkString &filePath, float scale, const stdEfkString &mtlPath )
+	{
+		const EFK_CHAR *mtlPathOrNullptr = ( mtlPath.empty() ) ? nullptr : mtlPath.c_str();
+		pHandle = Fx::Effect::Create( pManager, filePath.c_str(), scale, mtlPathOrNullptr );
+	}
+	Admin::Instance::~Instance()
+	{
+		ES_SAFE_RELEASE( pHandle );
+	}
+	bool Admin::Instance::IsValid() const
+	{
+		return ( pHandle );
+	}
+	Fx::Effect *Admin::Instance::GetEffectOrNullptr()
+	{
+		return ( IsValid() ) ? pHandle : nullptr;
+	}
+
 	bool Admin::Init( ID3D11Device *pDevice, ID3D11DeviceContext *pContext )
 	{
 		instances.clear();
-		effectParam.LoadParameter();
+		LoadParameter();
 
 		if ( wasInitialized ) { return true; }
 		// else
@@ -184,6 +202,10 @@ namespace Effect
 		return pManager;
 	}
 
+	void Admin::LoadParameter()
+	{
+		effectParam.LoadParameter();
+	}
 	bool Admin::LoadEffect( Effect::Kind attr )
 	{
 		assert( wasInitialized );

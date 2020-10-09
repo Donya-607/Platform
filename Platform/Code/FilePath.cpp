@@ -3,15 +3,19 @@
 #include <cassert>
 #include <fstream>
 
-#include "Donya/Constant.h"	// Use DEBUG_MODE.
-#include "Donya/Useful.h"	// Use IsExistFile().
+#include "Donya/Constant.h"		// Use DEBUG_MODE.
+#include "Donya/Useful.h"		// Use IsExistFile().
+
+#include "Effect/EffectUtil.h"	// Implement GetEffectPath()
 
 namespace
 {
-	static constexpr const char		*DIR_PARAMETERS	= "./Data/Parameters/";
+	static constexpr const EFK_CHAR	*DIR_EFFECTS	= u"./Data/Effects/";
 	static constexpr const char		*DIR_FONTS		=  "./Data/Images/Fonts/";
 	static constexpr const wchar_t	*DIR_FONTS_W	= L"./Data/Images/Fonts/";
+	static constexpr const wchar_t	*DIR_IMAGES		= L"./Data/Images/";
 	static constexpr const char		*DIR_MODELS		= "./Data/Models/";
+	static constexpr const char		*DIR_PARAMETERS	= "./Data/Parameters/";
 	static constexpr const char		*EXT_BINARY		= ".bin";
 	static constexpr const wchar_t	*EXT_FONT		= L".fnt";
 	static constexpr const char		*EXT_JSON		= ".json";
@@ -109,7 +113,7 @@ namespace
 	SpriteSet Make( const wchar_t *sprName, size_t instanceCount )
 	{
 		constexpr const wchar_t *directory = L"./Data/Images/";
-		return SpriteSet{ std::wstring{ directory + std::wstring{ sprName } }, instanceCount };
+		return SpriteSet{ std::wstring{ DIR_IMAGES + std::wstring{ sprName } }, instanceCount };
 	}
 	SpriteSet GetSpriteInfo( SpriteAttribute attr )
 	{
@@ -140,4 +144,25 @@ std::wstring	GetSpritePath( SpriteAttribute attr )
 size_t			GetSpriteInstanceCount( SpriteAttribute attr )
 {
 	return GetSpriteInfo( attr ).instanceCount;
+}
+
+namespace Effect
+{
+	stdEfkString GetEffectPath( Effect::Kind kind )
+	{
+		auto Make = []( const stdEfkString &fileName )
+		{
+			return DIR_EFFECTS + fileName;
+		};
+
+		switch ( kind )
+		{
+		case Effect::Kind::ChargeContinue:
+			return Make( u"Charge/Continue.efkefc" );
+		default: break;
+		}
+
+		_ASSERT_EXPR( 0, L"Error : Unexpected kind!" );
+		return u"ERROR_ATTRIBUTE";
+	}
 }
