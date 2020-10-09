@@ -44,6 +44,7 @@ namespace Effect
 		return m;
 	}
 
-	std::basic_string<EFK_CHAR> GetEffectPath( Effect::Kind kind );
+	using stdEfkString = std::basic_string<EFK_CHAR>;
 
+	stdEfkString GetEffectPath( Effect::Kind kind );
 }

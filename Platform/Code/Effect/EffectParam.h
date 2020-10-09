@@ -23,7 +23,7 @@ namespace Effect
 		}
 	public:
 	#if USE_IMGUI
-		void ShowImGuiNode(); // Implement at Effect.cpp
+		void ShowImGuiNode(); // Implement at EffectAdmin.cpp
 	#endif // USE_IMGUI
 	};
 }

@@ -1,31 +1,48 @@
 #pragma once
 
-#include <memory>
-
 #include <d3d11.h>
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 #include "Effekseer.h"
+#include "EffekseerRendererDX11.h"
 
 #include "../Donya/Template.h"
 #include "../Donya/Vector.h"
 
 #include "EffectKind.h"
+#include "EffectUtil.h"
 
 namespace Effect
 {
-	class EffectAdmin final : public Donya::Singleton<EffectAdmin>
+	class Admin final : public Donya::Singleton<Admin>
 	{
-		friend Donya::Singleton<EffectAdmin>;
+		friend Donya::Singleton<Admin>;
 	private:
-		struct Impl;
-	public:
-		std::unique_ptr<Impl> pImpl;
+		static constexpr int			maxInstanceCount	= 4096;
+		static constexpr int32_t		maxSpriteCount		= 8192;
 	private:
-		EffectAdmin();
+		Effekseer::Manager				*pManager			= nullptr;
+		EffekseerRendererDX11::Renderer	*pRenderer			= nullptr;
+		bool							wasInitialized		= false;
+	private:
+		class Instance
+		{
+		private:
+			Effekseer::Effect *pHandle = nullptr;
+		public:
+			Instance( Effekseer::Manager *pManager, const stdEfkString &filePath, float scaleWhenCreate = 1.0f, const stdEfkString &materialPath = {} );
+			~Instance();
+		public:
+			bool IsValid() const;
+			Effekseer::Effect *GetEffectOrNullptr();
+		};
+		std::unordered_map<stdEfkString, std::shared_ptr<Instance>> instances;
+	private:
+		Admin() = default;
 	public:
-		~EffectAdmin();
-	public:
-		bool Init( ID3D11Device *pDevice, ID3D11DeviceContext *pImmediateContext );
+		bool Init( ID3D11Device *pDevice, ID3D11DeviceContext *pContext );
 		void Uninit();
 
 		void Update( float updateSpeedMagnification = 1.0f );
