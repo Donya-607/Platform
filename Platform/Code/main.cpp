@@ -4,15 +4,21 @@
 
 #include "Donya/Constant.h"
 #include "Donya/Donya.h"
-#include "Donya/Sound.h"
+#include "Donya/Useful.h"
 
 #include "Common.h"
+#include "Effect/EffectAdmin.h"
 #include "Framework.h"
 #include "Icon.h"
 
+namespace
+{
+	constexpr auto mbTellFatalError = MB_OK | MB_ICONERROR;
+}
+
 INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _In_ LPWSTR cmdLine, _In_ INT cmdShow )
 {
-#if defined( DEBUG ) | defined( _DEBUG )
+#if DEBUG_MODE
 	// reference:https://docs.microsoft.com/ja-jp/visualstudio/debugger/crt-debug-heap-details?view=vs-2015
 	_CrtSetDbgFlag
 	(
@@ -29,18 +35,34 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 
 	srand( scast<unsigned int>( time( NULL ) ) );
 
+	bool initResult = true;
+
 	Donya::LibraryInitializer desc{};
 	desc.screenWidth		= Common::ScreenWidth();
 	desc.screenHeight		= Common::ScreenHeight();
 	desc.windowCaption		= "Mimit";
 	desc.enableCaptionBar	= true;
 	desc.fullScreenMode		= false;
-	Donya::Init( cmdShow, desc );
+	initResult = Donya::Init( cmdShow, desc );
+	if ( !initResult )
+	{
+		Donya::ShowMessageBox( L"System Initialization is failed.", L"ERROR", mbTellFatalError );
+		return Donya::Uninit();
+	}
+	// else
 
 	Donya::SetWindowIcon( instance, IDI_ICON );
 
+	Effect::Admin::Get().Init( Donya::GetDevice(), Donya::GetImmediateContext() );
+	
 	Framework framework{};
-	framework.Init();
+	initResult = framework.Init();
+	if ( !initResult )
+	{
+		Donya::ShowMessageBox( L"Game Initialization is failed.", L"ERROR", mbTellFatalError );
+		return Donya::Uninit();
+	}
+	// else
 
 	while ( Donya::MessageLoop() )
 	{

@@ -2277,6 +2277,8 @@ Scene::Result SceneGame::ReturnResult()
 #if USE_IMGUI
 #include <functional>
 #include "Donya/Useful.h"
+#include "Effect/Effect.h"
+#include "Effect/EffectKind.h"
 namespace
 {
 	class  GuiWindow
@@ -2764,6 +2766,51 @@ void SceneGame::UseImGui( float elapsedTime )
 		else
 		{
 			ImGui::TextDisabled( u8"選んだルーム" );
+		}
+
+		ImGui::TreePop();
+	}
+
+	if ( ImGui::TreeNode( u8"エフェクト生成テスト" ) )
+	{
+		static std::shared_ptr<Effect::Handle> pHandle = nullptr;
+		static Donya::Vector3 genPos{};
+		static Donya::Vector3 setPos{};
+		static Donya::Vector3 velocity{};
+		ImGui::DragFloat3( u8"生成位置",	&genPos.x,		0.1f );
+		ImGui::DragFloat3( u8"設定位置",	&setPos.x,		0.1f );
+		ImGui::DragFloat3( u8"移動速度",	&velocity.x,	0.1f );
+
+		if ( ImGui::Button( u8"生成" ) )
+		{
+			if ( pHandle ) { pHandle->Stop(); }
+			pHandle.reset();
+
+			pHandle = std::make_shared<Effect::Handle>
+				( Effect::Handle::Generate( Effect::Kind::ChargeContinue, genPos ) );
+			if ( !pHandle->IsValid() ) { pHandle.reset(); }
+		}
+		if ( ImGui::Button( u8"設定位置を代入" ) && pHandle )
+		{
+			pHandle->SetPosition( setPos );
+		}
+		if ( ImGui::Button( u8"Scale = 1.0f" ) && pHandle )
+		{
+			pHandle->SetScale( 1.0f );
+		}
+		if ( ImGui::Button( u8"Scale = 0.0f" ) && pHandle )
+		{
+			pHandle->SetScale( 0.0f );
+		}
+		if ( ImGui::Button( u8"ストップ" ) && pHandle )
+		{
+			pHandle->Stop();
+			pHandle.reset();
+		}
+
+		if ( pHandle )
+		{
+			pHandle->Move( velocity );
 		}
 
 		ImGui::TreePop();
