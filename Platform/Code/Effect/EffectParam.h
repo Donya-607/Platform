@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cereal/types/vector.hpp>
+
 #include "../Donya/Serializer.h"	
 #include "../Donya/UseImGui.h"		// Use USE_IMGUI macro
 

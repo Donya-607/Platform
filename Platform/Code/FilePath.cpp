@@ -158,7 +158,9 @@ namespace Effect
 		switch ( kind )
 		{
 		case Effect::Kind::ChargeContinue:
-			return Make( u"Charge/Continue.efkefc" );
+			// return Make( u"Charge/Continue.efkefc" );
+			return Make( u"Test/Test.efkefc" );
+			// return Make( u"Test/Test.efk" );
 		default: break;
 		}
 

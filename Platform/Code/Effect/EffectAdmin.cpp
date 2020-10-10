@@ -2,6 +2,8 @@
 
 #include "EffekseerRendererDX11.h"
 
+#include "../Donya/Useful.h"	// Use OutputDebugStr()
+
 #include "../Common.h"
 #include "EffectParam.h"
 #include "EffectUtil.h"
@@ -58,6 +60,17 @@ namespace Effect
 	{
 		const EFK_CHAR *mtlPathOrNullptr = ( mtlPath.empty() ) ? nullptr : mtlPath.c_str();
 		pHandle = Fx::Effect::Create( pManager, filePath.c_str(), scale, mtlPathOrNullptr );
+
+		if ( !IsValid() )
+		{
+		#if DEBUG_MODE
+			std::wstring errMsg = L"Failed: Loading an effect file: ";
+			errMsg += Effect::ToWString( filePath );
+			errMsg += L"\n";
+			Donya::OutputDebugStr( errMsg.c_str() );
+			_ASSERT_EXPR( 0, errMsg );
+		#endif // DEBUG_MODE
+		}
 	}
 	Admin::Instance::~Instance()
 	{

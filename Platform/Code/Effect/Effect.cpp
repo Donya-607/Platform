@@ -29,14 +29,22 @@ namespace
 
 namespace Effect
 {
-	Handle Handle::Generate( Kind attr, const Donya::Vector3 &pos, int32_t startFrame )
+	Handle Handle::Generate( Kind kind, const Donya::Vector3 &pos, int32_t startFrame )
 	{
 		auto &admin = GetAdmin();
+
 		Fx::Manager	*pManager	= admin.GetManagerOrNullptr();
-		Fx::Effect	*pEffect	= admin.GetEffectOrNullptr( attr );
-		if ( !pManager || !pEffect )
+		if ( !pManager )
 		{
-			assert( !"Error: Invalid manager or effect." );
+			_ASSERT_EXPR( 0, L"Error: Effect manager is invalid!" );
+			return Handle{ -1 };
+		}
+		// else
+
+		Fx::Effect	*pEffect	= admin.GetEffectOrNullptr( kind );
+		if ( !pEffect )
+		{
+			_ASSERT_EXPR( 0, L"Error: Effect is invalid! May you use wrong file name?" );
 			return Handle{ -1 };
 		}
 		// else
@@ -44,11 +52,11 @@ namespace Effect
 		const Fx::Handle handle = pManager->Play( pEffect, ToFxVector( pos ), startFrame );
 		if ( pManager->Exists( handle ) )
 		{
-			const float attrScale = admin.GetEffectScale( attr );
+			const float kindScale = admin.GetEffectScale( kind );
 			// We should update this handle before SetScale().
 			// The SetScale() will throws an exception if we didn't call UpdateHandle() before that.
 			pManager->UpdateHandle( handle, 0.0f );
-			pManager->SetScale( handle, attrScale, attrScale, attrScale );
+			pManager->SetScale( handle, kindScale, kindScale, kindScale );
 		}
 		return Handle{ handle };
 	}

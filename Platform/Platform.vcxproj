@@ -183,6 +183,7 @@
     <ClCompile Include="Code\Donya\WindowsUtil.cpp" />
     <ClCompile Include="Code\Effect\Effect.cpp" />
     <ClCompile Include="Code\Effect\EffectAdmin.cpp" />
+    <ClCompile Include="Code\Effect\EffectUtil.cpp" />
     <ClCompile Include="Code\Enemies\SuperBallMachine.cpp" />
     <ClCompile Include="Code\Enemy.cpp" />
     <ClCompile Include="Code\Fader.cpp" />

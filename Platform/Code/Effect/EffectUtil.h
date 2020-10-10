@@ -46,5 +46,10 @@ namespace Effect
 
 	using stdEfkString = std::basic_string<EFK_CHAR>;
 
+	stdEfkString ToEfkString( const std::string &str );
+	stdEfkString ToEfkString( const std::wstring &str );
+	std::string  ToString( const stdEfkString &str );
+	std::wstring ToWString( const stdEfkString &str );
+
 	stdEfkString GetEffectPath( Effect::Kind kind );
 }
