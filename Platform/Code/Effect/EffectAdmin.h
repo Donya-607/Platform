@@ -50,6 +50,11 @@ namespace Effect
 
 		void Draw();
 	public:
+		void SetLightColorAmbient( const Donya::Vector4 &color );
+		void SetLightColorAmbient( const Donya::Vector3 &color, float alpha = 1.0f );
+		void SetLightColorDiffuse( const Donya::Vector4 &color );
+		void SetLightColorDiffuse( const Donya::Vector3 &color, float alpha = 1.0f );
+		void SetLightDirection( const Donya::Vector3 &unitDirection );
 		void SetViewMatrix( const Donya::Vector4x4 &cameraMatrix );
 		void SetProjectionMatrix( const Donya::Vector4x4 &projectionMatrix );
 	public:

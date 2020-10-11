@@ -584,16 +584,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate( elapsedTime );
 
-	Effect::Admin::Get().SetViewMatrix( iCamera.CalcViewMatrix() );
-	Effect::Admin::Get().SetProjectionMatrix( iCamera.GetProjectionMatrix() );
-#if DEBUG_MODE
-	if ( projectLightCamera )
-	{
-		Effect::Admin::Get().SetViewMatrix( CalcLightViewMatrix() );
-		Effect::Admin::Get().SetProjectionMatrix( lightCamera.GetProjectionMatrix() );
-	}
-#endif // DEBUG_MODE
-
 	// Kill the player if fall out from current room
 	if ( pPlayer && !pPlayer->NowMiss() )
 	{
@@ -654,14 +644,23 @@ void SceneGame::Draw( float elapsedTime )
 	if ( !AreRenderersReady() ) { return; }
 	// else
 
-	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix )
+	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix, bool applyToEffect )
 	{
 		Donya::Model::Constants::PerScene::Common constant{};
 		constant.directionalLight	= directionalLight;
 		constant.eyePosition		= eyePos;
-		constant.viewMatrix			= viewProjectionMatrix;
+		constant.viewMatrix			= viewMatrix;
 		constant.viewProjMatrix		= viewProjectionMatrix;
 		pRenderer->UpdateConstant( constant );
+
+		if ( applyToEffect )
+		{
+			auto &effectAdmin = Effect::Admin::Get();
+			effectAdmin.SetViewMatrix( viewMatrix );
+			effectAdmin.SetLightColorAmbient( directionalLight.light.ambientColor );
+			effectAdmin.SetLightColorDiffuse( directionalLight.light.diffuseColor );
+			effectAdmin.SetLightDirection	( directionalLight.direction.XYZ() );
+		}
 	};
 	auto DrawObjects			= [&]( DrawTarget option, bool castShadow )
 	{
@@ -744,7 +743,7 @@ void SceneGame::Draw( float elapsedTime )
 		{
 			Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
 			tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
-			UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP );
+			UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP, /* applyToEffect = */ false );
 		}
 		pRenderer->ActivateConstantScene();
 
@@ -766,7 +765,7 @@ void SceneGame::Draw( float elapsedTime )
 			auto dir = data.directionalLight;
 			dir.light.ambientColor = Donya::Vector4::Product( dir.light.ambientColor, skyColor );
 			dir.light.diffuseColor = Donya::Vector4::Product( dir.light.diffuseColor, skyColor );
-			UpdateSceneConstant( dir, cameraPos, V, VP );
+			UpdateSceneConstant( dir, cameraPos, V, VP, /* applyToEffect = */ true );
 
 			shadowConstant.lightProjMatrix	= LVP;
 			shadowConstant.shadowColor		= data.shadowMap.color;
@@ -1322,6 +1321,8 @@ void SceneGame::CameraInit()
 
 	iCamera.SetProjectionPerspective();
 	lightCamera.SetProjectionOrthographic();
+
+	Effect::Admin::Get().SetProjectionMatrix( iCamera.GetProjectionMatrix() );
 
 	// I can setting a configuration,
 	// but current data is not changed immediately.
@@ -2414,6 +2415,12 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	ImGui::Checkbox( u8"[ALT+L]	光源の可視化",	&drawLightSources	);
 	ImGui::Checkbox( u8"[F4]	光視点にする",	&projectLightCamera	);
+	Effect::Admin::Get().SetProjectionMatrix
+	(
+		( projectLightCamera )
+		? lightCamera.GetProjectionMatrix()
+		: iCamera.GetProjectionMatrix()
+	);
 
 	sceneParam.ShowImGuiNode( u8"ゲームシーンのパラメータ" );
 

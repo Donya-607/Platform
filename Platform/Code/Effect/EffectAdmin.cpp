@@ -192,6 +192,26 @@ namespace Effect
 		pRenderer->EndRendering();
 	}
 
+	void Admin::SetLightColorAmbient( const Donya::Vector4 &color )
+	{
+		pRenderer->SetLightAmbientColor( ToFxColor( color ) );
+	}
+	void Admin::SetLightColorAmbient( const Donya::Vector3 &color, float alpha )
+	{
+		SetLightColorAmbient( Donya::Vector4{ color, alpha } );
+	}
+	void Admin::SetLightColorDiffuse( const Donya::Vector4 &color )
+	{
+		pRenderer->SetLightColor( ToFxColor( color ) );
+	}
+	void Admin::SetLightColorDiffuse( const Donya::Vector3 &color, float alpha )
+	{
+		SetLightColorDiffuse( Donya::Vector4{ color, alpha } );
+	}
+	void Admin::SetLightDirection( const Donya::Vector3 &dir )
+	{
+		pRenderer->SetLightDirection( ToFxVector( dir ) );
+	}
 	void Admin::SetViewMatrix( const Donya::Vector4x4 &m )
 	{
 		assert( wasInitialized );

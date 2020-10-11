@@ -159,8 +159,9 @@ namespace Effect
 		{
 		case Effect::Kind::ChargeContinue:
 			// return Make( u"Charge/Continue.efkefc" );
-			return Make( u"Test/Test.efkefc" );
+			// return Make( u"Test/Test.efkefc" );
 			// return Make( u"Test/Test.efk" );
+			return Make( u"Hit_Buster.efk" );
 		default: break;
 		}
 
