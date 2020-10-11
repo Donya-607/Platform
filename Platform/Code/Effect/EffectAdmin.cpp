@@ -174,19 +174,33 @@ namespace Effect
 
 		pManager->Destroy();
 		pRenderer->Destroy();
+		pManager	= nullptr;
+		pRenderer	= nullptr;
 
 		wasInitialized = false;
 	}
 
 	void Admin::Update( float updateSpeedMagnification )
 	{
-		assert( wasInitialized );
+		if ( !wasInitialized )
+		{
+			_ASSERT_EXPR( 0, L"Error: Effect system has not been initialized!" );
+			return;
+		}
+		// else
+
 		pManager->Update( updateSpeedMagnification );
 	}
 	
 	void Admin::Draw()
 	{
-		assert( wasInitialized );
+		if ( !wasInitialized )
+		{
+			_ASSERT_EXPR( 0, L"Error: Effect system has not been initialized!" );
+			return;
+		}
+		// else
+
 		pRenderer->BeginRendering();
 		pManager->Draw();
 		pRenderer->EndRendering();
@@ -194,6 +208,13 @@ namespace Effect
 
 	void Admin::SetLightColorAmbient( const Donya::Vector4 &color )
 	{
+		if ( !wasInitialized )
+		{
+			_ASSERT_EXPR( 0, L"Error: Effect system has not been initialized!" );
+			return;
+		}
+		// else
+
 		pRenderer->SetLightAmbientColor( ToFxColor( color ) );
 	}
 	void Admin::SetLightColorAmbient( const Donya::Vector3 &color, float alpha )
@@ -202,6 +223,13 @@ namespace Effect
 	}
 	void Admin::SetLightColorDiffuse( const Donya::Vector4 &color )
 	{
+		if ( !wasInitialized )
+		{
+			_ASSERT_EXPR( 0, L"Error: Effect system has not been initialized!" );
+			return;
+		}
+		// else
+
 		pRenderer->SetLightColor( ToFxColor( color ) );
 	}
 	void Admin::SetLightColorDiffuse( const Donya::Vector3 &color, float alpha )
@@ -210,22 +238,47 @@ namespace Effect
 	}
 	void Admin::SetLightDirection( const Donya::Vector3 &dir )
 	{
+		if ( !wasInitialized )
+		{
+			_ASSERT_EXPR( 0, L"Error: Effect system has not been initialized!" );
+			return;
+		}
+		// else
+
 		pRenderer->SetLightDirection( ToFxVector( dir ) );
 	}
 	void Admin::SetViewMatrix( const Donya::Vector4x4 &m )
 	{
-		assert( wasInitialized );
+		if ( !wasInitialized )
+		{
+			_ASSERT_EXPR( 0, L"Error: Effect system has not been initialized!" );
+			return;
+		}
+		// else
+
 		pRenderer->SetCameraMatrix( ToFxMatrix( m ) );
 	}
 	void Admin::SetProjectionMatrix( const Donya::Vector4x4 &m )
 	{
-		assert( wasInitialized );
+		if ( !wasInitialized )
+		{
+			_ASSERT_EXPR( 0, L"Error: Effect system has not been initialized!" );
+			return;
+		}
+		// else
+
 		pRenderer->SetProjectionMatrix( ToFxMatrix( m ) );
 	}
 
 	Fx::Manager *Admin::GetManagerOrNullptr() const
 	{
-		assert( wasInitialized );
+		if ( !wasInitialized )
+		{
+			_ASSERT_EXPR( 0, L"Error: Effect system has not been initialized!" );
+			return nullptr;
+		}
+		// else
+
 		return pManager;
 	}
 
@@ -235,10 +288,15 @@ namespace Effect
 	}
 	bool Admin::LoadEffect( Effect::Kind attr )
 	{
-		assert( wasInitialized );
+		if ( !wasInitialized )
+		{
+			_ASSERT_EXPR( 0, L"Error: Effect system has not been initialized!" );
+			return false;
+		}
+		// else
+
 		const stdEfkString filePath = GetEffectPath( attr );
 
-		// Has already loaded?
 		const auto find = instances.find( filePath );
 		if ( find != instances.end() ) { return true; }
 		// else
@@ -249,12 +307,10 @@ namespace Effect
 	}
 	void Admin::UnloadEffect( Effect::Kind attr )
 	{
-		assert( wasInitialized );
 		instances.erase( GetEffectPath( attr ) );
 	}
 	void Admin::UnloadEffectAll()
 	{
-		assert( wasInitialized );
 		instances.clear();
 	}
 
@@ -267,8 +323,6 @@ namespace Effect
 	}
 	Effekseer::Effect *Admin::GetEffectOrNullptr( Effect::Kind attr )
 	{
-		assert( wasInitialized );
-		
 		const auto find = instances.find( GetEffectPath( attr ) );
 		if ( find == instances.end() ) { return nullptr; }
 		// else

@@ -75,7 +75,7 @@ namespace Effect
 			Fx::Manager *pManager = GetAdmin().GetManagerOrNullptr();
 			if ( !pManager )
 			{
-				_ASSERT_EXPR( 0, !"Error: Manager is invalid." );
+				_ASSERT_EXPR( 0, !"Error: Effect manager is invalid!" );
 				return;
 			}
 			// else
