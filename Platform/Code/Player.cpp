@@ -915,7 +915,7 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 	prevChargeSecond = currChargeSecond;
 	nowTrigger = false;
 
-	ShotLevel oldChargeLevel = chargeLevel;
+	const ShotLevel oldChargeLevel = chargeLevel;
 
 	// If calculate the charge level after update the "currChargeSecond",
 	// the level will be zero(ShotLevel::Normal) absolutely when fire timing, because that timing is the input was released.

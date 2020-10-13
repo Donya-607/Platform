@@ -2807,6 +2807,12 @@ void SceneGame::UseImGui( float elapsedTime )
 		std::string  strKind = u8"選択："; strKind += Effect::GetEffectName( kind );
 		ImGui::Text( strKind.c_str() );
 
+		if ( ImGui::Button( u8"Adminに追加" ) )
+		{
+			Effect::Admin::Get().GenerateInstance( kind, setPos );
+		}
+		ImGui::Text( "" );
+
 		bool exists = ( pHandle && pHandle->IsExists() ) ? true : false;
 		ImGui::Checkbox( u8"インスタンスは存在しているか", &exists );
 

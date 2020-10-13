@@ -12,6 +12,7 @@
 #include "../Donya/UseImGui.h"	// Use USE_IMGUI macro
 #include "../Donya/Vector.h"
 
+#include "Effect.h"
 #include "EffectKind.h"
 #include "EffectUtil.h"
 
@@ -31,7 +32,7 @@ namespace Effect
 		class Instance
 		{
 		private:
-			Effekseer::Effect *pHandle = nullptr;
+			Effekseer::Effect *pFx = nullptr;
 		public:
 			Instance( Effekseer::Manager *pManager, const stdEfkString &filePath, float scaleWhenCreate = 1.0f, const stdEfkString &materialPath = {} );
 			~Instance();
@@ -39,7 +40,8 @@ namespace Effect
 			bool IsValid() const;
 			Effekseer::Effect *GetEffectOrNullptr();
 		};
-		std::unordered_map<stdEfkString, std::shared_ptr<Instance>> instances;
+		std::unordered_map<stdEfkString, std::shared_ptr<Instance>> instances; // The source effects
+		std::vector<Effect::Handle> handles; // The instances of some effect
 	private:
 		Admin() = default;
 	public:
@@ -64,15 +66,24 @@ namespace Effect
 		/// <summary>
 		/// Returns true if the load was succeeded, or specified effect was already has loaded.
 		/// </summary>
-		bool LoadEffect( Effect::Kind effectAttribute );
-		void UnloadEffect( Effect::Kind effectAttribute );
+		bool LoadEffect( Effect::Kind effectKind );
+		void UnloadEffect( Effect::Kind effectKind );
 		void UnloadEffectAll();
 	public:
-		float GetEffectScale( Effect::Kind effectAttribute );
+		/// <summary>
+		/// Generate specify effect's instance into internal.
+		/// </summary>
+		void GenerateInstance( Kind effectKind, const Donya::Vector3 &position, int32_t startFrame = 0 );
+		/// <summary>
+		/// Clear all instances from internal.
+		/// </summary>
+		void ClearInstances();
+	public:
+		float GetEffectScale( Effect::Kind effectKind );
 		/// <summary>
 		/// Returns nullptr if specified effect was not loaded.
 		/// </summary>
-		Effekseer::Effect *GetEffectOrNullptr( Effect::Kind effectAttribute );
+		Effekseer::Effect *GetEffectOrNullptr( Effect::Kind effectKind );
 	public:
 	#if USE_IMGUI
 		void ShowImGuiNode( const std::string &nodeCaption );

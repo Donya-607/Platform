@@ -1,6 +1,6 @@
 #include "EffectAdmin.h"
 
-#include "EffekseerRendererDX11.h"
+#include <algorithm>
 
 #include "../Donya/Useful.h"	// Use OutputDebugStr()
 
@@ -59,7 +59,7 @@ namespace Effect
 	Admin::Instance::Instance( Effekseer::Manager *pManager, const stdEfkString &filePath, float scale, const stdEfkString &mtlPath )
 	{
 		const EFK_CHAR *mtlPathOrNullptr = ( mtlPath.empty() ) ? nullptr : mtlPath.c_str();
-		pHandle = Fx::Effect::Create( pManager, filePath.c_str(), scale, mtlPathOrNullptr );
+		pFx = Fx::Effect::Create( pManager, filePath.c_str(), scale, mtlPathOrNullptr );
 
 		if ( !IsValid() )
 		{
@@ -74,15 +74,15 @@ namespace Effect
 	}
 	Admin::Instance::~Instance()
 	{
-		ES_SAFE_RELEASE( pHandle );
+		ES_SAFE_RELEASE( pFx );
 	}
 	bool Admin::Instance::IsValid() const
 	{
-		return ( pHandle );
+		return ( pFx );
 	}
 	Fx::Effect *Admin::Instance::GetEffectOrNullptr()
 	{
-		return ( IsValid() ) ? pHandle : nullptr;
+		return ( IsValid() ) ? pFx : nullptr;
 	}
 
 	bool Admin::Init( ID3D11Device *pDevice, ID3D11DeviceContext *pContext )
@@ -190,6 +190,16 @@ namespace Effect
 		// else
 
 		pManager->Update( updateSpeedMagnification );
+
+		auto result = std::remove_if
+		(
+			handles.begin(), handles.end(),
+			[]( Handle &element )
+			{
+				return ( !element.IsExists() || !element.IsValid() ) ? true : false;
+			}
+		);
+		handles.erase( result, handles.end() );
 	}
 	
 	void Admin::Draw()
@@ -312,6 +322,20 @@ namespace Effect
 	void Admin::UnloadEffectAll()
 	{
 		instances.clear();
+	}
+
+	void Admin::GenerateInstance( Kind kind, const Donya::Vector3 &position, int32_t startFrame )
+	{
+		handles.emplace_back( std::move( Handle::Generate( kind, position, startFrame ) ) );
+	}
+	void Admin::ClearInstances()
+	{
+		for ( auto &it : handles )
+		{
+			it.Stop();
+		}
+
+		handles.clear();
 	}
 
 	float Admin::GetEffectScale( Effect::Kind attr )
