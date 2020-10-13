@@ -194,6 +194,54 @@ namespace Donya
 		return v;
 	}
 
+	void Quaternion::ToAxisAngle( Donya::Vector3 *outAxis, float *outRadian ) const
+	{
+		// See https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/index.htm
+		// I regard as I was already normalized.
+
+		// angle = 2 * acos( qw )
+		// x = qx / sqrt( 1 - qw*qw )
+		// y = qy / sqrt( 1 - qw*qw )
+		// z = qz / sqrt( 1 - qw*qw )
+
+		const float angle = 2.0f * acosf( std::max( -1.0f, std::min( 1.0f, w ) ) );
+
+		if ( IsZero( angle ) )
+		{
+			// q = i0 + j0 + k0 + w1
+			// angle = 2 * acos( 1 ) = 0
+			// x = 0 / sqrt( 1 - 1 ) = zero-divide
+			if ( outAxis	) { *outAxis	= Donya::Vector3::Front(); }
+			if ( outRadian	) { *outRadian	= 0.0f; }
+			return;
+		}
+		// else
+
+		constexpr float rad180 = ToRadian( 180.0f );
+		if ( IsZero( fabsf( angle ) - rad180 ) ) // angle == 180 degree
+		{
+			// q = ix + jy + kz + 0w
+			// angle = 2 * acos( 0 ) = 2 * 90 = 180 or -180
+			// x = x / sqrt( 1 - 0 ) = x / 1
+			if ( outAxis	) { *outAxis	= Donya::Vector3{ x, y, z }; }
+			if ( outRadian	) { *outRadian	= rad180; }
+			return;
+		}
+		// else
+
+		if ( outAxis )
+		{
+			const float squareRoot = sqrtf( 1.0f - w*w );
+			outAxis->x = x / squareRoot;
+			outAxis->y = y / squareRoot;
+			outAxis->z = z / squareRoot;
+		}
+		if ( outRadian )
+		{
+			*outRadian = angle;
+		}
+	}
+
 	Quaternion Quaternion::RotateBy( const Quaternion &Q )
 	{
 		*this = Rotated( Q );

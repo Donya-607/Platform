@@ -174,6 +174,13 @@ namespace Donya
 		Donya::Vector3 GetEulerAngles() const;
 
 		/// <summary>
+		/// It requires the quaternion must be normalized.
+		/// If the angle is zero, it returns axis is front(0,0,1).
+		/// You can set nullptr if you want to ignore some argument.
+		/// </summary>
+		void ToAxisAngle( Donya::Vector3 *outAxis, float *outRadian ) const;
+
+		/// <summary>
 		/// Returns = Q * V * Q*
 		/// </summary>
 		constexpr Donya::Vector3 RotateVector( const Donya::Vector3 &target ) const
