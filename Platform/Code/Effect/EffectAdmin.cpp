@@ -316,9 +316,16 @@ namespace Effect
 
 	float Admin::GetEffectScale( Effect::Kind attr )
 	{
+		// Check the kind's range
 		if ( IsOutOfRange( attr ) ) { return 1.0f; }
 		// else
+		
 		const auto scales = FetchParameter().effectScales;
+		// Check the array's range
+		if ( scales.empty() )				{ return 1.0f; }
+		if ( scales.size() != kindCount )	{ return scales.front(); }
+		// else
+
 		return ( scales.empty() ) ? 1.0f : scales[scast<size_t>( attr )];
 	}
 	Effekseer::Effect *Admin::GetEffectOrNullptr( Effect::Kind attr )
