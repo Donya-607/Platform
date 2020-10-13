@@ -306,6 +306,16 @@ namespace Donya
 		static float Norm( const Quaternion & );
 
 		/// <summary>
+		/// It requires the Q must be normalized.
+		/// If the Q7s angle is zero, it returns axis is front(0,0,1).
+		/// You can set nullptr if you want to ignore some argument.
+		/// </summary>
+		static void ToAxisAngle( const Quaternion &Q, Donya::Vector3 *outAxis, float *outRadian )
+		{
+			return Q.ToAxisAngle( outAxis, outRadian );
+		}
+
+		/// <summary>
 		/// Q = s - v
 		/// </summary>
 		static constexpr Quaternion Conjugate( const Quaternion &Q )

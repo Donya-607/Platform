@@ -2830,6 +2830,22 @@ void SceneGame::UseImGui( float elapsedTime )
 
 		ImGui::TreePop();
 	}
+
+	if ( ImGui::TreeNode( u8"Test ToAxisAngle()" ) )
+	{
+		auto q = pPlayer->GetOrientation();
+		Donya::Vector3 axis{};
+		float radian = 65535.0f;
+
+		q.ToAxisAngle( &axis, &radian );
+
+		ImGui::Text( u8"Q:[%6.3f][%6.3f][%6.3f][%6.3f]", q.x, q.y, q.z, q.w );
+		ImGui::Text( u8"Axis:[%6.3f][%6.3f][%6.3f]", axis.x, axis.y, axis.z );
+		ImGui::Text( u8"Degree:[%6.3f]", ToDegree( radian ) );
+		ImGui::Text( u8"Radian:[%6.3f]", radian );
+
+		ImGui::TreePop();
+	}
 	
 	ImGui::End();
 }
