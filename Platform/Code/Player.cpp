@@ -899,6 +899,7 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 
 Player::ShotManager::~ShotManager()
 {
+	fxLoop.Stop();
 	StopLoopSEIfPlaying( /* forcely = */ true );
 }
 void Player::ShotManager::Init()
@@ -907,6 +908,8 @@ void Player::ShotManager::Init()
 	prevChargeSecond	= 0.0f;
 	currChargeSecond	= 0.0f;
 	nowTrigger			= false;
+	fxComplete.Disable();
+	fxLoop.Disable();
 
 	StopLoopSEIfPlaying();
 }
@@ -929,10 +932,12 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 	{
 		if ( chargeLevel == ShotLevel::Tough )
 		{
+			fxLoop = Effect::Handle::Generate( Effect::Kind::Charge_Complete, inst.GetPosition() );
 			Donya::Sound::Play( Music::Charge_Start );
 		}
 		if ( chargeLevel == ShotLevel::Strong )
 		{
+			fxComplete = Effect::Handle::Generate( Effect::Kind::Charge_Complete, inst.GetPosition() );
 			Donya::Sound::Play( Music::Charge_Complete );
 		}
 	}
@@ -958,6 +963,9 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 		currChargeSecond = 0.0f;
 		StopLoopSEIfPlaying();
 	}
+
+	fxComplete.SetPosition( inst.GetPosition() );
+	fxLoop.SetPosition( inst.GetPosition() );
 }
 bool Player::ShotManager::IsShotRequested( const Player &inst ) const
 {

@@ -2823,7 +2823,7 @@ void SceneGame::UseImGui( float elapsedTime )
 			pHandle.reset();
 
 			pHandle = std::make_shared<Effect::Handle>( Effect::Handle::Generate( kind, setPos ) );
-			if ( !pHandle->IsValid() ) { pHandle.reset(); }
+			if ( !pHandle->IsExists() ) { pHandle.reset(); }
 		}
 		if ( ImGui::Button( u8"íœ" ) && pHandle )
 		{

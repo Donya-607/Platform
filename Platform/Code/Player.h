@@ -14,6 +14,7 @@
 #include "Bullet.h"
 #include "CSVLoader.h"
 #include "Damage.h"
+#include "Effect/Effect.h"
 #include "FontHelper.h"
 #include "Map.h"
 #include "Meter.h"
@@ -220,6 +221,8 @@ private:
 		Donya::Vector3	emissiveColor	{ 0.0f, 0.0f, 0.0f }; // By charge
 		Donya::Vector3	destColor		{ 0.0f, 0.0f, 0.0f }; // By charge
 		bool			playingChargeSE		= false;
+		Effect::Handle	fxComplete;
+		Effect::Handle	fxLoop;
 	public:
 		~ShotManager();
 	public:

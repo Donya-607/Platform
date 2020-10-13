@@ -31,13 +31,16 @@ namespace Effect
 {
 	Handle Handle::Generate( Kind kind, const Donya::Vector3 &pos, int32_t startFrame )
 	{
+		Handle rv{};
+		rv.Disable();
+
 		auto &admin = GetAdmin();
 
 		Fx::Manager	*pManager	= admin.GetManagerOrNullptr();
 		if ( !pManager )
 		{
 			_ASSERT_EXPR( 0, L"Error: Effect manager is invalid!" );
-			return Handle{ -1 };
+			return rv;
 		}
 		// else
 
@@ -45,7 +48,7 @@ namespace Effect
 		if ( !pEffect )
 		{
 			_ASSERT_EXPR( 0, L"Error: Effect is invalid! May you use wrong file name?" );
-			return Handle{ -1 };
+			return rv;
 		}
 		// else
 
@@ -58,13 +61,17 @@ namespace Effect
 			pManager->UpdateHandle( handle, 0.0f );
 			pManager->SetScale( handle, kindScale, kindScale, kindScale );
 		}
-		return Handle{ handle };
-	}
 
-	bool Handle::IsValid() const
+		rv.Assign( handle );
+		return std::move( rv );
+	}
+	void Handle::Assign( const Fx::Handle &fxHandle )
 	{
-		auto pManager = GetAdmin().GetManagerOrNullptr();
-		return ( pManager ) ? pManager->Exists( handle ) : false;
+		handle = fxHandle;
+	}
+	void Handle::Disable()
+	{
+		handle = invalidID;
 	}
 
 	namespace
