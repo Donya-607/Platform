@@ -237,8 +237,8 @@ private:
 		bool NowTriggered( const InputManager &input ) const;
 		ShotLevel		CalcChargeLevel();
 		Donya::Vector3	CalcEmissiveColor();
-		void PlayLoopSEIfStopping();
-		void StopLoopSEIfPlaying( bool forcely = false );
+		void PlayLoopSFXIfStopping();
+		void StopLoopSFXIfPlaying( bool forcely = false );
 	};
 	class Flusher
 	{

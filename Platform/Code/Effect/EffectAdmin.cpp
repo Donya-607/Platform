@@ -196,7 +196,7 @@ namespace Effect
 			handles.begin(), handles.end(),
 			[]( Handle &element )
 			{
-				return ( !element.IsExists() || !element.IsValid() ) ? true : false;
+				return ( !element.IsExists() ) ? true : false;
 			}
 		);
 		handles.erase( result, handles.end() );

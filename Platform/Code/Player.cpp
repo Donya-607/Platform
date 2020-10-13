@@ -899,8 +899,7 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 
 Player::ShotManager::~ShotManager()
 {
-	fxLoop.Stop();
-	StopLoopSEIfPlaying( /* forcely = */ true );
+	StopLoopSFXIfPlaying( /* forcely = */ true );
 }
 void Player::ShotManager::Init()
 {
@@ -911,7 +910,7 @@ void Player::ShotManager::Init()
 	fxComplete.Disable();
 	fxLoop.Disable();
 
-	StopLoopSEIfPlaying();
+	StopLoopSFXIfPlaying();
 }
 void Player::ShotManager::Update( const Player &inst, float elapsedTime, const InputManager &input )
 {
@@ -932,7 +931,6 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 	{
 		if ( chargeLevel == ShotLevel::Tough )
 		{
-			fxLoop = Effect::Handle::Generate( Effect::Kind::Charge_Complete, inst.GetPosition() );
 			Donya::Sound::Play( Music::Charge_Start );
 		}
 		if ( chargeLevel == ShotLevel::Strong )
@@ -956,12 +954,12 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 		}
 
 		currChargeSecond += elapsedTime;
-		PlayLoopSEIfStopping();
+		PlayLoopSFXIfStopping();
 	}
 	else
 	{
 		currChargeSecond = 0.0f;
-		StopLoopSEIfPlaying();
+		StopLoopSFXIfPlaying();
 	}
 
 	fxComplete.SetPosition( inst.GetPosition() );
@@ -1067,20 +1065,26 @@ Donya::Vector3 Player::ShotManager::CalcEmissiveColor()
 
 	return pParam->emissiveColor.Product( colorFactor );
 }
-void Player::ShotManager::PlayLoopSEIfStopping()
+void Player::ShotManager::PlayLoopSFXIfStopping()
 {
 	if ( playingChargeSE					) { return; }
 	if ( chargeLevel == ShotLevel::Normal	) { return; }
 	// else
 
+	// Actual position will set at the end of Update()
+	constexpr Donya::Vector3 generatePos = Donya::Vector3::Zero();
+
+	fxLoop = Effect::Handle::Generate( Effect::Kind::Charge_Loop, generatePos );
 	playingChargeSE = true;
 	Donya::Sound::Play( Music::Charge_Loop );
 }
-void Player::ShotManager::StopLoopSEIfPlaying( bool forcely )
+void Player::ShotManager::StopLoopSFXIfPlaying( bool forcely )
 {
 	if ( !playingChargeSE && !forcely ) { return; }
 	// else
 
+	fxLoop.Stop();
+	fxLoop.Disable();
 	playingChargeSE = false;
 	Donya::Sound::Stop( Music::Charge_Loop, /* isEnableForAll = */ true );
 }
