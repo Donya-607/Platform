@@ -180,7 +180,7 @@ namespace Effect
 		wasInitialized = false;
 	}
 
-	void Admin::Update( float updateSpeedMagnification )
+	void Admin::Update( float elapsedTime )
 	{
 		if ( !wasInitialized )
 		{
@@ -189,7 +189,8 @@ namespace Effect
 		}
 		// else
 
-		pManager->Update( updateSpeedMagnification );
+		constexpr float toBePerFrame = 60.0f;
+		pManager->Update( elapsedTime * toBePerFrame );
 
 		auto result = std::remove_if
 		(

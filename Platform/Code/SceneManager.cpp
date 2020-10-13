@@ -57,7 +57,7 @@ void SceneMng::Update( float elapsedTime )
 		ProcessMessage( message, updateCount, i );
 	}
 
-	Effect::Admin::Get().Update();
+	Effect::Admin::Get().Update( elapsedTime );
 
 	Fader::Get().Update( elapsedTime );
 }

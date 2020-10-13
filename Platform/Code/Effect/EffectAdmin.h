@@ -48,7 +48,7 @@ namespace Effect
 		bool Init( ID3D11Device *pDevice, ID3D11DeviceContext *pContext );
 		void Uninit();
 
-		void Update( float updateSpeedMagnification = 1.0f );
+		void Update( float elapsedTime );
 
 		void Draw();
 	public:
