@@ -4,6 +4,7 @@
 
 #include "Effekseer.h"
 
+#include "../Donya/Quaternion.h"
 #include "../Donya/Vector.h"
 
 #include "EffectKind.h"
@@ -31,6 +32,8 @@ namespace Effect
 		void SetScale( float scaleX, float scaleY, float scaleZ );
 		void SetScale( const Donya::Vector3 &scale );
 		void SetRotation( float pitch, float yaw, float roll );
+		void SetRotation( const Donya::Vector3 &axis, float angleRadian );
+		void SetRotation( const Donya::Quaternion &unitOrientation );
 		void SetPosition( const Donya::Vector3 &position );
 		void Move( const Donya::Vector3 &velocity );
 		void Stop();

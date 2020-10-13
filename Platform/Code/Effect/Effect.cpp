@@ -111,6 +111,25 @@ namespace Effect
 			}
 		);
 	}
+	void Handle::SetRotation( const Donya::Vector3 &axis, float radian )
+	{
+		OperateIfManagerIsAvailable
+		(
+			[&]( Fx::Manager *pManager )
+			{
+				pManager->SetRotation( handle, ToFxVector( axis ), radian );
+			}
+		);
+	}
+	void Handle::SetRotation( const Donya::Quaternion &unitOrientation )
+	{
+		Donya::Vector3 axis{};
+		float radian = 0.0f;
+
+		unitOrientation.ToAxisAngle( &axis, &radian );
+
+		SetRotation( axis, radian );
+	}
 	void Handle::SetPosition( const Donya::Vector3 &pos )
 	{
 		OperateIfManagerIsAvailable
