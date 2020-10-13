@@ -37,5 +37,6 @@ namespace Effect
 		void SetPosition( const Donya::Vector3 &position );
 		void Move( const Donya::Vector3 &velocity );
 		void Stop();
+		bool IsExists() const;
 	};
 }

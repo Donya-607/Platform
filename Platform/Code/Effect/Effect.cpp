@@ -69,6 +69,10 @@ namespace Effect
 
 	namespace
 	{
+		// Hack:
+		// I separated these functions to change the return statement.
+		// But another code in these function is the same. Is there a smart idea?
+
 		template<typename DoingMethod>
 		void OperateIfManagerIsAvailable( DoingMethod method )
 		{
@@ -81,6 +85,19 @@ namespace Effect
 			// else
 
 			method( pManager );
+		}
+		template<typename ReturnType, typename DoingMethod>
+		ReturnType OperateIfManagerIsAvailable( DoingMethod method )
+		{
+			Fx::Manager *pManager = GetAdmin().GetManagerOrNullptr();
+			if ( !pManager )
+			{
+				_ASSERT_EXPR( 0, !"Error: Effect manager is invalid!" );
+				return ReturnType{};
+			}
+			// else
+
+			return method( pManager );
 		}
 	}
 	void Handle::SetScale( float scale )
@@ -157,6 +174,16 @@ namespace Effect
 			[&]( Fx::Manager *pManager )
 			{
 				pManager->StopEffect( handle );
+			}
+		);
+	}
+	bool Handle::IsExists() const
+	{
+		return OperateIfManagerIsAvailable<bool>
+		(
+			[&]( Fx::Manager *pManager )
+			{
+				return pManager->Exists( handle );
 			}
 		);
 	}
