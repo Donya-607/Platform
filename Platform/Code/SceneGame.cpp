@@ -2157,8 +2157,6 @@ void SceneGame::Collision_PlayerVSItem()
 
 		pItem->WasCaught();
 
-		// TODO: Play catch SE
-
 		switch ( itemKind )
 		{
 		case Item::Kind::ExtraLife:
@@ -2166,15 +2164,9 @@ void SceneGame::Collision_PlayerVSItem()
 			return;
 		case Item::Kind::LifeEnergy_Big:
 			pPlayer->RecoverHP( itemParameter.lifeEnergyBig.recoveryAmount );
-		#if DEBUG_MODE
-			Donya::Sound::Play( Music::DEBUG_Weak );
-		#endif // DEBUG_MODE
 			return;
 		case Item::Kind::LifeEnergy_Small:
 			pPlayer->RecoverHP( itemParameter.lifeEnergySmall.recoveryAmount );
-		#if DEBUG_MODE
-			Donya::Sound::Play( Music::DEBUG_Weak );
-		#endif // DEBUG_MODE
 			return;
 		default: return;
 		}
@@ -2794,10 +2786,13 @@ void SceneGame::UseImGui( float elapsedTime )
 	if ( ImGui::TreeNode( u8"エフェクト生成テスト" ) )
 	{
 		static std::shared_ptr<Effect::Handle> pHandle = nullptr;
-		static Donya::Vector3 setPos{};
-		static Donya::Vector3 scale{ 1.0f, 1.0f, 1.0f };
+		static Donya::Vector3	setPos{};
+		static Donya::Vector3	scale{ 1.0f, 1.0f, 1.0f };
+		static Effect::Kind		kind = Effect::Kind::CatchItem;
+		static bool				usePlayerPos = true;
 
-		if ( ImGui::Button( u8"自機の位置を代入" ) )
+		ImGui::Checkbox( u8"自機の座標を使う", &usePlayerPos );
+		if ( usePlayerPos )
 		{
 			setPos = ( pPlayer ) ? pPlayer->GetPosition() : setPos;
 		}
@@ -2805,13 +2800,20 @@ void SceneGame::UseImGui( float elapsedTime )
 		ImGui::DragFloat3( u8"設定位置",	&setPos.x,	0.1f );
 		ImGui::DragFloat3( u8"スケール",	&scale.x,	0.1f );
 
-		if ( ImGui::Button( u8"生成" ) )
+		int iKind = scast<int>( kind );
+		ImGui::SliderInt( u8"種類", &iKind, 0, scast<int>( Effect::Kind::KindCount ) - 1 );
+		kind = scast<Effect::Kind>( iKind );
+
+		std::string  strKind = u8"選択："; strKind += Effect::GetEffectName( kind );
+		ImGui::Text( strKind.c_str() );
+
+
+		if ( ImGui::Button( u8"再設定" ) )
 		{
 			if ( pHandle ) { pHandle->Stop(); }
 			pHandle.reset();
 
-			constexpr auto genKind = Effect::Kind::ChargeContinue;
-			pHandle = std::make_shared<Effect::Handle>( Effect::Handle::Generate( genKind, setPos ) );
+			pHandle = std::make_shared<Effect::Handle>( Effect::Handle::Generate( kind, setPos ) );
 			if ( !pHandle->IsValid() ) { pHandle.reset(); }
 		}
 		if ( ImGui::Button( u8"削除" ) && pHandle )

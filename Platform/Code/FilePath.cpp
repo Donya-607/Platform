@@ -157,11 +157,22 @@ namespace Effect
 
 		switch ( kind )
 		{
-		case Effect::Kind::ChargeContinue:
-			// return Make( u"Charge/Continue.efkefc" );
-			// return Make( u"Test/Test.efkefc" );
-			// return Make( u"Test/Test.efk" );
+		case Effect::Kind::CatchItem:
+			return Make( u"CatchItem.efk" );
+		case Effect::Kind::Charge_Complete:
+			return Make( u"Charge_Complete.efk" );
+		case Effect::Kind::Charge_Loop:
+			return Make( u"Charge_Loop.efk" );
+		case Effect::Kind::Death:
+			return Make( u"Death.efk" );
+		case Effect::Kind::DefeatEnemy_Small:
+			return Make( u"Defeat_Small.efk" );
+		case Effect::Kind::Hit_Buster:	
 			return Make( u"Hit_Buster.efk" );
+		case Effect::Kind::HurtDamage:
+			return Make( u"Hurt.efk" );
+		case Effect::Kind::Player_Slide_Begin:
+			return Make( u"Slide_Begin.efk" );
 		default: break;
 		}
 
