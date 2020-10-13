@@ -2,6 +2,9 @@
 
 #include <algorithm>				// Use std::find()
 
+#include "Effect/EffectAdmin.h"
+#include "Effect/EffectKind.h"
+
 #include "Donya/Loader.h"
 #include "Donya/Sound.h"
 #include "Donya/Template.h"			// Use AppendVector()
@@ -1093,10 +1096,12 @@ void Player::Flusher::Start( float flushingSeconds )
 {
 	workingSeconds	= flushingSeconds;
 	timer			= 0.0f;
+	fxHurt			= Effect::Handle::Generate( Effect::Kind::HurtDamage, {} );
 }
-void Player::Flusher::Update( float elapsedTime )
+void Player::Flusher::Update( const Player &inst, float elapsedTime )
 {
 	timer += elapsedTime;
+	fxHurt.SetPosition( inst.GetPosition() );
 }
 bool Player::Flusher::Drawable() const
 {
@@ -2125,7 +2130,7 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 	}
 	// else
 
-	invincibleTimer.Update( elapsedTime );
+	invincibleTimer.Update( *this, elapsedTime );
 	ApplyReceivedDamageIfHas( elapsedTime, terrain );
 
 	hurtBox.exist = ( invincibleTimer.NowWorking() ) ? false : true;
@@ -2299,6 +2304,8 @@ bool Player::WillDie() const
 }
 void Player::KillMe()
 {
+	Effect::Admin::Get().GenerateInstance( Effect::Kind::Death, GetPosition() );
+
 	AssignMover<Miss>();
 }
 void Player::KillMeIfCollideToKillAreas( float elapsedTime, const Map &terrain )

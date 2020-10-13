@@ -243,11 +243,12 @@ private:
 	class Flusher
 	{
 	private:
-		float workingSeconds	= 0.0f;
-		float timer				= 0.0f;
+		float			workingSeconds	= 0.0f;
+		float			timer			= 0.0f;
+		Effect::Handle	fxHurt;
 	public:
 		void Start( float flushingSeconds );
-		void Update( float elapsedTime );
+		void Update( const Player &instance, float elapsedTime );
 		bool Drawable() const;
 		/// <summary>
 		/// It means now invincible.
