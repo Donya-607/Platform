@@ -7,6 +7,7 @@
 #endif // USE_IMGUI
 
 #include "Common.h"
+#include "Effect/EffectAdmin.h"
 #include "Enemies/SuperBallMachine.h"
 #include "Enemies/Togehero.h"
 #include "FilePath.h"
@@ -431,6 +432,8 @@ namespace Enemy
 		if ( hp <= 0 )
 		{
 			BeginWaitIfActive();
+
+			Effect::Admin::Get().GenerateInstance( Effect::Kind::DefeatEnemy_Small, GetPosition() );
 		}
 
 		pReceivedDamage.reset();

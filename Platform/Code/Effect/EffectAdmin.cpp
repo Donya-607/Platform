@@ -329,6 +329,10 @@ namespace Effect
 	{
 		handles.emplace_back( std::move( Handle::Generate( kind, position, startFrame ) ) );
 	}
+	void Admin::AddCopy( const Effect::Handle &instance )
+	{
+		handles.emplace_back( instance );
+	}
 	void Admin::ClearInstances()
 	{
 		for ( auto &it : handles )

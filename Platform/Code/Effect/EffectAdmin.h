@@ -75,6 +75,11 @@ namespace Effect
 		/// </summary>
 		void GenerateInstance( Kind effectKind, const Donya::Vector3 &position, int32_t startFrame = 0 );
 		/// <summary>
+		/// Copy the instance into internal.
+		/// it is convenient when usage like detaching the local effect.
+		/// </summary>
+		void AddCopy( const Effect::Handle &instance );
+		/// <summary>
 		/// Clear all instances from internal.
 		/// </summary>
 		void ClearInstances();

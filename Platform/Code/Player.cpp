@@ -1327,6 +1327,10 @@ void Player::Slide::Init( Player &inst )
 	inst.velocity.z = 0.0f;
 	inst.UpdateOrientation( /* lookingRight = */ ( slideSign < 0.0f ) ? false : true );
 
+	Effect::Handle handle = Effect::Handle::Generate( Effect::Kind::Player_Slide_Begin, inst.GetPosition() );
+	handle.SetRotation( 0.0f, ToRadian( 90.0f ) * slideSign, 0.0f );
+	Effect::Admin::Get().AddCopy( handle ); // Leave the effect instance's management to admin
+	
 	Donya::Sound::Play( Music::Player_Dash );
 }
 void Player::Slide::Uninit( Player &inst )

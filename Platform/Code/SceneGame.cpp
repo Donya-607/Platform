@@ -27,6 +27,7 @@
 #include "Common.h"
 #include "Enemy.h"
 #include "Effect/EffectAdmin.h"
+#include "Effect/EffectKind.h"
 #include "Fader.h"
 #include "FilePath.h"
 #include "FontHelper.h"
@@ -2156,6 +2157,8 @@ void SceneGame::Collision_PlayerVSItem()
 		const auto itemKind = pItem->GetKind();
 
 		pItem->WasCaught();
+
+		Effect::Admin::Get().GenerateInstance( Effect::Kind::CatchItem, pItem->GetPosition() );
 
 		switch ( itemKind )
 		{
