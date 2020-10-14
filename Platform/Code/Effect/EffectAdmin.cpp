@@ -68,7 +68,7 @@ namespace Effect
 			errMsg += Effect::ToWString( filePath );
 			errMsg += L"\n";
 			Donya::OutputDebugStr( errMsg.c_str() );
-			_ASSERT_EXPR( 0, errMsg );
+			_ASSERT_EXPR( 0, errMsg.c_str() );
 		#endif // DEBUG_MODE
 		}
 	}

@@ -3,11 +3,14 @@
 #include <iterator>				// Use std::begin()/end()
 
 #include "../Donya/Template.h"	// Use Clamp()
+#include "../Donya/Useful.h"	// Use characer convert function
 
 namespace Effect
 {
 	namespace
 	{
+		constexpr int maxStringBufferCount = 512;
+
 		void Convert( float( *output )[4][4], const float( &source )[4][4] )
 		{
 			for ( int row = 0; row < 4; ++row )
@@ -17,17 +20,6 @@ namespace Effect
 					( *output )[row][column] = source[row][column];
 				}
 			}
-		}
-
-		template<typename FromChar, typename ToChar>
-		std::basic_string<ToChar> Convert( const std::basic_string<FromChar> &str )
-		{
-			// See https://dbj.org/c17-codecvt-deprecated-panic/
-
-			if ( str.empty() ) { return {}; }
-			// else
-		
-			return { std::begin( str ), std::end( str ) };
 		}
 	}
 
@@ -73,18 +65,30 @@ namespace Effect
 
 	stdEfkString ToEfkString( const std::string &str )
 	{
-		return Convert<char, EFK_CHAR>( str );
+		EFK_CHAR dest[maxStringBufferCount];
+		
+		Effekseer::ConvertUtf8ToUtf16( dest, sizeof( dest ), str.c_str() );
+
+		return dest;
 	}
 	stdEfkString ToEfkString( const std::wstring &str )
 	{
-		return Convert<wchar_t, EFK_CHAR>( str );
+		return ToEfkString( Donya::WideToUTF8( str ) );
 	}
 	std::string  ToString( const stdEfkString &str )
 	{
-		return Convert<EFK_CHAR, char>( str );
+		char dest[maxStringBufferCount];
+		
+		Effekseer::ConvertUtf16ToUtf8
+		(
+			reinterpret_cast<int8_t *>( dest ), sizeof( dest ),
+			reinterpret_cast<const int16_t*>( str.c_str() )
+		);
+
+		return dest;
 	}
 	std::wstring ToWString( const stdEfkString &str )
 	{
-		return Convert<EFK_CHAR, wchar_t>( str );
+		return Donya::UTF8ToWide( ToString( str ) );
 	}
 }
