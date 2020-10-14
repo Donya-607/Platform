@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "Bosses/Skull.h"
+#include "Effect/EffectAdmin.h"
 #include "FilePath.h"
 #include "Map.h"			// Use Map::ToWorldPos()
 #include "ModelHelper.h"
@@ -674,6 +675,8 @@ namespace Boss
 		{
 			if ( it.pBoss && it.pBoss->ShouldRemove() )
 			{
+				Effect::Admin::Get().GenerateInstance( Effect::Kind::Death, it.pBoss->GetPosition() );
+
 				it.pBoss->Uninit();
 				it.pBoss.reset();
 			}
