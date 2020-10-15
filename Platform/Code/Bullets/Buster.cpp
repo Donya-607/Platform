@@ -2,6 +2,8 @@
 
 #include "../Donya/Sound.h"
 
+#include "../Effect/EffectAdmin.h"
+#include "../Effect/EffectKind.h"
 #include "../Music.h"
 #include "../Parameter.h"
 #include "../PointLightStorage.h"
@@ -124,6 +126,10 @@ namespace Bullet
 	Kind Buster::GetKind() const
 	{
 		return Kind::Buster;
+	}
+	void Buster::GenerateHitEffect() const
+	{
+		Effect::Admin::Get().GenerateInstance( Effect::Kind::Hit_Buster, GetPosition() );
 	}
 	void Buster::PlayCollidedSE() const
 	{

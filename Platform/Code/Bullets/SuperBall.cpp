@@ -2,6 +2,8 @@
 
 #include "../Donya/Sound.h"
 
+#include "../Effect/EffectAdmin.h"
+#include "../Effect/EffectKind.h"
 #include "../Music.h"
 #include "../Parameter.h"
 
@@ -99,6 +101,10 @@ namespace Bullet
 	Kind SuperBall::GetKind() const
 	{
 		return Kind::SuperBall;
+	}
+	void SuperBall::GenerateHitEffect() const
+	{
+		Effect::Admin::Get().GenerateInstance( Effect::Kind::DefeatEnemy_Small, GetPosition() );
 	}
 	void SuperBall::PlayCollidedSE() const
 	{

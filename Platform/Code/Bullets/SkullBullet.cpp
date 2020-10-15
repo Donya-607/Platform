@@ -59,6 +59,10 @@ namespace Bullet
 	{
 		return Kind::SkullBuster;
 	}
+	void SkullBuster::GenerateHitEffect() const
+	{
+		// No op
+	}
 	void SkullBuster::PlayCollidedSE() const
 	{
 		Donya::Sound::Play( Music::Bullet_HitBuster );
@@ -186,6 +190,10 @@ namespace Bullet
 	Kind SkullShield::GetKind() const
 	{
 		return Kind::SkullShield;
+	}
+	void SkullShield::GenerateHitEffect() const
+	{
+		// No op
 	}
 	void SkullShield::PlayCollidedSE() const
 	{

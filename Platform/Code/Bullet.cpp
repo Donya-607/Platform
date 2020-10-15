@@ -487,6 +487,7 @@ namespace Bullet
 		body.exist		= false;
 		hitSphere.exist	= false;
 
+		GenerateHitEffect();
 		PlayCollidedSE();
 	}
 	void Base::ProtectedProcess()
@@ -510,6 +511,7 @@ namespace Bullet
 
 		wasProtected	= ProtectedInfo::Processed;
 
+		// TODO: Generate protect fx
 		PlayProtectedSE();
 	}
 	void Base::InitBody( const FireDesc &parameter )

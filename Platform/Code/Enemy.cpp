@@ -431,9 +431,10 @@ namespace Enemy
 		hp -= pReceivedDamage->amount;
 		if ( hp <= 0 )
 		{
-			BeginWaitIfActive();
-
+			// Generate the effect before resetting the position
 			Effect::Admin::Get().GenerateInstance( Effect::Kind::DefeatEnemy_Small, GetPosition() );
+
+			BeginWaitIfActive();
 		}
 
 		pReceivedDamage.reset();

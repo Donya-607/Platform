@@ -34,6 +34,7 @@ namespace Bullet
 	public:
 		Kind GetKind() const override;
 	public:
+		void GenerateHitEffect() const override;
 		void PlayCollidedSE() const override;
 	private:
 		Definition::Damage GetDamageParameter() const override;
