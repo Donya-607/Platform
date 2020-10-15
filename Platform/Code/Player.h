@@ -247,6 +247,8 @@ private:
 		float			timer			= 0.0f;
 		Effect::Handle	fxHurt;
 	public:
+		~Flusher();
+	public:
 		void Start( float flushingSeconds );
 		void Update( const Player &instance, float elapsedTime );
 		bool Drawable() const;

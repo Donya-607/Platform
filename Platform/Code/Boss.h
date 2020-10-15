@@ -20,6 +20,7 @@
 
 #include "CSVLoader.h"
 #include "Damage.h"
+#include "Effect/Effect.h"
 #include "Map.h"
 #include "ModelHelper.h"
 #include "ObjectBase.h"
@@ -96,9 +97,12 @@ namespace Boss
 		private:
 			float workingSeconds	= 0.0f;
 			float timer				= 0.0f;
+			Effect::Handle			fxHurt;
+		public:
+			~Flusher();
 		public:
 			void Start( float flushingSeconds );
-			void Update( float elapsedTime );
+			void Update( const Base &instance, float elapsedTime );
 			bool Drawable( float flushingInterval ) const;
 			/// <summary>
 			/// It means now invincible.

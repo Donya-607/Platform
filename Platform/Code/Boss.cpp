@@ -130,14 +130,21 @@ namespace Boss
 #endif // USE_IMGUI
 
 	
+	Base::Flusher::~Flusher()
+	{
+		fxHurt.Stop();
+		fxHurt.Disable();
+	}
 	void Base::Flusher::Start( float flushingSeconds )
 	{
 		workingSeconds	= flushingSeconds;
 		timer			= 0.0f;
+		fxHurt			= Effect::Handle::Generate( Effect::Kind::HurtDamage, {} );
 	}
-	void Base::Flusher::Update( float elapsedTime )
+	void Base::Flusher::Update( const Base &inst, float elapsedTime )
 	{
 		timer += elapsedTime;
+		fxHurt.SetPosition( inst.GetPosition() );
 	}
 	bool Base::Flusher::Drawable( float flushingInterval ) const
 	{
@@ -198,7 +205,7 @@ namespace Boss
 		if ( NowDead() ) { return; }
 		// else
 
-		invincibleTimer.Update( elapsedTime );
+		invincibleTimer.Update( *this, elapsedTime );
 		ApplyReceivedDamageIfHas();
 	}
 	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )

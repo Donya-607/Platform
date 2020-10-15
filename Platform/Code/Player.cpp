@@ -1092,6 +1092,11 @@ void Player::ShotManager::StopLoopSFXIfPlaying( bool forcely )
 	Donya::Sound::Stop( Music::Charge_Loop, /* isEnableForAll = */ true );
 }
 
+Player::Flusher::~Flusher()
+{
+	fxHurt.Stop();
+	fxHurt.Disable();
+}
 void Player::Flusher::Start( float flushingSeconds )
 {
 	workingSeconds	= flushingSeconds;
