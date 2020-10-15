@@ -331,6 +331,8 @@ void SceneGame::Init()
 
 	sceneParam.LoadParameter();
 
+	Effect::Admin::Get().ClearInstances();
+
 	constexpr Donya::Int2 wholeScreenSize
 	{
 		Common::ScreenWidth(),
@@ -369,6 +371,8 @@ void SceneGame::Uninit()
 
 	if ( pMap ) { pMap->ReleaseModel(); }
 	pMap.reset();
+
+	Effect::Admin::Get().ClearInstances();
 
 	Donya::Sound::Stop( Music::BGM_Game );
 }

@@ -334,6 +334,7 @@ namespace Boss
 		hp -= pReceivedDamage->amount;
 		if ( hp <= 0 )
 		{
+			Effect::Admin::Get().GenerateInstance( Effect::Kind::Death, GetPosition() );
 			DieMoment();
 		}
 
@@ -675,8 +676,6 @@ namespace Boss
 		{
 			if ( it.pBoss && it.pBoss->ShouldRemove() )
 			{
-				Effect::Admin::Get().GenerateInstance( Effect::Kind::Death, it.pBoss->GetPosition() );
-
 				it.pBoss->Uninit();
 				it.pBoss.reset();
 			}
