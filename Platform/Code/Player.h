@@ -438,6 +438,7 @@ private:
 		GunKind GetKind() const override
 		{ return GunKind::Shield; }
 	private:
+		void ReleaseShieldHandle( Player &instance );
 		Donya::Vector3 CalcThrowDirection( const Player &instance, const InputManager &input ) const;
 		Donya::Vector3 CalcShieldPosition( const Player &instance ) const;
 		void ExpandShield( Player &instance, const InputManager &input );

@@ -128,10 +128,11 @@ namespace Bullet
 		Donya::Vector3					velocity;	// [m/s]
 		Donya::Quaternion				orientation;
 		Definition::Damage				damage;
-		float							secondToRemove	= FLT_MAX;
+		float							secondToRemove		= FLT_MAX;
 
-		bool							wantRemove		= false;
-		mutable bool					wasCollided		= false;
+		bool							removeIfOutScreen	= true;
+		bool							wantRemove			= false;
+		mutable bool					wasCollided			= false;
 		
 		// It means: "(was protected) from XXX side".
 		enum class ProtectedInfo
@@ -174,6 +175,7 @@ namespace Bullet
 		virtual void SetWorldPosition( const Donya::Vector3 &wsPos );
 		virtual void SetVelocity( const Donya::Vector3 &newVelocity );
 		virtual void SetLifeTime( float second );
+		void DisallowRemovingByOutOfScreen();
 	protected:
 		virtual void GenerateCollidedEffect() const = 0;
 		virtual void GenerateProtectedEffect() const;

@@ -1932,7 +1932,16 @@ void Player::ShieldGun::Init( Player &inst )
 }
 void Player::ShieldGun::Uninit( Player &inst )
 {
-	inst.pBullet.reset();
+	if ( takeShield && inst.pBullet )
+	{
+		std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
+		if ( pInstance )
+		{
+			pInstance->SetLifeTime( 0.0f );
+		}
+	}
+
+	ReleaseShieldHandle( inst );
 }
 void Player::ShieldGun::Update( Player &inst, float elapsedTime )
 {
@@ -1946,19 +1955,11 @@ void Player::ShieldGun::Update( Player &inst, float elapsedTime )
 	if ( !pInstance )
 	{
 		// The handle has been invalided
-		takeShield = false;
-		inst.pBullet.reset();
+		ReleaseShieldHandle( inst );
 		return;
 	}
 	// else
 
-	const auto &shieldParam = Bullet::Parameter::GetSkullShield();
-
-	// The screen area will be used to consider "is there outside of the screen?"
-	// So I specify the player's position for regarded as inside the screen certainly.
-	Donya::Collision::Box3F screenArea = inst.GetNormalBody( /* ofHurtBox = */ false );
-	screenArea.size += shieldParam.basic.hitBoxSize;
-	screenArea.exist = true;
 	pInstance->SetWorldPosition( CalcShieldPosition( inst ) );
 }
 bool Player::ShieldGun::Chargeable() const
@@ -1979,6 +1980,11 @@ void Player::ShieldGun::Fire( Player &inst, const InputManager &input )
 	// else
 
 	ThrowShield( inst, input );
+}
+void Player::ShieldGun::ReleaseShieldHandle( Player &inst )
+{
+	takeShield = false;
+	inst.pBullet.reset(); // Also release the handle
 }
 Donya::Vector3 Player::ShieldGun::CalcThrowDirection( const Player &inst, const InputManager &input ) const
 {
@@ -2041,6 +2047,7 @@ void Player::ShieldGun::ExpandShield( Player &inst, const InputManager &input )
 	desc.owner			= inst.hurtBox.id;
 	inst.pBullet = std::make_unique<Bullet::SkullShield>();
 	inst.pBullet->Init( desc );
+	inst.pBullet->DisallowRemovingByOutOfScreen();
 	Bullet::Admin::Get().AddCopy( inst.pBullet );
 
 	takeShield = true;
@@ -2058,8 +2065,7 @@ void Player::ShieldGun::ThrowShield( Player &inst, const InputManager &input )
 
 	const Donya::Vector3 direction = CalcThrowDirection( inst, input );
 	pInstance->SetVelocity( direction * Parameter().Get().shieldThrowSpeed );
-	takeShield = false;
-	inst.pBullet.reset(); // Also release the handle
+	ReleaseShieldHandle( inst );
 
 	Donya::Sound::Play( Music::Bullet_ShotShield_Throw );
 }

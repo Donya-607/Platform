@@ -295,7 +295,7 @@ namespace Bullet
 			ProtectedProcess();
 		}
 
-		if ( OnOutSide( wsScreen ) )
+		if ( removeIfOutScreen && OnOutSide( wsScreen ) )
 		{
 			wantRemove = true;
 		}
@@ -477,6 +477,10 @@ namespace Bullet
 	void Base::SetLifeTime( float second )
 	{
 		secondToRemove = second;
+	}
+	void Base::DisallowRemovingByOutOfScreen()
+	{
+		removeIfOutScreen = false;
 	}
 	void Base::GenerateProtectedEffect() const
 	{
