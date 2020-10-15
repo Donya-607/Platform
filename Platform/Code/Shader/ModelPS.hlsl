@@ -35,7 +35,7 @@ float4 main( VS_OUT pin ) : SV_TARGET
 	float4	diffuseMapColor	= diffuseMap.Sample( diffuseMapSampler, pin.texCoord );
 			diffuseMapColor	= SRGBToLinear( diffuseMapColor );
 	float	diffuseAlpha	= diffuseMapColor.a * cbDrawColor.a;
-	clip(	diffuseAlpha );
+	clip(	diffuseAlpha - 0.001f ); // Also discard the 0.0f
 
 	float3	totalLight		= CalcLightInfluence
 							(
