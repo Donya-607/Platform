@@ -9,6 +9,8 @@
 #include "Bullets/SkullBullet.h"
 #include "Bullets/SuperBall.h"
 #include "Common.h"				// Use IsShowCollision()
+#include "Effect/EffectAdmin.h"
+#include "Effect/EffectKind.h"
 #include "FilePath.h"
 #include "ModelHelper.h"
 #include "Music.h"
@@ -476,6 +478,10 @@ namespace Bullet
 	{
 		secondToRemove = second;
 	}
+	void Base::GenerateProtectedEffect() const
+	{
+		Effect::Admin::Get().GenerateInstance( Effect::Kind::Protected, GetPosition() );
+	}
 	void Base::PlayProtectedSE() const
 	{
 		Donya::Sound::Play( Music::Bullet_Protected );
@@ -487,7 +493,7 @@ namespace Bullet
 		body.exist		= false;
 		hitSphere.exist	= false;
 
-		GenerateHitEffect();
+		GenerateCollidedEffect();
 		PlayCollidedSE();
 	}
 	void Base::ProtectedProcess()
@@ -511,7 +517,7 @@ namespace Bullet
 
 		wasProtected	= ProtectedInfo::Processed;
 
-		// TODO: Generate protect fx
+		GenerateProtectedEffect();
 		PlayProtectedSE();
 	}
 	void Base::InitBody( const FireDesc &parameter )

@@ -127,7 +127,7 @@ namespace Bullet
 	{
 		return Kind::Buster;
 	}
-	void Buster::GenerateHitEffect() const
+	void Buster::GenerateCollidedEffect() const
 	{
 		Effect::Admin::Get().GenerateInstance( Effect::Kind::Hit_Buster, GetPosition() );
 	}

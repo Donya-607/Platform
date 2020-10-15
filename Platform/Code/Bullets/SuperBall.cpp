@@ -102,7 +102,7 @@ namespace Bullet
 	{
 		return Kind::SuperBall;
 	}
-	void SuperBall::GenerateHitEffect() const
+	void SuperBall::GenerateCollidedEffect() const
 	{
 		Effect::Admin::Get().GenerateInstance( Effect::Kind::DefeatEnemy_Small, GetPosition() );
 	}

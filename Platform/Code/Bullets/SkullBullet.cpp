@@ -59,7 +59,7 @@ namespace Bullet
 	{
 		return Kind::SkullBuster;
 	}
-	void SkullBuster::GenerateHitEffect() const
+	void SkullBuster::GenerateCollidedEffect() const
 	{
 		// No op
 	}
@@ -191,7 +191,7 @@ namespace Bullet
 	{
 		return Kind::SkullShield;
 	}
-	void SkullShield::GenerateHitEffect() const
+	void SkullShield::GenerateCollidedEffect() const
 	{
 		// No op
 	}

@@ -21,7 +21,7 @@ namespace Bullet
 		bool Destructible() const override;
 		Kind GetKind() const override;
 	private:
-		void GenerateHitEffect() const override;
+		void GenerateCollidedEffect() const override;
 		void PlayCollidedSE() const override;
 	private:
 		Definition::Damage GetDamageParameter() const override;

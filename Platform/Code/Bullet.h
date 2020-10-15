@@ -175,7 +175,8 @@ namespace Bullet
 		virtual void SetVelocity( const Donya::Vector3 &newVelocity );
 		virtual void SetLifeTime( float second );
 	protected:
-		virtual void GenerateHitEffect() const = 0;
+		virtual void GenerateCollidedEffect() const = 0;
+		virtual void GenerateProtectedEffect() const;
 		virtual void PlayCollidedSE() const = 0;
 		virtual void PlayProtectedSE() const;
 		/// <summary>

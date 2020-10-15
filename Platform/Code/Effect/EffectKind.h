@@ -12,6 +12,7 @@ namespace Effect
 		Hit_Buster,
 		HurtDamage,
 		Player_Slide_Begin,
+		Protected,
 
 		KindCount
 	};
@@ -27,6 +28,7 @@ namespace Effect
 		case Effect::Kind::Hit_Buster:			return "Hit_Buster";
 		case Effect::Kind::HurtDamage:			return "HurtDamage";
 		case Effect::Kind::Player_Slide_Begin:	return "Player_Slide_Begin";
+		case Effect::Kind::Protected:			return "Protected";
 		default: break;
 		}
 

@@ -173,6 +173,8 @@ namespace Effect
 			return Make( u"Hurt.efk" );
 		case Effect::Kind::Player_Slide_Begin:
 			return Make( u"Slide_Begin.efk" );
+		case Effect::Kind::Protected:
+			return Make( u"Protect.efk" );
 		default: break;
 		}
 
