@@ -218,6 +218,7 @@ namespace Item
 		if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
+		ImGui::DragFloat( u8"出現時のＹ初速",			&dropBoundStrength,	0.01f );
 		ImGui::DragFloat( u8"重力[m/s]",				&gravity,			0.01f );
 		ImGui::DragFloat( u8"モーション再生速度",		&animePlaySpeed,	0.01f );
 		ImGui::Helper::ShowAABBNode( u8"地形との当たり判定",			&body		);
@@ -295,6 +296,9 @@ namespace Item
 		orientation		= Donya::Quaternion::Identity();
 		aliveTimer		= 0.0f;
 		wantRemove		= false;
+
+		const auto *pData = GetGeneralOrNull( GetKind() );
+		velocity.y		= ( pData ) ? pData->dropBoundStrength : 0.0f;
 	}
 	void Item::Uninit() {}
 	void Item::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
@@ -499,7 +503,7 @@ namespace Item
 	}
 	void Admin::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
 	{
-		GenerateRequestedFires();
+		GenerateRequestedItems();
 		generateRequests.clear();
 
 		for ( auto &it : items )
@@ -582,7 +586,7 @@ namespace Item
 		// else
 		return &items[instanceIndex];
 	}
-	void Admin::GenerateRequestedFires()
+	void Admin::GenerateRequestedItems()
 	{
 		for ( const auto &it : generateRequests )
 		{

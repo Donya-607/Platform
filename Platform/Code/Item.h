@@ -177,7 +177,7 @@ namespace Item
 		/// </summary>
 		const Item *GetInstanceOrNullptr( size_t instanceIndex ) const;
 	private:
-		void GenerateRequestedFires();
+		void GenerateRequestedItems();
 		void RemoveItemsIfNeeds();
 	#if USE_IMGUI
 	public:

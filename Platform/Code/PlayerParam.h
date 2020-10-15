@@ -28,6 +28,7 @@ public:
 	float	ladderMoveSpeed		= 1.0f;
 	float	ladderShotLagSecond	= 0.5f;
 	float	jumpStrength		= 1.0f;
+	float	jumpBufferSecond	= 0.2f;		// Allow second of pre-input
 	float	gravity				= 1.0f;
 	float	gravityResistance	= 0.5f;		// Multiply to gravity if while pressing a jump key
 	float	resistableSeconds	= 0.5f;
@@ -171,6 +172,10 @@ private:
 		}
 		if ( 11 <= version )
 		{
+			archive( CEREAL_NVP( jumpBufferSecond ) );
+		}
+		if ( 12 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -179,4 +184,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 10 )
+CEREAL_CLASS_VERSION( PlayerParam, 11 )

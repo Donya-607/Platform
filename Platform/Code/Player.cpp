@@ -310,21 +310,22 @@ void PlayerParam::ShowImGuiNode()
 {
 	if ( ImGui::TreeNode( u8"汎用設定" ) )
 	{
-		ImGui::DragInt  ( u8"最大体力",				&maxHP						);
-		ImGui::DragInt  ( u8"最大残機数",			&maxRemainCount				);
-		ImGui::DragInt  ( u8"初期残機数",			&initialRemainCount			);
-		ImGui::DragFloat( u8"移動速度",				&moveSpeed,			0.01f	);
-		ImGui::DragFloat( u8"スライディング速度",		&slideMoveSpeed,	0.01f	);
-		ImGui::DragFloat( u8"スライディング秒数",		&slideMoveSeconds,	0.01f	);
-		ImGui::DragFloat( u8"ジャンプ力",			&jumpStrength,		0.01f	);
-		ImGui::DragFloat( u8"重力",					&gravity,			0.01f	);
-		ImGui::SliderFloat( u8"重力抵抗力",			&gravityResistance,	0.0f, 1.0f );
-		ImGui::DragFloat( u8"重力抵抗可能秒数",		&resistableSeconds,	0.01f	);
-		ImGui::DragFloat( u8"最高落下速度",			&maxFallSpeed,		0.01f	);
-		ImGui::DragFloat( u8"のけぞる秒数",			&knockBackSeconds,	0.01f	);
-		ImGui::DragFloat( u8"のけぞり速度",			&knockBackSpeed,	0.01f	);
-		ImGui::DragFloat( u8"無敵秒数",				&invincibleSeconds,	0.01f	);
-		ImGui::DragFloat( u8"無敵中点滅間隔（秒）",	&flushingInterval,	0.01f	);
+		ImGui::DragInt  ( u8"最大体力",					&maxHP						);
+		ImGui::DragInt  ( u8"最大残機数",				&maxRemainCount				);
+		ImGui::DragInt  ( u8"初期残機数",				&initialRemainCount			);
+		ImGui::DragFloat( u8"移動速度",					&moveSpeed,			0.01f	);
+		ImGui::DragFloat( u8"スライディング速度",			&slideMoveSpeed,	0.01f	);
+		ImGui::DragFloat( u8"スライディング秒数",			&slideMoveSeconds,	0.01f	);
+		ImGui::DragFloat( u8"ジャンプ力",				&jumpStrength,		0.01f	);
+		ImGui::DragFloat( u8"ジャンプの先行入力受付秒数",	&jumpBufferSecond,	0.01f	);
+		ImGui::DragFloat( u8"重力",						&gravity,			0.01f	);
+		ImGui::SliderFloat( u8"重力抵抗力",				&gravityResistance,	0.0f, 1.0f );
+		ImGui::DragFloat( u8"重力抵抗可能秒数",			&resistableSeconds,	0.01f	);
+		ImGui::DragFloat( u8"最高落下速度",				&maxFallSpeed,		0.01f	);
+		ImGui::DragFloat( u8"のけぞる秒数",				&knockBackSeconds,	0.01f	);
+		ImGui::DragFloat( u8"のけぞり速度",				&knockBackSpeed,	0.01f	);
+		ImGui::DragFloat( u8"無敵秒数",					&invincibleSeconds,	0.01f	);
+		ImGui::DragFloat( u8"無敵中点滅間隔（秒）",		&flushingInterval,	0.01f	);
 
 		auto MakePositive	= []( float *v )
 		{
@@ -337,6 +338,7 @@ void PlayerParam::ShowImGuiNode()
 		MakePositive( &slideMoveSpeed		);
 		MakePositive( &slideMoveSeconds		);
 		MakePositive( &jumpStrength			);
+		MakePositive( &jumpBufferSecond		);
 		MakePositive( &gravity				);
 		MakePositive( &resistableSeconds	);
 		MakePositive( &maxFallSpeed			);
@@ -551,6 +553,11 @@ bool Player::InputManager::Jumpable( int jumpInputIndex ) const
 {
 	if ( jumpInputIndex < 0 || Input::variationCount <= jumpInputIndex ) { return false; }
 	// else
+
+	const auto &data = Parameter().Get();
+	if ( data.jumpBufferSecond < keepJumpSeconds[jumpInputIndex] ) { return false; }
+	// else
+
 	return wasReleasedJumps[jumpInputIndex];
 }
 void Player::InputManager::Overwrite( const Input overwrite )
