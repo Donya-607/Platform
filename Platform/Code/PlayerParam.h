@@ -37,6 +37,7 @@ public:
 	float	knockBackSpeed		= 1.0f;		// X speed
 	float	invincibleSeconds	= 2.0f;
 	float	flushingInterval	= 0.1f;		// Seconds
+	float	appearDelaySecond	= 0.5f;		// Seconds
 	Donya::Collision::Box3F		hitBox;			// VS a terrain
 	Donya::Collision::Box3F		hurtBox;		// VS an attack(e.g. enemy)
 	Donya::Collision::Box3F		slideHitBox;	// VS a terrain when sliding
@@ -176,6 +177,10 @@ private:
 		}
 		if ( 12 <= version )
 		{
+			archive( CEREAL_NVP( appearDelaySecond ) );
+		}
+		if ( 13 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -184,4 +189,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 11 )
+CEREAL_CLASS_VERSION( PlayerParam, 12 )

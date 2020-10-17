@@ -11,6 +11,7 @@ namespace Effect
 		DefeatEnemy_Small,
 		Hit_Buster,
 		HurtDamage,
+		Player_Appear,
 		Player_Slide_Begin,
 		Protected,
 
@@ -27,6 +28,7 @@ namespace Effect
 		case Effect::Kind::DefeatEnemy_Small:	return "DefeatEnemy_Small";
 		case Effect::Kind::Hit_Buster:			return "Hit_Buster";
 		case Effect::Kind::HurtDamage:			return "HurtDamage";
+		case Effect::Kind::Player_Appear:		return "Player_Appear";
 		case Effect::Kind::Player_Slide_Begin:	return "Player_Slide_Begin";
 		case Effect::Kind::Protected:			return "Protected";
 		default: break;

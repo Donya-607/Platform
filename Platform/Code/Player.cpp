@@ -643,7 +643,7 @@ void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAn
 	currKind = CalcNowKind( inst, elapsedTime );
 	if ( currKind != prevKind )
 	{
-		model.animator.ResetTimer();
+		ResetMotionFrame();
 	}
 	
 	ShouldEnableLoop( currKind )
@@ -681,6 +681,14 @@ void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vecto
 	pRenderer->Render( model.pResource->model, model.pose );
 
 	pRenderer->DeactivateConstantModel();
+}
+void Player::MotionManager::ResetMotionFrame()
+{
+	model.animator.ResetTimer();
+}
+bool Player::MotionManager::WasCurrentMotionEnded() const
+{
+	return model.animator.WasEnded();
 }
 void Player::MotionManager::QuitShotMotion()
 {
@@ -869,6 +877,7 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 	case MotionKind::LadderShotLeft:	return false;
 	case MotionKind::LadderShotRight:	return false;
 	case MotionKind::Brace:				return true;
+	case MotionKind::Appear:			return false;
 	default: break;
 	}
 
@@ -881,6 +890,10 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 	if ( IsZero( elapsedTime ) ) { return currKind; }
 	// else
 
+	if ( inst.pMover && inst.pMover->NowAppearing( inst ) )
+	{
+		return MotionKind::Appear;
+	}
 	if ( inst.pMover && inst.pMover->NowGrabbingLadder( inst ) )
 	{ return MotionKind::GrabLadder; }
 	if ( inst.pMover && inst.pMover->NowKnockBacking( inst ) )
@@ -1873,6 +1886,45 @@ std::function<void()> Player::Miss::GetChangeStateMethod( Player &inst ) const
 	return []() {}; // No op
 }
 
+void Player::Appear::Init( Player &inst )
+{
+	MoverBase::Init( inst );
+
+	timer	= 0.0f;
+	visible	= false;
+
+	Effect::Admin::Get().GenerateInstance( Effect::Kind::Player_Appear, inst.GetPosition() );
+}
+void Player::Appear::Update( Player &inst, float elapsedTime, const Map &terrain )
+{
+	timer += elapsedTime;
+
+	const auto &data = Parameter().Get();
+	if ( data.appearDelaySecond <= timer )
+	{
+		visible = true;
+		inst.motionManager.ResetMotionFrame();
+	}
+
+	MotionUpdate( inst, elapsedTime );
+}
+void Player::Appear::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
+{
+	// No op
+}
+bool Player::Appear::Drawable( const Player &inst ) const
+{
+	return visible;
+}
+bool Player::Appear::ShouldChangeMover( const Player &inst ) const
+{
+	return inst.motionManager.WasCurrentMotionEnded();
+}
+std::function<void()> Player::Appear::GetChangeStateMethod( Player &inst ) const
+{
+	return [&inst]() { inst.AssignMover<Normal>(); };
+}
+
 // region Mover
 #pragma endregion
 
@@ -2102,7 +2154,7 @@ void Player::Init( const PlayerInitializer &initializer )
 	prevSlidingStatus	= false;
 	onGround			= false;
 
-	AssignMover<Normal>();
+	AssignMover<Appear>();
 	AssignGun<BusterGun>();
 }
 void Player::Uninit()

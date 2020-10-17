@@ -123,6 +123,7 @@ public:
 		LadderShotLeft,
 		LadderShotRight,
 		Brace,
+		Appear,
 
 		MotionCount
 	};
@@ -198,8 +199,10 @@ private:
 		void Update( Player &instance, float elapsedTime, bool stopAnimation = false );
 		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW, const Donya::Vector3 &blendColor, float blendAlpha ) const;
 	public:
+		void ResetMotionFrame();
 		void QuitShotMotion();
 	public:
+		bool WasCurrentMotionEnded() const;
 		MotionKind CurrentKind() const { return currKind; }
 	private:
 		void UpdateShotMotion( Player &instance, float elapsedTime );
@@ -272,6 +275,7 @@ private:
 		virtual bool NowGrabbingLadder( const Player &instance ) const { return false; }
 		virtual bool NowBracing( const Player &instance ) const { return false; }
 		virtual bool NowMiss( const Player &instance ) const { return false; }
+		virtual bool NowAppearing( const Player &instance ) const { return false; }
 		virtual bool Drawable( const Player &instance ) const { return true; }
 		virtual bool ShouldChangeMover( const Player &instance ) const = 0;
 		virtual std::function<void()> GetChangeStateMethod( Player &instance ) const = 0;
@@ -390,6 +394,23 @@ private:
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"É~ÉX"; }
+	#endif // USE_IMGUI
+	};
+	class Appear : public MoverBase
+	{
+	private:
+		float	timer	= 0.0f;
+		bool	visible	= false;
+	public:
+		void Init( Player &instance ) override;
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		bool NowAppearing( const Player &instance ) const override { return true; }
+		bool Drawable( const Player &instance ) const override;
+		bool ShouldChangeMover( const Player &instance ) const override;
+		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	#if USE_IMGUI
+		std::string GetMoverName() const override { return u8"ìoèÍ"; }
 	#endif // USE_IMGUI
 	};
 // Mover
