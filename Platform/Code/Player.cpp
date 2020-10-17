@@ -2167,7 +2167,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain )
 		constexpr Donya::Vector3 errorOffset
 		{
 			0.0f,
-			0.01f,
+			0.001f,
 			0.0f
 		};
 		const Donya::Vector3 foot
