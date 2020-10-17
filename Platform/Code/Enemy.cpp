@@ -637,7 +637,8 @@ namespace Enemy
 
 			InitializeParam tmp;
 			tmp.lookDirection	= InitializeParam::LookDirection::ToTarget;
-			tmp.wsPos			= Map::ToWorldPos( row, column );
+			tmp.wsPos			= Map::ToWorldPos( row, column, /* alignToCenterOfTile = */ true );
+			tmp.wsPos.y			-= Tile::unitWholeSize * 0.5f;
 			const Kind kind = scast<Kind>( id - StageFormat::EnemyStart );
 			AppendEnemy( kind, tmp, wsTargetPos, wsScreen );
 		};
