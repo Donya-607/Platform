@@ -256,7 +256,7 @@ void SceneLoad::Init()
 			Bundle{ ID::BGM_Title,					"./Data/Sounds/BGM/Title.ogg",						true	},
 			Bundle{ ID::BGM_Game,					"./Data/Sounds/BGM/Game.ogg",						true	},
 			Bundle{ ID::BGM_Boss,					"./Data/Sounds/BGM/BossBattle.ogg",					true	},
-			Bundle{ ID::BGM_Over,					"./Data/Sounds/BGM/GameOver.ogg",					true	},
+			Bundle{ ID::BGM_Over,					"./Data/Sounds/BGM/GameOver.ogg",					false	},
 			Bundle{ ID::BGM_Result,					"./Data/Sounds/BGM/Result.ogg",						true	},
 
 			Bundle{ ID::Boss_Appear,				"./Data/Sounds/SE/Boss/BossPerformance.ogg",		false	},

@@ -1893,6 +1893,8 @@ void Player::Appear::Init( Player &inst )
 {
 	MoverBase::Init( inst );
 
+	inst.velocity = Donya::Vector3::Zero();
+
 	timer	= 0.0f;
 	visible	= false;
 
@@ -2150,8 +2152,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain )
 	hurtBox.id			= Donya::Collision::GetUniqueID();
 	hurtBox.ownerID		= Donya::Collision::invalidID;
 	hurtBox.ignoreList.clear();
-	body.pos			= initializer.GetWorldInitialPos();
-	body.pos.y			+= body.size.y; // Foot(bottom) to center
+	body.pos			= initializer.GetWorldInitialPos(); // The "body.pos" will be used as foot position.
 	hurtBox.pos			= body.pos;
 	velocity			= 0.0f;
 	inputManager.Init();
@@ -2163,7 +2164,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain )
 
 	// Validate should I take a ground state
 	{
-		constexpr Donya::Vector3 errorMargin
+		constexpr Donya::Vector3 errorOffset
 		{
 			0.0f,
 			0.01f,
@@ -2178,7 +2179,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain )
 		const Donya::Vector3 validations[]
 		{
 			foot,
-			foot + errorMargin
+			foot - errorOffset // Look below a little
 		};
 
 		for ( const auto &it : validations )
@@ -2187,7 +2188,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain )
 			if ( pTile && StageFormat::IsRidableTileID( pTile->GetID() ) )
 			{
 				const Donya::Vector3 tileTop = pTile->GetHitBox().Max();
-				body.pos.y		= tileTop.y + body.size.y; // Place the foot on the tile
+				body.pos.y		= tileTop.y + errorOffset.y; // Place the foot on the tile
 				hurtBox.pos.y	= body.pos.y;
 				onGround		= true;
 				break;
