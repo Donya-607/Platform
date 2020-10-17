@@ -27,7 +27,7 @@
 class PlayerInitializer
 {
 private:
-	Donya::Vector3	wsInitialPos;
+	Donya::Vector3	wsInitialPos;	// Store a foot position
 	bool			lookingRight = true;
 private:
 	friend class cereal::access;
@@ -47,6 +47,9 @@ private:
 	}
 	static constexpr const char *ID = "PlayerInit";
 public:
+	/// <summary>
+	/// Returns a foot position
+	/// </summary>
 	Donya::Vector3	GetWorldInitialPos() const;
 	bool			ShouldLookingRight() const;
 public:
@@ -494,7 +497,7 @@ private:
 	};
 	mutable std::unique_ptr<DamageDesc> pReceivedDamage	= nullptr; // Will be made at GiveDamage()
 public:
-	void Init( const PlayerInitializer &initializer );
+	void Init( const PlayerInitializer &initializer, const Map &terrain );
 	void Uninit();
 
 	void Update( float elapsedTime, Input input, const Map &terrain );

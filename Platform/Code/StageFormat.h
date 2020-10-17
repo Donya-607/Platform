@@ -32,6 +32,15 @@ namespace StageFormat
 		IdentifierCount
 	};
 
+	constexpr bool IsRidableTileID( ID kind, bool allowDangerous = false )
+	{
+		if ( kind == Normal ) { return true; }
+		if ( kind == Ladder ) { return true; }
+		if ( allowDangerous && kind == Needle ) { return true; }
+		// else
+		return false;
+	}
+
 	std::string MakeIDName( ID id );
 #if USE_IMGUI
 	/// <summary>

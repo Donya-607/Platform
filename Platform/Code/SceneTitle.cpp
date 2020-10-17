@@ -277,13 +277,13 @@ void SceneTitle::Init()
 	{
 		/*
 		The dependencies of initializations:
-		CurrentRoomID	[House, Player]
+		Enemies:		[CurrentScreen, Player]	- depends on the player position as target, and current screen for decide the initial state
+		CurrentScreen:	[Camera]				- depends on the view and projection matrix of the camera
+		Camera:			[Player, House]			- depends on the player position(camera), and room position(light camera)
+		CurrentRoomID	[Player, House]			- the current room indicates what the player belongs map
 		House - it is free
-		Enemies:		[Map]				- depends on the map for decide the initial state
-		Map:			[CurrentScreen]		- depends on an area of current screen the camera projects
-		CurrentScreen:	[Camera]			- depends on the view and projection matrix of the camera
-		Camera:			[Player, House]		- depends on the player position(camera) and room position(light camera)
-		Player - it is free(currently)
+		Player:			[Map]					- depends on the map because decide the ground state
+		Map - it is free
 		*/
 
 		// Initialize a dependent objects
@@ -291,17 +291,15 @@ void SceneTitle::Init()
 		pHouse = std::make_unique<House>();
 		pHouse->Init( stageNo );
 
-		PlayerInit();
+		pMap = std::make_unique<Map>();
+		pMap->Init( stageNo, /* reloadModel = */ true );
+
+		PlayerInit( *pMap );
 
 		currentRoomID = CalcCurrentRoomID();
 
-		// The calculation of camera position depends on the player's position
 		CameraInit();
-		// The calculation of screen space uses camera's view and projection matrix, so must calc it after CameraInit().
 		currentScreen = CalcCurrentScreenPlane();
-
-		pMap = std::make_unique<Map>();
-		pMap->Init( stageNo, /* reloadModel = */ true );
 
 		auto &enemyAdmin = Enemy::Admin::Get();
 		enemyAdmin.ClearInstances();
@@ -1255,7 +1253,7 @@ Donya::Vector4x4 SceneTitle::CalcLightViewMatrix() const
 	return lightCamera.CalcViewMatrix();
 }
 
-void SceneTitle::PlayerInit()
+void SceneTitle::PlayerInit( const Map &terrain )
 {
 	if ( !pPlayerIniter )
 	{
@@ -1271,7 +1269,7 @@ void SceneTitle::PlayerInit()
 	}
 
 	pPlayer = std::make_unique<Player>();
-	pPlayer->Init( *pPlayerIniter );
+	pPlayer->Init( *pPlayerIniter, terrain );
 }
 void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 {
@@ -1450,7 +1448,9 @@ void SceneTitle::UseImGui()
 				pPlayerIniter->SaveJson( stageNo );
 			}
 
-			PlayerInit();
+			const Map emptyMap{}; // Used for empty argument. Fali safe.
+			const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+			PlayerInit( mapRef );
 		};
 		auto ApplyToRoom	= [&]( const CSVLoader &loadedData )
 		{

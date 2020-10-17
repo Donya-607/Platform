@@ -1154,13 +1154,13 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 
 	/*
 	The dependencies of initializations:
-	CurrentRoomID	[House, Player]
+	Enemies:		[CurrentScreen, Player]	- depends on the player position as target, and current screen for decide the initial state
+	CurrentScreen:	[Camera]				- depends on the view and projection matrix of the camera
+	Camera:			[Player, House]			- depends on the player position(camera), and room position(light camera)
+	CurrentRoomID	[Player, House]			- the current room indicates what the player belongs map
 	House - it is free
-	Enemies:		[Map, Player]		- depends on the player position as target, and map for decide the initial state
-	Map:			[CurrentScreen]		- depends on an area of current screen the camera projects
-	CurrentScreen:	[Camera]			- depends on the view and projection matrix of the camera
-	Camera:			[Player, House]		- depends on the player position(camera), and room position(light camera)
-	Player - it is free(currently)
+	Player:			[Map]					- depends on the map because decide the ground state
+	Map - it is free
 	*/
 
 	// Initialize a dependent objects
@@ -1168,7 +1168,9 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	pHouse = std::make_unique<House>();
 	pHouse->Init( stageNo );
 
-	PlayerInit();
+	if ( pMap ) { pMap->Init( stageNo, reloadMapModel ); }
+
+	PlayerInit( *pMap );
 	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
 	if ( pPlayerMeter )
 	{
@@ -1186,12 +1188,8 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 		pSky->AdvanceHourTo( pCurrentRoom->GetHour(), 0.0f ); // Immediately
 	}
 
-	// The calculation of camera position depends on the player's position
 	CameraInit();
-	// The calculation of screen space uses camera's view and projection matrix, so must calc it after CameraInit().
 	currentScreen = CalcCurrentScreenPlane();
-
-	if ( pMap ) { pMap->Init( stageNo, reloadMapModel ); }
 
 	auto &enemyAdmin = Enemy::Admin::Get();
 	enemyAdmin.ClearInstances();
@@ -1532,7 +1530,7 @@ Donya::Vector4x4 SceneGame::CalcLightViewMatrix() const
 	return lightCamera.CalcViewMatrix();
 }
 
-void SceneGame::PlayerInit()
+void SceneGame::PlayerInit( const Map &terrain )
 {
 	if ( !pPlayerIniter )
 	{
@@ -1548,7 +1546,7 @@ void SceneGame::PlayerInit()
 	}
 
 	pPlayer = std::make_unique<Player>();
-	pPlayer->Init( *pPlayerIniter );
+	pPlayer->Init( *pPlayerIniter, terrain );
 }
 void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 {
@@ -2545,7 +2543,9 @@ void SceneGame::UseImGui( float elapsedTime )
 				pPlayerIniter->SaveJson( stageNumber );
 			}
 
-			PlayerInit();
+			const Map emptyMap{}; // Used for empty argument. Fali safe.
+			const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+			PlayerInit( mapRef );
 		};
 		auto ApplyToRoom	= [&]( const CSVLoader &loadedData )
 		{

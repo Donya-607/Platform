@@ -120,8 +120,9 @@ void PlayerInitializer::RemakeByCSV( const CSVLoader &loadedData )
 		if ( !ShouldConsider( id ) ) { return false; }
 		// else
 
-		wsInitialPos = Map::ToWorldPos( r, c );
 		lookingRight = ( id == StageFormat::StartPointRight );
+		wsInitialPos = Map::ToWorldPos( r, c, /* alignToCenterOfTile = */ true );
+		wsInitialPos.y -= Tile::unitWholeSize * 0.5f;
 		return true;
 	};
 
@@ -249,8 +250,8 @@ void PlayerInitializer::ShowImGuiNode( const std::string &nodeCaption, int stage
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	ImGui::DragFloat3( u8"初期のワールド座標",	&wsInitialPos.x, 0.01f );
-	ImGui::Checkbox  ( u8"初期は右向きか",		&lookingRight );
+	ImGui::DragFloat3( u8"初期のワールド座標（足元）",	&wsInitialPos.x, 0.01f );
+	ImGui::Checkbox  ( u8"初期は右向きか",			&lookingRight );
 
 	if ( allowShowIONode )
 	{
@@ -2137,7 +2138,7 @@ void Player::ShieldGun::ThrowShield( Player &inst, const InputManager &input )
 // Gun
 #pragma endregion
 
-void Player::Init( const PlayerInitializer &initializer )
+void Player::Init( const PlayerInitializer &initializer, const Map &terrain )
 {
 	const bool shouldLookingToRight = initializer.ShouldLookingRight();
 	UpdateOrientation( shouldLookingToRight );
@@ -2150,6 +2151,7 @@ void Player::Init( const PlayerInitializer &initializer )
 	hurtBox.ownerID		= Donya::Collision::invalidID;
 	hurtBox.ignoreList.clear();
 	body.pos			= initializer.GetWorldInitialPos();
+	body.pos.y			+= body.size.y; // Foot(bottom) to center
 	hurtBox.pos			= body.pos;
 	velocity			= 0.0f;
 	inputManager.Init();
@@ -2158,6 +2160,40 @@ void Player::Init( const PlayerInitializer &initializer )
 	currentHP			= data.maxHP;
 	prevSlidingStatus	= false;
 	onGround			= false;
+
+	// Validate should I take a ground state
+	{
+		constexpr Donya::Vector3 errorMargin
+		{
+			0.0f,
+			0.01f,
+			0.0f
+		};
+		const Donya::Vector3 foot
+		{
+			body.pos.x,
+			body.pos.y - body.size.y,
+			body.pos.z
+		};
+		const Donya::Vector3 validations[]
+		{
+			foot,
+			foot + errorMargin
+		};
+
+		for ( const auto &it : validations )
+		{
+			const auto pTile = terrain.GetPlaceTileOrNullptr( foot );
+			if ( pTile && StageFormat::IsRidableTileID( pTile->GetID() ) )
+			{
+				const Donya::Vector3 tileTop = pTile->GetHitBox().Max();
+				body.pos.y		= tileTop.y + body.size.y; // Place the foot on the tile
+				hurtBox.pos.y	= body.pos.y;
+				onGround		= true;
+				break;
+			}
+		}
+	}
 
 	AssignMover<Appear>();
 	AssignGun<BusterGun>();

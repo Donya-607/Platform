@@ -105,7 +105,7 @@ private:
 
 	Donya::Vector4x4 CalcLightViewMatrix() const;
 
-	void	PlayerInit();
+	void	PlayerInit( const Map &terrain );
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );
 
 	int		CalcCurrentRoomID() const;
