@@ -40,6 +40,7 @@ namespace
 		"LadderShotLeft",
 		"LadderShotRight",
 		"Brace",
+		"Appear",
 	};
 
 	static std::shared_ptr<ModelHelper::SkinningSet> pModel{};
@@ -310,6 +311,7 @@ void PlayerParam::ShowImGuiNode()
 {
 	if ( ImGui::TreeNode( u8"汎用設定" ) )
 	{
+		ImGui::DragFloat( u8"登場時の出現タイミング（秒）",&appearDelaySecond,	0.01f	);
 		ImGui::DragInt  ( u8"最大体力",					&maxHP						);
 		ImGui::DragInt  ( u8"最大残機数",				&maxRemainCount				);
 		ImGui::DragInt  ( u8"初期残機数",				&initialRemainCount			);
@@ -1899,11 +1901,14 @@ void Player::Appear::Update( Player &inst, float elapsedTime, const Map &terrain
 {
 	timer += elapsedTime;
 
-	const auto &data = Parameter().Get();
-	if ( data.appearDelaySecond <= timer )
+	if ( !visible )
 	{
-		visible = true;
-		inst.motionManager.ResetMotionFrame();
+		const auto &data = Parameter().Get();
+		if ( data.appearDelaySecond <= timer )
+		{
+			visible = true;
+			inst.motionManager.ResetMotionFrame();
+		}
 	}
 
 	MotionUpdate( inst, elapsedTime );
@@ -2745,13 +2750,18 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );
 	ImGui::Checkbox		( u8"地上にいるか",					&onGround );
 
-	inputManager.ShowImGuiNode( u8"入力状態" );
-
 	bool tmp{};
 	tmp = pMover->NowKnockBacking( *this );
 	ImGui::Checkbox		( u8"のけぞり中か",					&tmp );
 	tmp = invincibleTimer.NowWorking();
 	ImGui::Checkbox		( u8"無敵中か",						&tmp );
+
+	inputManager.ShowImGuiNode( u8"入力状態" );
+
+	if ( ImGui::Button( u8"登場演出再生" ) )
+	{
+		AssignMover<Appear>();
+	}
 
 	ImGui::DragFloat3	( u8"ワールド座標",					&body.pos.x,	0.01f );
 	ImGui::DragFloat3	( u8"速度",							&velocity.x,	0.01f );

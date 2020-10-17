@@ -2711,12 +2711,12 @@ void SceneGame::UseImGui( float elapsedTime )
 		if ( pSky ) { pSky->ShowImGuiNode( u8"空の現在" ); }
 		ImGui::Text( "" );
 
-		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
-		Player::UpdateParameter( u8"自機のパラメータ" );
-		ImGui::Text( "" );
-
 		if ( pMap    ) { pMap->ShowImGuiNode( u8"マップの現在", stageNumber ); }
 		if ( pHouse  ) { pHouse->ShowImGuiNode( u8"部屋の現在", stageNumber ); }
+		ImGui::Text( "" );
+
+		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
+		Player::UpdateParameter( u8"自機のパラメータ" );
 		ImGui::Text( "" );
 
 		Bullet::Admin::Get().ShowImGuiNode( u8"弾の現在" );
