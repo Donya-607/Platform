@@ -17,6 +17,7 @@
 #include "ClearEvent.h"
 #include "Effect/Effect.h"
 #include "Map.h"
+#include "Music.h"
 #include "ObjectBase.h"
 #include "Player.h"
 #include "Renderer.h"
@@ -70,10 +71,11 @@ private:
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 	Input								currentInput;
 	Donya::Collision::Box3F				currentScreen;
-	int									currentRoomID	= 0;
+	int									currentRoomID		= 0;
+	Music::ID							currentPlayingBGM	= Music::BGM_Game;
 	
-	Scene::Type							nextScene		= Scene::Type::Null;
-	State								status			= State::StrategyStage;
+	Scene::Type							nextScene			= Scene::Type::Null;
+	State								status				= State::StrategyStage;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 	std::unique_ptr<Donya::Displayer>	pDisplayer;
@@ -93,6 +95,7 @@ private:
 	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 
 	int		stageNumber				= 0;
+	float	stageTimer				= 0.0f;	// Elapsed second from start a stage
 	float	elapsedSecondsAfterMiss	= 0.0f;
 	bool	isThereClearEvent		= false;
 	bool	isThereBoss				= false;
@@ -121,10 +124,13 @@ private:
 	bool	CreateShaders();
 	bool	AreRenderersReady() const;
 
+	void	PlayBGM( Music::ID kind );
+	void	FadeOutBGM() const;
+
 	Donya::Vector4x4 MakeScreenTransform() const;
 	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
 
-	void	InitStage( int stageNo, bool reloadMapModel );
+	void	InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel );
 	void	UninitStage();
 
 	void	AssignCurrentInput();

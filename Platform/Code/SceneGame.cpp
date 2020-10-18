@@ -142,7 +142,10 @@ namespace
 		MeterParam playerMeter;
 		MeterParam skullMeter;
 
+		float readyFxBeginDelaySecond = 1.0f;
 		Donya::Vector3 readyFxPosOffset; // Offset from the focus point of camera
+
+		float fadeOutSecondOfBGM = 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -202,6 +205,14 @@ namespace
 			}
 			if ( 10 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( readyFxBeginDelaySecond	),
+					CEREAL_NVP( fadeOutSecondOfBGM		)
+				);
+			}
+			if ( 11 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -256,10 +267,14 @@ namespace
 
 			if ( ImGui::TreeNode( u8"秒数関連" ) )
 			{
-				ImGui::DragFloat( u8"スクロールに要する秒数",			&scrollTakeSecond,	0.01f );
-				ImGui::DragFloat( u8"ミスからリトライまでの待機秒数",	&waitSecondRetry,	0.01f );
-				scrollTakeSecond = std::max( 0.01f, scrollTakeSecond );
-				waitSecondRetry  = std::max( 0.01f, waitSecondRetry  );
+				ImGui::DragFloat( u8"READY表示までの遅延",				&readyFxBeginDelaySecond,	0.01f );
+				ImGui::DragFloat( u8"ＢＧＭのフェードアウトにかける秒数",	&fadeOutSecondOfBGM,		0.01f );
+				ImGui::DragFloat( u8"スクロールに要する秒数",				&scrollTakeSecond,			0.01f );
+				ImGui::DragFloat( u8"ミスからリトライまでの待機秒数",		&waitSecondRetry,			0.01f );
+				readyFxBeginDelaySecond	= std::max( 0.0f,  readyFxBeginDelaySecond	);
+				fadeOutSecondOfBGM		= std::max( 0.0f,  fadeOutSecondOfBGM		);
+				scrollTakeSecond		= std::max( 0.01f, scrollTakeSecond			);
+				waitSecondRetry			= std::max( 0.01f, waitSecondRetry			);
 
 				ImGui::TreePop();
 			}
@@ -326,15 +341,13 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				9 )
+CEREAL_CLASS_VERSION( SceneParam,				10 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
 {
-	Donya::Sound::Play( Music::BGM_Game );
-#if DEBUG_MODE
-	// Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true ); // Too noisy.
-#endif // DEBUG_MODE
+	currentPlayingBGM = Music::BGM_Game;
+	Donya::Sound::Play( currentPlayingBGM );
 
 	sceneParam.LoadParameter();
 
@@ -368,7 +381,7 @@ void SceneGame::Init()
 
 	pMap = std::make_unique<Map>();
 
-	InitStage( stageNumber, /* reloadModel = */ true );
+	InitStage( currentPlayingBGM, stageNumber, /* reloadModel = */ true );
 }
 void SceneGame::Uninit()
 {
@@ -379,7 +392,7 @@ void SceneGame::Uninit()
 
 	Effect::Admin::Get().ClearInstances();
 
-	Donya::Sound::Stop( Music::BGM_Game );
+	Donya::Sound::Stop( currentPlayingBGM, /* isEnableForAll = */ true );
 }
 
 Scene::Result SceneGame::Update( float elapsedTime )
@@ -424,14 +437,14 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	if ( Fader::Get().IsClosed() && nextScene == Scene::Type::Game )
 	{
 		UninitStage();
-		InitStage( stageNumber, /* reloadModel = */ false );
+		InitStage( Music::BGM_Game, stageNumber, /* reloadModel = */ false );
 	}
 
 	
 	controller.Update();
 	AssignCurrentInput();
 
-
+	stageTimer += elapsedTime;
 	const float deltaTimeForMove  = ( scroll.active ) ? 0.0f : elapsedTime;
 	const float deltaTimeForAnime = ( scroll.active ) ? 0.0f : elapsedTime;
 
@@ -466,6 +479,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		{
 			status = State::BattleBoss;
 			pBossContainer->StartupBossIfStandby( currentRoomID );
+
+			FadeOutBGM();
+			// TODO: Play the boss-BGM after a performance of boss
+			PlayBGM( Music::BGM_Boss );
 		}
 		else if ( !pBossContainer->IsAliveIn( currentRoomID ) )
 		{
@@ -485,31 +502,40 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	if ( pSky ) { pSky->Update( elapsedTime ); }
 
-	if ( pFxReady )
+	// In under the READY-ing state
+	if ( !pPlayer )
 	{
-		// In under the READY-ing state
-
-		if ( !pFxReady->IsExists() )
+		if ( !pFxReady )
 		{
-			pFxReady->Stop();
-			pFxReady->Disable();
-			pFxReady.reset();
+			if ( data.readyFxBeginDelaySecond <= stageTimer )
+			{
+				const Donya::Vector3 fxReadyPos = iCamera.GetFocusPoint() + data.readyFxPosOffset;
+				pFxReady = std::make_unique<Effect::Handle>( Effect::Handle::Generate( Effect::Kind::READY, fxReadyPos ) );
+			}
+		}
+		else
+		{
+			if ( !pFxReady->IsExists() )
+			{
+				pFxReady->Stop();
+				pFxReady->Disable();
+				pFxReady.reset();
 
-			PlayerInit( *pMap );
+				PlayerInit( *pMap );
+			}
 		}
 	}
 
 	PlayerUpdate( deltaTimeForMove, mapRef );
-	// PlayerUpdate( elapsedTime, mapRef );
 	if ( data.waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
 	{
+		elapsedSecondsAfterMiss = 0.0f;
+
 		const int remaining = Player::Remaining::Get();
 		if ( remaining <= 0 )
 		{
-			// Donya::Sound::AppendFadePoint( Music::BGM_Game, 2.0f, 0.0f, true );
-
+			FadeOutBGM();
 			StartFade( Scene::Type::Over );
-			
 			// The remaining count will be re-set at transitioned scene.
 		}
 		else
@@ -1100,6 +1126,17 @@ bool SceneGame::AreRenderersReady() const
 	return true;
 }
 
+void SceneGame::PlayBGM( Music::ID kind )
+{
+	Donya::Sound::Stop( currentPlayingBGM, /* isEnableForAll = */ true );
+	currentPlayingBGM = kind;
+	Donya::Sound::Play( currentPlayingBGM );
+}
+void SceneGame::FadeOutBGM() const
+{
+	Donya::Sound::AppendFadePoint( currentPlayingBGM, FetchParameter().fadeOutSecondOfBGM, 0.0f, /* isEnableForAll = */ true );
+}
+
 Donya::Vector4x4 SceneGame::MakeScreenTransform() const
 {
 	constexpr Donya::Vector4x4 matViewport = Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
@@ -1165,11 +1202,17 @@ Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 	return nowScreen;
 }
 
-void SceneGame::InitStage( int stageNo, bool reloadMapModel )
+void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel )
 {
 	status = State::StrategyStage;
+	stageTimer = 0.0f;
 
-	// Hide the players
+	if ( currentPlayingBGM != nextBGM )
+	{
+		PlayBGM( nextBGM );
+	}
+
+	// Remove the player relates
 	if ( pPlayer )
 	{
 		pPlayer->Uninit();
@@ -1178,6 +1221,11 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	if ( pPlayerMeter )
 	{
 		pPlayerMeter.reset();
+	}
+	if ( pFxReady )
+	{
+		pFxReady->Stop();
+		pFxReady.reset();
 	}
 
 	// But the Initializer must be exist
@@ -1200,10 +1248,11 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	House		- it is free
 	PlayerPos	- it is free("pPlayerIniter" will be in charge)
 	Map			- it is free
-	Fx_Ready:		[Camera]					- the position can be decide by the focus point of camera
 	*/
 
+
 	// Initialize a dependent objects
+
 
 	pHouse = std::make_unique<House>();
 	pHouse->Init( stageNo );
@@ -1220,14 +1269,6 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	CameraInit();
 	currentScreen = CalcCurrentScreenPlane();
 
-	const Donya::Vector3 fxReadyPos = iCamera.GetFocusPoint() + data.readyFxPosOffset;
-	if ( pFxReady )
-	{
-		pFxReady->Stop();
-		pFxReady.reset();
-	}
-	pFxReady = std::make_unique<Effect::Handle>( Effect::Handle::Generate( Effect::Kind::READY, fxReadyPos ) );
-
 	auto &enemyAdmin = Enemy::Admin::Get();
 	enemyAdmin.ClearInstances();
 	enemyAdmin.LoadEnemies( stageNo, playerPos, currentScreen, IOFromBinary );
@@ -1235,7 +1276,9 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	enemyAdmin.SaveEnemies( stageNo, true );
 #endif // DEBUG_MODE
 
+
 	// Initialize a non-dependent objects
+
 
 	pClearEvent = std::make_unique<ClearEvent>();
 	pClearEvent->Init( stageNo );
@@ -1673,7 +1716,7 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 
 int  SceneGame::CalcCurrentRoomID() const
 {
-	if ( !pPlayer || !pHouse ) { return currentRoomID; }
+	if ( !pHouse ) { return currentRoomID; }
 	// else
 
 	const Donya::Vector3 playerPos = GetPlayerPosition();
