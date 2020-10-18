@@ -174,6 +174,8 @@ namespace Effect
 			return Make( u"Appear.efk" );
 		case Effect::Kind::Player_Slide_Begin:
 			return Make( u"Slide_Begin.efk" );
+		case Effect::Kind::READY:
+			return Make( u"READY.efk" );
 		case Effect::Kind::Protected:
 			return Make( u"Protect.efk" );
 		default: break;

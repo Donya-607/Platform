@@ -13,6 +13,7 @@ namespace Effect
 		HurtDamage,
 		Player_Appear,
 		Player_Slide_Begin,
+		READY,
 		Protected,
 
 		KindCount
@@ -30,6 +31,7 @@ namespace Effect
 		case Effect::Kind::HurtDamage:			return "HurtDamage";
 		case Effect::Kind::Player_Appear:		return "Player_Appear";
 		case Effect::Kind::Player_Slide_Begin:	return "Player_Slide_Begin";
+		case Effect::Kind::READY:				return "READY";
 		case Effect::Kind::Protected:			return "Protected";
 		default: break;
 		}
