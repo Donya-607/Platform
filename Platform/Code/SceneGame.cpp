@@ -141,6 +141,8 @@ namespace
 		};
 		MeterParam playerMeter;
 		MeterParam skullMeter;
+
+		Donya::Vector3 readyFxPosOffset; // Offset from the focus point of camera
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -195,6 +197,10 @@ namespace
 				);
 			}
 			if ( 9 <= version )
+			{
+				archive( CEREAL_NVP( readyFxPosOffset ) );
+			}
+			if ( 10 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -280,6 +286,7 @@ namespace
 
 			if ( ImGui::TreeNode( u8"その他" ) )
 			{
+				ImGui::DragFloat3( u8"READY：表示座標（注視点からの相対）", &readyFxPosOffset.x, 0.01f );
 				ImGui::SliderFloat2( u8"スティックのデッドゾーン", &deadZone.x, 0.0f, 1.0f );
 				ImGui::TreePop();
 			}
@@ -319,7 +326,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				8 )
+CEREAL_CLASS_VERSION( SceneParam,				9 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
@@ -358,8 +365,6 @@ void SceneGame::Init()
 
 	pPlayerIniter = std::make_unique<PlayerInitializer>();
 	pPlayerIniter->LoadParameter( stageNumber );
-
-	pPlayerMeter = std::make_unique<Meter::Drawer>();
 
 	pMap = std::make_unique<Map>();
 
@@ -480,6 +485,20 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	if ( pSky ) { pSky->Update( elapsedTime ); }
 
+	if ( pFxReady )
+	{
+		// In under the READY-ing state
+
+		if ( !pFxReady->IsExists() )
+		{
+			pFxReady->Stop();
+			pFxReady->Disable();
+			pFxReady.reset();
+
+			PlayerInit( *pMap );
+		}
+	}
+
 	PlayerUpdate( deltaTimeForMove, mapRef );
 	// PlayerUpdate( elapsedTime, mapRef );
 	if ( data.waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
@@ -502,7 +521,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		}
 	}
 
-	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+	const Donya::Vector3 playerPos = GetPlayerPosition();
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
 	BossUpdate( deltaTimeForMove, playerPos );
@@ -1150,17 +1169,38 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 {
 	status = State::StrategyStage;
 
-	bool result = true;
+	// Hide the players
+	if ( pPlayer )
+	{
+		pPlayer->Uninit();
+		pPlayer.reset();
+	}
+	if ( pPlayerMeter )
+	{
+		pPlayerMeter.reset();
+	}
+
+	// But the Initializer must be exist
+	if ( !pPlayerIniter )
+	{
+		_ASSERT_EXPR( 0, L"Error: The PlayerInitializer does not exist unexpectedly!" );
+		pPlayerIniter = std::make_unique<PlayerInitializer>();
+		pPlayerIniter->LoadParameter( stageNumber );
+	}
+	const Donya::Vector3 playerPos = GetPlayerPosition(); // Fetch the initializer's position
+
+	const auto &data = FetchParameter();
 
 	/*
 	The dependencies of initializations:
-	Enemies:		[CurrentScreen, Player]	- depends on the player position as target, and current screen for decide the initial state
-	CurrentScreen:	[Camera]				- depends on the view and projection matrix of the camera
-	Camera:			[Player, House]			- depends on the player position(camera), and room position(light camera)
-	CurrentRoomID	[Player, House]			- the current room indicates what the player belongs map
-	House - it is free
-	Player:			[Map]					- depends on the map because decide the ground state
-	Map - it is free
+	Enemies:		[CurrentScreen, PlayerPos]	- depends on the player position as target, and current screen for decide the initial state
+	CurrentScreen:	[Camera]					- depends on the view and projection matrix of the camera
+	Camera:			[PlayerPos, House]			- depends on the player position(camera), and room position(light camera)
+	CurrentRoomID	[PlayerPos, House]			- the current room indicates what the player belongs map
+	House		- it is free
+	PlayerPos	- it is free("pPlayerIniter" will be in charge)
+	Map			- it is free
+	Fx_Ready:		[Camera]					- the position can be decide by the focus point of camera
 	*/
 
 	// Initialize a dependent objects
@@ -1169,17 +1209,6 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 	pHouse->Init( stageNo );
 
 	if ( pMap ) { pMap->Init( stageNo, reloadMapModel ); }
-
-	PlayerInit( *pMap );
-	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
-	if ( pPlayerMeter )
-	{
-		const float maxHP = scast<float>( Player::Parameter().Get().maxHP );
-		pPlayerMeter->Init( maxHP, maxHP, maxHP );
-
-		const auto &data = FetchParameter();
-		pPlayerMeter->SetDrawOption( data.playerMeter.hpDrawPos, data.playerMeter.hpDrawColor, data.playerMeter.hpDrawScale );
-	}
 
 	currentRoomID = CalcCurrentRoomID();
 	const Room  *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
@@ -1190,6 +1219,14 @@ void SceneGame::InitStage( int stageNo, bool reloadMapModel )
 
 	CameraInit();
 	currentScreen = CalcCurrentScreenPlane();
+
+	const Donya::Vector3 fxReadyPos = iCamera.GetFocusPoint() + data.readyFxPosOffset;
+	if ( pFxReady )
+	{
+		pFxReady->Stop();
+		pFxReady.reset();
+	}
+	pFxReady = std::make_unique<Effect::Handle>( Effect::Handle::Generate( Effect::Kind::READY, fxReadyPos ) );
 
 	auto &enemyAdmin = Enemy::Admin::Get();
 	enemyAdmin.ClearInstances();
@@ -1376,13 +1413,14 @@ void SceneGame::PrepareScrollIfNotActive( int oldRoomID, int newRoomID )
 	scroll.active			= true;
 	scroll.elapsedSecond	= 0.0f;
 
-	const Donya::Vector3 baseFocus = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+	const Donya::Vector3 baseFocus = GetPlayerPosition();
 	scroll.cameraFocusStart = ClampFocusPoint( baseFocus, oldRoomID );
 	scroll.cameraFocusDest  = ClampFocusPoint( baseFocus, newRoomID );
 }
 void SceneGame::AssignCameraPos()
 {
 	const auto &data = FetchParameter();
+	const Donya::Vector3 playerPos = GetPlayerPosition();
 	
 	Donya::Vector3 focusPos;
 	if ( scroll.active )
@@ -1394,16 +1432,14 @@ void SceneGame::AssignCameraPos()
 	}
 	else
 	{
-		focusPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+		focusPos = playerPos;
 		focusPos = ClampFocusPoint( focusPos, currentRoomID );
 	}
 
-	const Donya::Vector3 cameraPos = focusPos + data.camera.offsetPos;
-	iCamera.SetPosition  ( cameraPos );
+	iCamera.SetPosition  ( focusPos + data.camera.offsetPos   );
 	iCamera.SetFocusPoint( focusPos + data.camera.offsetFocus );
 	
-	const Donya::Vector3 playerPos	= ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
-	const Donya::Vector3 offset		= -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
+	const Donya::Vector3 offset = -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
 	lightCamera.SetPosition  ( playerPos + offset );
 	lightCamera.SetFocusPoint( playerPos );
 }
@@ -1419,7 +1455,7 @@ void SceneGame::CameraUpdate( float elapsedTime )
 		
 		if ( nowDebugMode ) // Don't call AssignCameraPos() when debug-mode
 		{
-			const Donya::Vector3 playerPos	= ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+			const Donya::Vector3 playerPos	= GetPlayerPosition();
 			const Donya::Vector3 offset		= -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
 			lightCamera.SetPosition  ( playerPos + offset );
 			lightCamera.SetFocusPoint( playerPos );
@@ -1547,6 +1583,13 @@ void SceneGame::PlayerInit( const Map &terrain )
 
 	pPlayer = std::make_unique<Player>();
 	pPlayer->Init( *pPlayerIniter, terrain );
+
+
+	const auto  &meterData	= FetchParameter().playerMeter;
+	const float maxHP		= scast<float>( Player::Parameter().Get().maxHP );
+	pPlayerMeter = std::make_unique<Meter::Drawer>();
+	pPlayerMeter->Init( maxHP, maxHP, maxHP );
+	pPlayerMeter->SetDrawOption( meterData.hpDrawPos, meterData.hpDrawColor, meterData.hpDrawScale );
 }
 void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 {
@@ -1575,6 +1618,10 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 	{
 		pPlayerMeter->SetDestination( scast<float>( pPlayer->GetCurrentHP() ) );
 	}
+}
+Donya::Vector3 SceneGame::GetPlayerPosition() const
+{
+	return ( pPlayer ) ? pPlayer->GetPosition() : ( pPlayerIniter ) ? pPlayerIniter->GetWorldInitialPos() : Donya::Vector3::Zero();
 }
 
 void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
@@ -1629,7 +1676,8 @@ int  SceneGame::CalcCurrentRoomID() const
 	if ( !pPlayer || !pHouse ) { return currentRoomID; }
 	// else
 
-	const int newID =  pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
+	const Donya::Vector3 playerPos = GetPlayerPosition();
+	const int newID =  pHouse->CalcBelongRoomID( playerPos );
 	return (  newID == Room::invalidID ) ? currentRoomID : newID;
 }
 
@@ -2498,7 +2546,7 @@ void SceneGame::UseImGui( float elapsedTime )
 		};
 		auto ApplyToEnemy	= [&]( const CSVLoader &loadedData )
 		{
-			const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+			const Donya::Vector3 playerPos = GetPlayerPosition();
 
 			Enemy::Admin::Get().ClearInstances();
 			Enemy::Admin::Get().RemakeByCSV( loadedData, playerPos, currentScreen );
@@ -2723,7 +2771,7 @@ void SceneGame::UseImGui( float elapsedTime )
 		Bullet::Parameter::Update( u8"弾のパラメータ" );
 		ImGui::Text( "" );
 
-		const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+		const Donya::Vector3 playerPos = GetPlayerPosition();
 		Enemy::Admin::Get().ShowImGuiNode( u8"敵の現在", stageNumber, playerPos, currentScreen );
 		Enemy::Parameter::Update( u8"敵のパラメータ" );
 		ImGui::Text( "" );

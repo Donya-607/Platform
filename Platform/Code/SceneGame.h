@@ -15,6 +15,7 @@
 #include "Boss.h"
 #include "Bloom.h"
 #include "ClearEvent.h"
+#include "Effect/Effect.h"
 #include "Map.h"
 #include "ObjectBase.h"
 #include "Player.h"
@@ -82,6 +83,7 @@ private:
 	std::unique_ptr<Shader>				pQuadShader;
 	std::unique_ptr<Meter::Drawer>		pPlayerMeter;
 	std::unique_ptr<Meter::Drawer>		pSkullMeter;
+	std::unique_ptr<Effect::Handle>		pFxReady;
 	std::unique_ptr<Map>				pMap;
 	std::unique_ptr<Sky>				pSky;
 	std::unique_ptr<House>				pHouse;
@@ -137,6 +139,7 @@ private:
 
 	void	PlayerInit( const Map &terrain );
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );
+	Donya::Vector3 GetPlayerPosition() const;
 	
 	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 
