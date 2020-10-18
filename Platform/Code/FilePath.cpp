@@ -112,7 +112,6 @@ namespace
 
 	SpriteSet Make( const wchar_t *sprName, size_t instanceCount )
 	{
-		constexpr const wchar_t *directory = L"./Data/Images/";
 		return SpriteSet{ std::wstring{ DIR_IMAGES + std::wstring{ sprName } }, instanceCount };
 	}
 	SpriteSet GetSpriteInfo( SpriteAttribute attr )
