@@ -1899,6 +1899,7 @@ void Player::Appear::Init( Player &inst )
 	visible	= false;
 
 	Effect::Admin::Get().GenerateInstance( Effect::Kind::Player_Appear, inst.GetPosition() );
+	Donya::Sound::Play( Music::Player_Appear );
 }
 void Player::Appear::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
@@ -2140,7 +2141,7 @@ void Player::ShieldGun::ThrowShield( Player &inst, const InputManager &input )
 // Gun
 #pragma endregion
 
-void Player::Init( const PlayerInitializer &initializer, const Map &terrain )
+void Player::Init( const PlayerInitializer &initializer, const Map &terrain, bool withAppearPerformance )
 {
 	const bool shouldLookingToRight = initializer.ShouldLookingRight();
 	UpdateOrientation( shouldLookingToRight );
@@ -2196,7 +2197,10 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain )
 		}
 	}
 
-	AssignMover<Appear>();
+	( withAppearPerformance )
+	? AssignMover<Appear>()
+	: AssignMover<Normal>();
+
 	AssignGun<BusterGun>();
 }
 void Player::Uninit()
@@ -2623,7 +2627,8 @@ void Player::MoveVertical  ( float elapsedTime )
 }
 bool Player::NowShotable( float elapsedTime ) const
 {
-	if ( IsZero( elapsedTime ) ) { return false; } // If game time is pausing
+	if ( IsZero( elapsedTime )						) { return false; } // If game time is pausing
+	if ( pMover && pMover->NowAppearing( *this )	) { return false; }
 	// else
 
 	const bool movable		= ( pMover && !pMover->NowKnockBacking( *this ) );

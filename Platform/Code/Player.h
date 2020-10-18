@@ -497,7 +497,7 @@ private:
 	};
 	mutable std::unique_ptr<DamageDesc> pReceivedDamage	= nullptr; // Will be made at GiveDamage()
 public:
-	void Init( const PlayerInitializer &initializer, const Map &terrain );
+	void Init( const PlayerInitializer &initializer, const Map &terrain, bool withAppearPerformance = true );
 	void Uninit();
 
 	void Update( float elapsedTime, Input input, const Map &terrain );

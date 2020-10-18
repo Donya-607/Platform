@@ -1269,7 +1269,7 @@ void SceneTitle::PlayerInit( const Map &terrain )
 	}
 
 	pPlayer = std::make_unique<Player>();
-	pPlayer->Init( *pPlayerIniter, terrain );
+	pPlayer->Init( *pPlayerIniter, terrain, /* withAppearPerformance = */ false );
 }
 void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 {

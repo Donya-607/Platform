@@ -28,6 +28,7 @@ namespace Music
 		Charge_Start,
 		
 		Player_1UP,
+		Player_Appear,
 		Player_Damage,
 		Player_Dash,
 		Player_Jump,

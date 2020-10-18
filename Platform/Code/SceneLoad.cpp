@@ -275,6 +275,7 @@ void SceneLoad::Init()
 			Bundle{ ID::Charge_Start,				"./Data/Sounds/SE/Effect/Charge_Start.wav",			false	},
 			
 			Bundle{ ID::Player_1UP,					"./Data/Sounds/SE/Player/ExtraLife.wav",			false	},
+			Bundle{ ID::Player_Appear,				"./Data/Sounds/SE/Player/Appear.ogg",				false	},
 			Bundle{ ID::Player_Damage,				"./Data/Sounds/SE/Player/Damage.wav",				false	},
 			Bundle{ ID::Player_Dash,				"./Data/Sounds/SE/Player/Dash.wav",					false	},
 			Bundle{ ID::Player_Jump,				"./Data/Sounds/SE/Player/Jump.wav",					false	},
