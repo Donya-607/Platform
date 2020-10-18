@@ -28,6 +28,7 @@
 #include "ModelHelper.h"			// Use serialize methods
 #include "Music.h"
 #include "Parameter.h"
+#include "PlayerParam.h"			// Use for reset the remaining
 #include "PointLightStorage.h"
 #include "StageNumber.h"
 
@@ -294,6 +295,7 @@ void SceneTitle::Init()
 		pMap = std::make_unique<Map>();
 		pMap->Init( stageNo, /* reloadModel = */ true );
 
+		Player::Remaining::Set( Player::Parameter().Get().initialRemainCount );
 		PlayerInit( *pMap );
 
 		currentRoomID = CalcCurrentRoomID();

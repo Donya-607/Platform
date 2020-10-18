@@ -351,8 +351,6 @@ void SceneGame::Init()
 
 	sceneParam.LoadParameter();
 
-	Effect::Admin::Get().ClearInstances();
-
 	constexpr Donya::Int2 wholeScreenSize
 	{
 		Common::ScreenWidth(),
@@ -1211,6 +1209,8 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel )
 	{
 		PlayBGM( nextBGM );
 	}
+
+	Effect::Admin::Get().ClearInstances();
 
 	// Remove the player relates
 	if ( pPlayer )
