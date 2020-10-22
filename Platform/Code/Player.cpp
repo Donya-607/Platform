@@ -87,6 +87,11 @@ namespace
 
 Donya::Vector3	PlayerInitializer::GetWorldInitialPos() const { return wsInitialPos; }
 bool			PlayerInitializer::ShouldLookingRight() const { return lookingRight; }
+void PlayerInitializer::AssignParameter( const Donya::Vector3 &wsPos, bool lookRight )
+{
+	wsInitialPos = wsPos;
+	lookingRight = lookRight;
+}
 void PlayerInitializer::LoadParameter( int stageNo )
 {
 #if DEBUG_MODE

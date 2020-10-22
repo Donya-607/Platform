@@ -73,7 +73,8 @@ private:
 	Donya::Collision::Box3F				currentScreen;
 	int									currentRoomID		= 0;
 	Music::ID							currentPlayingBGM	= Music::BGM_Game;
-	
+	PlayerInitializer					playerIniter;
+
 	Scene::Type							nextScene			= Scene::Type::Null;
 	State								status				= State::StrategyStage;
 
@@ -92,7 +93,6 @@ private:
 	std::unique_ptr<ClearEvent>			pClearEvent;
 	std::unique_ptr<Boss::Container>	pBossContainer;
 	std::unique_ptr<Player>				pPlayer;
-	std::unique_ptr<PlayerInitializer>	pPlayerIniter;
 
 	int		stageNumber				= 0;
 	float	stageTimer				= 0.0f;	// Elapsed second from start a stage
@@ -143,7 +143,7 @@ private:
 
 	Donya::Vector4x4 CalcLightViewMatrix() const;
 
-	void	PlayerInit( const Map &terrain );
+	void	PlayerInit( const PlayerInitializer &initializer, const Map &terrain );
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );
 	Donya::Vector3 GetPlayerPosition() const;
 	

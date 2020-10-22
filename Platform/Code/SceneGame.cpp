@@ -372,12 +372,11 @@ void SceneGame::Init()
 	result = pSky->Init();
 	assert( result );
 
+	pMap = std::make_unique<Map>();
+
 	stageNumber = Definition::StageNumber::Game();
 
-	pPlayerIniter = std::make_unique<PlayerInitializer>();
-	pPlayerIniter->LoadParameter( stageNumber );
-
-	pMap = std::make_unique<Map>();
+	playerIniter.LoadParameter( stageNumber );
 
 	InitStage( currentPlayingBGM, stageNumber, /* reloadModel = */ true );
 }
@@ -519,7 +518,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 				pFxReady->Disable();
 				pFxReady.reset();
 
-				PlayerInit( *pMap );
+				PlayerInit( playerIniter, *pMap );
 			}
 		}
 	}
@@ -1227,15 +1226,8 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel )
 		pFxReady->Stop();
 		pFxReady.reset();
 	}
-
-	// But the Initializer must be exist
-	if ( !pPlayerIniter )
-	{
-		_ASSERT_EXPR( 0, L"Error: The PlayerInitializer does not exist unexpectedly!" );
-		pPlayerIniter = std::make_unique<PlayerInitializer>();
-		pPlayerIniter->LoadParameter( stageNumber );
-	}
-	const Donya::Vector3 playerPos = GetPlayerPosition(); // Fetch the initializer's position
+	// But the PlayerInitializer must use the same data
+	const Donya::Vector3 playerPos = playerIniter.GetWorldInitialPos();
 
 	const auto &data = FetchParameter();
 
@@ -1609,15 +1601,8 @@ Donya::Vector4x4 SceneGame::CalcLightViewMatrix() const
 	return lightCamera.CalcViewMatrix();
 }
 
-void SceneGame::PlayerInit( const Map &terrain )
+void SceneGame::PlayerInit( const PlayerInitializer &initializer, const Map &terrain )
 {
-	if ( !pPlayerIniter )
-	{
-		_ASSERT_EXPR( 0, L"Error: Initializer is not available!" );
-		return;
-	}
-	// else
-
 	if ( pPlayer )
 	{
 		pPlayer->Uninit();
@@ -1625,7 +1610,7 @@ void SceneGame::PlayerInit( const Map &terrain )
 	}
 
 	pPlayer = std::make_unique<Player>();
-	pPlayer->Init( *pPlayerIniter, terrain );
+	pPlayer->Init( initializer, terrain );
 
 
 	const auto  &meterData	= FetchParameter().playerMeter;
@@ -1664,7 +1649,7 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 }
 Donya::Vector3 SceneGame::GetPlayerPosition() const
 {
-	return ( pPlayer ) ? pPlayer->GetPosition() : ( pPlayerIniter ) ? pPlayerIniter->GetWorldInitialPos() : Donya::Vector3::Zero();
+	return ( pPlayer ) ? pPlayer->GetPosition() : playerIniter.GetWorldInitialPos();
 }
 
 void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
@@ -2447,6 +2432,30 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	UseScreenSpaceImGui();
 
+	static Donya::Vector3 beforeBossRoomPosition{ 84.0f, -8.0f, 0.0f };
+	auto SetPlayerToBeforeBossRoom = [&]()
+	{
+		const Map emptyMap{}; // Used for empty argument. Fali safe.
+		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+
+		PlayerInitializer preBossSetter{};
+		preBossSetter.AssignParameter( beforeBossRoomPosition );
+
+		PlayerInit( preBossSetter, mapRef );
+
+		currentRoomID = CalcCurrentRoomID();
+		const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
+		if ( pSky && pCurrentRoom )
+		{
+			pSky->AdvanceHourTo( pCurrentRoom->GetHour(), 0.0f ); // Immediately
+		}
+
+		AssignCameraPos();
+		scroll.active			= false;
+		scroll.elapsedSecond	= 0.0f;
+		currentScreen = CalcCurrentScreenPlane();
+	};
+
 	// Choose a room by mouse
 	if ( Donya::Mouse::Trigger( Donya::Mouse::Kind::RIGHT ) && pHouse )
 	{
@@ -2495,6 +2504,10 @@ void SceneGame::UseImGui( float elapsedTime )
 	if ( Donya::Keyboard::Trigger( VK_F4 ) )
 	{
 		projectLightCamera = !projectLightCamera;
+	}
+	if ( Donya::Keyboard::Trigger( VK_F6 ) )
+	{
+		SetPlayerToBeforeBossRoom();
 	}
 
 	ImGui::SetNextWindowBgAlpha( 0.6f );
@@ -2625,18 +2638,17 @@ void SceneGame::UseImGui( float elapsedTime )
 		};
 		auto ApplyToPlayer	= [&]( const CSVLoader &loadedData )
 		{
-			if ( !pPlayerIniter ) { pPlayerIniter = std::make_unique<PlayerInitializer>(); }
-			pPlayerIniter->RemakeByCSV( loadedData );
+			playerIniter.RemakeByCSV( loadedData );
 
 			if ( thenSave )
 			{
-				pPlayerIniter->SaveBin ( stageNumber );
-				pPlayerIniter->SaveJson( stageNumber );
+				playerIniter.SaveBin ( stageNumber );
+				playerIniter.SaveJson( stageNumber );
 			}
 
 			const Map emptyMap{}; // Used for empty argument. Fali safe.
 			const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
-			PlayerInit( mapRef );
+			PlayerInit( playerIniter, mapRef );
 		};
 		auto ApplyToRoom	= [&]( const CSVLoader &loadedData )
 		{

@@ -53,6 +53,7 @@ public:
 	Donya::Vector3	GetWorldInitialPos() const;
 	bool			ShouldLookingRight() const;
 public:
+	void AssignParameter( const Donya::Vector3 &wsInitialFootPos, bool lookingRight = true );
 	void LoadParameter( int stageNo );
 private:
 	void LoadBin( int stageNo );
