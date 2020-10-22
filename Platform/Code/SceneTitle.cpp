@@ -347,7 +347,7 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 		if ( nowDebugMode )
 		{
-			iCamera.ChangeMode( Donya::ICamera::Mode::Free );
+			iCamera.ChangeMode( Donya::ICamera::Mode::Satellite );
 		}
 		else
 		{

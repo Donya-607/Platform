@@ -109,8 +109,8 @@ bool SkyMap::CreateBuffers()
 	constexpr size_t sliceH = 12U;
 	constexpr size_t sliceV = 6U;
 	constexpr float  radius = 1.0f;
-	const auto geometry = Donya::Model::Geometry::CreateSphere( sliceH, sliceV, radius );
-	// const auto geometry = Donya::Model::Geometry::CreateCube( radius );
+	// const auto geometry = Donya::Model::Geometry::CreateSphere( sliceH, sliceV, radius );
+	const auto geometry = Donya::Model::Geometry::CreateCube( radius );
 
 	// The create functions requires a resource as std::vector
 	const size_t posCount = geometry.vertices.size();

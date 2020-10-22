@@ -70,11 +70,11 @@ private:
 	UIObject	sprTitleLogo;
 
 #if DEBUG_MODE
-	bool nowDebugMode			= false;
-	bool isReverseCameraMoveX	= false;
-	bool isReverseCameraMoveY	= true;
-	bool isReverseCameraRotX	= false;
-	bool isReverseCameraRotY	= false;
+	bool		nowDebugMode			= false;
+	bool		isReverseCameraMoveX	= true;
+	bool		isReverseCameraMoveY	= false;
+	bool		isReverseCameraRotX		= false;
+	bool		isReverseCameraRotY		= false;
 	Donya::Vector3 previousCameraPos; // In not debugMode
 #endif // DEBUG_MODE
 public:
