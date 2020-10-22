@@ -394,6 +394,11 @@ void SceneGame::Uninit()
 
 Scene::Result SceneGame::Update( float elapsedTime )
 {
+	if ( Donya::Keyboard::Trigger( VK_F6 ) )
+	{
+		SetPlayerToBeforeBossRoom();
+	}
+
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
 	{
@@ -2359,6 +2364,39 @@ Scene::Result SceneGame::ReturnResult()
 	return noop;
 }
 
+
+
+void SceneGame::SetPlayerToBeforeBossRoom()
+{
+	static Donya::Vector3 beforeBossRoomPosition{ 84.0f, -8.0f, 0.0f };
+	auto SetPlayerToBeforeBossRoom = [&]()
+	{
+		const Map emptyMap{}; // Used for empty argument. Fali safe.
+		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+
+		PlayerInitializer preBossSetter{};
+		preBossSetter.AssignParameter( beforeBossRoomPosition );
+
+		PlayerInit( preBossSetter, mapRef );
+
+		currentRoomID = CalcCurrentRoomID();
+		const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
+		if ( pSky && pCurrentRoom )
+		{
+			pSky->AdvanceHourTo( pCurrentRoom->GetHour(), 0.0f ); // Immediately
+		}
+
+		AssignCameraPos();
+		scroll.active			= false;
+		scroll.elapsedSecond	= 0.0f;
+		currentScreen = CalcCurrentScreenPlane();
+	};
+
+	SetPlayerToBeforeBossRoom();
+}
+
+
+
 #if USE_IMGUI
 #include <functional>
 #include "Donya/Useful.h"
@@ -2432,30 +2470,6 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	UseScreenSpaceImGui();
 
-	static Donya::Vector3 beforeBossRoomPosition{ 84.0f, -8.0f, 0.0f };
-	auto SetPlayerToBeforeBossRoom = [&]()
-	{
-		const Map emptyMap{}; // Used for empty argument. Fali safe.
-		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
-
-		PlayerInitializer preBossSetter{};
-		preBossSetter.AssignParameter( beforeBossRoomPosition );
-
-		PlayerInit( preBossSetter, mapRef );
-
-		currentRoomID = CalcCurrentRoomID();
-		const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
-		if ( pSky && pCurrentRoom )
-		{
-			pSky->AdvanceHourTo( pCurrentRoom->GetHour(), 0.0f ); // Immediately
-		}
-
-		AssignCameraPos();
-		scroll.active			= false;
-		scroll.elapsedSecond	= 0.0f;
-		currentScreen = CalcCurrentScreenPlane();
-	};
-
 	// Choose a room by mouse
 	if ( Donya::Mouse::Trigger( Donya::Mouse::Kind::RIGHT ) && pHouse )
 	{
@@ -2504,10 +2518,6 @@ void SceneGame::UseImGui( float elapsedTime )
 	if ( Donya::Keyboard::Trigger( VK_F4 ) )
 	{
 		projectLightCamera = !projectLightCamera;
-	}
-	if ( Donya::Keyboard::Trigger( VK_F6 ) )
-	{
-		SetPlayerToBeforeBossRoom();
 	}
 
 	ImGui::SetNextWindowBgAlpha( 0.6f );

@@ -164,6 +164,7 @@ private:
 private:
 	Result	ReturnResult();
 private:
+	void SetPlayerToBeforeBossRoom();
 #if USE_IMGUI
 	void	UseImGui( float elapsedTime );
 	void	UseScreenSpaceImGui();
