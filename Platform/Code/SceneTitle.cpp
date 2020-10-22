@@ -267,6 +267,10 @@ void SceneTitle::Init()
 		result = CreateShaders();
 		assert( result );
 
+		pSky = std::make_unique<Sky>();
+		result = pSky->Init();
+		assert( result );
+
 		pPlayerIniter = std::make_unique<PlayerInitializer>();
 		pPlayerIniter->LoadParameter( stageNo );
 
@@ -328,6 +332,7 @@ void SceneTitle::Uninit()
 	if ( pHouse		) { pHouse->Uninit();	}
 	if ( pPlayer	) { pPlayer->Uninit();	}
 	pMap.reset();
+	pSky.reset();
 	pHouse.reset();
 	pPlayer.reset();
 
@@ -386,6 +391,8 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	if ( pMap ) { pMap->Update( deltaTimeForMove ); }
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+
+	if ( pSky ) { pSky->Update( elapsedTime ); }
 
 	const int oldRoomID = currentRoomID;
 	if ( scroll.active )
@@ -539,6 +546,17 @@ void SceneTitle::Draw( float elapsedTime )
 	const Donya::Vector4x4 LV  = CalcLightViewMatrix();
 	const Donya::Vector4x4 LVP = LV * lightCamera.GetProjectionMatrix();
 	const auto &data = FetchParameter();
+
+	// Draw the back-ground
+	if ( pSky )
+	{
+		pScreenSurface->SetRenderTarget();
+		pScreenSurface->SetViewport();
+
+		pSky->Draw( cameraPos.XYZ(), VP );
+
+		Donya::Surface::ResetRenderTarget();
+	}
 
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );

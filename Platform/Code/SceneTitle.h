@@ -16,6 +16,7 @@
 #include "Renderer.h"
 #include "Room.h"
 #include "Scene.h"
+#include "Sky.h"
 #include "UI.h"
 
 class SceneTitle : public Scene
@@ -59,6 +60,7 @@ private:
 	std::unique_ptr<Donya::Surface>			pShadowMap;
 	std::unique_ptr<Shader>					pQuadShader;
 	std::unique_ptr<Map>					pMap;
+	std::unique_ptr<Sky>					pSky;
 	std::unique_ptr<House>					pHouse;
 	std::unique_ptr<Player>					pPlayer;
 	std::unique_ptr<PlayerInitializer>		pPlayerIniter;
