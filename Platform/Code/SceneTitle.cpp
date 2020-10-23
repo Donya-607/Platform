@@ -1296,10 +1296,65 @@ void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 	if ( !pPlayer ) { return; }
 	// else
 
+	bool pressLeft	= false;
+	bool pressRight	= false;
+	bool pressUp	= false;
+	bool pressDown	= false;
+	std::array<bool, Player::Input::variationCount> pressJumps{};
+	std::array<bool, Player::Input::variationCount> pressShots{};
+	std::array<bool, Player::Input::variationCount> pressDashes{};
+	std::array<int,  Player::Input::variationCount> shiftGuns{};
+
+	// TODO: To be changeable the input key or button
+
+	if ( controller.IsConnected() )
+	{
+		using Button	= Donya::Gamepad::Button;
+		using Direction	= Donya::Gamepad::StickDirection;
+		
+		pressLeft	= controller.Press( Button::LEFT	) || controller.PressStick( Direction::LEFT		);
+		pressRight	= controller.Press( Button::RIGHT	) || controller.PressStick( Direction::RIGHT	);
+		pressUp		= controller.Press( Button::UP		) || controller.PressStick( Direction::UP		);
+		pressDown	= controller.Press( Button::DOWN	) || controller.PressStick( Direction::DOWN		);
+		
+		pressJumps[0]	= controller.Press( Button::A	);
+		pressShots[0]	= controller.Press( Button::X	);
+		pressDashes[0]	= controller.Press( Button::LT	);
+		shiftGuns[0]	= controller.Press( Button::PRESS_R	);
+		if ( 2 <= Player::Input::variationCount )
+		{
+		pressJumps[1]	= controller.Press( Button::B	);
+		pressShots[1]	= controller.Press( Button::Y	);
+		pressDashes[1]	= controller.Press( Button::RT	);
+		}
+	}
+	else
+	{
+		pressLeft	= Donya::Keyboard::Press( VK_LEFT	);
+		pressRight	= Donya::Keyboard::Press( VK_RIGHT	);
+		pressUp		= Donya::Keyboard::Press( VK_UP		);
+		pressDown	= Donya::Keyboard::Press( VK_DOWN	);
+
+		pressJumps[0]	= Donya::Keyboard::Press( 'Z'	);
+		pressShots[0]	= Donya::Keyboard::Press( 'X'	);
+		pressDashes[0]	= Donya::Keyboard::Press( 'A'	);
+		shiftGuns[0]	= Donya::Keyboard::Press( 'C'	);
+		if ( 2 <= Player::Input::variationCount )
+		{
+		pressJumps[1]	= Donya::Keyboard::Press( VK_RSHIFT	);
+		pressShots[1]	= Donya::Keyboard::Press( 'S'	);
+		}
+	}
+
 	Player::Input input{};
-	input.moveVelocity	= { 0.0f, 0.0f };
-	input.useJumps.fill( false );
-	input.useShots.fill( false );
+	if ( pressLeft	) { input.moveVelocity.x -= 1.0f; }
+	if ( pressRight	) { input.moveVelocity.x += 1.0f; }
+	if ( pressUp	) { input.moveVelocity.y += 1.0f; } // World space direction
+	if ( pressDown	) { input.moveVelocity.y -= 1.0f; } // World space direction
+	input.useJumps  = pressJumps;
+	input.useShots  = pressShots;
+	input.useDashes = pressDashes;
+	input.shiftGuns = shiftGuns;
 
 	pPlayer->Update( elapsedTime, input, terrain );
 }
