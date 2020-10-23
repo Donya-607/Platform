@@ -21,9 +21,10 @@ private:
 		END
 	};
 private:
-	static constexpr std::array<SpriteAttribute, 1> showLogos
+	static constexpr std::array<SpriteAttribute, 2> showLogos
 	{
-		SpriteAttribute::FMODLogoBlack
+		SpriteAttribute::FMODLogoBlack,
+		SpriteAttribute::EffekseerLogo
 	};
 private:
 	std::array<size_t, showLogos.size()> sprites{ 0 };

@@ -28,6 +28,7 @@ bool MakeFileIfNotExists( const std::string &relativeFilePath, bool binaryMode )
 
 enum class SpriteAttribute
 {
+	EffekseerLogo,
 	FMODLogoBlack,
 	FMODLogoWhite,
 

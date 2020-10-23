@@ -118,6 +118,8 @@ namespace
 	{
 		switch ( attr )
 		{
+		case SpriteAttribute::EffekseerLogo:
+			return Make( L"Rights/EffekseerLogo.png", 2U );
 		case SpriteAttribute::FMODLogoBlack:
 			return Make( L"Rights/FMOD Logo Black - White Background.png", 2U );
 		case SpriteAttribute::FMODLogoWhite:

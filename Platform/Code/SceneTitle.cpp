@@ -500,14 +500,23 @@ void SceneTitle::Draw( float elapsedTime )
 	if ( !AreRenderersReady() ) { return; }
 	// else
 
-	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix )
+	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix, bool applyToEffect )
 	{
 		Donya::Model::Constants::PerScene::Common constant{};
 		constant.directionalLight	= directionalLight;
-		constant.eyePosition		= eyePos, 1.0f;
+		constant.eyePosition		= eyePos;
 		constant.viewMatrix			= viewMatrix;
 		constant.viewProjMatrix		= viewProjectionMatrix;
 		pRenderer->UpdateConstant( constant );
+
+		if ( applyToEffect )
+		{
+			auto &effectAdmin = Effect::Admin::Get();
+			effectAdmin.SetViewMatrix( viewMatrix );
+			effectAdmin.SetLightColorAmbient( directionalLight.light.ambientColor );
+			effectAdmin.SetLightColorDiffuse( directionalLight.light.diffuseColor );
+			effectAdmin.SetLightDirection	( directionalLight.direction.XYZ() );
+		}
 	};
 	auto DrawObjects			= [&]( bool castShadow )
 	{
@@ -570,7 +579,7 @@ void SceneTitle::Draw( float elapsedTime )
 	{
 		Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
 		tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
-		UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP );
+		UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP, /* applyToEffect = */ false );
 	}
 	// Make the shadow map
 	{
@@ -585,7 +594,7 @@ void SceneTitle::Draw( float elapsedTime )
 
 	// Update scene and shadow constants
 	{
-		UpdateSceneConstant( data.directionalLight, cameraPos, V, VP );
+		UpdateSceneConstant( data.directionalLight, cameraPos, V, VP, /* applyToEffect = */ true );
 
 		RenderingHelper::ShadowConstant constant{};
 		constant.lightProjMatrix	= LVP;

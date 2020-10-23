@@ -394,6 +394,10 @@ void SceneGame::Uninit()
 
 Scene::Result SceneGame::Update( float elapsedTime )
 {
+	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
+	{
+		StartFade( Scene::Type::Title );
+	}
 	if ( Donya::Keyboard::Trigger( VK_F6 ) )
 	{
 		SetPlayerToBeforeBossRoom();
