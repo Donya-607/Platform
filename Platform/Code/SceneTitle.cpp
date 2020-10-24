@@ -265,6 +265,15 @@ namespace
 		return sceneParam.Get();
 	}
 
+	Member::Camera FetchCameraOrDefault( SceneTitle::State key )
+	{
+		const auto &data	= FetchParameter().cameras;
+
+		const int intKey	= scast<int>( key );
+		const int size		= scast<int>( data.size() );
+		return ( intKey < size ) ? data[intKey] : Member::Camera{};
+	}
+
 #if DEBUG_MODE
 	constexpr unsigned int maxPathBufferSize = MAX_PATH;
 	std::string FetchStageFilePathByCommonDialog()
@@ -432,8 +441,18 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	PointLightStorage::Get().Clear();
 
-	oldStatus = currentStatus;
-
+	if ( transStateTime < 1.0f )
+	{
+		const float takeSecond = FetchCameraOrDefault( currentStatus ).lerpSecFromOther;
+		const float advance = 1.0f / takeSecond;
+		transStateTime += advance * elapsedTime;
+		if ( 1.0f <= transStateTime )
+		{
+			oldStatus = currentStatus;
+			transStateTime = 1.0f;
+		}
+	}
+	
 	elapsedSecond += elapsedTime;
 
 	controller.Update();
@@ -557,10 +576,39 @@ void SceneTitle::Draw( float elapsedTime )
 		: pRenderer->DeactivateShaderNormalSkinning();
 	};
 
-	const auto &currCamera = GetCurrentCamera( currentStatus );
-	const Donya::Vector4   cameraPos = Donya::Vector4{ currCamera.GetPosition(), 1.0f };
-	const Donya::Vector4x4 V   = currCamera.CalcViewMatrix();
-	const Donya::Vector4x4 VP  = V * currCamera.GetProjectionMatrix();
+	Donya::Vector4   cameraPos{};
+	Donya::Vector4x4 V{};
+	Donya::Vector4x4 VP{};
+	if ( 1.0f <= transStateTime ) // Lerp is not needed
+	{
+		const auto &camera = GetCurrentCamera( currentStatus );
+		cameraPos = Donya::Vector4{ camera.GetPosition(), 1.0f };
+		V  = camera.CalcViewMatrix();
+		VP = V * camera.GetProjectionMatrix();
+	}
+	else
+	{
+		const auto &old  = GetCurrentCamera( oldStatus		);
+		const auto &curr = GetCurrentCamera( currentStatus	);
+
+		// I prefer lerp-ed view matrix than slerp-ed view matrix
+		const auto oldV  = old.CalcViewMatrix();
+		const auto currV = curr.CalcViewMatrix();
+		for ( int r = 0; r < 4; ++r )
+		{
+			for ( int c = 0; c < 3; ++c )
+			{
+				V.m[r][c] = Donya::Lerp( oldV.m[r][c], currV.m[r][c], transStateTime );
+			}
+		}
+
+		const float lerpedFOV	= Donya::Lerp( old.GetFOV(), curr.GetFOV(), transStateTime );
+		// These are same between old and current
+		const auto screenSize	= curr.GetScreenSize();
+		const auto zNear		= curr.GetZNear();
+		const auto zFar			= curr.GetZFar();
+		VP = V * Donya::Vector4x4::MakePerspectiveFovLH( lerpedFOV, screenSize.x / screenSize.y, zNear, zFar );
+	}
 
 	const Donya::Vector4   lightPos = Donya::Vector4{ lightCamera.GetPosition(), 1.0f };
 	const Donya::Vector4x4 LV  = CalcLightViewMatrix();
@@ -1084,8 +1132,7 @@ void SceneTitle::CameraInit()
 	Member::Camera cameraData;
 	for ( int i = 0; i < stateCount; ++i )
 	{
-		// Fetch the parameter or default
-		cameraData = ( i < scast<int>( data.cameras.size() ) ) ? data.cameras[i] : Member::Camera{};
+		cameraData = FetchCameraOrDefault( scast<State>( i ) );
 
 		auto &it = stateCameras[i];
 		it.Init				( Donya::ICamera::Mode::Look );
@@ -1114,33 +1161,6 @@ void SceneTitle::CameraInit()
 	{ it.Update( moveInitPoint ); }
 	lightCamera.Update( moveInitPoint );
 }
-Donya::Vector3 SceneTitle::ClampFocusPoint( const Donya::Vector3 &focusPoint, int roomID )
-{
-	if ( !pHouse ) { return focusPoint; }
-	// else
-		
-	const auto area = pHouse->CalcRoomArea( roomID );
-	if ( area == Donya::Collision::Box3F::Nil() ) { return focusPoint; }
-	// else
-
-	const auto &data = FetchParameter();
-
-	const auto min = area.Min();
-	const auto max = area.Max();
-			
-	const float halfAreaWidth		= ( max.x - min.x ) * 0.5f;
-	const float halfAreaHeight		= ( max.y - min.y ) * 0.5f;
-	const float halfScreenWidth		= ( currentScreen.Max().x - currentScreen.Min().x ) * 0.5f;
-	const float halfScreenHeight	= ( currentScreen.Max().y - currentScreen.Min().y ) * 0.5f;
-	const float halfWidth			= std::min( halfAreaWidth,  halfScreenWidth  ); // If area size smaller than screen, set to center the focus point
-	const float halfHeight			= std::min( halfAreaHeight, halfScreenHeight ); // If area size smaller than screen, set to center the focus point
-
-	Donya::Vector3 clamped = focusPoint;
-	clamped.x = Donya::Clamp( clamped.x, min.x + halfWidth,  max.x - halfWidth  );
-	clamped.y = Donya::Clamp( clamped.y, min.y + halfHeight, max.y - halfHeight );
-	clamped.z = Donya::Clamp( clamped.z, min.z, max.z );
-	return clamped;
-}
 void SceneTitle::AssignCameraPos()
 {
 	const auto &data = FetchParameter();
@@ -1150,15 +1170,11 @@ void SceneTitle::AssignCameraPos()
 	Donya::Vector3 basePos;
 	for ( int i = 0; i < stateCount; ++i )
 	{
-		// Fetch the parameter or default
-		cameraData = ( i < scast<int>( data.cameras.size() ) ) ? data.cameras[i] : Member::Camera{};
+		cameraData = FetchCameraOrDefault( scast<State>( i ) );
 
 		if ( cameraData.coordIsRelative )
 		{
-			// Use the player's position with focus offset 
-			basePos = ClampFocusPoint( playerPos + cameraData.focus, currentRoomID );
-			// Except the offset, make it as criteria only
-			basePos -= cameraData.focus;
+			basePos = playerPos;
 		}
 		else
 		{
@@ -1184,8 +1200,7 @@ void SceneTitle::CameraUpdate( float elapsedTime )
 		Member::Camera cameraData;
 		for ( int i = 0; i < stateCount; ++i )
 		{
-			// Fetch the parameter or default
-			cameraData = ( i < scast<int>( data.cameras.size() ) ) ? data.cameras[i] : Member::Camera{};
+			cameraData = FetchCameraOrDefault( scast<State>( i ) );
 
 			auto &it = stateCameras[i];
 			it.SetFOV( ToRadian( cameraData.fovDegree ) );
@@ -1637,9 +1652,30 @@ void SceneTitle::UseImGui()
 		ImGui::InputInt( u8"現在のルーム番号", &currentRoomID );
 
 		int intStatus = scast<int>( currentStatus );
+		if ( Donya::Keyboard::Trigger( 'R' ) ) { intStatus--; }
+		if ( Donya::Keyboard::Trigger( 'T' ) ) { intStatus++; }
 		ImGui::SliderInt( u8"現在のステータス", &intStatus, 0, stateCount - 1 );
+		intStatus = Donya::Clamp( intStatus, 0, stateCount - 1 );
 		ImGui::Text( GetStateName( currentStatus ) );
+		const auto prev = currentStatus;
 		currentStatus = scast<State>( intStatus );
+		if ( currentStatus != prev )
+		{
+			oldStatus = prev;
+			transStateTime = 0.0f;
+		}
+		ImGui::SliderFloat( u8"遷移時間", &transStateTime, 0.0f, 1.0f );
+		ImGui::Text( u8"前回：" ); ImGui::SameLine();
+		ImGui::Text( GetStateName( oldStatus ) );
+		ImGui::Text( u8"現在：" ); ImGui::SameLine();
+		ImGui::Text( GetStateName( currentStatus ) );
+
+		const auto &old  = GetCurrentCamera( oldStatus		);
+		const auto &curr = GetCurrentCamera( currentStatus	);
+		Donya::Vector3		lerpedPos = Donya::Lerp( old.GetPosition(), curr.GetPosition(), transStateTime );
+		Donya::Quaternion	lerpedRot = Donya::Quaternion::Slerp( old.GetOrientation(), curr.GetOrientation(), transStateTime );
+		ImGui::DragFloat3( u8"補間中：座標", &lerpedPos.x );
+		ImGui::DragFloat4( u8"補間中：姿勢", &lerpedRot.x );
 
 		if ( ImGui::TreeNode( u8"カメラの現在" ) )
 		{

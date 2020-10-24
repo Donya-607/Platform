@@ -105,7 +105,6 @@ private:
 	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
 
 	void	CameraInit();
-	Donya::Vector3 ClampFocusPoint( const Donya::Vector3 &focusPoint, int roomID );
 	void	AssignCameraPos();
 	void	CameraUpdate( float elapsedTime );
 	const Donya::ICamera &GetCurrentCamera( State key ) const;
