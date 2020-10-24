@@ -701,15 +701,17 @@ namespace Boss
 // region Mover
 #pragma endregion
 
-	void Skull::Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea )
+	void Skull::Init( const InitializeParam &parameter, int roomID, bool withAppearPerformance, const Donya::Collision::Box3F &wsRoomArea )
 	{
-		Base::Init( parameter, roomID, wsRoomArea );
+		Base::Init( parameter, roomID, withAppearPerformance, wsRoomArea );
 
 		previousBehaviors.fill( Behavior::None );
 
 		motionManager.Init( *this );
 
-		AssignMover<AppearPerformance>();
+		( withAppearPerformance )
+		? AssignMover<AppearPerformance>()
+		: AssignMover<DetectTargetAction>();
 	}
 	void Skull::Update( float elapsedTime, const Input &input )
 	{

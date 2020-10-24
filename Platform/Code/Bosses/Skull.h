@@ -189,7 +189,7 @@ namespace Boss
 			}
 		}
 	public:
-		void Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea ) override;
+		void Init( const InitializeParam &parameter, int roomID, bool withAppearPerformance, const Donya::Collision::Box3F &wsRoomArea ) override;
 		void Update( float elapsedTime, const Input &input ) override;
 		void PhysicUpdate( float elapsedTime, const Map &terrain ) override;
 		void Draw( RenderingHelper *pRenderer ) const override;

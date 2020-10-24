@@ -17,6 +17,7 @@
 #endif // DEBUG_MODE
 
 #include "Bloom.h"
+#include "Bosses/Skull.h"
 #include "Bullet.h"
 #include "Common.h"
 #include "Enemy.h"
@@ -135,6 +136,8 @@ namespace
 			}
 		};
 		std::vector<Camera> cameras; // size() == SceneTitle::StateCount
+
+		Boss::InitializeParam bossIniter;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -161,6 +164,10 @@ namespace
 				archive( CEREAL_NVP( cameras ) );
 			}
 			if ( 3 <= version )
+			{
+				archive( CEREAL_NVP( bossIniter ) );
+			}
+			if ( 4 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -255,6 +262,13 @@ namespace
 
 				ImGui::TreePop();
 			}
+
+			if ( ImGui::TreeNode( u8"演出関連" ) )
+			{
+				bossIniter.ShowImGuiNode( u8"ボスの初期化設定" );
+
+				ImGui::TreePop();
+			}
 		}
 	#endif // USE_IMGUI
 	};
@@ -309,6 +323,7 @@ void SceneTitle::Init()
 	Donya::Sound::Play( Music::BGM_Title );
 
 	sceneParam.LoadParameter();
+	const auto &data = FetchParameter();
 
 	constexpr int stageNo = Definition::StageNumber::Title();
 	constexpr Donya::Int2 wholeScreenSize
@@ -368,6 +383,9 @@ void SceneTitle::Init()
 
 		CameraInit();
 		currentScreen = CalcCurrentScreenPlane();
+
+		pBoss = std::make_unique<Boss::Skull>();
+		pBoss->Init( data.bossIniter, currentRoomID, /* withAppearPerformance = */ false );
 
 		auto &enemyAdmin = Enemy::Admin::Get();
 		enemyAdmin.ClearInstances();
@@ -478,8 +496,15 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
 	
 	PlayerUpdate( deltaTimeForMove, mapRef );
-
 	const Donya::Vector3 playerPos = GetPlayerPosition();
+
+	if ( pBoss )
+	{
+		Boss::Input noop;
+		noop.wsTargetPos = playerPos;
+		pBoss->Update( deltaTimeForMove, noop );
+	}
+
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
 	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
@@ -506,6 +531,7 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 			pPlayer->PhysicUpdate( deltaTimeForMove, mapRef, leftBorder, rightBorder );
 		}
 
+		if ( pBoss ) { pBoss->PhysicUpdate( deltaTimeForMove, mapRef ); }
 		Bullet::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
 		Enemy::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
 		Item::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
@@ -567,7 +593,8 @@ void SceneTitle::Draw( float elapsedTime )
 		: pRenderer->ActivateShaderNormalSkinning();
 
 		Bullet::Admin::Get().Draw( pRenderer.get() );
-		if ( pPlayer ) { pPlayer->Draw( pRenderer.get() ); }
+		if ( pPlayer	) { pPlayer->Draw( pRenderer.get() ); }
+		if ( pBoss		) { pBoss->Draw( pRenderer.get() ); }
 		Enemy::Admin::Get().Draw( pRenderer.get() );
 		Item::Admin::Get().Draw( pRenderer.get() );
 

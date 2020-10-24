@@ -70,6 +70,7 @@ private:
 	std::unique_ptr<Sky>					pSky;
 	std::unique_ptr<House>					pHouse;
 	std::unique_ptr<Player>					pPlayer;
+	std::unique_ptr<Boss::Base>				pBoss;
 
 	float		elapsedSecond	= 0.0f;
 	Choice		chooseItem		= Choice::ItemCount;

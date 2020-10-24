@@ -149,7 +149,7 @@ namespace Boss
 			}
 		}
 	public:
-		virtual void Init( const InitializeParam &parameter, int roomID, const Donya::Collision::Box3F &wsRoomArea );
+		virtual void Init( const InitializeParam &parameter, int roomID, bool withAppearPerformance, const Donya::Collision::Box3F &wsRoomArea = Donya::Collision::Box3F::Nil() );
 		virtual void Uninit();
 		virtual void Update( float elapsedTime, const Input &input );
 		virtual void PhysicUpdate( float elapsedTime, const Map &terrain );

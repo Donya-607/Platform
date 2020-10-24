@@ -168,7 +168,7 @@ namespace Boss
 		return ( timer < workingSeconds ) ? true : false;
 	}
 
-	void Base::Init( const InitializeParam &parameter, int belongRoomID, const Donya::Collision::Box3F &wsRoomArea )
+	void Base::Init( const InitializeParam &parameter, int belongRoomID, bool withPerformance, const Donya::Collision::Box3F &wsRoomArea )
 	{
 		initializer		= parameter;
 		roomID			= belongRoomID;
@@ -646,7 +646,7 @@ namespace Boss
 		// I should call Init()
 		for ( auto &it : bosses )
 		{
-			if ( it.pBoss ) { it.pBoss->Init( it.initializer, it.roomID, it.roomArea ); }
+			if ( it.pBoss ) { it.pBoss->Init( it.initializer, it.roomID, /* withAppearPerformance = */ true, it.roomArea ); }
 		}
 
 		return succeeded;
@@ -673,6 +673,7 @@ namespace Boss
 		(
 			set.initializer,
 			set.roomID,
+			/* withAppearPerformance = */ true,
 			set.roomArea
 		);
 	}
