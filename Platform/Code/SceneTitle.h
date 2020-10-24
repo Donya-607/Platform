@@ -101,6 +101,8 @@ private:
 
 	void	UpdateChooseItem();
 
+	void	ChangeState( State next );
+
 	Donya::Vector4x4 MakeScreenTransform() const;
 	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
 

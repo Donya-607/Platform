@@ -601,6 +601,10 @@ void SceneTitle::Draw( float elapsedTime )
 				V.m[r][c] = Donya::Lerp( oldV.m[r][c], currV.m[r][c], transStateTime );
 			}
 		}
+		const auto invV = V.Inverse();
+		cameraPos.x = invV._41;
+		cameraPos.y = invV._42;
+		cameraPos.z = invV._43;
 
 		const float lerpedFOV	= Donya::Lerp( old.GetFOV(), curr.GetFOV(), transStateTime );
 		// These are same between old and current
@@ -1036,6 +1040,18 @@ void SceneTitle::UpdateChooseItem()
 
 	// TODO: Play choice SE
 
+	if ( currentStatus == State::Attract )
+	{
+		if ( trgLeft || trgRight || trgUp || trgDown )
+		{
+			ChangeState( State::Controllable );
+		}
+	}
+	if ( trgDecide && currentStatus != State::StartPerformance )
+	{
+		ChangeState( State::StartPerformance );
+	}
+
 	wasDecided = trgDecide;
 
 	// If do not selected
@@ -1054,6 +1070,13 @@ void SceneTitle::UpdateChooseItem()
 	if ( trgUp		) { chooseItem = Choice::Start;  }
 	else
 	if ( trgDown	) { chooseItem = Choice::Option; }
+}
+
+void SceneTitle::ChangeState( State next )
+{
+	oldStatus		= currentStatus;
+	currentStatus	= next;
+	transStateTime	= 0.0f;
 }
 
 Donya::Vector4x4 SceneTitle::MakeScreenTransform() const
@@ -1350,6 +1373,32 @@ void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 	};
 
 	Player::Input input = Input::MakeCurrentInput( controller, deadZone );
+
+	if ( currentStatus == State::Attract )
+	{
+		auto HasTrue = []( const auto &arr )
+		{
+			for ( const auto &it : arr )
+			{
+				if ( it ) { return true; }
+			}
+			return false;
+		};
+		auto Inputed = [&HasTrue]( const Player::Input &input )
+		{
+			return
+					HasTrue( input.useJumps )
+				||	HasTrue( input.useShots )
+				||	HasTrue( input.useDashes )
+				||	HasTrue( input.shiftGuns )
+				||	!input.moveVelocity.IsZero()
+				;
+		};
+		if ( Inputed( input ) )
+		{
+			ChangeState( State::Controllable );
+		}
+	}
 
 	pPlayer->Update( elapsedTime, input, terrain );
 }
