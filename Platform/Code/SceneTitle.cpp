@@ -38,6 +38,19 @@
 
 namespace
 {
+	constexpr const char *GetStateName( SceneTitle::State status )
+	{
+		switch ( status )
+		{
+		case SceneTitle::State::Attract:			return "Attract";
+		case SceneTitle::State::Controllable:		return "Controllable";
+		case SceneTitle::State::StartPerformance:	return "StartPerformance";
+		default: break;
+		}
+
+		// Fail safe
+		return GetStateName( SceneTitle::State::Attract );
+	}
 	constexpr const char *GetChoiceItemName( SceneTitle::Choice item )
 	{
 		switch ( item )
@@ -48,20 +61,11 @@ namespace
 		}
 
 		// Fail safe
-		return GetChoiceItemName( SceneTitle::Choice::Start );
+		return GetChoiceItemName( SceneTitle::Choice::Option );
 	}
 
 	struct Member
 	{
-		struct
-		{
-			float slerpFactor	= 0.2f;
-			float fovDegree		= 30.0f;
-			Donya::Vector3 offsetPos{ 0.0f, 5.0f, -10.0f };	// The offset of position from the player position
-			Donya::Vector3 offsetFocus;						// The offset of focus from the player position
-		}
-		camera;
-		
 		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
 
 		float scrollTakeSecond	= 1.0f;	// The second required for scrolling
@@ -102,6 +106,35 @@ namespace
 
 		std::vector<Donya::Vector2> itemPositions; // size() == SceneTitle::Choice::ItemCount
 		float chooseItemMagni = 1.5f;
+
+		struct Camera
+		{
+			bool			coordIsRelative		= true; // By player position
+			Donya::Vector3	pos		{ 0.0f, 0.0f,-1.0f };
+			Donya::Vector3	focus	{ 0.0f, 0.0f, 0.0f };
+			float			fovDegree			= 30.0f;
+			float			lerpSecFromOther	= 1.0f; // Taking second for transition from other state
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( coordIsRelative		),
+					CEREAL_NVP( pos					),
+					CEREAL_NVP( focus				),
+					CEREAL_NVP( fovDegree			),
+					CEREAL_NVP( lerpSecFromOther	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		std::vector<Camera> cameras; // size() == SceneTitle::StateCount
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -109,11 +142,6 @@ namespace
 		{
 			archive
 			(
-				CEREAL_NVP( camera.slerpFactor	),
-				CEREAL_NVP( camera.fovDegree	),
-				CEREAL_NVP( camera.offsetPos	),
-				CEREAL_NVP( camera.offsetFocus	),
-
 				CEREAL_NVP( directionalLight	),
 				CEREAL_NVP( scrollTakeSecond	),
 				CEREAL_NVP( shadowMap			),
@@ -130,6 +158,10 @@ namespace
 			}
 			if ( 2 <= version )
 			{
+				archive( CEREAL_NVP( cameras ) );
+			}
+			if ( 3 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -137,12 +169,30 @@ namespace
 	#if USE_IMGUI
 		void ShowImGuiNode()
 		{
-			if ( ImGui::TreeNode( u8"カメラ" ) )
+			if ( cameras.size() != SceneTitle::stateCount )
 			{
-				ImGui::DragFloat ( u8"補間倍率",						&camera.slerpFactor,	0.01f );
-				ImGui::DragFloat ( u8"画角（Degree）",				&camera.fovDegree,		0.1f  );
-				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&camera.offsetPos.x,	0.01f );
-				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&camera.offsetFocus.x,	0.01f );
+				cameras.resize( SceneTitle::stateCount );
+			}
+			if ( ImGui::TreeNode( u8"カメラ関連" ) )
+			{
+				auto Show = []( const char *nodeCaption, Camera *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption ) ) { return; }
+					// else
+
+					ImGui::Checkbox		( u8"自機からの相対座標にする", &p->coordIsRelative );
+					ImGui::DragFloat3	( u8"カメラ座標",	&p->pos.x,				0.01f );
+					ImGui::DragFloat3	( u8"注視点座標",	&p->focus.x,			0.01f );
+					ImGui::SliderFloat	( u8"FOV(degree)",	&p->fovDegree,			0.01f, 90.0f );
+					ImGui::DragFloat	( u8"遷移に使う秒数",	&p->lerpSecFromOther,	0.01f );
+
+					ImGui::TreePop();
+				};
+				for ( int i = 0; i < SceneTitle::stateCount; ++i )
+				{
+					const auto status = scast<SceneTitle::State>( i );
+					Show( GetStateName( status ), &cameras[i] );
+				}
 
 				ImGui::TreePop();
 			}
@@ -241,7 +291,9 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( Member, 1 )
+CEREAL_CLASS_VERSION( Member,				2 )
+CEREAL_CLASS_VERSION( Member::ShadowMap,	0 )
+CEREAL_CLASS_VERSION( Member::Camera,		0 )
 
 void SceneTitle::Init()
 {
@@ -273,8 +325,7 @@ void SceneTitle::Init()
 		assert( result );
 		pSky->AdvanceHourTo( 0.0f, 0.0f );
 
-		pPlayerIniter = std::make_unique<PlayerInitializer>();
-		pPlayerIniter->LoadParameter( stageNo );
+		playerIniter.LoadParameter( stageNo );
 
 		using Spr = SpriteAttribute;
 		result = sprTitleLogo.LoadSprite( GetSpritePath( Spr::TitleLogo ), GetSpriteInstanceCount( Spr::TitleLogo ) );
@@ -354,11 +405,17 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 		if ( nowDebugMode )
 		{
-			iCamera.ChangeMode( Donya::ICamera::Mode::Satellite );
+			for ( auto &it : stateCameras )
+			{
+				it.ChangeMode( Donya::ICamera::Mode::Satellite );
+			}
 		}
 		else
 		{
-			iCamera.SetOrientation( Donya::Quaternion::Identity() );
+			for ( auto &it : stateCameras )
+			{
+				it.SetOrientation( Donya::Quaternion::Identity() );
+			}
 			CameraInit();
 		}
 	}
@@ -375,6 +432,8 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	PointLightStorage::Get().Clear();
 
+	oldStatus = currentStatus;
+
 	elapsedSecond += elapsedTime;
 
 	controller.Update();
@@ -388,27 +447,20 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 		}
 	}
 
-	const float deltaTimeForMove = ( scroll.active ) ? 0.0f : elapsedTime;
+	const float deltaTimeForMove = elapsedTime;
+
+	if ( pSky ) { pSky->Update( elapsedTime ); }
 
 	if ( pMap ) { pMap->Update( deltaTimeForMove ); }
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 
-	if ( pSky ) { pSky->Update( elapsedTime ); }
-
-	const int oldRoomID = currentRoomID;
-	if ( scroll.active )
-	{
-		// Update the roomID if the game is pausing for the scroll.
-		// That limit prevents the camera moves to not allowed direction.
-		currentRoomID = CalcCurrentRoomID();
-	}
-
+	currentRoomID = CalcCurrentRoomID();
 	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
 	
 	PlayerUpdate( deltaTimeForMove, mapRef );
 
-	const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+	const Donya::Vector3 playerPos = GetPlayerPosition();
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
 	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
@@ -433,51 +485,6 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 									? FLT_MAX
 									: currentRoomArea.Max().x;
 			pPlayer->PhysicUpdate( deltaTimeForMove, mapRef, leftBorder, rightBorder );
-
-			const int movedRoomID = CalcCurrentRoomID();
-			if ( movedRoomID != currentRoomID )
-			{
-				// RoomID will update in next frame of the game.
-				// But if the scroll is not allowed, stay in the current room.
-
-				// If allow the scroll to a connecting room, the scroll waiting will occur as strange.
-				if ( pCurrentRoom && !pCurrentRoom->IsConnectTo( movedRoomID ) )
-				{
-					bool scrollToUp		= false;
-					bool scrollToDown	= false;
-					{
-						const auto movedRoomArea = pHouse->CalcRoomArea( movedRoomID );
-						if ( currentRoomArea.pos.y < movedRoomArea.pos.y )
-						{
-							scrollToUp		= true;
-						}
-						if ( currentRoomArea.pos.y > movedRoomArea.pos.y )
-						{
-							scrollToDown	= true;
-						}
-					}
-
-					if ( scrollToUp )
-					{
-						if ( pPlayer->NowGrabbingLadder() && Contain( transitionable, Dir::Up ) )
-						{
-							PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-						}
-					}
-					else
-					if ( scrollToDown )
-					{
-						if ( Contain( transitionable, Dir::Down ) )
-						{
-							PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-						}
-					}
-					else
-					{
-						PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-					}
-				}
-			}
 		}
 
 		Bullet::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
@@ -489,8 +496,9 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate( elapsedTime );
 
-	Effect::Admin::Get().SetViewMatrix( iCamera.CalcViewMatrix() );
-	Effect::Admin::Get().SetProjectionMatrix( iCamera.GetProjectionMatrix() );
+	const auto &currCamera = GetCurrentCamera( currentStatus );
+	Effect::Admin::Get().SetViewMatrix( currCamera.CalcViewMatrix() );
+	Effect::Admin::Get().SetProjectionMatrix( currCamera.GetProjectionMatrix() );
 
 	return ReturnResult();
 }
@@ -549,9 +557,10 @@ void SceneTitle::Draw( float elapsedTime )
 		: pRenderer->DeactivateShaderNormalSkinning();
 	};
 
-	const Donya::Vector4   cameraPos = Donya::Vector4{ iCamera.GetPosition(), 1.0f };
-	const Donya::Vector4x4 V   = iCamera.CalcViewMatrix();
-	const Donya::Vector4x4 VP  = V * iCamera.GetProjectionMatrix();
+	const auto &currCamera = GetCurrentCamera( currentStatus );
+	const Donya::Vector4   cameraPos = Donya::Vector4{ currCamera.GetPosition(), 1.0f };
+	const Donya::Vector4x4 V   = currCamera.CalcViewMatrix();
+	const Donya::Vector4x4 VP  = V * currCamera.GetProjectionMatrix();
 
 	const Donya::Vector4   lightPos = Donya::Vector4{ lightCamera.GetPosition(), 1.0f };
 	const Donya::Vector4x4 LV  = CalcLightViewMatrix();
@@ -1001,7 +1010,8 @@ void SceneTitle::UpdateChooseItem()
 
 Donya::Vector4x4 SceneTitle::MakeScreenTransform() const
 {
-	const Donya::Vector4x4 matViewProj = iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix();
+	const auto &currCamera = GetCurrentCamera( currentStatus );
+	const Donya::Vector4x4 matViewProj = currCamera.CalcViewMatrix() * currCamera.GetProjectionMatrix();
 	const Donya::Vector4x4 matViewport = Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
 	return matViewProj * matViewport;
 }
@@ -1068,19 +1078,30 @@ void SceneTitle::CameraInit()
 {
 	const auto &data = FetchParameter();
 
-	iCamera.Init( Donya::ICamera::Mode::Look );
-	iCamera.SetZRange( 0.1f, 1000.0f );
-	iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
-	iCamera.SetScreenSize( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
+	constexpr Donya::Vector2 screenSize{ Common::ScreenWidthF(), Common::ScreenHeightF() };
+	constexpr Donya::Vector2 defaultZRange{ 0.1f, 1000.0f };
+	
+	Member::Camera cameraData;
+	for ( int i = 0; i < stateCount; ++i )
+	{
+		// Fetch the parameter or default
+		cameraData = ( i < scast<int>( data.cameras.size() ) ) ? data.cameras[i] : Member::Camera{};
 
-	lightCamera.Init( Donya::ICamera::Mode::Look );
-	lightCamera.SetZRange( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
-	lightCamera.SetScreenSize( data.shadowMap.projectDistance.XY() );
+		auto &it = stateCameras[i];
+		it.Init				( Donya::ICamera::Mode::Look );
+		it.SetZRange		( defaultZRange.x, defaultZRange.y );
+		it.SetFOV			( ToRadian( cameraData.fovDegree ) );
+		it.SetScreenSize	( screenSize );
+
+		it.SetProjectionPerspective();
+	}
+
+	lightCamera.Init			( Donya::ICamera::Mode::Look );
+	lightCamera.SetZRange		( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
+	lightCamera.SetScreenSize	( data.shadowMap.projectDistance.XY() );
+	lightCamera.SetProjectionOrthographic();
 
 	AssignCameraPos();
-
-	iCamera.SetProjectionPerspective();
-	lightCamera.SetProjectionOrthographic();
 
 	// I can setting a configuration,
 	// but current data is not changed immediately.
@@ -1088,11 +1109,10 @@ void SceneTitle::CameraInit()
 	Donya::ICamera::Controller moveInitPoint{};
 	moveInitPoint.SetNoOperation();
 	moveInitPoint.slerpPercent = 1.0f;
-	iCamera.Update( moveInitPoint );
-	lightCamera.Update( moveInitPoint );
 
-	scroll.active			= false;
-	scroll.elapsedSecond	= 0.0f;
+	for ( auto &it : stateCameras )
+	{ it.Update( moveInitPoint ); }
+	lightCamera.Update( moveInitPoint );
 }
 Donya::Vector3 SceneTitle::ClampFocusPoint( const Donya::Vector3 &focusPoint, int roomID )
 {
@@ -1116,49 +1136,41 @@ Donya::Vector3 SceneTitle::ClampFocusPoint( const Donya::Vector3 &focusPoint, in
 	const float halfHeight			= std::min( halfAreaHeight, halfScreenHeight ); // If area size smaller than screen, set to center the focus point
 
 	Donya::Vector3 clamped = focusPoint;
-	clamped += data.camera.offsetFocus; // Clamp the center pos in offseted value
 	clamped.x = Donya::Clamp( clamped.x, min.x + halfWidth,  max.x - halfWidth  );
 	clamped.y = Donya::Clamp( clamped.y, min.y + halfHeight, max.y - halfHeight );
 	clamped.z = Donya::Clamp( clamped.z, min.z, max.z );
-	clamped -= data.camera.offsetFocus; // Back to before offset pos because below setting process expects that value
 	return clamped;
-}
-void SceneTitle::PrepareScrollIfNotActive( int oldRoomID, int newRoomID )
-{
-	if ( scroll.active ) { return; }
-	// else
-
-	scroll.active			= true;
-	scroll.elapsedSecond	= 0.0f;
-
-	const Donya::Vector3 baseFocus = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
-	scroll.cameraFocusStart = ClampFocusPoint( baseFocus, oldRoomID );
-	scroll.cameraFocusDest  = ClampFocusPoint( baseFocus, newRoomID );
 }
 void SceneTitle::AssignCameraPos()
 {
 	const auto &data = FetchParameter();
-	
-	Donya::Vector3 focusPos;
-	if ( scroll.active )
-	{
-		const float percent = scroll.elapsedSecond / ( data.scrollTakeSecond + EPSILON );
-		const Donya::Vector3 diff = scroll.cameraFocusDest - scroll.cameraFocusStart;
+	const Donya::Vector3 playerPos = GetPlayerPosition();
 
-		focusPos = scroll.cameraFocusStart + ( diff * percent );
-	}
-	else
+	Member::Camera cameraData;
+	Donya::Vector3 basePos;
+	for ( int i = 0; i < stateCount; ++i )
 	{
-		focusPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
-		focusPos = ClampFocusPoint( focusPos, currentRoomID );
+		// Fetch the parameter or default
+		cameraData = ( i < scast<int>( data.cameras.size() ) ) ? data.cameras[i] : Member::Camera{};
+
+		if ( cameraData.coordIsRelative )
+		{
+			// Use the player's position with focus offset 
+			basePos = ClampFocusPoint( playerPos + cameraData.focus, currentRoomID );
+			// Except the offset, make it as criteria only
+			basePos -= cameraData.focus;
+		}
+		else
+		{
+			basePos = Donya::Vector3::Zero();
+		}
+
+		auto &it = stateCameras[i];
+		it.SetPosition	( basePos + cameraData.pos		);
+		it.SetFocusPoint( basePos + cameraData.focus	);
 	}
 
-	const Donya::Vector3 cameraPos = focusPos + data.camera.offsetPos;
-	iCamera.SetPosition  ( cameraPos );
-	iCamera.SetFocusPoint( focusPos + data.camera.offsetFocus );
-	
-	const Donya::Vector3 playerPos	= ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
-	const Donya::Vector3 offset		= -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
+	const Donya::Vector3 offset = -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
 	lightCamera.SetPosition  ( playerPos + offset );
 	lightCamera.SetFocusPoint( playerPos );
 }
@@ -1169,12 +1181,20 @@ void SceneTitle::CameraUpdate( float elapsedTime )
 #if USE_IMGUI
 	// Apply for be able to see an adjustment immediately
 	{
-		iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
-		iCamera.SetProjectionPerspective();
+		Member::Camera cameraData;
+		for ( int i = 0; i < stateCount; ++i )
+		{
+			// Fetch the parameter or default
+			cameraData = ( i < scast<int>( data.cameras.size() ) ) ? data.cameras[i] : Member::Camera{};
+
+			auto &it = stateCameras[i];
+			it.SetFOV( ToRadian( cameraData.fovDegree ) );
+			it.SetProjectionPerspective();
+		}
 
 		if ( nowDebugMode ) // Don't call AssignCameraPos() when debug-mode
 		{
-			const Donya::Vector3 playerPos	= ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+			const Donya::Vector3 playerPos	= GetPlayerPosition();
 			const Donya::Vector3 offset		= -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
 			lightCamera.SetPosition  ( playerPos + offset );
 			lightCamera.SetFocusPoint( playerPos );
@@ -1185,30 +1205,23 @@ void SceneTitle::CameraUpdate( float elapsedTime )
 	}
 #endif // USE_IMGUI
 
-	if ( scroll.active )
-	{
-		scroll.elapsedSecond += elapsedTime;
-		if ( data.scrollTakeSecond <= scroll.elapsedSecond )
-		{
-			scroll.active = false;
-		}
-	}
-
 	Donya::ICamera::Controller input{};
 	input.SetNoOperation();
-	input.slerpPercent = data.camera.slerpFactor;
+	input.slerpPercent = 1.0f;
 
 	lightCamera.Update( input );
 
 #if !DEBUG_MODE
 	AssignCameraPos();
-	iCamera.Update( input );
+	for ( auto &it : stateCameras )
+	{ it.Update( input ); }
 #else
 	if ( !nowDebugMode )
 	{
 		AssignCameraPos();
-		iCamera.Update( input );
-		previousCameraPos = iCamera.GetPosition();
+		for ( auto &it : stateCameras )
+		{ it.Update( input ); }
+
 		return;
 	}
 	// else
@@ -1227,7 +1240,9 @@ void SceneTitle::CameraUpdate( float elapsedTime )
 	if ( !isDriveMouse )
 	{
 		input.SetNoOperation();
-		iCamera.Update( input );
+		for ( auto &it : stateCameras )
+		{ it.Update( input ); }
+
 		return;
 	}
 	// else
@@ -1272,11 +1287,24 @@ void SceneTitle::CameraUpdate( float elapsedTime )
 	input.roll				= 0.0f;
 	input.moveInLocalSpace	= true;
 
-	iCamera.Update( input );
-
+	for ( auto &it : stateCameras )
+	{ it.Update( input ); }
+	
 	input.SetNoOperation();
 
 #endif // !DEBUG_MODE
+}
+const Donya::ICamera &SceneTitle::GetCurrentCamera( State key ) const
+{
+	const int intKey = scast<int>( key );
+	if ( intKey < 0 || stateCount <= intKey )
+	{
+		_ASSERT_EXPR( 0, L"Error: Unexpected State!" );
+		return stateCameras.front();
+	}
+	// e;se
+	
+	return stateCameras[intKey];
 }
 
 Donya::Vector4x4 SceneTitle::CalcLightViewMatrix() const
@@ -1286,13 +1314,6 @@ Donya::Vector4x4 SceneTitle::CalcLightViewMatrix() const
 
 void SceneTitle::PlayerInit( const Map &terrain )
 {
-	if ( !pPlayerIniter )
-	{
-		_ASSERT_EXPR( 0, L"Error: Initializer is not available!" );
-		return;
-	}
-	// else
-
 	if ( pPlayer )
 	{
 		pPlayer->Uninit();
@@ -1300,7 +1321,7 @@ void SceneTitle::PlayerInit( const Map &terrain )
 	}
 
 	pPlayer = std::make_unique<Player>();
-	pPlayer->Init( *pPlayerIniter, terrain, /* withAppearPerformance = */ false );
+	pPlayer->Init( playerIniter, terrain, /* withAppearPerformance = */ false );
 }
 void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 {
@@ -1317,13 +1338,17 @@ void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 
 	pPlayer->Update( elapsedTime, input, terrain );
 }
+Donya::Vector3 SceneTitle::GetPlayerPosition() const
+{
+	return ( pPlayer ) ? pPlayer->GetPosition() : playerIniter.GetWorldInitialPos();
+}
 
 int  SceneTitle::CalcCurrentRoomID() const
 {
-	if ( !pPlayer || !pHouse ) { return currentRoomID; }
+	if ( !pHouse ) { return currentRoomID; }
 	// else
 
-	const int newID =  pHouse->CalcBelongRoomID( pPlayer->GetPosition() );
+	const int newID =  pHouse->CalcBelongRoomID( GetPlayerPosition() );
 	return (  newID == Room::invalidID ) ? currentRoomID : newID;
 }
 
@@ -1437,7 +1462,7 @@ void SceneTitle::UseImGui()
 
 		auto ApplyToEnemy	= [&]( const CSVLoader &loadedData )
 		{
-			const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+			const Donya::Vector3 playerPos = GetPlayerPosition();
 
 			Enemy::Admin::Get().ClearInstances();
 			Enemy::Admin::Get().RemakeByCSV( loadedData, playerPos, currentScreen );
@@ -1473,13 +1498,12 @@ void SceneTitle::UseImGui()
 		};
 		auto ApplyToPlayer	= [&]( const CSVLoader &loadedData )
 		{
-			if ( !pPlayerIniter ) { pPlayerIniter = std::make_unique<PlayerInitializer>(); }
-			pPlayerIniter->RemakeByCSV( loadedData );
+			playerIniter.RemakeByCSV( loadedData );
 
 			if ( thenSave )
 			{
-				pPlayerIniter->SaveBin ( stageNo );
-				pPlayerIniter->SaveJson( stageNo );
+				playerIniter.SaveBin ( stageNo );
+				playerIniter.SaveJson( stageNo );
 			}
 
 			const Map emptyMap{}; // Used for empty argument. Fali safe.
@@ -1612,6 +1636,11 @@ void SceneTitle::UseImGui()
 	{
 		ImGui::InputInt( u8"現在のルーム番号", &currentRoomID );
 
+		int intStatus = scast<int>( currentStatus );
+		ImGui::SliderInt( u8"現在のステータス", &intStatus, 0, stateCount - 1 );
+		ImGui::Text( GetStateName( currentStatus ) );
+		currentStatus = scast<State>( intStatus );
+
 		if ( ImGui::TreeNode( u8"カメラの現在" ) )
 		{
 			ImGui::Checkbox( u8"移動方向を反転する・Ｘ", &isReverseCameraMoveX );
@@ -1624,11 +1653,20 @@ void SceneTitle::UseImGui()
 				ImGui::Text( ( prefix + u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]" ).c_str(), v.x, v.y, v.z );
 			};
 
-			const Donya::Vector3 cameraPos = iCamera.GetPosition();
+			static State showState		= State::Attract;
+			static bool  showCurrent	= true;
+			if ( showCurrent )
+			{
+				showState = currentStatus;
+			}
+			
+			const auto &showCamera = stateCameras[scast<int>( showState )];
+
+			const Donya::Vector3 cameraPos = showCamera.GetPosition();
 			ShowVec3( u8"現在位置", cameraPos );
 			ImGui::Text( "" );
 
-			const Donya::Vector3 focusPoint = iCamera.GetFocusPoint();
+			const Donya::Vector3 focusPoint = showCamera.GetFocusPoint();
 			ShowVec3( u8"注視点位置", focusPoint );
 			ImGui::Text( "" );
 			ImGui::TreePop();
@@ -1647,7 +1685,7 @@ void SceneTitle::UseImGui()
 		Bullet::Parameter::Update( u8"弾のパラメータ" );
 		ImGui::Text( "" );
 
-		const Donya::Vector3 playerPos = ( pPlayer ) ? pPlayer->GetPosition() : Donya::Vector3::Zero();
+		const Donya::Vector3 playerPos = GetPlayerPosition();
 		Enemy::Admin::Get().ShowImGuiNode( u8"敵の現在", stageNo, playerPos, currentScreen );
 		Enemy::Parameter::Update( u8"敵のパラメータ" );
 		ImGui::Text( "" );

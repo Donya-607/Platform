@@ -447,6 +447,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	const float deltaTimeForAnime = ( scroll.active ) ? 0.0f : elapsedTime;
 
 
+	if ( pSky ) { pSky->Update( elapsedTime ); }
+
 	if ( pMap ) { pMap->Update( deltaTimeForMove ); }
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
@@ -497,8 +499,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		StartFade( Scene::Type::Result );
 	}
 	
-
-	if ( pSky ) { pSky->Update( elapsedTime ); }
 
 	// In under the READY-ing state
 	if ( !pPlayer )

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <memory>
 
 #include "Donya/Camera.h"
@@ -22,6 +23,16 @@
 class SceneTitle : public Scene
 {
 public:
+	enum class State
+	{
+		Attract,
+		Controllable,
+		StartPerformance,
+
+		StateCount
+	};
+	static constexpr int stateCount = scast<int>( State::StateCount );
+
 	enum class Choice
 	{
 		Start = 0,
@@ -30,29 +41,25 @@ public:
 		ItemCount, // Do not select anything
 	};
 private:
-	struct Scroll
-	{
-		bool			active			= false;
-		float			elapsedSecond	= 0.0f;
-		Donya::Vector3	cameraFocusStart;
-		Donya::Vector3	cameraFocusDest;
-	};
 	struct Shader
 	{
 		Donya::VertexShader VS;
 		Donya::PixelShader  PS;
 	};
 private:
-	Donya::ICamera							iCamera;
-	Scroll									scroll;
+	std::array<Donya::ICamera, stateCount>	stateCameras;
 	Donya::ICamera							lightCamera;
 
 	Donya::XInput							controller{ Donya::Gamepad::PAD_1 };
 	Donya::Collision::Box3F					currentScreen;
 	int										currentRoomID	= 0;
-	
+	PlayerInitializer						playerIniter;
+
 	Scene::Type								nextScene		= Scene::Type::Null;
-	
+	State									currentStatus	= State::Attract;
+	State									oldStatus		= State::Attract;
+	float									transStateTime	= 1.0f; // 0.0f ~ 1.0f, Lerp( oldStatus -> currentStatus, time )
+
 	std::unique_ptr<RenderingHelper>		pRenderer;
 	std::unique_ptr<Donya::Displayer>		pDisplayer;
 	std::unique_ptr<BloomApplier>			pBloomer;
@@ -63,7 +70,6 @@ private:
 	std::unique_ptr<Sky>					pSky;
 	std::unique_ptr<House>					pHouse;
 	std::unique_ptr<Player>					pPlayer;
-	std::unique_ptr<PlayerInitializer>		pPlayerIniter;
 
 	float		elapsedSecond	= 0.0f;
 	Choice		chooseItem		= Choice::ItemCount;
@@ -77,7 +83,6 @@ private:
 	bool		isReverseCameraMoveY	= false;
 	bool		isReverseCameraRotX		= false;
 	bool		isReverseCameraRotY		= false;
-	Donya::Vector3 previousCameraPos; // In not debugMode
 #endif // DEBUG_MODE
 public:
 	SceneTitle() : Scene() {}
@@ -101,14 +106,15 @@ private:
 
 	void	CameraInit();
 	Donya::Vector3 ClampFocusPoint( const Donya::Vector3 &focusPoint, int roomID );
-	void	PrepareScrollIfNotActive( int oldRoomID, int newRoomID );
 	void	AssignCameraPos();
 	void	CameraUpdate( float elapsedTime );
+	const Donya::ICamera &GetCurrentCamera( State key ) const;
 
 	Donya::Vector4x4 CalcLightViewMatrix() const;
 
 	void	PlayerInit( const Map &terrain );
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );
+	Donya::Vector3 GetPlayerPosition() const;
 
 	int		CalcCurrentRoomID() const;
 
