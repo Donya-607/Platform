@@ -34,23 +34,6 @@ private:
 		BattleBoss,
 		ClearStage
 	};
-	struct Input
-	{
-		Donya::Vector2 inputDirection; // Controller's stick or directional-pad, or keyboard's arrow key.
-		std::array<bool, Player::Input::variationCount> pressJumps{};	// Current frame.
-		std::array<bool, Player::Input::variationCount> pressShots{};	// Current frame.
-		std::array<bool, Player::Input::variationCount> pressDashes{};	// Current frame.
-		std::array<int,  Player::Input::variationCount> shiftGuns{};	// Positive:Change to next, Negative:Change to previous
-	public:
-		void Clear()
-		{
-			inputDirection = 0.0f;
-			pressJumps.fill( false );
-			pressShots.fill( false );
-			pressDashes.fill( false );
-			shiftGuns.fill( false );
-		}
-	};
 	struct Scroll
 	{
 		bool			active			= false;
@@ -69,7 +52,7 @@ private:
 	Donya::ICamera						lightCamera;
 
 	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
-	Input								currentInput;
+	Player::Input						currentInput;
 	Donya::Collision::Box3F				currentScreen;
 	int									currentRoomID		= 0;
 	Music::ID							currentPlayingBGM	= Music::BGM_Game;
@@ -164,7 +147,6 @@ private:
 private:
 	Result	ReturnResult();
 private:
-	void SetPlayerToBeforeBossRoom();
 #if USE_IMGUI
 	void	UseImGui( float elapsedTime );
 	void	UseScreenSpaceImGui();

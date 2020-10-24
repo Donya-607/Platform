@@ -31,6 +31,7 @@
 #include "Fader.h"
 #include "FilePath.h"
 #include "FontHelper.h"
+#include "Input.h"
 #include "Item.h"
 #include "ItemParam.h"				// Use a recovery amount
 #include "Meter.h"
@@ -394,15 +395,6 @@ void SceneGame::Uninit()
 
 Scene::Result SceneGame::Update( float elapsedTime )
 {
-	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
-	{
-		StartFade( Scene::Type::Title );
-	}
-	if ( Donya::Keyboard::Trigger( VK_F6 ) )
-	{
-		SetPlayerToBeforeBossRoom();
-	}
-
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
 	{
@@ -1324,68 +1316,8 @@ void SceneGame::UninitStage()
 
 void SceneGame::AssignCurrentInput()
 {
-	bool pressLeft	= false;
-	bool pressRight	= false;
-	bool pressUp	= false;
-	bool pressDown	= false;
-	std::array<bool, Player::Input::variationCount> pressJumps{};
-	std::array<bool, Player::Input::variationCount> pressShots{};
-	std::array<bool, Player::Input::variationCount> pressDashes{};
-	std::array<int,  Player::Input::variationCount> shiftGuns{};
-
-	// TODO: To be changeable the input key or button
-
-	if ( controller.IsConnected() )
-	{
-		using Button	= Donya::Gamepad::Button;
-		using Direction	= Donya::Gamepad::StickDirection;
-
-		const auto &deadZone = FetchParameter().deadZone;
-		const auto stick = controller.LeftStick();
-		
-		pressLeft	= controller.Press( Button::LEFT	) || ( stick.x <= -deadZone.x );
-		pressRight	= controller.Press( Button::RIGHT	) || ( stick.x >= +deadZone.x );
-		pressUp		= controller.Press( Button::UP		) || ( stick.y >= +deadZone.y );
-		pressDown	= controller.Press( Button::DOWN	) || ( stick.y <= -deadZone.y );
-		
-		pressJumps[0]	= controller.Press( Button::A	);
-		pressShots[0]	= controller.Press( Button::X	);
-		pressDashes[0]	= controller.Press( Button::LT	);
-		shiftGuns[0]	= controller.Press( Button::PRESS_R	);
-		if ( 2 <= Player::Input::variationCount )
-		{
-		pressJumps[1]	= controller.Press( Button::B	);
-		pressShots[1]	= controller.Press( Button::Y	);
-		pressDashes[1]	= controller.Press( Button::RT	);
-		}
-	}
-	else
-	{
-		pressLeft	= Donya::Keyboard::Press( VK_LEFT	);
-		pressRight	= Donya::Keyboard::Press( VK_RIGHT	);
-		pressUp		= Donya::Keyboard::Press( VK_UP		);
-		pressDown	= Donya::Keyboard::Press( VK_DOWN	);
-
-		pressJumps[0]	= Donya::Keyboard::Press( 'Z'	);
-		pressShots[0]	= Donya::Keyboard::Press( 'X'	);
-		pressDashes[0]	= Donya::Keyboard::Press( 'A'	);
-		shiftGuns[0]	= Donya::Keyboard::Press( 'C'	);
-		if ( 2 <= Player::Input::variationCount )
-		{
-		pressJumps[1]	= Donya::Keyboard::Press( VK_RSHIFT	);
-		pressShots[1]	= Donya::Keyboard::Press( 'S'	);
-		}
-	}
-
-	currentInput.Clear();
-	if ( pressLeft	) { currentInput.inputDirection.x -= 1.0f; }
-	if ( pressRight	) { currentInput.inputDirection.x += 1.0f; }
-	if ( pressUp	) { currentInput.inputDirection.y += 1.0f; } // World space direction
-	if ( pressDown	) { currentInput.inputDirection.y -= 1.0f; } // World space direction
-	currentInput.pressJumps		= pressJumps;
-	currentInput.pressShots		= pressShots;
-	currentInput.pressDashes	= pressDashes;
-	currentInput.shiftGuns		= shiftGuns;
+	const auto &deadZone = FetchParameter().deadZone;
+	currentInput = Input::MakeCurrentInput( controller, deadZone );
 }
 
 void SceneGame::CameraInit()
@@ -1633,13 +1565,7 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 	if ( !pPlayer ) { return; }
 	// else
 
-	Player::Input input{};
-	input.moveVelocity	= currentInput.inputDirection;
-	input.useJumps		= currentInput.pressJumps;
-	input.useShots		= currentInput.pressShots;
-	input.useDashes		= currentInput.pressDashes;
-	input.shiftGuns		= currentInput.shiftGuns;
-
+	Player::Input input = currentInput;
 	pPlayer->Update( elapsedTime, input, terrain );
 
 	if ( pPlayer->NowMiss() )
@@ -1681,9 +1607,9 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 
 	Boss::Input input{};
 	input.wsTargetPos				= wsTargetPos;
-	input.controllerInputDirection	= currentInput.inputDirection;
-	input.pressJump					= Contains( currentInput.pressJumps, true );
-	input.pressShot					= Contains( currentInput.pressShots, true );
+	input.controllerInputDirection	= currentInput.moveVelocity;
+	input.pressJump					= Contains( currentInput.useJumps, true );
+	input.pressShot					= Contains( currentInput.useShots, true );
 
 	pBossContainer->Update( elapsedTime, input );
 
@@ -2368,39 +2294,6 @@ Scene::Result SceneGame::ReturnResult()
 	return noop;
 }
 
-
-
-void SceneGame::SetPlayerToBeforeBossRoom()
-{
-	static Donya::Vector3 beforeBossRoomPosition{ 84.0f, -8.0f, 0.0f };
-	auto SetPlayerToBeforeBossRoom = [&]()
-	{
-		const Map emptyMap{}; // Used for empty argument. Fali safe.
-		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
-
-		PlayerInitializer preBossSetter{};
-		preBossSetter.AssignParameter( beforeBossRoomPosition );
-
-		PlayerInit( preBossSetter, mapRef );
-
-		currentRoomID = CalcCurrentRoomID();
-		const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
-		if ( pSky && pCurrentRoom )
-		{
-			pSky->AdvanceHourTo( pCurrentRoom->GetHour(), 0.0f ); // Immediately
-		}
-
-		AssignCameraPos();
-		scroll.active			= false;
-		scroll.elapsedSecond	= 0.0f;
-		currentScreen = CalcCurrentScreenPlane();
-	};
-
-	SetPlayerToBeforeBossRoom();
-}
-
-
-
 #if USE_IMGUI
 #include <functional>
 #include "Donya/Useful.h"
@@ -2474,6 +2367,30 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	UseScreenSpaceImGui();
 
+	static Donya::Vector3 beforeBossRoomPosition{ 84.0f, -8.0f, 0.0f };
+	auto SetPlayerToBeforeBossRoom = [&]()
+	{
+		const Map emptyMap{}; // Used for empty argument. Fali safe.
+		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+
+		PlayerInitializer preBossSetter{};
+		preBossSetter.AssignParameter( beforeBossRoomPosition );
+
+		PlayerInit( preBossSetter, mapRef );
+
+		currentRoomID = CalcCurrentRoomID();
+		const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
+		if ( pSky && pCurrentRoom )
+		{
+			pSky->AdvanceHourTo( pCurrentRoom->GetHour(), 0.0f ); // Immediately
+		}
+
+		AssignCameraPos();
+		scroll.active			= false;
+		scroll.elapsedSecond	= 0.0f;
+		currentScreen = CalcCurrentScreenPlane();
+	};
+
 	// Choose a room by mouse
 	if ( Donya::Mouse::Trigger( Donya::Mouse::Kind::RIGHT ) && pHouse )
 	{
@@ -2522,6 +2439,10 @@ void SceneGame::UseImGui( float elapsedTime )
 	if ( Donya::Keyboard::Trigger( VK_F4 ) )
 	{
 		projectLightCamera = !projectLightCamera;
+	}
+	if ( Donya::Keyboard::Trigger( VK_F6 ) )
+	{
+		SetPlayerToBeforeBossRoom();
 	}
 
 	ImGui::SetNextWindowBgAlpha( 0.6f );

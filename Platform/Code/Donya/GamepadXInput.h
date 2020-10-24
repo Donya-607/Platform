@@ -82,6 +82,25 @@ namespace Donya
 		/// Please call when end the application.
 		/// </summary>
 		static void Uninit();
+	public:
+		// These constants' reference: https://docs.microsoft.com/ja-jp/windows/win32/api/xinput/ns-xinput-xinput_gamepad
+
+		/// <summary>
+		/// Returns normalized(0.0f ~ 1.0f) threshold of dead zone
+		/// </summary>
+		static float GetDeadZoneLeftStick();
+		/// <summary>
+		/// Returns normalized(0.0f ~ 1.0f) threshold of dead zone
+		/// </summary>
+		static float GetDeadZoneRightStick();
+		/// <summary>
+		/// The max value of the input of stick
+		/// </summary>
+		static constexpr float maxStickValue = 32767.0f;
+		/// <summary>
+		/// The min value of the input of stick
+		/// </summary>
+		static constexpr float minStickValue = -32768.0f;
 	private:
 		struct Impl;
 		std::unique_ptr<Impl> pXImpl;

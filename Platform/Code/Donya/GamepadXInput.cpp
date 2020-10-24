@@ -295,6 +295,16 @@ namespace Donya
 		XInputEnable( FALSE );
 	}
 #pragma warning( pop )
+	float XInput::GetDeadZoneLeftStick()
+	{
+		constexpr float border = scast<float>( XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE ) / maxStickValue;
+		return border;
+	}
+	float XInput::GetDeadZoneRightStick()
+	{
+		constexpr float border = scast<float>( XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE ) / maxStickValue;
+		return border;
+	}
 
 	void XInput::Update()
 	{
@@ -356,19 +366,12 @@ namespace Donya
 
 		// Stick.
 		{
-			// see https://docs.microsoft.com/ja-jp/windows/win32/api/xinput/ns-xinput-xinput_gamepad
-
-			constexpr float THUMB_MAX	= 32768.0f;
-			constexpr float DEAD_ZONE_L	= scast<float>( XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE  ) / THUMB_MAX;
-			constexpr float DEAD_ZONE_R	= scast<float>( XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE ) / THUMB_MAX;
-
-			auto NormalizeThumb	= [&THUMB_MAX]( int thumbParam )->float
+			auto NormalizeThumb	= []( int thumbParam )->float
 			{
-				return scast<float>( thumbParam ) / THUMB_MAX;
+				return scast<float>( thumbParam ) / maxStickValue;
 			};
-			auto IsInDeadZone	= [&DEAD_ZONE_L, &DEAD_ZONE_R]( const Donya::Vector2 &thumb, bool isLeftStick )->bool
+			auto IsInDeadZone	= []( const Donya::Vector2 &thumb, float deadZone )->bool
 			{
-				const float deadZone = ( isLeftStick ) ? DEAD_ZONE_L : DEAD_ZONE_R;
 				return ( thumb.LengthSq() < deadZone * deadZone ) ? true : false;
 			};
 
@@ -377,11 +380,11 @@ namespace Donya
 			pImpl->stickR.thumb.x = NormalizeThumb( pad.sThumbRX );
 			pImpl->stickR.thumb.y = NormalizeThumb( pad.sThumbRY );
 
-			if ( IsInDeadZone( pImpl->stickL.thumb, /* isLeftStick = */ true ) )
+			if ( IsInDeadZone( pImpl->stickL.thumb, GetDeadZoneLeftStick() ) )
 			{
 				pImpl->stickL.thumb = 0.0f;
 			}
-			if ( IsInDeadZone( pImpl->stickR.thumb, /* isLeftStick = */ false ) )
+			if ( IsInDeadZone( pImpl->stickR.thumb, GetDeadZoneRightStick() ) )
 			{
 				pImpl->stickR.thumb = 0.0f;
 			}
