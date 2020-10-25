@@ -4,6 +4,7 @@
 
 #include "Donya/Blend.h"
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
+#include "Donya/Easing.h"
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
@@ -110,11 +111,13 @@ namespace
 
 		struct Camera
 		{
-			bool			coordIsRelative		= true; // By player position
-			Donya::Vector3	pos		{ 0.0f, 0.0f,-1.0f };
-			Donya::Vector3	focus	{ 0.0f, 0.0f, 0.0f };
-			float			fovDegree			= 30.0f;
-			float			lerpSecFromOther	= 1.0f; // Taking second for transition from other state
+			bool				coordIsRelative		= true; // By player position
+			Donya::Vector3		pos		{ 0.0f, 0.0f,-1.0f };
+			Donya::Vector3		focus	{ 0.0f, 0.0f, 0.0f };
+			float				fovDegree			= 30.0f;
+			float				lerpSecFromOther	= 1.0f; // Taking second for transition from other state
+			Donya::Easing::Kind	easeKind			= Donya::Easing::Kind::Linear;
+			Donya::Easing::Type	easeType			= Donya::Easing::Type::In;
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -130,6 +133,14 @@ namespace
 				);
 
 				if ( 1 <= version )
+				{
+					archive
+					(
+						CEREAL_NVP( easeKind ),
+						CEREAL_NVP( easeType )
+					);
+				}
+				if ( 2 <= version )
 				{
 					// archive( CEREAL_NVP( x ) );
 				}
@@ -192,6 +203,7 @@ namespace
 					ImGui::DragFloat3	( u8"注視点座標",	&p->focus.x,			0.01f );
 					ImGui::SliderFloat	( u8"FOV(degree)",	&p->fovDegree,			0.01f, 90.0f );
 					ImGui::DragFloat	( u8"遷移に使う秒数",	&p->lerpSecFromOther,	0.01f );
+					ImGui::Helper::ShowEaseParam( u8"遷移に使うイージング", &p->easeKind, &p->easeType );
 
 					ImGui::TreePop();
 				};
@@ -314,9 +326,9 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( Member,				2 )
+CEREAL_CLASS_VERSION( Member,				3 )
 CEREAL_CLASS_VERSION( Member::ShadowMap,	0 )
-CEREAL_CLASS_VERSION( Member::Camera,		0 )
+CEREAL_CLASS_VERSION( Member::Camera,		1 )
 
 void SceneTitle::Init()
 {
@@ -617,6 +629,9 @@ void SceneTitle::Draw( float elapsedTime )
 	{
 		const auto &old  = GetCurrentCamera( oldStatus		);
 		const auto &curr = GetCurrentCamera( currentStatus	);
+		const auto data  = FetchCameraOrDefault( currentStatus );
+
+		const float lerpFactor = Donya::Easing::Ease( data.easeKind, data.easeType, transStateTime );
 
 		// I prefer lerp-ed view matrix than slerp-ed view matrix
 		const auto oldV  = old.CalcViewMatrix();
@@ -625,7 +640,7 @@ void SceneTitle::Draw( float elapsedTime )
 		{
 			for ( int c = 0; c < 3; ++c )
 			{
-				V.m[r][c] = Donya::Lerp( oldV.m[r][c], currV.m[r][c], transStateTime );
+				V.m[r][c] = Donya::Lerp( oldV.m[r][c], currV.m[r][c], lerpFactor );
 			}
 		}
 		const auto invV = V.Inverse();
@@ -633,7 +648,7 @@ void SceneTitle::Draw( float elapsedTime )
 		cameraPos.y = invV._42;
 		cameraPos.z = invV._43;
 
-		const float lerpedFOV	= Donya::Lerp( old.GetFOV(), curr.GetFOV(), transStateTime );
+		const float lerpedFOV	= Donya::Lerp( old.GetFOV(), curr.GetFOV(), lerpFactor );
 		// These are same between old and current
 		const auto screenSize	= curr.GetScreenSize();
 		const auto zNear		= curr.GetZNear();
@@ -1787,6 +1802,9 @@ void SceneTitle::UseImGui()
 
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
 		Player::UpdateParameter( u8"自機のパラメータ" );
+		ImGui::Text( "" );
+
+		if ( pSky ) { pSky->ShowImGuiNode( u8"空の現在" ); }
 		ImGui::Text( "" );
 
 		if ( pMap    ) { pMap->ShowImGuiNode( u8"マップの現在", stageNo ); }
