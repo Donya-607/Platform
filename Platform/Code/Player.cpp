@@ -1948,7 +1948,8 @@ void Player::Leave::Init( Player &inst )
 {
 	MoverBase::Init( inst );
 
-	inst.velocity = Donya::Vector3::Zero();
+	inst.velocity		= Donya::Vector3::Zero();
+	inst.hurtBox.exist	= false;
 
 	timer	= 0.0f;
 	visible	= true;
