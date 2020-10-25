@@ -318,6 +318,7 @@ void PlayerParam::ShowImGuiNode()
 	if ( ImGui::TreeNode( u8"汎用設定" ) )
 	{
 		ImGui::DragFloat( u8"登場時の出現タイミング（秒）",&appearDelaySecond,	0.01f	);
+		ImGui::DragFloat( u8"退場時の消滅タイミング（秒）",&leaveDelaySecond,	0.01f	);
 		ImGui::DragInt  ( u8"最大体力",					&maxHP						);
 		ImGui::DragInt  ( u8"最大残機数",				&maxRemainCount				);
 		ImGui::DragInt  ( u8"初期残機数",				&initialRemainCount			);
@@ -332,6 +333,7 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::DragFloat( u8"最高落下速度",				&maxFallSpeed,		0.01f	);
 		ImGui::DragFloat( u8"のけぞる秒数",				&knockBackSeconds,	0.01f	);
 		ImGui::DragFloat( u8"のけぞり速度",				&knockBackSpeed,	0.01f	);
+		ImGui::DragFloat( u8"のけぞり抵抗時の短縮倍率",	&braceStandFactor,	0.01f	);
 		ImGui::DragFloat( u8"無敵秒数",					&invincibleSeconds,	0.01f	);
 		ImGui::DragFloat( u8"無敵中点滅間隔（秒）",		&flushingInterval,	0.01f	);
 
@@ -420,6 +422,8 @@ void PlayerParam::ShowImGuiNode()
 		auto &normal = chargeParams[scast<int>( Player::ShotLevel::Normal )];
 		normal.chargeSecond  = 0.0f;
 		normal.emissiveColor = Donya::Vector3::Zero();
+
+		ImGui::SliderFloat( u8"発光への遷移時の補間係数", &emissiveTransFactor, 0.01f, 1.0f );
 
 		ImGui::TreePop();
 	}
@@ -953,10 +957,9 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 	// If calculate the charge level after update the "currChargeSecond",
 	// the level will be zero(ShotLevel::Normal) absolutely when fire timing, because that timing is the input was released.
 	// So I must calculate it before the update. It will not be late for one frame by this.
-	chargeLevel	= CalcChargeLevel();
-	destColor	= CalcEmissiveColor();
-	// TODO: Replace the time(0.3f) to some parameter
-	emissiveColor = Donya::Lerp( emissiveColor, destColor, 0.3f );
+	chargeLevel		= CalcChargeLevel();
+	destColor		= CalcEmissiveColor();
+	emissiveColor	= Donya::Lerp( emissiveColor, destColor, Parameter().Get().emissiveTransFactor );
 
 	if ( oldChargeLevel != chargeLevel )
 	{
@@ -1811,6 +1814,8 @@ void Player::KnockBack::Init( Player &inst )
 {
 	MoverBase::Init( inst );
 
+	const auto &data = Parameter().Get();
+
 	const bool knockedFromRight = ( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight );
 	inst.UpdateOrientation( knockedFromRight );
 
@@ -1821,14 +1826,14 @@ void Player::KnockBack::Init( Player &inst )
 
 		if ( !inst.prevBracingStatus )
 		{
-			inst.velocity.x  = Parameter().Get().knockBackSpeed * impulseSign;
+			inst.velocity.x  = data.knockBackSpeed * impulseSign;
 		}
 	}
 
 	inst.motionManager.QuitShotMotion();
 	
 	timer		= 0.0f;
-	motionSpeed	= ( inst.prevBracingStatus ) ? 2.0f : 1.0f; // TODO: Replace the "2.0f" to some parameter
+	motionSpeed	= ( inst.prevBracingStatus ) ? data.braceStandFactor : 1.0f;
 }
 void Player::KnockBack::Uninit( Player &inst )
 {
@@ -1938,6 +1943,51 @@ std::function<void()> Player::Appear::GetChangeStateMethod( Player &inst ) const
 {
 	return [&inst]() { inst.AssignMover<Normal>(); };
 }
+
+void Player::Leave::Init( Player &inst )
+{
+	MoverBase::Init( inst );
+
+	inst.velocity = Donya::Vector3::Zero();
+
+	timer	= 0.0f;
+	visible	= true;
+
+	Effect::Admin::Get().GenerateInstance( Effect::Kind::Player_Leave, inst.GetPosition() );
+	Donya::Sound::Play( Music::Player_Leave );
+}
+void Player::Leave::Update( Player &inst, float elapsedTime, const Map &terrain )
+{
+	timer += elapsedTime;
+
+	if ( visible )
+	{
+		const auto &data = Parameter().Get();
+		if ( data.leaveDelaySecond <= timer )
+		{
+			visible = false;
+		}
+	}
+
+	MotionUpdate( inst, elapsedTime );
+}
+void Player::Leave::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
+{
+	// No op
+}
+bool Player::Leave::Drawable( const Player &inst ) const
+{
+	return visible;
+}
+bool Player::Leave::ShouldChangeMover( const Player &inst ) const
+{
+	return false;
+}
+std::function<void()> Player::Leave::GetChangeStateMethod( Player &inst ) const
+{
+	return []() {}; // No op
+}
+
 
 // region Mover
 #pragma endregion
@@ -2808,6 +2858,10 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	if ( ImGui::Button( u8"登場演出再生" ) )
 	{
 		AssignMover<Appear>();
+	}
+	if ( ImGui::Button( u8"退場させる" ) )
+	{
+		AssignMover<Leave>();
 	}
 
 	ImGui::DragFloat3	( u8"ワールド座標",					&body.pos.x,	0.01f );

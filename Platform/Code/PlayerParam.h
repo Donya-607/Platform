@@ -35,9 +35,12 @@ public:
 	float	maxFallSpeed		= 1.0f;
 	float	knockBackSeconds	= 0.5f;
 	float	knockBackSpeed		= 1.0f;		// X speed
+	float	braceStandFactor	= 2.0f;
 	float	invincibleSeconds	= 2.0f;
 	float	flushingInterval	= 0.1f;		// Seconds
+	float	emissiveTransFactor	= 0.3f;
 	float	appearDelaySecond	= 0.5f;		// Seconds
+	float	leaveDelaySecond	= 0.5f;		// Seconds
 	Donya::Collision::Box3F		hitBox;			// VS a terrain
 	Donya::Collision::Box3F		hurtBox;		// VS an attack(e.g. enemy)
 	Donya::Collision::Box3F		slideHitBox;	// VS a terrain when sliding
@@ -181,6 +184,15 @@ private:
 		}
 		if ( 13 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( braceStandFactor	),
+				CEREAL_NVP( emissiveTransFactor	),
+				CEREAL_NVP( leaveDelaySecond	)
+			);
+		}
+		if ( 14 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -189,4 +201,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 12 )
+CEREAL_CLASS_VERSION( PlayerParam, 13 )

@@ -417,6 +417,22 @@ private:
 		std::string GetMoverName() const override { return u8"ìoèÍ"; }
 	#endif // USE_IMGUI
 	};
+	class Leave : public MoverBase
+	{
+	private:
+		float	timer	= 0.0f;
+		bool	visible	= true;
+	public:
+		void Init( Player &instance ) override;
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		bool Drawable( const Player &instance ) const override;
+		bool ShouldChangeMover( const Player &instance ) const override;
+		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	#if USE_IMGUI
+		std::string GetMoverName() const override { return u8"ëﬁèÍ"; }
+	#endif // USE_IMGUI
+	};
 // Mover
 #pragma endregion
 #pragma region Gun
