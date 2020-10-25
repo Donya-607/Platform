@@ -174,6 +174,8 @@ namespace Effect
 			return Make( u"Hurt.efk" );
 		case Effect::Kind::Player_Appear:
 			return Make( u"Appear.efk" );
+		case Effect::Kind::Player_Leave:
+			return Make( u"Leave.efk" );
 		case Effect::Kind::Player_Slide_Begin:
 			return Make( u"Slide_Begin.efk" );
 		case Effect::Kind::READY:

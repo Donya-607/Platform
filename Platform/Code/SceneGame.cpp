@@ -2833,8 +2833,10 @@ void SceneGame::UseImGui( float elapsedTime )
 		static std::shared_ptr<Effect::Handle> pHandle = nullptr;
 		static Donya::Vector3	setPos{};
 		static Donya::Vector3	scale{ 1.0f, 1.0f, 1.0f };
-		static Effect::Kind		kind = Effect::Kind::CatchItem;
-		static bool				usePlayerPos = true;
+		static Effect::Kind		kind			= Effect::Kind::CatchItem;
+		static float			playSpeed		= 1.0f;
+		static int32_t			startFrame		= 0;
+		static bool				usePlayerPos	= true;
 
 		ImGui::Checkbox( u8"自機の座標を使う", &usePlayerPos );
 		if ( usePlayerPos )
@@ -2842,8 +2844,10 @@ void SceneGame::UseImGui( float elapsedTime )
 			setPos = ( pPlayer ) ? pPlayer->GetPosition() : setPos;
 		}
 
-		ImGui::DragFloat3( u8"設定位置",	&setPos.x,	0.1f );
-		ImGui::DragFloat3( u8"スケール",	&scale.x,	0.1f );
+		ImGui::DragFloat3	( u8"設定位置",		&setPos.x,	0.1f );
+		ImGui::DragFloat3	( u8"スケール",		&scale.x,	0.1f );
+		ImGui::DragFloat	( u8"再生速度",		&playSpeed,	0.1f );
+		ImGui::DragInt		( u8"開始フレーム",	&startFrame );
 
 		int iKind = scast<int>( kind );
 		ImGui::SliderInt( u8"種類", &iKind, 0, scast<int>( Effect::Kind::KindCount ) - 1 );
@@ -2867,8 +2871,9 @@ void SceneGame::UseImGui( float elapsedTime )
 			if ( pHandle ) { pHandle->Stop(); }
 			pHandle.reset();
 
-			pHandle = std::make_shared<Effect::Handle>( Effect::Handle::Generate( kind, setPos ) );
+			pHandle = std::make_shared<Effect::Handle>( Effect::Handle::Generate( kind, setPos, startFrame ) );
 			if ( !pHandle->IsExists() ) { pHandle.reset(); }
+			pHandle->SetPlaySpeed( playSpeed );
 		}
 		if ( ImGui::Button( u8"削除" ) && pHandle )
 		{

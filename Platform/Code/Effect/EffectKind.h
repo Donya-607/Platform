@@ -12,6 +12,7 @@ namespace Effect
 		Hit_Buster,
 		HurtDamage,
 		Player_Appear,
+		Player_Leave,
 		Player_Slide_Begin,
 		READY,
 		Protected,
@@ -30,6 +31,7 @@ namespace Effect
 		case Effect::Kind::Hit_Buster:			return "Hit_Buster";
 		case Effect::Kind::HurtDamage:			return "HurtDamage";
 		case Effect::Kind::Player_Appear:		return "Player_Appear";
+		case Effect::Kind::Player_Leave:		return "Player_Leave";
 		case Effect::Kind::Player_Slide_Begin:	return "Player_Slide_Begin";
 		case Effect::Kind::READY:				return "READY";
 		case Effect::Kind::Protected:			return "Protected";

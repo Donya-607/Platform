@@ -164,6 +164,16 @@ namespace Effect
 			}
 		);
 	}
+	void Handle::SetPlaySpeed( float speed )
+	{
+		OperateIfManagerIsAvailable
+		(
+			[&]( Fx::Manager *pManager )
+			{
+				pManager->SetSpeed( handle, speed );
+			}
+		);
+	}
 	void Handle::Move( const Donya::Vector3 &velocity )
 	{
 		OperateIfManagerIsAvailable

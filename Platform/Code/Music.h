@@ -33,6 +33,7 @@ namespace Music
 		Player_Dash,
 		Player_Jump,
 		Player_Landing,
+		Player_Leave,
 		Player_Miss,
 		
 		RecoverHP,

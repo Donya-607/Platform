@@ -42,6 +42,7 @@ namespace Effect
 		void SetRotation( const Donya::Vector3 &axis, float angleRadian );
 		void SetRotation( const Donya::Quaternion &unitOrientation );
 		void SetPosition( const Donya::Vector3 &position );
+		void SetPlaySpeed( float speed );
 		void Move( const Donya::Vector3 &velocity );
 		void Stop();
 	public:
