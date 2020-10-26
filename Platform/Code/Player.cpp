@@ -1001,6 +1001,13 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime, const I
 	fxComplete.SetPosition( inst.GetPosition() );
 	fxLoop.SetPosition( inst.GetPosition() );
 }
+void Player::ShotManager::ChargeFully()
+{
+	constexpr int maxLevelIndex = scast<int>( ShotLevel::Strong );
+
+	const auto &chargeParams = Parameter().Get().chargeParams;
+	currChargeSecond = chargeParams[maxLevelIndex].chargeSecond + 1.0f;
+}
 bool Player::ShotManager::IsShotRequested( const Player &inst ) const
 {
 	if ( nowTrigger ) { return true; }
@@ -2431,6 +2438,10 @@ void Player::RecoverHP( int recovery )
 {
 	currentHP += recovery;
 	currentHP =  std::min( Parameter().Get().maxHP, currentHP );
+}
+void Player::ChargeFully()
+{
+	shotManager.ChargeFully();
 }
 bool Player::NowMiss() const
 {

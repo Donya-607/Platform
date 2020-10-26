@@ -23,7 +23,7 @@
 class SceneTitle : public Scene
 {
 public:
-	enum class State
+	enum class CameraState
 	{
 		Attract,
 		Controllable,
@@ -31,7 +31,18 @@ public:
 
 		StateCount
 	};
-	static constexpr int stateCount = scast<int>( State::StateCount );
+	static constexpr int cameraStateCount = scast<int>( CameraState::StateCount );
+
+	enum class PerformanceState
+	{
+		NotPerforming,
+		ToLeave,
+		ToFade,
+		Wait,
+
+		StateCount
+	};
+	static constexpr int performanceStateCount = scast<int>( PerformanceState::StateCount );
 
 	enum class Choice
 	{
@@ -47,32 +58,35 @@ private:
 		Donya::PixelShader  PS;
 	};
 private:
-	std::array<Donya::ICamera, stateCount>	stateCameras;
-	Donya::ICamera							lightCamera;
+	std::array<Donya::ICamera, cameraStateCount>	stateCameras;
+	Donya::ICamera									lightCamera;
 
-	Donya::XInput							controller{ Donya::Gamepad::PAD_1 };
-	Donya::Collision::Box3F					currentScreen;
-	int										currentRoomID	= 0;
-	PlayerInitializer						playerIniter;
+	Donya::XInput									controller{ Donya::Gamepad::PAD_1 };
+	Donya::Collision::Box3F							currentScreen;
+	int												currentRoomID		= 0;
+	PlayerInitializer								playerIniter;
 
-	Scene::Type								nextScene		= Scene::Type::Null;
-	State									currentStatus	= State::Attract;
-	State									oldStatus		= State::Attract;
-	float									transStateTime	= 1.0f; // 0.0f ~ 1.0f, Lerp( oldStatus -> currentStatus, time )
+	Scene::Type										nextScene			= Scene::Type::Null;
+	CameraState										currCameraStatus	= CameraState::Attract;
+	CameraState										beforeCameraStatus	= CameraState::Attract;
+	float											transCameraTime		= 1.0f; // 0.0f ~ 1.0f, Lerp( beforeCameraStatus -> currCameraStatus, time )
 
-	std::unique_ptr<RenderingHelper>		pRenderer;
-	std::unique_ptr<Donya::Displayer>		pDisplayer;
-	std::unique_ptr<BloomApplier>			pBloomer;
-	std::unique_ptr<Donya::Surface>			pScreenSurface;
-	std::unique_ptr<Donya::Surface>			pShadowMap;
-	std::unique_ptr<Shader>					pQuadShader;
-	std::unique_ptr<Map>					pMap;
-	std::unique_ptr<Sky>					pSky;
-	std::unique_ptr<House>					pHouse;
-	std::unique_ptr<Player>					pPlayer;
-	std::unique_ptr<Boss::Base>				pBoss;
+	PerformanceState								performanceStatus	= PerformanceState::NotPerforming;
+
+	std::unique_ptr<RenderingHelper>				pRenderer;
+	std::unique_ptr<Donya::Displayer>				pDisplayer;
+	std::unique_ptr<BloomApplier>					pBloomer;
+	std::unique_ptr<Donya::Surface>					pScreenSurface;
+	std::unique_ptr<Donya::Surface>					pShadowMap;
+	std::unique_ptr<Shader>							pQuadShader;
+	std::unique_ptr<Map>							pMap;
+	std::unique_ptr<Sky>							pSky;
+	std::unique_ptr<House>							pHouse;
+	std::unique_ptr<Player>							pPlayer;
+	std::unique_ptr<Boss::Base>						pBoss;
 
 	float		elapsedSecond	= 0.0f;
+	float		performTimer	= 0.0f;
 	Choice		chooseItem		= Choice::ItemCount;
 	bool		wasDecided		= false;
 
@@ -101,8 +115,10 @@ private:
 	bool	AreRenderersReady() const;
 
 	void	UpdateChooseItem();
+	
+	void	UpdatePerformance( float elapsedTime );
 
-	void	ChangeState( State next );
+	void	ChangeCameraState( CameraState next );
 
 	Donya::Vector4x4 MakeScreenTransform() const;
 	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
@@ -110,7 +126,7 @@ private:
 	void	CameraInit();
 	void	AssignCameraPos();
 	void	CameraUpdate( float elapsedTime );
-	const Donya::ICamera &GetCurrentCamera( State key ) const;
+	const Donya::ICamera &GetCurrentCamera( CameraState key ) const;
 
 	Donya::Vector4x4 CalcLightViewMatrix() const;
 

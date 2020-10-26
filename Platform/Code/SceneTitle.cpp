@@ -40,18 +40,31 @@
 
 namespace
 {
-	constexpr const char *GetStateName( SceneTitle::State status )
+	constexpr const char *GetCameraStateName( SceneTitle::CameraState status )
 	{
 		switch ( status )
 		{
-		case SceneTitle::State::Attract:			return "Attract";
-		case SceneTitle::State::Controllable:		return "Controllable";
-		case SceneTitle::State::StartPerformance:	return "StartPerformance";
+		case SceneTitle::CameraState::Attract:			return "Attract";
+		case SceneTitle::CameraState::Controllable:		return "Controllable";
+		case SceneTitle::CameraState::StartPerformance:	return "StartPerformance";
 		default: break;
 		}
 
 		// Fail safe
-		return GetStateName( SceneTitle::State::Attract );
+		return GetCameraStateName( SceneTitle::CameraState::Attract );
+	}
+	constexpr const char *GetPerformanceStateName( SceneTitle::PerformanceState status )
+	{
+		switch ( status )
+		{
+		case SceneTitle::PerformanceState::NotPerforming:	return "NotPerforming";
+		case SceneTitle::PerformanceState::ToLeave:			return "ToLeave";
+		case SceneTitle::PerformanceState::ToFade:			return "ToFade";
+		default: break;
+		}
+
+		// Fail safe
+		return GetPerformanceStateName( SceneTitle::PerformanceState::NotPerforming );
 	}
 	constexpr const char *GetChoiceItemName( SceneTitle::Choice item )
 	{
@@ -149,6 +162,9 @@ namespace
 		std::vector<Camera> cameras; // size() == SceneTitle::StateCount
 
 		Boss::InitializeParam bossIniter;
+
+		float leaveDelaySec	= 1.0f;
+		float fadeDelaySec	= 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -180,6 +196,14 @@ namespace
 			}
 			if ( 4 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( leaveDelaySec	),
+					CEREAL_NVP( fadeDelaySec	)
+				);
+			}
+			if ( 5 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -187,9 +211,9 @@ namespace
 	#if USE_IMGUI
 		void ShowImGuiNode()
 		{
-			if ( cameras.size() != SceneTitle::stateCount )
+			if ( cameras.size() != SceneTitle::cameraStateCount )
 			{
-				cameras.resize( SceneTitle::stateCount );
+				cameras.resize( SceneTitle::cameraStateCount );
 			}
 			if ( ImGui::TreeNode( u8"カメラ関連" ) )
 			{
@@ -207,10 +231,10 @@ namespace
 
 					ImGui::TreePop();
 				};
-				for ( int i = 0; i < SceneTitle::stateCount; ++i )
+				for ( int i = 0; i < SceneTitle::cameraStateCount; ++i )
 				{
-					const auto status = scast<SceneTitle::State>( i );
-					Show( GetStateName( status ), &cameras[i] );
+					const auto status = scast<SceneTitle::CameraState>( i );
+					Show( GetCameraStateName( status ), &cameras[i] );
 				}
 
 				ImGui::TreePop();
@@ -245,8 +269,12 @@ namespace
 
 			if ( ImGui::TreeNode( u8"秒数関連" ) )
 			{
-				ImGui::DragFloat( u8"スクロールに要する秒数", &scrollTakeSecond, 0.01f );
-				scrollTakeSecond = std::max( 0.01f, scrollTakeSecond );
+				ImGui::DragFloat( u8"スクロールに要する秒数",	&scrollTakeSecond,	0.01f );
+				ImGui::DragFloat( u8"退場までの遅延秒数",		&leaveDelaySec,		0.01f );
+				ImGui::DragFloat( u8"フェードまでの遅延秒数",	&fadeDelaySec,		0.01f );
+				scrollTakeSecond	= std::max( 0.01f,	scrollTakeSecond	);
+				leaveDelaySec		= std::max( 0.0f,	leaveDelaySec		);
+				fadeDelaySec		= std::max( 0.0f,	fadeDelaySec		);
 
 				ImGui::TreePop();
 			}
@@ -291,7 +319,7 @@ namespace
 		return sceneParam.Get();
 	}
 
-	Member::Camera FetchCameraOrDefault( SceneTitle::State key )
+	Member::Camera FetchCameraOrDefault( SceneTitle::CameraState key )
 	{
 		const auto &data	= FetchParameter().cameras;
 
@@ -326,7 +354,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( Member,				3 )
+CEREAL_CLASS_VERSION( Member,				4 )
 CEREAL_CLASS_VERSION( Member::ShadowMap,	0 )
 CEREAL_CLASS_VERSION( Member::Camera,		1 )
 
@@ -482,15 +510,15 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	PointLightStorage::Get().Clear();
 
-	if ( transStateTime < 1.0f )
+	if ( transCameraTime < 1.0f )
 	{
-		const float takeSecond = FetchCameraOrDefault( currentStatus ).lerpSecFromOther;
+		const float takeSecond = FetchCameraOrDefault( currCameraStatus ).lerpSecFromOther;
 		const float advance = 1.0f / takeSecond;
-		transStateTime += advance * elapsedTime;
-		if ( 1.0f <= transStateTime )
+		transCameraTime += advance * elapsedTime;
+		if ( 1.0f <= transCameraTime )
 		{
-			oldStatus = currentStatus;
-			transStateTime = 1.0f;
+			beforeCameraStatus = currCameraStatus;
+			transCameraTime = 1.0f;
 		}
 	}
 	
@@ -499,22 +527,16 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	controller.Update();
 
 	UpdateChooseItem();
-	if ( !Fader::Get().IsExist() && wasDecided )
-	{
-		if ( chooseItem == Choice::Start )
-		{
-			StartFade();
-			if( pPlayer ) { pPlayer->PerformLeaving(); }
-		}
-	}
+
+	UpdatePerformance( elapsedTime );
 
 	const float deltaTimeForMove = elapsedTime;
 
 	if ( pSky ) { pSky->Update( elapsedTime ); }
 
 	if ( pMap ) { pMap->Update( deltaTimeForMove ); }
-	const Map emptyMap{}; // Used for empty argument. Fali safe.
-	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+	const Map  emptyMap{}; // Used for empty argument. Fali safe.
+	const Map  &mapRef = ( pMap ) ? *pMap : emptyMap;
 
 	currentRoomID = CalcCurrentRoomID();
 	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
@@ -565,13 +587,28 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate( elapsedTime );
 
-	const auto &currCamera = GetCurrentCamera( currentStatus );
+	const auto &currCamera = GetCurrentCamera( currCameraStatus );
 	Effect::Admin::Get().SetViewMatrix( currCamera.CalcViewMatrix() );
 	Effect::Admin::Get().SetProjectionMatrix( currCamera.GetProjectionMatrix() );
 
 	return ReturnResult();
 }
 
+namespace
+{
+	enum class DrawTarget
+	{
+		Map		= 1 << 0,
+		Bullet	= 1 << 1,
+		Player	= 1 << 2,
+		Boss	= 1 << 3,
+		Enemy	= 1 << 4,
+		Item	= 1 << 5,
+
+		All		= Map | Bullet | Player | Boss | Enemy | Item
+	};
+	DEFINE_ENUM_FLAG_OPERATORS( DrawTarget )
+}
 void SceneTitle::Draw( float elapsedTime )
 {
 	ClearBackGround();
@@ -588,15 +625,21 @@ void SceneTitle::Draw( float elapsedTime )
 		constant.viewProjMatrix		= viewProjectionMatrix;
 		pRenderer->UpdateConstant( constant );
 	};
-	auto DrawObjects			= [&]( bool castShadow )
+	auto DrawObjects			= [&]( DrawTarget option, bool castShadow )
 	{
+		using Kind = DrawTarget;
+		auto Drawable = [&option]( Kind verify )
+		{
+			return scast<int>( option & verify ) != 0;
+		};
+
 		// The drawing priority is determined by the priority of the information.
 
 		( castShadow )
 		? pRenderer->ActivateShaderShadowStatic()
 		: pRenderer->ActivateShaderNormalStatic();
 
-		if ( pMap ) { pMap->Draw( pRenderer.get() ); }
+		if ( Drawable( Kind::Map ) && pMap ) { pMap->Draw( pRenderer.get() ); }
 
 		( castShadow )
 		? pRenderer->DeactivateShaderShadowStatic()
@@ -607,11 +650,11 @@ void SceneTitle::Draw( float elapsedTime )
 		? pRenderer->ActivateShaderShadowSkinning()
 		: pRenderer->ActivateShaderNormalSkinning();
 
-		Bullet::Admin::Get().Draw( pRenderer.get() );
-		if ( pPlayer	) { pPlayer->Draw( pRenderer.get() ); }
-		if ( pBoss		) { pBoss->Draw( pRenderer.get() ); }
-		Enemy::Admin::Get().Draw( pRenderer.get() );
-		Item::Admin::Get().Draw( pRenderer.get() );
+		if ( Drawable( Kind::Player	) && pPlayer	) { pPlayer->Draw( pRenderer.get() );	}
+		if ( Drawable( Kind::Boss	) && pBoss		) { pBoss->Draw( pRenderer.get() );		}
+		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );		}
+		if ( Drawable( Kind::Item	) ) { Item::Admin::Get().Draw( pRenderer.get() );		}
+		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() );		}
 
 		( castShadow )
 		? pRenderer->DeactivateShaderShadowSkinning()
@@ -621,20 +664,20 @@ void SceneTitle::Draw( float elapsedTime )
 	Donya::Vector4   cameraPos{};
 	Donya::Vector4x4 V{};
 	Donya::Vector4x4 VP{};
-	if ( 1.0f <= transStateTime ) // Lerp is not needed
+	if ( 1.0f <= transCameraTime ) // Lerp is not needed
 	{
-		const auto &camera = GetCurrentCamera( currentStatus );
+		const auto &camera = GetCurrentCamera( currCameraStatus );
 		cameraPos = Donya::Vector4{ camera.GetPosition(), 1.0f };
 		V  = camera.CalcViewMatrix();
 		VP = V * camera.GetProjectionMatrix();
 	}
 	else
 	{
-		const auto &old  = GetCurrentCamera( oldStatus		);
-		const auto &curr = GetCurrentCamera( currentStatus	);
-		const auto data  = FetchCameraOrDefault( currentStatus );
+		const auto &old  = GetCurrentCamera( beforeCameraStatus		);
+		const auto &curr = GetCurrentCamera( currCameraStatus	);
+		const auto data  = FetchCameraOrDefault( currCameraStatus );
 
-		const float lerpFactor = Donya::Easing::Ease( data.easeKind, data.easeType, transStateTime );
+		const float lerpFactor = Donya::Easing::Ease( data.easeKind, data.easeType, transCameraTime );
 
 		// I prefer lerp-ed view matrix than slerp-ed view matrix
 		const auto oldV  = old.CalcViewMatrix();
@@ -687,16 +730,18 @@ void SceneTitle::Draw( float elapsedTime )
 
 	pShadowMap->SetRenderTarget();
 	pShadowMap->SetViewport();
-	// Update scene constant as light source
-	{
-		Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
-		tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
-		UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP );
-	}
 	// Make the shadow map
 	{
+		// Update scene constant as light source
+		{
+			Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
+			tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
+			UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP );
+		}
 		pRenderer->ActivateConstantScene();
-		DrawObjects( /* castShadow = */ true );
+
+		DrawObjects( DrawTarget::All, /* castShadow = */ true );
+
 		pRenderer->DeactivateConstantScene();
 	}
 	Donya::Surface::ResetRenderTarget();
@@ -704,29 +749,45 @@ void SceneTitle::Draw( float elapsedTime )
 	pScreenSurface->SetRenderTarget();
 	pScreenSurface->SetViewport();
 
-	// Update scene and shadow constants
-	{
-		UpdateSceneConstant( data.directionalLight, cameraPos, V, VP );
-
-		RenderingHelper::ShadowConstant constant{};
-		constant.lightProjMatrix	= LVP;
-		constant.shadowColor		= data.shadowMap.color;
-		constant.shadowBias			= data.shadowMap.bias;
-		pRenderer->UpdateConstant( constant );
-	}
-	// Update point light constant
-	{
-		pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
-	}
 	// Draw normal scene with shadow map
 	{
+		RenderingHelper::ShadowConstant shadowConstant{};
+		// Update scene and shadow constants
+		{
+			UpdateSceneConstant( data.directionalLight, cameraPos, V, VP );
+
+			shadowConstant.lightProjMatrix	= LVP;
+			shadowConstant.shadowColor		= data.shadowMap.color;
+			shadowConstant.shadowBias		= data.shadowMap.bias;
+			pRenderer->UpdateConstant( shadowConstant );
+		}
+		// Update point light constant
+		{
+			pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
+		}
+
 		pRenderer->ActivateConstantScene();
 		pRenderer->ActivateConstantPointLight();
 		pRenderer->ActivateConstantShadow();
 		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		pRenderer->ActivateShadowMap( *pShadowMap );
 
-		DrawObjects( /* castShadow = */ false );
+		constexpr DrawTarget option = DrawTarget::All ^ DrawTarget::Bullet ^ DrawTarget::Item;
+		DrawObjects( option, /* castShadow = */ false );
+
+		// Disable shadow
+		{
+			pRenderer->DeactivateConstantShadow();
+			shadowConstant.shadowBias = 1.0f; // Make the pixel to nearest
+			pRenderer->UpdateConstant( shadowConstant );
+			pRenderer->ActivateConstantShadow();
+		}
+
+		DrawObjects( DrawTarget::Item, /* castShadow = */ false );
+
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_Write );
+		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 
 		pRenderer->DeactivateShadowMap( *pShadowMap );
 		pRenderer->DeactivateSamplerShadow();
@@ -741,7 +802,6 @@ void SceneTitle::Draw( float elapsedTime )
 	Donya::DepthStencil::Deactivate();
 
 	// Draw sprites
-	// if ( 0 )
 	{
 		sprTitleLogo.pos.x = Common::HalfScreenWidthF();
 		sprTitleLogo.pos.y = Common::HalfScreenHeightF();
@@ -1062,6 +1122,9 @@ bool SceneTitle::AreRenderersReady() const
 
 void SceneTitle::UpdateChooseItem()
 {
+	if ( wasDecided ) { return; }
+	// else
+
 	bool trgLeft	= false;
 	bool trgRight	= false;
 	bool trgUp		= false;
@@ -1091,16 +1154,12 @@ void SceneTitle::UpdateChooseItem()
 
 	// TODO: Play choice SE
 
-	if ( currentStatus == State::Attract )
+	if ( currCameraStatus == CameraState::Attract )
 	{
 		if ( trgLeft || trgRight || trgUp || trgDown )
 		{
-			ChangeState( State::Controllable );
+			ChangeCameraState( CameraState::Controllable );
 		}
-	}
-	if ( trgDecide && currentStatus != State::StartPerformance )
-	{
-		ChangeState( State::StartPerformance );
 	}
 
 	// If do not selected
@@ -1127,16 +1186,65 @@ void SceneTitle::UpdateChooseItem()
 	}
 }
 
-void SceneTitle::ChangeState( State next )
+void SceneTitle::UpdatePerformance( float elapsedTime )
 {
-	oldStatus		= currentStatus;
-	currentStatus	= next;
-	transStateTime	= 0.0f;
+	if ( performanceStatus == PerformanceState::NotPerforming )
+	{
+		if ( wasDecided )
+		{
+			if ( pPlayer ) { pPlayer->ChargeFully(); }
+			ChangeCameraState( CameraState::StartPerformance );
+
+			performTimer = 0.0f;
+			performanceStatus = PerformanceState::ToLeave;
+		}
+
+		return;
+	}
+	// else
+
+	if ( performanceStatus == PerformanceState::Wait ) { return; }
+	// else
+
+	performTimer += elapsedTime;
+
+	const auto &data = FetchParameter();
+	switch ( performanceStatus )
+	{
+	case PerformanceState::ToLeave:
+		if ( data.leaveDelaySec <= performTimer )
+		{
+			if ( pPlayer ) { pPlayer->PerformLeaving(); }
+
+			performTimer = 0.0f;
+			performanceStatus = PerformanceState::ToFade;
+		}
+		return;
+	case PerformanceState::ToFade:
+		if ( data.fadeDelaySec <= performTimer )
+		{
+			StartFade();
+
+			performTimer = 0.0f;
+			performanceStatus = PerformanceState::Wait;
+		}
+		return;
+	default:
+		_ASSERT_EXPR( 0, L"Error: Unexpected PerformanceStatus!" );
+		return;
+	}
+}
+
+void SceneTitle::ChangeCameraState( CameraState next )
+{
+	beforeCameraStatus		= currCameraStatus;
+	currCameraStatus	= next;
+	transCameraTime	= 0.0f;
 }
 
 Donya::Vector4x4 SceneTitle::MakeScreenTransform() const
 {
-	const auto &currCamera = GetCurrentCamera( currentStatus );
+	const auto &currCamera = GetCurrentCamera( currCameraStatus );
 	const Donya::Vector4x4 matViewProj = currCamera.CalcViewMatrix() * currCamera.GetProjectionMatrix();
 	const Donya::Vector4x4 matViewport = Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
 	return matViewProj * matViewport;
@@ -1208,9 +1316,9 @@ void SceneTitle::CameraInit()
 	constexpr Donya::Vector2 defaultZRange{ 0.1f, 1000.0f };
 	
 	Member::Camera cameraData;
-	for ( int i = 0; i < stateCount; ++i )
+	for ( int i = 0; i < cameraStateCount; ++i )
 	{
-		cameraData = FetchCameraOrDefault( scast<State>( i ) );
+		cameraData = FetchCameraOrDefault( scast<CameraState>( i ) );
 
 		auto &it = stateCameras[i];
 		it.Init				( Donya::ICamera::Mode::Look );
@@ -1246,9 +1354,9 @@ void SceneTitle::AssignCameraPos()
 
 	Member::Camera cameraData;
 	Donya::Vector3 basePos;
-	for ( int i = 0; i < stateCount; ++i )
+	for ( int i = 0; i < cameraStateCount; ++i )
 	{
-		cameraData = FetchCameraOrDefault( scast<State>( i ) );
+		cameraData = FetchCameraOrDefault( scast<CameraState>( i ) );
 
 		if ( cameraData.coordIsRelative )
 		{
@@ -1276,9 +1384,9 @@ void SceneTitle::CameraUpdate( float elapsedTime )
 	// Apply for be able to see an adjustment immediately
 	{
 		Member::Camera cameraData;
-		for ( int i = 0; i < stateCount; ++i )
+		for ( int i = 0; i < cameraStateCount; ++i )
 		{
-			cameraData = FetchCameraOrDefault( scast<State>( i ) );
+			cameraData = FetchCameraOrDefault( scast<CameraState>( i ) );
 
 			auto &it = stateCameras[i];
 			it.SetFOV( ToRadian( cameraData.fovDegree ) );
@@ -1387,12 +1495,12 @@ void SceneTitle::CameraUpdate( float elapsedTime )
 
 #endif // !DEBUG_MODE
 }
-const Donya::ICamera &SceneTitle::GetCurrentCamera( State key ) const
+const Donya::ICamera &SceneTitle::GetCurrentCamera( CameraState key ) const
 {
 	const int intKey = scast<int>( key );
-	if ( intKey < 0 || stateCount <= intKey )
+	if ( intKey < 0 || cameraStateCount <= intKey )
 	{
-		_ASSERT_EXPR( 0, L"Error: Unexpected State!" );
+		_ASSERT_EXPR( 0, L"Error: Unexpected CameraState!" );
 		return stateCameras.front();
 	}
 	// e;se
@@ -1427,31 +1535,50 @@ void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 		Donya::XInput::GetDeadZoneLeftStick()
 	};
 
-	Player::Input input = Input::MakeCurrentInput( controller, deadZone );
-
-	if ( currentStatus == State::Attract )
+	Player::Input input{};
+	if ( performanceStatus != PerformanceState::NotPerforming )
 	{
-		auto HasTrue = []( const auto &arr )
+		// First frame of performancing
+		if ( IsZero( performTimer ) && performanceStatus == PerformanceState::ToLeave )
 		{
-			for ( const auto &it : arr )
+			input.useShots.fill( true );
+
+			// Make to look to left(center direction) side
+			const auto front = pPlayer->GetOrientation();
+			if ( 0.0f <= front.x )
 			{
-				if ( it ) { return true; }
+				input.moveVelocity.x = -1.0f;
 			}
-			return false;
-		};
-		auto Inputed = [&HasTrue]( const Player::Input &input )
+		}
+	}
+	else
+	{
+		input = Input::MakeCurrentInput( controller, deadZone );
+
+		if ( currCameraStatus == CameraState::Attract )
 		{
-			return
-					HasTrue( input.useJumps )
-				||	HasTrue( input.useShots )
-				||	HasTrue( input.useDashes )
-				||	HasTrue( input.shiftGuns )
-				||	!input.moveVelocity.IsZero()
-				;
-		};
-		if ( Inputed( input ) )
-		{
-			ChangeState( State::Controllable );
+			auto HasTrue = []( const auto &arr )
+			{
+				for ( const auto &it : arr )
+				{
+					if ( it ) { return true; }
+				}
+				return false;
+			};
+			auto Inputed = [&HasTrue]( const Player::Input &input )
+			{
+				return
+						HasTrue( input.useJumps )
+					||	HasTrue( input.useShots )
+					||	HasTrue( input.useDashes )
+					||	HasTrue( input.shiftGuns )
+					||	!input.moveVelocity.IsZero()
+					;
+			};
+			if ( Inputed( input ) )
+			{
+				ChangeCameraState( CameraState::Controllable );
+			}
 		}
 	}
 
@@ -1514,7 +1641,13 @@ Scene::Result SceneTitle::ReturnResult()
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
+	#if DEBUG_MODE
+		// change.sceneType = Scene::Type::Game;
+		change.sceneType = Scene::Type::Title;
+	#else
 		change.sceneType = Scene::Type::Game;
+	#endif // DEBUG_MODE
+
 		return change;
 	}
 	// else
@@ -1533,6 +1666,67 @@ void SceneTitle::UseImGui()
 	constexpr int stageNo = Definition::StageNumber::Title();
 
 	sceneParam.ShowImGuiNode( u8"タイトルシーンのパラメータ" );
+
+	if ( ImGui::TreeNode( u8"ステート関連" ) )
+	{
+		int intCamStatus = scast<int>( currCameraStatus );
+		if ( Donya::Keyboard::Trigger( 'R' ) ) { intCamStatus--; }
+		if ( Donya::Keyboard::Trigger( 'T' ) ) { intCamStatus++; }
+		
+		int intPfmStatus = scast<int>( performanceStatus );
+		if ( Donya::Keyboard::Trigger( 'F' ) ) { intPfmStatus--; }
+		if ( Donya::Keyboard::Trigger( 'G' ) ) { intPfmStatus++; }
+
+		ImGui::Text( u8"[R, T]でカメラステートの前後が，" );
+		ImGui::Text( u8"[F, Gで演出ステートの前後が，" );
+		ImGui::Text( u8"できます。" );
+
+		if ( ImGui::TreeNode( u8"カメラ" ) )
+		{
+			ImGui::SliderInt( u8"現在", &intCamStatus, 0, cameraStateCount - 1 );
+			intCamStatus = Donya::Clamp( intCamStatus, 0, cameraStateCount - 1 );
+			const auto prev = currCameraStatus;
+			currCameraStatus = scast<CameraState>( intCamStatus );
+			if ( currCameraStatus != prev )
+			{
+				beforeCameraStatus = prev;
+				transCameraTime = 0.0f;
+			}
+			ImGui::Text( GetCameraStateName( currCameraStatus ) );
+
+			ImGui::SliderFloat( u8"遷移時間", &transCameraTime, 0.0f, 1.0f );
+			ImGui::Text( u8"前回：" ); ImGui::SameLine();
+			ImGui::Text( GetCameraStateName( beforeCameraStatus ) );
+			ImGui::Text( u8"現在：" ); ImGui::SameLine();
+			ImGui::Text( GetCameraStateName( currCameraStatus ) );
+
+			const auto &old  = GetCurrentCamera( beforeCameraStatus	);
+			const auto &curr = GetCurrentCamera( currCameraStatus	);
+			Donya::Vector3		lerpedPos = Donya::Lerp( old.GetPosition(), curr.GetPosition(), transCameraTime );
+			Donya::Quaternion	lerpedRot = Donya::Quaternion::Slerp( old.GetOrientation(), curr.GetOrientation(), transCameraTime );
+			ImGui::DragFloat3( u8"補間中：座標", &lerpedPos.x );
+			ImGui::DragFloat4( u8"補間中：姿勢", &lerpedRot.x );
+
+			ImGui::TreePop();
+		}
+		
+		if ( ImGui::TreeNode( u8"演出" ) )
+		{
+			ImGui::SliderInt( u8"現在", &intPfmStatus, 0, performanceStateCount - 1 );
+			intPfmStatus = Donya::Clamp( intPfmStatus, 0, performanceStateCount - 1 );
+			const auto prev = performanceStatus;
+			performanceStatus = scast<PerformanceState>( intPfmStatus );
+			if ( performanceStatus != prev )
+			{
+				performTimer = 0.0f;
+			}
+			ImGui::Text( GetPerformanceStateName( performanceStatus ) );
+
+			ImGui::TreePop();
+		}
+
+		ImGui::TreePop();
+	}
 
 	if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
 	{
@@ -1755,32 +1949,6 @@ void SceneTitle::UseImGui()
 	{
 		ImGui::InputInt( u8"現在のルーム番号", &currentRoomID );
 
-		int intStatus = scast<int>( currentStatus );
-		if ( Donya::Keyboard::Trigger( 'R' ) ) { intStatus--; }
-		if ( Donya::Keyboard::Trigger( 'T' ) ) { intStatus++; }
-		ImGui::SliderInt( u8"現在のステータス", &intStatus, 0, stateCount - 1 );
-		intStatus = Donya::Clamp( intStatus, 0, stateCount - 1 );
-		ImGui::Text( GetStateName( currentStatus ) );
-		const auto prev = currentStatus;
-		currentStatus = scast<State>( intStatus );
-		if ( currentStatus != prev )
-		{
-			oldStatus = prev;
-			transStateTime = 0.0f;
-		}
-		ImGui::SliderFloat( u8"遷移時間", &transStateTime, 0.0f, 1.0f );
-		ImGui::Text( u8"前回：" ); ImGui::SameLine();
-		ImGui::Text( GetStateName( oldStatus ) );
-		ImGui::Text( u8"現在：" ); ImGui::SameLine();
-		ImGui::Text( GetStateName( currentStatus ) );
-
-		const auto &old  = GetCurrentCamera( oldStatus		);
-		const auto &curr = GetCurrentCamera( currentStatus	);
-		Donya::Vector3		lerpedPos = Donya::Lerp( old.GetPosition(), curr.GetPosition(), transStateTime );
-		Donya::Quaternion	lerpedRot = Donya::Quaternion::Slerp( old.GetOrientation(), curr.GetOrientation(), transStateTime );
-		ImGui::DragFloat3( u8"補間中：座標", &lerpedPos.x );
-		ImGui::DragFloat4( u8"補間中：姿勢", &lerpedRot.x );
-
 		if ( ImGui::TreeNode( u8"カメラの現在" ) )
 		{
 			ImGui::Checkbox( u8"移動方向を反転する・Ｘ", &isReverseCameraMoveX );
@@ -1793,11 +1961,11 @@ void SceneTitle::UseImGui()
 				ImGui::Text( ( prefix + u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]" ).c_str(), v.x, v.y, v.z );
 			};
 
-			static State showState		= State::Attract;
-			static bool  showCurrent	= true;
+			static CameraState	showState	= CameraState::Attract;
+			static bool			showCurrent	= true;
 			if ( showCurrent )
 			{
-				showState = currentStatus;
+				showState = currCameraStatus;
 			}
 			
 			const auto &showCamera = stateCameras[scast<int>( showState )];

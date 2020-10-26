@@ -236,6 +236,8 @@ private:
 		void Init();
 		void Update( const Player &instance, float elapsedTime, const InputManager &input );
 	public:
+		void ChargeFully();
+	public:
 		bool			IsShotRequested( const Player &instance ) const;
 		float			ChargeSecond()		const { return currChargeSecond;	}
 		ShotLevel		ChargeLevel()		const { return chargeLevel;			}
@@ -524,6 +526,7 @@ public:
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
 public:
 	void RecoverHP( int recovery );
+	void ChargeFully();
 public:
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;
