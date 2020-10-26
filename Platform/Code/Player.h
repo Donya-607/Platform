@@ -158,11 +158,11 @@ private:
 		void Init();
 		void Update( float elapsedTime, const Input input );
 	public:
-		int  UseJumpIndex() const; // Return -1 if not using
+		int  UseJumpIndex( bool getCurrent = true ) const; // Return -1 if not using
 		int  UseShotIndex() const; // Return -1 if not using
 		int  UseDashIndex() const; // Return -1 if not using
 		int  ShiftGunIndex() const; // Return -1 if not using
-		bool UseJump() const;
+		bool UseJump( bool getCurrent = true ) const;
 		bool UseShot() const;
 		bool UseDash() const;
 		int  ShiftGun() const;
@@ -540,6 +540,7 @@ public:
 public:
 	void KillMe();
 	void KillMeIfCollideToKillAreas( float elapsedTime, const Map &terrain );
+	void PerformLeaving();
 private:
 	void GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const;
 	/// <summary>

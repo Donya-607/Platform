@@ -489,13 +489,15 @@ void Player::InputManager::Update( float elapsedTime, const Input input )
 		}
 	}
 }
-int  Player::InputManager::UseJumpIndex() const
+int  Player::InputManager::UseJumpIndex( bool getCurrent ) const
 {
+	const auto &input = ( getCurrent ) ? curr : prev;
+
 	int		minimumIndex	= -1;
 	float	minimumSecond	= FLT_MAX;
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		if ( !curr.useJumps[i] ) { continue; }
+		if ( !input.useJumps[i] ) { continue; }
 		// else
 
 		const float &sec	= keepJumpSeconds[i];
@@ -544,9 +546,9 @@ int  Player::InputManager::ShiftGunIndex() const
 
 	return -1;
 }
-bool Player::InputManager::UseJump() const
+bool Player::InputManager::UseJump( bool getCurrent ) const
 {
-	return ( 0 <= UseJumpIndex() );
+	return ( 0 <= UseJumpIndex( getCurrent ) );
 }
 bool Player::InputManager::UseShot() const
 {
@@ -1253,7 +1255,6 @@ void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain
 		}
 		else
 		{
-			// TODO: Prevent keep pressing
 			if ( inst.inputManager.UseDash() && inst.onGround )
 			{
 				gotoSlide = true;
@@ -2501,6 +2502,10 @@ void Player::KillMeIfCollideToKillAreas( float elapsedTime, const Map &terrain )
 		}
 	}
 }
+void Player::PerformLeaving()
+{
+	AssignMover<Leave>();
+}
 void Player::GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const
 {
 	// Receive only smallest damage if same timing
@@ -2778,6 +2783,14 @@ void Player::Fall( float elapsedTime )
 	{
 		inputManager.WasReleasedJumpInput().fill( true );
 	}
+
+#if 0 // Control the Y velocity when the jump input was released. do not works correctly
+	const bool nowReleaseMoment = ( jumpInputIndex < 0 && 0 < inputManager.UseJumpIndex( /* getCurrent = */ false ) ); // Current is off(index < 0), Previous is on(0 < index)
+	if ( nowReleaseMoment )
+	{
+		velocity.y = 0.0f;
+	}
+#endif // 0
 
 	const float applyGravity =	( resistGravity )
 								? data.gravity * data.gravityResistance

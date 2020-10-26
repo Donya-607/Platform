@@ -417,6 +417,11 @@ void SceneTitle::Init()
 		// itemAdmin.SaveItems( stageNo, true );
 	#endif // DEBUG_MODE
 	}
+
+	auto &effectAdmin = Effect::Admin::Get();
+	effectAdmin.SetLightColorAmbient( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
+	effectAdmin.SetLightColorDiffuse( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
+	effectAdmin.SetLightDirection	( data.directionalLight.direction.XYZ() );
 }
 void SceneTitle::Uninit()
 {
@@ -465,7 +470,13 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	// Apply for be able to see an adjustment immediately
 	{
-		if ( pBloomer ) { pBloomer->AssignParameter( FetchParameter().bloomParam ); }
+		const auto &data = FetchParameter();
+		if ( pBloomer ) { pBloomer->AssignParameter( data.bloomParam ); }
+
+		auto &effectAdmin = Effect::Admin::Get();
+		effectAdmin.SetLightColorAmbient( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
+		effectAdmin.SetLightColorDiffuse( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
+		effectAdmin.SetLightDirection	( data.directionalLight.direction.XYZ() );
 	}
 #endif // USE_IMGUI
 
@@ -493,6 +504,7 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 		if ( chooseItem == Choice::Start )
 		{
 			StartFade();
+			if( pPlayer ) { pPlayer->PerformLeaving(); }
 		}
 	}
 
@@ -567,7 +579,7 @@ void SceneTitle::Draw( float elapsedTime )
 	if ( !AreRenderersReady() ) { return; }
 	// else
 
-	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix, bool applyToEffect )
+	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix )
 	{
 		Donya::Model::Constants::PerScene::Common constant{};
 		constant.directionalLight	= directionalLight;
@@ -575,15 +587,6 @@ void SceneTitle::Draw( float elapsedTime )
 		constant.viewMatrix			= viewMatrix;
 		constant.viewProjMatrix		= viewProjectionMatrix;
 		pRenderer->UpdateConstant( constant );
-
-		if ( applyToEffect )
-		{
-			auto &effectAdmin = Effect::Admin::Get();
-			effectAdmin.SetViewMatrix( viewMatrix );
-			effectAdmin.SetLightColorAmbient( directionalLight.light.ambientColor );
-			effectAdmin.SetLightColorDiffuse( directionalLight.light.diffuseColor );
-			effectAdmin.SetLightDirection	( directionalLight.direction.XYZ() );
-		}
 	};
 	auto DrawObjects			= [&]( bool castShadow )
 	{
@@ -653,7 +656,11 @@ void SceneTitle::Draw( float elapsedTime )
 		const auto screenSize	= curr.GetScreenSize();
 		const auto zNear		= curr.GetZNear();
 		const auto zFar			= curr.GetZFar();
-		VP = V * Donya::Vector4x4::MakePerspectiveFovLH( lerpedFOV, screenSize.x / screenSize.y, zNear, zFar );
+		const auto P			= Donya::Vector4x4::MakePerspectiveFovLH( lerpedFOV, screenSize.x / screenSize.y, zNear, zFar );
+		VP = V * P;
+
+		Effect::Admin::Get().SetViewMatrix( V );
+		Effect::Admin::Get().SetProjectionMatrix( P );
 	}
 
 	const Donya::Vector4   lightPos = Donya::Vector4{ lightCamera.GetPosition(), 1.0f };
@@ -684,7 +691,7 @@ void SceneTitle::Draw( float elapsedTime )
 	{
 		Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
 		tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
-		UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP, /* applyToEffect = */ false );
+		UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP );
 	}
 	// Make the shadow map
 	{
@@ -699,7 +706,7 @@ void SceneTitle::Draw( float elapsedTime )
 
 	// Update scene and shadow constants
 	{
-		UpdateSceneConstant( data.directionalLight, cameraPos, V, VP, /* applyToEffect = */ true );
+		UpdateSceneConstant( data.directionalLight, cameraPos, V, VP );
 
 		RenderingHelper::ShadowConstant constant{};
 		constant.lightProjMatrix	= LVP;
@@ -840,6 +847,7 @@ void SceneTitle::Draw( float elapsedTime )
 
 		pScreenSurface->SetRenderTargetShaderResourcePS( 0U );
 
+		Donya::Sprite::SetDrawDepth( 1.0f );
 		pDisplayer->Draw
 		(
 			screenSurfaceSize,
@@ -867,6 +875,7 @@ void SceneTitle::Draw( float elapsedTime )
 	if ( Common::IsShowCollision() )
 	{
 		if ( pPlayer	) { pPlayer->DrawHitBox( pRenderer.get(), VP );					}
+		if ( pBoss		) { pBoss->DrawHitBox( pRenderer.get(), VP );					}
 		if ( pMap		) { pMap->DrawHitBoxes( currentScreen, pRenderer.get(), VP );	}
 		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		Enemy ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
@@ -1094,8 +1103,6 @@ void SceneTitle::UpdateChooseItem()
 		ChangeState( State::StartPerformance );
 	}
 
-	wasDecided = trgDecide;
-
 	// If do not selected
 	if ( chooseItem == Choice::ItemCount )
 	{
@@ -1112,6 +1119,12 @@ void SceneTitle::UpdateChooseItem()
 	if ( trgUp		) { chooseItem = Choice::Start;  }
 	else
 	if ( trgDown	) { chooseItem = Choice::Option; }
+
+	const bool chooseSelectableItem = ( chooseItem == Choice::Start ) ? true : false;
+	if ( trgDecide && chooseSelectableItem )
+	{
+		wasDecided = trgDecide;
+	}
 }
 
 void SceneTitle::ChangeState( State next )
