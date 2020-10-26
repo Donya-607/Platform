@@ -165,6 +165,7 @@ namespace
 
 		float leaveDelaySec	= 1.0f;
 		float fadeDelaySec	= 1.0f;
+		float fadeBGMSec	= 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -203,6 +204,10 @@ namespace
 				);
 			}
 			if ( 5 <= version )
+			{
+				archive( CEREAL_NVP( fadeBGMSec ) );
+			}
+			if ( 6 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -269,12 +274,14 @@ namespace
 
 			if ( ImGui::TreeNode( u8"•b”ŠÖ˜A" ) )
 			{
-				ImGui::DragFloat( u8"ƒXƒNƒ[ƒ‹‚É—v‚·‚é•b”",	&scrollTakeSecond,	0.01f );
-				ImGui::DragFloat( u8"‘Þê‚Ü‚Å‚Ì’x‰„•b”",		&leaveDelaySec,		0.01f );
-				ImGui::DragFloat( u8"ƒtƒF[ƒh‚Ü‚Å‚Ì’x‰„•b”",	&fadeDelaySec,		0.01f );
+				ImGui::DragFloat( u8"ƒXƒNƒ[ƒ‹‚É—v‚·‚é•b”",		&scrollTakeSecond,	0.01f );
+				ImGui::DragFloat( u8"‘Þê‚Ü‚Å‚Ì’x‰„•b”",			&leaveDelaySec,		0.01f );
+				ImGui::DragFloat( u8"ƒtƒF[ƒh‚Ü‚Å‚Ì’x‰„•b”",		&fadeDelaySec,		0.01f );
+				ImGui::DragFloat( u8"BGM‚ÌƒtƒF[ƒh‚É‚©‚¯‚é•b”",	&fadeBGMSec,		0.01f );
 				scrollTakeSecond	= std::max( 0.01f,	scrollTakeSecond	);
 				leaveDelaySec		= std::max( 0.0f,	leaveDelaySec		);
 				fadeDelaySec		= std::max( 0.0f,	fadeDelaySec		);
+				fadeBGMSec			= std::max( 0.0f,	fadeBGMSec			);
 
 				ImGui::TreePop();
 			}
@@ -354,7 +361,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( Member,				4 )
+CEREAL_CLASS_VERSION( Member,				5 )
 CEREAL_CLASS_VERSION( Member::ShadowMap,	0 )
 CEREAL_CLASS_VERSION( Member::Camera,		1 )
 
@@ -1194,6 +1201,7 @@ void SceneTitle::UpdatePerformance( float elapsedTime )
 		{
 			if ( pPlayer ) { pPlayer->ChargeFully(); }
 			ChangeCameraState( CameraState::StartPerformance );
+			Donya::Sound::AppendFadePoint( Music::BGM_Title, FetchParameter().fadeBGMSec, 0.0f );
 
 			performTimer = 0.0f;
 			performanceStatus = PerformanceState::ToLeave;
@@ -1313,7 +1321,7 @@ void SceneTitle::CameraInit()
 	const auto &data = FetchParameter();
 
 	constexpr Donya::Vector2 screenSize{ Common::ScreenWidthF(), Common::ScreenHeightF() };
-	constexpr Donya::Vector2 defaultZRange{ 0.1f, 1000.0f };
+	constexpr Donya::Vector2 defaultZRange{ 0.1f, 500.0f };
 	
 	Member::Camera cameraData;
 	for ( int i = 0; i < cameraStateCount; ++i )
@@ -1554,6 +1562,7 @@ void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 	else
 	{
 		input = Input::MakeCurrentInput( controller, deadZone );
+		input.shiftGuns.fill( false );
 
 		if ( currCameraStatus == CameraState::Attract )
 		{
@@ -1642,8 +1651,8 @@ Scene::Result SceneTitle::ReturnResult()
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
 	#if DEBUG_MODE
-		// change.sceneType = Scene::Type::Game;
-		change.sceneType = Scene::Type::Title;
+		change.sceneType = Scene::Type::Game;
+		// change.sceneType = Scene::Type::Title;
 	#else
 		change.sceneType = Scene::Type::Game;
 	#endif // DEBUG_MODE

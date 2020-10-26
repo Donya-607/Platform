@@ -1324,14 +1324,17 @@ void SceneGame::CameraInit()
 {
 	const auto &data = FetchParameter();
 
-	iCamera.Init( Donya::ICamera::Mode::Look );
-	iCamera.SetZRange( 0.1f, 1000.0f );
-	iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
-	iCamera.SetScreenSize( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
+	constexpr Donya::Vector2 screenSize{ Common::ScreenWidthF(), Common::ScreenHeightF() };
+	constexpr Donya::Vector2 defaultZRange{ 0.1f, 500.0f };
 
-	lightCamera.Init( Donya::ICamera::Mode::Look );
-	lightCamera.SetZRange( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
-	lightCamera.SetScreenSize( data.shadowMap.projectDistance.XY() );
+	iCamera.Init				( Donya::ICamera::Mode::Look );
+	iCamera.SetZRange			( defaultZRange.x, defaultZRange.y );
+	iCamera.SetFOV				( ToRadian( data.camera.fovDegree ) );
+	iCamera.SetScreenSize		( screenSize );
+
+	lightCamera.Init			( Donya::ICamera::Mode::Look );
+	lightCamera.SetZRange		( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
+	lightCamera.SetScreenSize	( data.shadowMap.projectDistance.XY() );
 
 	AssignCameraPos();
 
