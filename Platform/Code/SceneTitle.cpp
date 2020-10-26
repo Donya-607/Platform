@@ -163,9 +163,10 @@ namespace
 
 		Boss::InitializeParam bossIniter;
 
-		float leaveDelaySec	= 1.0f;
-		float fadeDelaySec	= 1.0f;
-		float fadeBGMSec	= 1.0f;
+		float leaveDelaySec			= 1.0f;
+		float fadeDelaySec			= 1.0f;
+		float fadeBGMSec			= 1.0f;
+		float resetCameraWaitSec	= 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -208,6 +209,10 @@ namespace
 				archive( CEREAL_NVP( fadeBGMSec ) );
 			}
 			if ( 6 <= version )
+			{
+				archive( CEREAL_NVP( resetCameraWaitSec ) );
+			}
+			if ( 7 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -274,14 +279,16 @@ namespace
 
 			if ( ImGui::TreeNode( u8"•b”ŠÖ˜A" ) )
 			{
-				ImGui::DragFloat( u8"ƒXƒNƒ[ƒ‹‚É—v‚·‚é•b”",		&scrollTakeSecond,	0.01f );
-				ImGui::DragFloat( u8"‘Þê‚Ü‚Å‚Ì’x‰„•b”",			&leaveDelaySec,		0.01f );
-				ImGui::DragFloat( u8"ƒtƒF[ƒh‚Ü‚Å‚Ì’x‰„•b”",		&fadeDelaySec,		0.01f );
-				ImGui::DragFloat( u8"BGM‚ÌƒtƒF[ƒh‚É‚©‚¯‚é•b”",	&fadeBGMSec,		0.01f );
+				ImGui::DragFloat( u8"ƒXƒNƒ[ƒ‹‚É—v‚·‚é•b”",			&scrollTakeSecond,		0.01f );
+				ImGui::DragFloat( u8"‘Þê‚Ü‚Å‚Ì’x‰„•b”",				&leaveDelaySec,			0.01f );
+				ImGui::DragFloat( u8"ƒtƒF[ƒh‚Ü‚Å‚Ì’x‰„•b”",			&fadeDelaySec,			0.01f );
+				ImGui::DragFloat( u8"BGM‚ÌƒtƒF[ƒh‚É‚©‚¯‚é•b”",		&fadeBGMSec,			0.01f );
+				ImGui::DragFloat( u8"–³‘€ì‚ÅƒJƒƒ‰‚ð–ß‚·‚Ü‚Å‚Ì•b”",	&resetCameraWaitSec,	0.01f );
 				scrollTakeSecond	= std::max( 0.01f,	scrollTakeSecond	);
 				leaveDelaySec		= std::max( 0.0f,	leaveDelaySec		);
 				fadeDelaySec		= std::max( 0.0f,	fadeDelaySec		);
 				fadeBGMSec			= std::max( 0.0f,	fadeBGMSec			);
+				resetCameraWaitSec	= std::max( 0.01f, resetCameraWaitSec	);
 
 				ImGui::TreePop();
 			}
@@ -1136,7 +1143,7 @@ void SceneTitle::UpdateChooseItem()
 	bool trgRight	= false;
 	bool trgUp		= false;
 	bool trgDown	= false;
-	bool trgDecide	= false;
+	bool trgDecide	= false; // Use shot input
 	{
 		if ( controller.IsConnected() )
 		{
@@ -1147,7 +1154,7 @@ void SceneTitle::UpdateChooseItem()
 			trgRight	= controller.Trigger( Button::RIGHT	) || controller.TriggerStick( Direction::RIGHT	);
 			trgUp		= controller.Trigger( Button::UP	) || controller.TriggerStick( Direction::UP		);
 			trgDown		= controller.Trigger( Button::DOWN	) || controller.TriggerStick( Direction::DOWN	);
-			trgDecide	= controller.Trigger( Button::A		);
+			trgDecide	= controller.Trigger( Button::X		) || controller.Trigger( Button::Y );
 		}
 		else
 		{
@@ -1155,7 +1162,7 @@ void SceneTitle::UpdateChooseItem()
 			trgRight	= Donya::Keyboard::Trigger( VK_RIGHT);
 			trgUp		= Donya::Keyboard::Trigger( VK_UP	);
 			trgDown		= Donya::Keyboard::Trigger( VK_DOWN	);
-			trgDecide	= Donya::Keyboard::Trigger( 'Z' );
+			trgDecide	= Donya::Keyboard::Trigger( 'X' ) || Donya::Keyboard::Trigger( 'S' );
 		}
 	}
 
@@ -1537,13 +1544,14 @@ void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 	if ( !pPlayer ) { return; }
 	// else
 
-	static const Donya::Vector2 deadZone
-	{
-		Donya::XInput::GetDeadZoneLeftStick(),
-		Donya::XInput::GetDeadZoneLeftStick()
-	};
+	const Player::Input input = MakePlayerInput( elapsedTime );
 
+	pPlayer->Update( elapsedTime, input, terrain );
+}
+Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
+{
 	Player::Input input{};
+
 	if ( performanceStatus != PerformanceState::NotPerforming )
 	{
 		// First frame of performancing
@@ -1558,40 +1566,115 @@ void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 				input.moveVelocity.x = -1.0f;
 			}
 		}
-	}
-	else
-	{
-		input = Input::MakeCurrentInput( controller, deadZone );
-		input.shiftGuns.fill( false );
 
-		if ( currCameraStatus == CameraState::Attract )
+		return input;
+	}
+	// else
+
+	static const Donya::Vector2 deadZone
+	{
+		Donya::XInput::GetDeadZoneLeftStick(),
+		Donya::XInput::GetDeadZoneLeftStick()
+	};
+
+	input = Input::MakeCurrentInput( controller, deadZone );
+	input.shiftGuns.fill( false );
+
+	auto HasTrue = []( const auto &arr )
+	{
+		for ( const auto &it : arr )
 		{
-			auto HasTrue = []( const auto &arr )
+			if ( it ) { return true; }
+		}
+		return false;
+	};
+	auto Inputed = [&HasTrue]( const Player::Input &input )
+	{
+		return
+				HasTrue( input.useJumps )
+			||	HasTrue( input.useShots )
+			||	HasTrue( input.useDashes )
+			||	HasTrue( input.shiftGuns )
+			||	!input.moveVelocity.IsZero()
+			;
+	};
+
+	auto ActivateReturning		= [&]()
+	{
+		returnToAttract = true;
+	};
+	auto DeactivateReturning	= [&]()
+	{
+		returnToAttract = false;
+		horizDiffSignFromInitialPos = 0;
+	};
+
+	if ( currCameraStatus == CameraState::Attract )
+	{
+		if ( Inputed( input ) )
+		{
+			ChangeCameraState( CameraState::Controllable );
+		}
+
+		DeactivateReturning();
+		elapsedSecondSinceLastInput = 0.0f;
+	}
+	else if ( currCameraStatus == CameraState::Controllable )
+	{
+		if ( Inputed( input ) )
+		{
+			DeactivateReturning();
+			elapsedSecondSinceLastInput = 0.0f;
+		}
+		else
+		{
+			elapsedSecondSinceLastInput += elapsedTime;
+			if ( FetchParameter().resetCameraWaitSec <= elapsedSecondSinceLastInput )
 			{
-				for ( const auto &it : arr )
-				{
-					if ( it ) { return true; }
-				}
-				return false;
-			};
-			auto Inputed = [&HasTrue]( const Player::Input &input )
+				ActivateReturning();
+			}
+			else
 			{
-				return
-						HasTrue( input.useJumps )
-					||	HasTrue( input.useShots )
-					||	HasTrue( input.useDashes )
-					||	HasTrue( input.shiftGuns )
-					||	!input.moveVelocity.IsZero()
-					;
-			};
-			if ( Inputed( input ) )
-			{
-				ChangeCameraState( CameraState::Controllable );
+				DeactivateReturning();
 			}
 		}
 	}
 
-	pPlayer->Update( elapsedTime, input, terrain );
+	if ( returnToAttract )
+	{
+		const auto diff = pPlayer->GetPosition().x - playerIniter.GetWorldInitialPos().x;
+		const int  currSign = Donya::SignBit( diff );
+
+		// It condition is the first frame when the ABC is true.
+		// I should initialize the sign.
+		if ( !horizDiffSignFromInitialPos )
+		{
+			horizDiffSignFromInitialPos = currSign;
+		}
+
+		// Arrive to initial position
+		if ( horizDiffSignFromInitialPos != currSign || !currSign )
+		{
+			DeactivateReturning();
+
+			// Make to look to left(center direction) side
+			const auto front = pPlayer->GetOrientation();
+			if ( 0.0f <= front.x )
+			{
+				input.moveVelocity.x = -1.0f;
+			}
+
+			ChangeCameraState( CameraState::Attract );
+		}
+		// Head to initial position
+		else
+		{
+			horizDiffSignFromInitialPos = currSign;
+			input.moveVelocity.x = scast<float>( -horizDiffSignFromInitialPos );
+		}
+	}
+
+	return input;
 }
 Donya::Vector3 SceneTitle::GetPlayerPosition() const
 {

@@ -86,9 +86,12 @@ private:
 	std::unique_ptr<Boss::Base>						pBoss;
 
 	float		elapsedSecond	= 0.0f;
+	float		elapsedSecondSinceLastInput = 0.0f; // It is valid when the performanceStatus == PerformanceState::NotPerforming
+	int			horizDiffSignFromInitialPos = 0;
 	float		performTimer	= 0.0f;
 	Choice		chooseItem		= Choice::ItemCount;
 	bool		wasDecided		= false;
+	bool		returnToAttract	= false; // It is valid when the performanceStatus == PerformanceState::NotPerforming
 
 	UIObject	sprTitleLogo;
 
@@ -132,6 +135,7 @@ private:
 
 	void	PlayerInit( const Map &terrain );
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );
+	Player::Input  MakePlayerInput( float elapsedTime );
 	Donya::Vector3 GetPlayerPosition() const;
 
 	int		CalcCurrentRoomID() const;
