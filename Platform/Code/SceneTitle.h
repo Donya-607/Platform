@@ -120,10 +120,7 @@ private:
 	bool	AreRenderersReady() const;
 
 	void	UpdateInput();
-	bool	HasSomeInput( const Player::Input &input ) const;
-
 	void	UpdateChooseItem();
-	
 	void	UpdatePerformance( float elapsedTime );
 
 	void	ChangeCameraState( CameraState next );

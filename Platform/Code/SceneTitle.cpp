@@ -461,6 +461,7 @@ void SceneTitle::Init()
 	}
 
 	auto &effectAdmin = Effect::Admin::Get();
+	effectAdmin.ClearInstances();
 	effectAdmin.SetLightColorAmbient( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
 	effectAdmin.SetLightColorDiffuse( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
 	effectAdmin.SetLightDirection	( data.directionalLight.direction.XYZ() );
@@ -1131,6 +1132,19 @@ namespace
 		}
 		return false;
 	}
+	bool HasButtonInput( const Player::Input &input )
+	{
+		return
+			HasTrue( input.useJumps  )
+		||	HasTrue( input.useShots  )
+		||	HasTrue( input.useDashes )
+		||	HasTrue( input.shiftGuns )
+		;
+	}
+	bool HasStickInput( const Player::Input &input )
+	{
+		return !input.moveVelocity.IsZero();
+	}
 }
 void SceneTitle::UpdateInput()
 {
@@ -1143,16 +1157,6 @@ void SceneTitle::UpdateInput()
 	};
 	previousInput = currentInput;
 	currentInput  = Input::MakeCurrentInput( controller, deadZone );
-}
-bool SceneTitle::HasSomeInput( const Player::Input &input ) const
-{
-	return
-		HasTrue( input.useJumps )
-	||	HasTrue( input.useShots )
-	||	HasTrue( input.useDashes )
-	||	HasTrue( input.shiftGuns )
-	||	!input.moveVelocity.IsZero()
-	;
 }
 
 void SceneTitle::UpdateChooseItem()
@@ -1227,6 +1231,12 @@ void SceneTitle::UpdatePerformance( float elapsedTime )
 
 	if ( performanceStatus == PerformanceState::Wait ) { return; }
 	// else
+
+	// Skip performance
+	if ( HasButtonInput( currentInput ) && !HasButtonInput( previousInput ) )
+	{
+		StartFade();
+	}
 
 	performTimer += elapsedTime;
 
@@ -1599,7 +1609,7 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 
 	if ( currCameraStatus == CameraState::Attract )
 	{
-		if ( HasSomeInput( input ) )
+		if ( HasButtonInput( input ) || HasStickInput( input ) )
 		{
 			ChangeCameraState( CameraState::Controllable );
 		}
@@ -1609,7 +1619,7 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 	}
 	else if ( currCameraStatus == CameraState::Controllable )
 	{
-		if ( HasSomeInput( input ) )
+		if ( HasButtonInput( input ) || HasStickInput( input ) )
 		{
 			DeactivateReturning();
 			elapsedSecondSinceLastInput = 0.0f;
@@ -1700,6 +1710,9 @@ void SceneTitle::ClearBackGround() const
 }
 void SceneTitle::StartFade() const
 {
+	if ( Fader::Get().IsExist() ) { return; }
+	// else
+
 	Fader::Configuration config{};
 	config.type			= Fader::Type::Gradually;
 	config.closeSecond	= Fader::GetDefaultCloseSecond();
@@ -1710,7 +1723,7 @@ void SceneTitle::StartFade() const
 Scene::Result SceneTitle::ReturnResult()
 {
 #if DEBUG_MODE
-	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
+	if ( Donya::Keyboard::Trigger( VK_F2 ) )
 	{
 		Donya::Sound::Play( Music::DEBUG_Strong );
 		StartFade();
