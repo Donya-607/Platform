@@ -21,7 +21,7 @@ bool UIObject::Draw( float depth ) const
 		sprite,
 		pos.x,		pos.y,
 		scale.x,	scale.y,
-		degree,		origin.Product( wholeTexSize ),
+		degree,		origin.Product( wholeTexSize ).Product( scale ),
 		alpha,		color.x,	color.y,	color.z
 	);
 
