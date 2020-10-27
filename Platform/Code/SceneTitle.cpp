@@ -167,6 +167,9 @@ namespace
 		float fadeDelaySec			= 1.0f;
 		float fadeBGMSec			= 1.0f;
 		float resetCameraWaitSec	= 1.0f;
+
+		float			logoScale = 1.0f;
+		Donya::Vector2	logoPos{ 800.0f, 450.0f };
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -213,6 +216,14 @@ namespace
 				archive( CEREAL_NVP( resetCameraWaitSec ) );
 			}
 			if ( 7 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( logoScale	),
+					CEREAL_NVP( logoPos		)
+				);
+			}
+			if ( 8 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -323,6 +334,14 @@ namespace
 
 				ImGui::TreePop();
 			}
+
+			if ( ImGui::TreeNode( u8"タイトルロゴ" ) )
+			{
+				ImGui::DragFloat ( u8"スケール",			&logoScale, 0.01f );
+				ImGui::DragFloat2( u8"スクリーン座標",	&logoPos.x );
+
+				ImGui::TreePop();
+			}
 		}
 	#endif // USE_IMGUI
 	};
@@ -368,7 +387,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( Member,				5 )
+CEREAL_CLASS_VERSION( Member,				7 )
 CEREAL_CLASS_VERSION( Member::ShadowMap,	0 )
 CEREAL_CLASS_VERSION( Member::Camera,		1 )
 
@@ -816,11 +835,12 @@ void SceneTitle::Draw( float elapsedTime )
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
 
-	// Draw sprites
+	// Draw logo
 	{
-		sprTitleLogo.pos.x = Common::HalfScreenWidthF();
-		sprTitleLogo.pos.y = Common::HalfScreenHeightF();
-		sprTitleLogo.alpha = 1.0f;
+		sprTitleLogo.pos	= data.logoPos;
+		sprTitleLogo.scale	= data.logoScale;
+		sprTitleLogo.alpha	= 1.0f;
+		sprTitleLogo.origin	= { 0.5f, 0.5f };
 		sprTitleLogo.Draw( 0.0f );
 		Donya::Sprite::Flush();
 	}
@@ -1735,8 +1755,8 @@ Scene::Result SceneTitle::ReturnResult()
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
 	#if DEBUG_MODE
-		// change.sceneType = Scene::Type::Game;
-		change.sceneType = Scene::Type::Title;
+		change.sceneType = Scene::Type::Game;
+		// change.sceneType = Scene::Type::Title;
 	#else
 		change.sceneType = Scene::Type::Game;
 	#endif // DEBUG_MODE
