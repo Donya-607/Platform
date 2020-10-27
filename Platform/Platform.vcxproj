@@ -298,6 +298,7 @@
     <ClInclude Include="Code\Item.h" />
     <ClInclude Include="Code\ItemParam.h" />
     <ClInclude Include="Code\Map.h" />
+    <ClInclude Include="Code\Math.h" />
     <ClInclude Include="Code\Meter.h" />
     <ClInclude Include="Code\MeterParam.h" />
     <ClInclude Include="Code\ModelHelper.h" />

@@ -1,6 +1,7 @@
 #include "SceneTitle.h"
 
 #include <vector>
+#include <unordered_map>			// Use for imgui
 
 #include "Donya/Blend.h"
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
@@ -28,6 +29,7 @@
 #include "FontHelper.h"
 #include "Input.h"
 #include "Item.h"
+#include "Math.h"					// Use CalcBezierCurve()
 #include "ModelHelper.h"			// Use serialize methods
 #include "Music.h"
 #include "Parameter.h"
@@ -170,6 +172,17 @@ namespace
 
 		float			logoScale = 1.0f;
 		Donya::Vector2	logoPos{ 800.0f, 450.0f };
+
+		float						pressedItemAddDestScale			= 1.0f;
+		float						pressedItemAddFadeSecond		= 1.0f;
+		Donya::Easing::Kind			pressedItemAddFadeEaseKind		= Donya::Easing::Kind::Linear;
+		Donya::Easing::Type			pressedItemAddFadeEaseType		= Donya::Easing::Type::In;
+		float						pressedItemScalingDelaySecond	= 0.0f;
+		float						pressedItemScalingTakeSecond	= 1.0f;
+		std::vector<Donya::Vector2>	pressedItemScalingPoints; // With bezier-curve
+		float						pressedLogoScalingDelaySecond	= 0.0f;
+		float						pressedLogoScalingTakeSecond	= 1.0f;
+		std::vector<Donya::Vector2>	pressedLogoScalingPoints; // With bezier-curve
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -224,6 +237,28 @@ namespace
 				);
 			}
 			if ( 8 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( pressedItemScalingDelaySecond	),
+					CEREAL_NVP( pressedItemScalingTakeSecond	),
+					CEREAL_NVP( pressedItemScalingPoints		),
+					CEREAL_NVP( pressedLogoScalingDelaySecond	),
+					CEREAL_NVP( pressedLogoScalingTakeSecond	),
+					CEREAL_NVP( pressedLogoScalingPoints		)
+				);
+			}
+			if ( 9 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( pressedItemAddDestScale		),
+					CEREAL_NVP( pressedItemAddFadeSecond	),
+					CEREAL_NVP( pressedItemAddFadeEaseKind	),
+					CEREAL_NVP( pressedItemAddFadeEaseType	)
+				);
+			}
+			if ( 10 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -288,22 +323,6 @@ namespace
 
 			bloomParam.ShowImGuiNode( u8"ブルーム関連" );
 
-			if ( ImGui::TreeNode( u8"秒数関連" ) )
-			{
-				ImGui::DragFloat( u8"スクロールに要する秒数",			&scrollTakeSecond,		0.01f );
-				ImGui::DragFloat( u8"退場までの遅延秒数",				&leaveDelaySec,			0.01f );
-				ImGui::DragFloat( u8"フェードまでの遅延秒数",			&fadeDelaySec,			0.01f );
-				ImGui::DragFloat( u8"BGMのフェードにかける秒数",		&fadeBGMSec,			0.01f );
-				ImGui::DragFloat( u8"無操作でカメラを戻すまでの秒数",	&resetCameraWaitSec,	0.01f );
-				scrollTakeSecond	= std::max( 0.01f,	scrollTakeSecond	);
-				leaveDelaySec		= std::max( 0.0f,	leaveDelaySec		);
-				fadeDelaySec		= std::max( 0.0f,	fadeDelaySec		);
-				fadeBGMSec			= std::max( 0.0f,	fadeBGMSec			);
-				resetCameraWaitSec	= std::max( 0.01f, resetCameraWaitSec	);
-
-				ImGui::TreePop();
-			}
-
 			constexpr size_t itemCount = scast<size_t>( SceneTitle::Choice::ItemCount );
 			if ( itemPositions.size() != itemCount )
 			{
@@ -328,17 +347,93 @@ namespace
 				ImGui::TreePop();
 			}
 
-			if ( ImGui::TreeNode( u8"演出関連" ) )
-			{
-				bossIniter.ShowImGuiNode( u8"ボスの初期化設定" );
-
-				ImGui::TreePop();
-			}
-
 			if ( ImGui::TreeNode( u8"タイトルロゴ" ) )
 			{
 				ImGui::DragFloat ( u8"スケール",			&logoScale, 0.01f );
 				ImGui::DragFloat2( u8"スクリーン座標",	&logoPos.x );
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"演出関連" ) )
+			{
+				bossIniter.ShowImGuiNode( u8"ボスの初期化設定" );
+
+				if ( ImGui::TreeNode( u8"秒数関連" ) )
+				{
+					ImGui::DragFloat( u8"スクロールに要する秒数",			&scrollTakeSecond,		0.01f );
+					ImGui::DragFloat( u8"退場までの遅延秒数",				&leaveDelaySec,			0.01f );
+					ImGui::DragFloat( u8"フェードまでの遅延秒数",			&fadeDelaySec,			0.01f );
+					ImGui::DragFloat( u8"BGMのフェードにかける秒数",		&fadeBGMSec,			0.01f );
+					ImGui::DragFloat( u8"無操作でカメラを戻すまでの秒数",	&resetCameraWaitSec,	0.01f );
+					scrollTakeSecond	= std::max( 0.01f,	scrollTakeSecond	);
+					leaveDelaySec		= std::max( 0.0f,	leaveDelaySec		);
+					fadeDelaySec		= std::max( 0.0f,	fadeDelaySec		);
+					fadeBGMSec			= std::max( 0.0f,	fadeBGMSec			);
+					resetCameraWaitSec	= std::max( 0.01f, resetCameraWaitSec	);
+
+					ImGui::TreePop();
+				}
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"レスポンス関連" ) )
+			{
+				constexpr Donya::Vector2 scaleRange { -5.0f, 5.0f };
+				constexpr Donya::Vector2 sliderSize { 32.0f, 128.0f };
+				constexpr Donya::Vector2 appendScale{ 1.0f, 1.0f };
+
+				auto Show = [&appendScale]( const char *nodeCaption, const Donya::Vector2 &rangeMinMax, float *pDelaySecond, float *pTakeSecond, std::vector<Donya::Vector2> *pCtrlPoints )
+				{
+					if ( !ImGui::TreeNode( nodeCaption ) ) { return; }
+					// else
+
+					ImGui::DragFloat( u8"開始の遅延秒数", pDelaySecond, 0.01f );
+					*pDelaySecond = std::max( 0.0f, *pDelaySecond );
+					ImGui::DragFloat( u8"必要秒数", pTakeSecond, 0.01f );
+					*pTakeSecond = std::max( 0.001f, *pTakeSecond );
+
+					ImGui::Helper::ResizeByButton( pCtrlPoints, appendScale );
+					if ( pCtrlPoints->size() < 2 )
+					{
+						pCtrlPoints->resize( 2 );
+					}
+
+					const int pointCount = pCtrlPoints->size();
+					std::string caption;
+					for ( int i = 0; i < pointCount; ++i )
+					{
+						caption = Donya::MakeArraySuffix( i );
+						ImGui::SliderFloat2( caption.c_str(), &pCtrlPoints->at( i ).x, rangeMinMax.x, rangeMinMax.y );
+					}
+
+					ImGui::Text( "" ); // Line feed
+
+					static std::unordered_map<std::string, float> checkers;
+					auto found =  checkers.find( nodeCaption );
+					if ( found == checkers.end() )
+					{
+						checkers.insert( std::make_pair( nodeCaption, 0.0f ) );
+						found = checkers.find( nodeCaption );
+					}
+
+					auto &timer = found->second;
+					ImGui::SliderFloat( u8"確認用タイマ", &timer, 0.0f, 1.0f );
+
+					Donya::Vector2 result = Math::CalcBezierCurve( *pCtrlPoints, timer );
+					ImGui::SliderFloat2( u8"ベジェ曲線適用結果", &result.x, rangeMinMax.x, rangeMinMax.y );
+
+					ImGui::TreePop();
+				};
+
+				Show( u8"ロゴ", scaleRange, &pressedLogoScalingDelaySecond, &pressedLogoScalingTakeSecond, &pressedLogoScalingPoints );
+				Show( u8"項目", scaleRange, &pressedItemScalingDelaySecond, &pressedItemScalingTakeSecond, &pressedItemScalingPoints );
+
+				ImGui::Helper::ShowEaseParam( u8"加算項目のフェード・イージング設定", &pressedItemAddFadeEaseKind, &pressedItemAddFadeEaseType );
+				ImGui::DragFloat( u8"加算項目のフェード・終点スケール",	&pressedItemAddDestScale,  0.01f );
+				ImGui::DragFloat( u8"加算項目のフェード・秒数",			&pressedItemAddFadeSecond, 0.01f );
+				pressedItemAddFadeSecond = std::max( 0.01f, pressedItemAddFadeSecond );
 
 				ImGui::TreePop();
 			}
@@ -387,7 +482,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( Member,				7 )
+CEREAL_CLASS_VERSION( Member,				9 )
 CEREAL_CLASS_VERSION( Member::ShadowMap,	0 )
 CEREAL_CLASS_VERSION( Member::Camera,		1 )
 
@@ -558,9 +653,10 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 		}
 	}
 	
-	elapsedSecond += elapsedTime;
-
 	UpdateChooseItem();
+
+	elapsedSecond += elapsedTime;
+	if ( wasDecided ) { afterDecidedTimer += elapsedTime; }
 
 	UpdatePerformance( elapsedTime );
 
@@ -837,8 +933,18 @@ void SceneTitle::Draw( float elapsedTime )
 
 	// Draw logo
 	{
+		const float &delaySec = data.pressedLogoScalingDelaySecond;
+		const float &takeSec  = data.pressedLogoScalingTakeSecond;
+		float currBezierTime  = ( IsZero( takeSec ) ) ? 1.0f : ( afterDecidedTimer - delaySec ) / takeSec;
+		currBezierTime = Donya::Clamp( currBezierTime, 0.0f, 1.0f );
+
+		const Donya::Vector2 pressedScale =
+			( data.pressedLogoScalingPoints.size() < 2 )
+			? Donya::Vector2{ 1.0f, 1.0f }
+			: Math::CalcBezierCurve( data.pressedLogoScalingPoints, currBezierTime );
+
 		sprTitleLogo.pos	= data.logoPos;
-		sprTitleLogo.scale	= data.logoScale;
+		sprTitleLogo.scale	= data.logoScale * pressedScale;
 		sprTitleLogo.alpha	= 1.0f;
 		sprTitleLogo.origin	= { 0.5f, 0.5f };
 		sprTitleLogo.Draw( 0.0f );
@@ -875,20 +981,38 @@ void SceneTitle::Draw( float elapsedTime )
 			pScreenSurface->SetRenderTarget();
 			pScreenSurface->SetViewport();
 
-			constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
+			constexpr Donya::Vector2 pivot			{ 0.5f, 0.5f };
 			constexpr Donya::Vector4 selectColor	{ 1.0f, 1.0f, 1.0f, 1.0f };
 			constexpr Donya::Vector4 unselectColor	{ 0.4f, 0.4f, 0.4f, 1.0f };
-			const float &selectScale  = data.chooseItemMagni;
-			const float unselectScale = 1.0f;
 
-			auto Draw = [&]( const wchar_t *itemName, Choice item, bool selected )
+			const float &delaySec = data.pressedItemScalingDelaySecond;
+			const float &takeSec  = data.pressedItemScalingTakeSecond;
+			const float currBezierTime =
+				( IsZero( takeSec ) )
+				? 1.0f
+				: Donya::Clamp( ( afterDecidedTimer - delaySec ) / takeSec, 0.0f, 1.0f );
+
+			const Donya::Vector2 pressedScale =
+				( data.pressedItemScalingPoints.size() < 2 )
+				? Donya::Vector2{ 1.0f, 1.0f }
+				: Math::CalcBezierCurve( data.pressedItemScalingPoints, currBezierTime );
+
+			const Donya::Vector2 selectScale   = data.chooseItemMagni	* pressedScale;
+			const Donya::Vector2 unselectScale = 1.0f					* pressedScale;
+
+			const int positionCount = scast<int>( data.itemPositions.size() );
+			auto DrawImpl	= [&]( const wchar_t *itemName, Choice item, const Donya::Vector2 &scale, const Donya::Vector4 &color )
 			{
 				const int itemIndex = scast<int>( item );
 				const Donya::Vector2 pos =
-					( scast<int>( data.itemPositions.size() ) <= itemIndex )
+					( positionCount <= itemIndex )
 					? Donya::Vector2::Zero()
 					: data.itemPositions[itemIndex];
 
+				pFontRenderer->DrawExt( itemName, pos, pivot, scale, color );
+			};
+			auto Draw		= [&]( const wchar_t *itemName, Choice item, bool selected )
+			{
 				const Donya::Vector2 &scale =
 					( selected )
 					? selectScale
@@ -899,14 +1023,33 @@ void SceneTitle::Draw( float elapsedTime )
 					? selectColor
 					: unselectColor;
 
-				pFontRenderer->DrawExt( itemName, pos, pivot, scale, color );
+				DrawImpl( itemName, item, scale, color );
 			};
 
 			Donya::Sprite::SetDrawDepth( 0.0f );
 			Draw( L"ＳＴＡＲＴ",		Choice::Start,	( chooseItem == Choice::Start  ) );
 			// Draw( L"ＯＰＴＩＯＮ",	Choice::Option,	( chooseItem == Choice::Option ) );
+			Donya::Sprite::Flush();
+
+			Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
+			if ( chooseItem == Choice::Start )
+			{
+				const float &fadeSec = data.pressedItemAddFadeSecond;
+				const float currFadeTime =
+					( IsZero( fadeSec ) )
+					? 1.0f
+					: Donya::Clamp( afterDecidedTimer / fadeSec, 0.0f, 1.0f );
+				const float easeFactor = Donya::Easing::Ease( data.pressedItemAddFadeEaseKind, data.pressedItemAddFadeEaseType, currFadeTime );
+				
+				const float additionScale = data.pressedItemAddDestScale * easeFactor + data.chooseItemMagni;
+
+				const float additionAlpha = Donya::Clamp( 1.0f - easeFactor, 0.0f, 1.0f );
+				const Donya::Vector4 additionColor = Donya::Vector4{ selectColor.XYZ(), additionAlpha };
+				DrawImpl( L"ＳＴＡＲＴ", Choice::Start, additionScale, additionColor );
+			}
 
 			Donya::Sprite::Flush();
+			Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 
 			Donya::Surface::ResetRenderTarget();
 		}
@@ -1755,8 +1898,8 @@ Scene::Result SceneTitle::ReturnResult()
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
 	#if DEBUG_MODE
-		change.sceneType = Scene::Type::Game;
-		// change.sceneType = Scene::Type::Title;
+		// change.sceneType = Scene::Type::Game;
+		change.sceneType = Scene::Type::Title;
 	#else
 		change.sceneType = Scene::Type::Game;
 	#endif // DEBUG_MODE

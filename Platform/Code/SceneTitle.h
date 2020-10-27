@@ -87,13 +87,14 @@ private:
 	std::unique_ptr<Player>							pPlayer;
 	std::unique_ptr<Boss::Base>						pBoss;
 
-	float		elapsedSecond	= 0.0f;
+	float		elapsedSecond		= 0.0f;
 	float		elapsedSecondSinceLastInput = 0.0f; // It is valid when the performanceStatus == PerformanceState::NotPerforming
 	int			horizDiffSignFromInitialPos = 0;
-	float		performTimer	= 0.0f;
-	Choice		chooseItem		= Choice::Start;
-	bool		wasDecided		= false;
-	bool		returnToAttract	= false; // It is valid when the performanceStatus == PerformanceState::NotPerforming
+	float		performTimer		= 0.0f;
+	float		afterDecidedTimer	= 0.0f;
+	Choice		chooseItem			= Choice::Start;
+	bool		wasDecided			= false;
+	bool		returnToAttract		= false; // It is valid when the performanceStatus == PerformanceState::NotPerforming
 
 	UIObject	sprTitleLogo;
 
