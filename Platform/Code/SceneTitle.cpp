@@ -524,6 +524,8 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	PointLightStorage::Get().Clear();
 
+	UpdateInput();
+
 	if ( transCameraTime < 1.0f )
 	{
 		const float takeSecond = FetchCameraOrDefault( currCameraStatus ).lerpSecFromOther;
@@ -537,8 +539,6 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	}
 	
 	elapsedSecond += elapsedTime;
-
-	controller.Update();
 
 	UpdateChooseItem();
 
@@ -846,64 +846,50 @@ void SceneTitle::Draw( float elapsedTime )
 		Donya::DepthStencil::Deactivate();
 	}
 
-	pScreenSurface->SetRenderTarget();
-	pScreenSurface->SetViewport();
 	// Draw a fonts
-	const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
-	if ( pFontRenderer )
 	{
-		constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
-		constexpr Donya::Vector4 selectColor	{ 1.0f, 1.0f, 1.0f, 1.0f };
-		constexpr Donya::Vector4 unselectColor	{ 0.4f, 0.4f, 0.4f, 1.0f };
-		const float &selectScale  = data.chooseItemMagni;
-		const float unselectScale = 1.0f;
-
-		auto Draw = [&]( const wchar_t *itemName, Choice item, bool selected )
+		const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
+		if ( pFontRenderer )
 		{
-			// pFontRenderer->DrawExt( str, pos, pivot, scale, color );
+			pScreenSurface->SetRenderTarget();
+			pScreenSurface->SetViewport();
 
-			std::wstring string =
-				( selected )
-				? L"ÅÑ"
-				: L"Å@";
-			string += itemName;
+			constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
+			constexpr Donya::Vector4 selectColor	{ 1.0f, 1.0f, 1.0f, 1.0f };
+			constexpr Donya::Vector4 unselectColor	{ 0.4f, 0.4f, 0.4f, 1.0f };
+			const float &selectScale  = data.chooseItemMagni;
+			const float unselectScale = 1.0f;
 
-			const int itemIndex = scast<int>( item );
-			const Donya::Vector2 pos =
-				( scast<int>( data.itemPositions.size() ) <= itemIndex )
-				? Donya::Vector2::Zero()
-				: data.itemPositions[itemIndex];
+			auto Draw = [&]( const wchar_t *itemName, Choice item, bool selected )
+			{
+				const int itemIndex = scast<int>( item );
+				const Donya::Vector2 pos =
+					( scast<int>( data.itemPositions.size() ) <= itemIndex )
+					? Donya::Vector2::Zero()
+					: data.itemPositions[itemIndex];
 
-			const Donya::Vector2 &scale =
-				( selected )
-				? selectScale
-				: unselectScale;
+				const Donya::Vector2 &scale =
+					( selected )
+					? selectScale
+					: unselectScale;
 
-			const Donya::Vector4 &color =
-				( selected )
-				? selectColor
-				: unselectColor;
+				const Donya::Vector4 &color =
+					( selected )
+					? selectColor
+					: unselectColor;
 
-			pFontRenderer->DrawExt( string, pos, pivot, scale, color );
-		};
+				pFontRenderer->DrawExt( itemName, pos, pivot, scale, color );
+			};
 
-		Donya::Sprite::SetDrawDepth( 0.0f );
-		Draw( L"ÇrÇsÇ`ÇqÇs",		Choice::Start,	( chooseItem == Choice::Start  ) );
-		Draw( L"ÇnÇoÇsÇhÇnÇm",	Choice::Option,	( chooseItem == Choice::Option ) );
-	
-		/*
-		static Donya::Vector2 tmpPos{ 800.0f, 128.0f };
-		pFontRenderer->DrawExt
-		(
-			L"ÇsÇhÇsÇkÇd",
-			tmpPos,
-			pivot, { 5.0f, 5.0f }
-		);
-		*/
+			Donya::Sprite::SetDrawDepth( 0.0f );
+			Draw( L"ÇrÇsÇ`ÇqÇs",		Choice::Start,	( chooseItem == Choice::Start  ) );
+			// Draw( L"ÇnÇoÇsÇhÇnÇm",	Choice::Option,	( chooseItem == Choice::Option ) );
 
-		Donya::Sprite::Flush();
+			Donya::Sprite::Flush();
+
+			Donya::Surface::ResetRenderTarget();
+		}
 	}
-	Donya::Surface::ResetRenderTarget();
 
 	Donya::SetDefaultRenderTargets();
 
@@ -1134,48 +1120,68 @@ bool SceneTitle::AreRenderersReady() const
 	return true;
 }
 
+namespace
+{
+	template<typename T>
+	constexpr bool HasTrue( const std::array<T, Player::Input::variationCount> &arr )
+	{
+		for ( const auto &it : arr )
+		{
+			if ( it ) { return true; }
+		}
+		return false;
+	}
+}
+void SceneTitle::UpdateInput()
+{
+	controller.Update();
+
+	static const Donya::Vector2 deadZone
+	{
+		Donya::XInput::GetDeadZoneLeftStick(),
+		Donya::XInput::GetDeadZoneLeftStick()
+	};
+	previousInput = currentInput;
+	currentInput  = Input::MakeCurrentInput( controller, deadZone );
+}
+bool SceneTitle::HasSomeInput( const Player::Input &input ) const
+{
+	return
+		HasTrue( input.useJumps )
+	||	HasTrue( input.useShots )
+	||	HasTrue( input.useDashes )
+	||	HasTrue( input.shiftGuns )
+	||	!input.moveVelocity.IsZero()
+	;
+}
+
 void SceneTitle::UpdateChooseItem()
 {
 	if ( wasDecided ) { return; }
 	// else
 
-	bool trgLeft	= false;
-	bool trgRight	= false;
-	bool trgUp		= false;
-	bool trgDown	= false;
-	bool trgDecide	= false; // Use shot input
-	{
-		if ( controller.IsConnected() )
-		{
-			using Button	= Donya::Gamepad::Button;
-			using Direction	= Donya::Gamepad::StickDirection;
-		
-			trgLeft		= controller.Trigger( Button::LEFT	) || controller.TriggerStick( Direction::LEFT	);
-			trgRight	= controller.Trigger( Button::RIGHT	) || controller.TriggerStick( Direction::RIGHT	);
-			trgUp		= controller.Trigger( Button::UP	) || controller.TriggerStick( Direction::UP		);
-			trgDown		= controller.Trigger( Button::DOWN	) || controller.TriggerStick( Direction::DOWN	);
-			trgDecide	= controller.Trigger( Button::X		) || controller.Trigger( Button::Y );
-		}
-		else
-		{
-			trgLeft		= Donya::Keyboard::Trigger( VK_LEFT	);
-			trgRight	= Donya::Keyboard::Trigger( VK_RIGHT);
-			trgUp		= Donya::Keyboard::Trigger( VK_UP	);
-			trgDown		= Donya::Keyboard::Trigger( VK_DOWN	);
-			trgDecide	= Donya::Keyboard::Trigger( 'X' ) || Donya::Keyboard::Trigger( 'S' );
-		}
-	}
-
 	// TODO: Play choice SE
 
-	if ( currCameraStatus == CameraState::Attract )
+	auto Tilted = []( float value, int sign )
 	{
-		if ( trgLeft || trgRight || trgUp || trgDown )
-		{
-			ChangeCameraState( CameraState::Controllable );
-		}
-	}
+		return Donya::SignBit( value ) == sign;
+	};
 
+	const auto &curr = currentInput;
+	const auto &prev = previousInput;
+	const bool trgLeft		= Tilted( curr.moveVelocity.x, -1 ) && !Tilted( prev.moveVelocity.x, -1 );
+	const bool trgRight		= Tilted( curr.moveVelocity.x, +1 ) && !Tilted( prev.moveVelocity.x, +1 );
+	const bool trgUp		= Tilted( curr.moveVelocity.y, +1 ) && !Tilted( prev.moveVelocity.y, +1 );
+	const bool trgDown		= Tilted( curr.moveVelocity.y, -1 ) && !Tilted( prev.moveVelocity.y, -1 );
+	const bool trgDecide	= HasTrue( curr.useShots ) && !HasTrue( prev.useShots );
+
+#if 1 // CAN_NOT_SELECT_OPTION
+	const bool willChoice = ( trgLeft || trgRight || trgUp || trgDown || trgDecide );
+	if ( willChoice && chooseItem != Choice::Start )
+	{
+		chooseItem = Choice::Start;
+	}
+#else
 	// If do not selected
 	if ( chooseItem == Choice::ItemCount )
 	{
@@ -1192,6 +1198,7 @@ void SceneTitle::UpdateChooseItem()
 	if ( trgUp		) { chooseItem = Choice::Start;  }
 	else
 	if ( trgDown	) { chooseItem = Choice::Option; }
+#endif // CAN_NOT_SELECT_OPTION
 
 	const bool chooseSelectableItem = ( chooseItem == Choice::Start ) ? true : false;
 	if ( trgDecide && chooseSelectableItem )
@@ -1577,27 +1584,8 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 		Donya::XInput::GetDeadZoneLeftStick()
 	};
 
-	input = Input::MakeCurrentInput( controller, deadZone );
+	input = currentInput;
 	input.shiftGuns.fill( false );
-
-	auto HasTrue = []( const auto &arr )
-	{
-		for ( const auto &it : arr )
-		{
-			if ( it ) { return true; }
-		}
-		return false;
-	};
-	auto Inputed = [&HasTrue]( const Player::Input &input )
-	{
-		return
-				HasTrue( input.useJumps )
-			||	HasTrue( input.useShots )
-			||	HasTrue( input.useDashes )
-			||	HasTrue( input.shiftGuns )
-			||	!input.moveVelocity.IsZero()
-			;
-	};
 
 	auto ActivateReturning		= [&]()
 	{
@@ -1611,7 +1599,7 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 
 	if ( currCameraStatus == CameraState::Attract )
 	{
-		if ( Inputed( input ) )
+		if ( HasSomeInput( input ) )
 		{
 			ChangeCameraState( CameraState::Controllable );
 		}
@@ -1621,7 +1609,7 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 	}
 	else if ( currCameraStatus == CameraState::Controllable )
 	{
-		if ( Inputed( input ) )
+		if ( HasSomeInput( input ) )
 		{
 			DeactivateReturning();
 			elapsedSecondSinceLastInput = 0.0f;
@@ -1734,8 +1722,8 @@ Scene::Result SceneTitle::ReturnResult()
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
 	#if DEBUG_MODE
-		change.sceneType = Scene::Type::Game;
-		// change.sceneType = Scene::Type::Title;
+		// change.sceneType = Scene::Type::Game;
+		change.sceneType = Scene::Type::Title;
 	#else
 		change.sceneType = Scene::Type::Game;
 	#endif // DEBUG_MODE

@@ -62,6 +62,8 @@ private:
 	Donya::ICamera									lightCamera;
 
 	Donya::XInput									controller{ Donya::Gamepad::PAD_1 };
+	Player::Input									previousInput; // Use for detect a trigger/release timing
+	Player::Input									currentInput;
 	Donya::Collision::Box3F							currentScreen;
 	int												currentRoomID		= 0;
 	PlayerInitializer								playerIniter;
@@ -89,7 +91,7 @@ private:
 	float		elapsedSecondSinceLastInput = 0.0f; // It is valid when the performanceStatus == PerformanceState::NotPerforming
 	int			horizDiffSignFromInitialPos = 0;
 	float		performTimer	= 0.0f;
-	Choice		chooseItem		= Choice::ItemCount;
+	Choice		chooseItem		= Choice::Start;
 	bool		wasDecided		= false;
 	bool		returnToAttract	= false; // It is valid when the performanceStatus == PerformanceState::NotPerforming
 
@@ -116,6 +118,9 @@ private:
 	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
 	bool	CreateShaders();
 	bool	AreRenderersReady() const;
+
+	void	UpdateInput();
+	bool	HasSomeInput( const Player::Input &input ) const;
 
 	void	UpdateChooseItem();
 	
