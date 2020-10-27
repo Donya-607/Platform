@@ -179,6 +179,8 @@ namespace Boss
 		/// It may return false even when NowDead() is true.
 		/// </summary>
 		virtual bool				WillDie()			const;
+	public:
+		void UpdateOrientation( bool lookingRight );
 	protected:
 		/// <summary>
 		/// After this, the "pReceivedDamage" will be reset.
@@ -190,7 +192,6 @@ namespace Boss
 		virtual void DieMoment();
 	protected:
 		void UpdateInvincibleExistence();
-		void UpdateOrientation( bool lookingRight );
 		void UpdateMotionIfCan( float elapsedTime, int motionIndex );
 		std::vector<Donya::Collision::Box3F> FetchSolidsByBody( const Map &terrain, const Donya::Collision::Box3F &hitBoxVSTerrain, float elapsedTime, const Donya::Vector3 &currentVelocity );
 		/// <summary>

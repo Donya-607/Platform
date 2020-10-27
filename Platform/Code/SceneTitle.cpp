@@ -183,6 +183,9 @@ namespace
 		float						pressedLogoScalingDelaySecond	= 0.0f;
 		float						pressedLogoScalingTakeSecond	= 1.0f;
 		std::vector<Donya::Vector2>	pressedLogoScalingPoints; // With bezier-curve
+
+		float			leaveBossDelaySec = 1.0f;
+		Donya::Vector3	leaveBossOffset{}; // World space
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -259,6 +262,14 @@ namespace
 				);
 			}
 			if ( 10 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( leaveBossDelaySec	),
+					CEREAL_NVP( leaveBossOffset		)
+				);
+			}
+			if ( 11 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -361,13 +372,16 @@ namespace
 
 				if ( ImGui::TreeNode( u8"•b”ŠÖ˜A" ) )
 				{
-					ImGui::DragFloat( u8"ƒXƒNƒ[ƒ‹‚É—v‚·‚é•b”",			&scrollTakeSecond,		0.01f );
-					ImGui::DragFloat( u8"‘Þê‚Ü‚Å‚Ì’x‰„•b”",				&leaveDelaySec,			0.01f );
-					ImGui::DragFloat( u8"ƒtƒF[ƒh‚Ü‚Å‚Ì’x‰„•b”",			&fadeDelaySec,			0.01f );
-					ImGui::DragFloat( u8"BGM‚ÌƒtƒF[ƒh‚É‚©‚¯‚é•b”",		&fadeBGMSec,			0.01f );
-					ImGui::DragFloat( u8"–³‘€ì‚ÅƒJƒƒ‰‚ð–ß‚·‚Ü‚Å‚Ì•b”",	&resetCameraWaitSec,	0.01f );
+					ImGui::DragFloat ( u8"ƒXƒNƒ[ƒ‹‚É—v‚·‚é•b”",		&scrollTakeSecond,		0.01f );
+					ImGui::DragFloat ( u8"Ž©‹@‘Þê‚Ü‚Å‚Ì’x‰„•b”",		&leaveDelaySec,			0.01f );
+					ImGui::DragFloat ( u8"ƒ{ƒX‘Þê‚Ü‚Å‚Ì’x‰„•b”",		&leaveBossDelaySec,		0.01f );
+					ImGui::DragFloat3( u8"ƒ{ƒX‘ÞêŽž‚Ì–Ú•WÀ•Wi‘Š‘Îj",	&leaveBossOffset.x,		0.01f );
+					ImGui::DragFloat ( u8"ƒtƒF[ƒh‚Ü‚Å‚Ì’x‰„•b”",		&fadeDelaySec,			0.01f );
+					ImGui::DragFloat ( u8"BGM‚ÌƒtƒF[ƒh‚É‚©‚¯‚é•b”",		&fadeBGMSec,			0.01f );
+					ImGui::DragFloat ( u8"–³‘€ì‚ÅƒJƒƒ‰‚ð–ß‚·‚Ü‚Å‚Ì•b”",	&resetCameraWaitSec,	0.01f );
 					scrollTakeSecond	= std::max( 0.01f,	scrollTakeSecond	);
 					leaveDelaySec		= std::max( 0.0f,	leaveDelaySec		);
+					leaveBossDelaySec	= std::max( 0.0f,	leaveBossDelaySec	);
 					fadeDelaySec		= std::max( 0.0f,	fadeDelaySec		);
 					fadeBGMSec			= std::max( 0.0f,	fadeBGMSec			);
 					resetCameraWaitSec	= std::max( 0.01f, resetCameraWaitSec	);
@@ -482,9 +496,9 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( Member,				9 )
-CEREAL_CLASS_VERSION( Member::ShadowMap,	0 )
-CEREAL_CLASS_VERSION( Member::Camera,		1 )
+CEREAL_CLASS_VERSION( Member,				10 )
+CEREAL_CLASS_VERSION( Member::ShadowMap,	0  )
+CEREAL_CLASS_VERSION( Member::Camera,		1  )
 
 void SceneTitle::Init()
 {
@@ -674,12 +688,7 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	PlayerUpdate( deltaTimeForMove, mapRef );
 	const Donya::Vector3 playerPos = GetPlayerPosition();
 
-	if ( pBoss )
-	{
-		Boss::Input noop;
-		noop.wsTargetPos = playerPos;
-		pBoss->Update( deltaTimeForMove, noop );
-	}
+	BossUpdate( deltaTimeForMove, playerPos );
 
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
@@ -973,7 +982,7 @@ void SceneTitle::Draw( float elapsedTime )
 		Donya::DepthStencil::Deactivate();
 	}
 
-	// Draw a fonts
+	// Draw fonts
 	{
 		const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
 		if ( pFontRenderer )
@@ -1840,6 +1849,36 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 Donya::Vector3 SceneTitle::GetPlayerPosition() const
 {
 	return ( pPlayer ) ? pPlayer->GetPosition() : playerIniter.GetWorldInitialPos();
+}
+
+void SceneTitle::BossUpdate( float elapsedTime, const Donya::Vector3 &targetPos )
+{
+	if ( !pBoss ) { return; }
+	// else
+
+	const auto &data = FetchParameter();
+	
+	const bool toLeave = data.leaveBossDelaySec <= afterDecidedTimer;
+
+	Boss::Input input;
+	if ( toLeave )
+	{
+		// Make to jump
+		input.wsTargetPos	= pBoss->GetPosition() + data.leaveBossOffset;
+		input.pressShot		= true;
+	}
+	else
+	{
+		input.wsTargetPos	= targetPos;
+	}
+
+	pBoss->Update( elapsedTime, input );
+
+	if ( toLeave )
+	{
+		const float targetSign = Donya::SignBitF( targetPos.x - pBoss->GetPosition().x );
+		pBoss->UpdateOrientation( targetSign );
+	}
 }
 
 int  SceneTitle::CalcCurrentRoomID() const

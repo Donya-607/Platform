@@ -333,6 +333,16 @@ namespace Boss
 
 		return ( hp - pReceivedDamage->amount <= 0 );
 	}
+	void Base::UpdateOrientation( bool lookingRight )
+	{
+		const float rotateSign = ( lookingRight ) ? 1.0f : -1.0f;
+		orientation = Donya::Quaternion::Make
+		(
+			Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
+		);
+
+		AssignMyBody( body.pos );
+	}
 	void Base::ApplyReceivedDamageIfHas()
 	{
 		if ( !pReceivedDamage ) { return; }
@@ -356,16 +366,6 @@ namespace Boss
 	void Base::UpdateInvincibleExistence()
 	{
 		hurtBox.exist = ( invincibleTimer.NowWorking() ) ? false : true;
-	}
-	void Base::UpdateOrientation( bool lookingRight )
-	{
-		const float rotateSign = ( lookingRight ) ? 1.0f : -1.0f;
-		orientation = Donya::Quaternion::Make
-		(
-			Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
-		);
-
-		AssignMyBody( body.pos );
 	}
 	void Base::UpdateMotionIfCan( float elapsedTime, int motionIndex )
 	{

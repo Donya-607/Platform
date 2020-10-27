@@ -141,6 +141,8 @@ private:
 	Player::Input  MakePlayerInput( float elapsedTime );
 	Donya::Vector3 GetPlayerPosition() const;
 
+	void	BossUpdate( float elapsedTime, const Donya::Vector3 &targetPos );
+
 	int		CalcCurrentRoomID() const;
 
 	void	ClearBackGround() const;
