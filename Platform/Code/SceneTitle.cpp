@@ -614,6 +614,11 @@ void SceneTitle::Uninit()
 Scene::Result SceneTitle::Update( float elapsedTime )
 {
 #if DEBUG_MODE
+	if ( Donya::Keyboard::Trigger( VK_F2 ) )
+	{
+		Donya::Sound::Play( Music::DEBUG_Strong );
+		StartFade();
+	}
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
 	{
 		nowDebugMode = !nowDebugMode;
@@ -1924,21 +1929,18 @@ void SceneTitle::StartFade() const
 
 Scene::Result SceneTitle::ReturnResult()
 {
-#if DEBUG_MODE
-	if ( Donya::Keyboard::Trigger( VK_F2 ) )
-	{
-		Donya::Sound::Play( Music::DEBUG_Strong );
-		StartFade();
-	}
-#endif // DEBUG_MODE
-
 	if ( Fader::Get().IsClosed() )
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
 	#if DEBUG_MODE
-		// change.sceneType = Scene::Type::Game;
-		change.sceneType = Scene::Type::Title;
+	#if 0 // USUALLY
+		change.sceneType = Scene::Type::Game;
+	#else
+		change.sceneType = ( Donya::Keyboard::Press( VK_CONTROL ) )
+		? Scene::Type::Game
+		: Scene::Type::Title;
+	#endif // USUALLY
 	#else
 		change.sceneType = Scene::Type::Game;
 	#endif // DEBUG_MODE
