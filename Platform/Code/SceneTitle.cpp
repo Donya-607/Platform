@@ -1820,7 +1820,7 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 		const auto diff = pPlayer->GetPosition().x - playerIniter.GetWorldInitialPos().x;
 		const int  currSign = Donya::SignBit( diff );
 
-		// It condition is the first frame when the ABC is true.
+		// It condition is the first frame when the returnToAttract is true.
 		// I should initialize the sign.
 		if ( !horizDiffSignFromInitialPos )
 		{
@@ -1934,7 +1934,7 @@ Scene::Result SceneTitle::ReturnResult()
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
 	#if DEBUG_MODE
-	#if 0 // USUALLY
+	#if 1 // USUALLY
 		change.sceneType = Scene::Type::Game;
 	#else
 		change.sceneType = ( Donya::Keyboard::Press( VK_CONTROL ) )

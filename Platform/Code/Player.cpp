@@ -473,7 +473,7 @@ void Player::InputManager::Init()
 	keepJumpSeconds.fill( 0.0f );
 	wasReleasedJumps.fill( false );
 }
-void Player::InputManager::Update( float elapsedTime, const Input input )
+void Player::InputManager::Update( const Player &inst, float elapsedTime, const Input &input )
 {
 	prev = curr;
 	curr = input;
@@ -574,11 +574,11 @@ bool Player::InputManager::Jumpable( int jumpInputIndex ) const
 
 	return wasReleasedJumps[jumpInputIndex];
 }
-void Player::InputManager::Overwrite( const Input overwrite )
+void Player::InputManager::Overwrite( const Input &overwrite )
 {
 	curr = overwrite;
 }
-void Player::InputManager::OverwritePrevious( const Input overwrite )
+void Player::InputManager::OverwritePrevious( const Input &overwrite )
 {
 	prev = overwrite;
 }
@@ -1958,6 +1958,7 @@ void Player::Leave::Init( Player &inst )
 
 	inst.velocity		= Donya::Vector3::Zero();
 	inst.hurtBox.exist	= false;
+	inst.AssignGun<BusterGun>(); // Discard shield if the ShieldGun is assigned
 
 	timer	= 0.0f;
 	visible	= true;
@@ -2272,7 +2273,7 @@ void Player::Uninit()
 	if ( pMover ) { pMover->Uninit( *this ); }
 	pTargetLadder.reset();
 }
-void Player::Update( float elapsedTime, Input input, const Map &terrain )
+void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 {
 #if USE_IMGUI
 	// Apply for be able to see an adjustment immediately
@@ -2301,7 +2302,7 @@ void Player::Update( float elapsedTime, Input input, const Map &terrain )
 	}
 #endif // USE_IMGUI
 
-	inputManager.Update( elapsedTime, input );
+	inputManager.Update( *this, elapsedTime, input );
 
 	hurtBox.UpdateIgnoreList( elapsedTime );
 

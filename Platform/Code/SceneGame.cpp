@@ -143,10 +143,13 @@ namespace
 		MeterParam playerMeter;
 		MeterParam skullMeter;
 
-		float readyFxBeginDelaySecond = 1.0f;
+		float readyFxBeginDelaySecond	= 1.0f;
 		Donya::Vector3 readyFxPosOffset; // Offset from the focus point of camera
 
-		float fadeOutSecondOfBGM = 1.0f;
+		float fadeOutSecondOfBGM		= 1.0f;
+
+		float waitSecBet_ClearLeave		= 1.0f; // From the clear timing to leave
+		float waitSecBet_LeaveFade		= 1.0f; // From the leave timing to fade out
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -214,6 +217,14 @@ namespace
 			}
 			if ( 11 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( waitSecBet_ClearLeave	),
+					CEREAL_NVP( waitSecBet_LeaveFade	)
+				);
+			}
+			if ( 12 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -272,10 +283,14 @@ namespace
 				ImGui::DragFloat( u8"ＢＧＭのフェードアウトにかける秒数",	&fadeOutSecondOfBGM,		0.01f );
 				ImGui::DragFloat( u8"スクロールに要する秒数",				&scrollTakeSecond,			0.01f );
 				ImGui::DragFloat( u8"ミスからリトライまでの待機秒数",		&waitSecondRetry,			0.01f );
+				ImGui::DragFloat( u8"クリアから退場までの待機秒数",		&waitSecBet_ClearLeave,		0.01f );
+				ImGui::DragFloat( u8"退場からフェードまでの待機秒数",		&waitSecBet_LeaveFade,		0.01f );
 				readyFxBeginDelaySecond	= std::max( 0.0f,  readyFxBeginDelaySecond	);
 				fadeOutSecondOfBGM		= std::max( 0.0f,  fadeOutSecondOfBGM		);
 				scrollTakeSecond		= std::max( 0.01f, scrollTakeSecond			);
 				waitSecondRetry			= std::max( 0.01f, waitSecondRetry			);
+				waitSecBet_ClearLeave	= std::max( 0.0f,  waitSecBet_ClearLeave	);
+				waitSecBet_LeaveFade	= std::max( 0.0f,  waitSecBet_LeaveFade		);
 
 				ImGui::TreePop();
 			}
@@ -342,7 +357,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				10 )
+CEREAL_CLASS_VERSION( SceneParam,				11 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
@@ -396,6 +411,26 @@ void SceneGame::Uninit()
 Scene::Result SceneGame::Update( float elapsedTime )
 {
 #if DEBUG_MODE
+	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
+	{
+		Donya::Sound::Play( Music::DEBUG_Strong );
+
+		if ( Donya::Keyboard::Press( VK_SHIFT ) )
+		{
+			if ( Donya::Keyboard::Press( VK_CONTROL ) )
+			{
+				StartFade( Scene::Type::Over );
+			}
+			else
+			{
+				StartFade( Scene::Type::Result );
+			}
+		}
+		else
+		{
+			StartFade( Scene::Type::Title );
+		}
+	}
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
 	{
 		nowDebugMode = !nowDebugMode;
@@ -473,30 +508,42 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		isThereClearEvent	= ( pClearEvent		&& pClearEvent->IsThereIn( currentRoomID ) );
 		isThereBoss			= ( pBossContainer	&& pBossContainer->IsThereIn( currentRoomID ) );
 	}
-	if ( isThereBoss && pBossContainer )
-	{
-		if ( status == State::StrategyStage )
-		{
-			status = State::BattleBoss;
-			pBossContainer->StartupBossIfStandby( currentRoomID );
 
-			FadeOutBGM();
-			// TODO: Play the boss-BGM after a performance of boss
-			PlayBGM( Music::BGM_Boss );
-		}
-		else if ( !pBossContainer->IsAliveIn( currentRoomID ) )
+	if ( IsPlayingStatus( status ) )
+	{
+		if ( isThereBoss && pBossContainer )
 		{
-			// TODO: Disallow the control of player here.
-			// then wait, then goto next state.
-			isThereBoss = false;
-			status = ( isThereClearEvent ) ? State::ClearStage : State::StrategyStage;
+			if ( status == State::Stage )
+			{
+				status = State::VSBoss;
+				pBossContainer->StartupBossIfStandby( currentRoomID );
+
+				FadeOutBGM();
+				// TODO: Play the boss-BGM after a performance of boss
+				PlayBGM( Music::BGM_Boss );
+			}
+			else
+				if ( !pBossContainer->IsAliveIn( currentRoomID ) )
+				{
+					// TODO: Disallow the control of player here.
+					// then wait, then goto next state.
+					isThereBoss = false;
+					status = State::Stage;
+
+					FadeOutBGM();
+					// TODO: Play the game-BGM after a performance of destroy
+					PlayBGM( Music::BGM_Game );
+				}
+		}
+		if ( isThereClearEvent && !isThereBoss )
+		{
+			status = State::Clear;
+			FadeOutBGM();
 		}
 	}
-	if ( isThereClearEvent && !isThereBoss && !Fader::Get().IsExist() )
+	else
 	{
-		// TODO: Begin a clear performance here,
-		// then call it.
-		StartFade( Scene::Type::Result );
+		ClearStateUpdate( elapsedTime );
 	}
 	
 
@@ -1202,8 +1249,9 @@ Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 
 void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel )
 {
-	status = State::StrategyStage;
+	status = State::Stage;
 	stageTimer = 0.0f;
+	clearTimer = 0.0f;
 
 	if ( currentPlayingBGM != nextBGM )
 	{
@@ -1318,6 +1366,32 @@ void SceneGame::AssignCurrentInput()
 {
 	const auto &deadZone = FetchParameter().deadZone;
 	currentInput = Input::MakeCurrentInput( controller, deadZone );
+}
+
+bool SceneGame::IsPlayingStatus( State verify ) const
+{
+	return ( status == State::Stage || status == State::VSBoss );
+}
+void SceneGame::ClearStateUpdate( float elapsedTime )
+{
+	if ( IsPlayingStatus( status ) ) { return; }
+	// else
+
+	clearTimer += elapsedTime;
+
+	const auto &data = FetchParameter();
+	const float secFirst	= data.waitSecBet_ClearLeave;
+	const float secSecond	= data.waitSecBet_LeaveFade + secFirst;
+
+	if ( !wantLeave && secFirst <= clearTimer )
+	{
+		wantLeave = true;
+	}
+
+	if ( !Fader::Get().IsExist() && secSecond <= clearTimer )
+	{
+		StartFade( Scene::Type::Result );
+	}
 }
 
 void SceneGame::CameraInit()
@@ -1568,7 +1642,54 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 	if ( !pPlayer ) { return; }
 	// else
 
-	Player::Input input = currentInput;
+	Player::Input input{};
+	if ( status == State::Clear )
+	{
+		if ( wantLeave )
+		{
+			// Discard the elapsed time when heading to destination
+			clearTimer -= elapsedTime;
+
+			const Donya::Vector3 playerPos	= pPlayer->GetPosition();
+			const Room		*pCurrentRoom	= ( pHouse ) ? pHouse->FindRoomOrNullptr( currentRoomID ) : nullptr;
+
+			Donya::Vector3	destination		= ( pCurrentRoom ) ? pCurrentRoom->GetArea().pos : playerPos;
+			destination.y = playerPos.y;
+
+			const auto diff = playerPos.x - destination.x;
+			const int  currSign = Donya::SignBit( diff );
+
+			// It condition is the first frame when the status is Clear/WaitToFade.
+			// I should initialize the sign.
+			if ( !horizDiffSignFromInitialPos )
+			{
+				horizDiffSignFromInitialPos = currSign;
+			}
+
+			// Arrive to destination
+			if ( horizDiffSignFromInitialPos != currSign || !currSign )
+			{
+				pPlayer->PerformLeaving();
+				status = State::WaitToFade;
+			}
+			// Head to initial position
+			else
+			{
+				horizDiffSignFromInitialPos = currSign;
+				input.moveVelocity.x = scast<float>( -horizDiffSignFromInitialPos );
+			}
+		}
+	}
+	else
+	if ( status == State::WaitToFade )
+	{
+		// No op
+	}
+	else
+	{
+		input = currentInput;
+	}
+
 	pPlayer->Update( elapsedTime, input, terrain );
 
 	if ( pPlayer->NowMiss() )
@@ -2066,7 +2187,8 @@ void SceneGame::Collision_BulletVSEnemy()
 }
 void SceneGame::Collision_BulletVSPlayer()
 {
-	if ( !pPlayer || pPlayer->NowMiss() ) { return; }
+	if ( !pPlayer || pPlayer->NowMiss()	) { return; }
+	if ( !IsPlayingStatus( status )		) { return; } // Ignore if cleared
 	// else
 
 	const auto playerBody = pPlayer->GetHurtBox();
@@ -2112,8 +2234,9 @@ void SceneGame::Collision_BulletVSPlayer()
 }
 void SceneGame::Collision_BossVSPlayer()
 {
-	if ( !pPlayer || pPlayer->NowMiss() )  { return; }
-	if ( !pBossContainer || !isThereBoss ) { return; }
+	if ( !pPlayer || pPlayer->NowMiss()		)  { return; }
+	if ( !pBossContainer || !isThereBoss	) { return; }
+	if ( !IsPlayingStatus( status )			) { return; } // Ignore if cleared
 	// else
 
 	auto  pBoss = pBossContainer->GetBossOrNullptr( currentRoomID );
@@ -2130,7 +2253,8 @@ void SceneGame::Collision_BossVSPlayer()
 }
 void SceneGame::Collision_EnemyVSPlayer()
 {
-	if ( !pPlayer ) { return; }
+	if ( !pPlayer					) { return; }
+	if ( !IsPlayingStatus( status )	) { return; } // Ignore if cleared
 	// else
 
 	const auto playerBody	= pPlayer->GetHurtBox();
@@ -2245,29 +2369,6 @@ void SceneGame::StartFade( Scene::Type nextSceneType )
 
 Scene::Result SceneGame::ReturnResult()
 {
-#if DEBUG_MODE
-	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
-	{
-		Donya::Sound::Play( Music::DEBUG_Strong );
-
-		if ( Donya::Keyboard::Press( VK_SHIFT ) )
-		{
-			if ( Donya::Keyboard::Press( VK_CONTROL ) )
-			{
-				StartFade( Scene::Type::Over );
-			}
-			else
-			{
-				StartFade( Scene::Type::Result );
-			}
-		}
-		else
-		{
-			StartFade( Scene::Type::Title );
-		}
-	}
-#endif // DEBUG_MODE
-
 	// The case of Scene::Type::Game will process at Update()
 	if ( Fader::Get().IsClosed() && nextScene != Scene::Type::Null && nextScene != Scene::Type::Game )
 	{

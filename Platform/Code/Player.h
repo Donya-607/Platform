@@ -97,7 +97,7 @@ public:
 	{
 		static constexpr int variationCount = 2;
 	public:
-		Donya::Vector2 moveVelocity; // Unit velocity
+		Donya::Vector2	moveVelocity;	// Unit velocity
 		std::array<bool, variationCount> useJumps  = { false, false };
 		std::array<bool, variationCount> useShots  = { false, false };
 		std::array<bool, variationCount> useDashes = { false, false };
@@ -156,7 +156,7 @@ private:
 		std::array<bool,  Input::variationCount> wasReleasedJumps;
 	public:
 		void Init();
-		void Update( float elapsedTime, const Input input );
+		void Update( const Player &instance, float elapsedTime, const Input &input );
 	public:
 		int  UseJumpIndex( bool getCurrent = true ) const; // Return -1 if not using
 		int  UseShotIndex() const; // Return -1 if not using
@@ -168,8 +168,8 @@ private:
 		int  ShiftGun() const;
 		bool Jumpable( int jumpInputIndex ) const;
 	public:
-		void Overwrite( const Input overwrite );
-		void OverwritePrevious( const Input overwrite );
+		void Overwrite( const Input &overwrite );
+		void OverwritePrevious( const Input &overwrite );
 	public:
 		const Input &Previous() const
 		{ return prev; }
@@ -519,7 +519,7 @@ public:
 	void Init( const PlayerInitializer &initializer, const Map &terrain, bool withAppearPerformance = true );
 	void Uninit();
 
-	void Update( float elapsedTime, Input input, const Map &terrain );
+	void Update( float elapsedTime, const Input &input, const Map &terrain );
 	void PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
 
 	void Draw( RenderingHelper *pRenderer ) const;

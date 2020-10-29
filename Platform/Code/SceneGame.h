@@ -30,9 +30,10 @@ class SceneGame : public Scene
 private:
 	enum class State
 	{
-		StrategyStage,
-		BattleBoss,
-		ClearStage
+		Stage,
+		VSBoss,
+		Clear,
+		WaitToFade
 	};
 	struct Scroll
 	{
@@ -59,7 +60,7 @@ private:
 	PlayerInitializer					playerIniter;
 
 	Scene::Type							nextScene			= Scene::Type::Null;
-	State								status				= State::StrategyStage;
+	State								status				= State::Stage;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 	std::unique_ptr<Donya::Displayer>	pDisplayer;
@@ -77,19 +78,22 @@ private:
 	std::unique_ptr<Boss::Container>	pBossContainer;
 	std::unique_ptr<Player>				pPlayer;
 
-	int		stageNumber				= 0;
-	float	stageTimer				= 0.0f;	// Elapsed second from start a stage
-	float	elapsedSecondsAfterMiss	= 0.0f;
-	bool	isThereClearEvent		= false;
-	bool	isThereBoss				= false;
+	int		stageNumber					= 0;
+	float	stageTimer					= 0.0f;	// Elapsed second from start a stage
+	float	elapsedSecondsAfterMiss		= 0.0f;
+	float	clearTimer					= 0.0f;	// Elapsed second from clear a stage
+	int		horizDiffSignFromInitialPos	= 0;	// It is used for the status == State::Clear
+	bool	isThereClearEvent			= false;
+	bool	isThereBoss					= false;
+	bool	wantLeave					= false;// It is valid when the status == State::Clear
 
 #if DEBUG_MODE
-	bool	nowDebugMode			= false;
-	bool	isReverseCameraMoveX	= true;
-	bool	isReverseCameraMoveY	= false;
-	bool	isReverseCameraRotX		= false;
-	bool	isReverseCameraRotY		= false;
-	const Room *pChosenRoom			= nullptr; // It used for ImGui
+	bool	nowDebugMode				= false;
+	bool	isReverseCameraMoveX		= true;
+	bool	isReverseCameraMoveY		= false;
+	bool	isReverseCameraRotX			= false;
+	bool	isReverseCameraRotY			= false;
+	const Room *pChosenRoom				= nullptr; // It used for ImGui
 	Donya::Vector3 previousCameraPos; // In not debugMode
 #endif // DEBUG_MODE
 public:
@@ -117,6 +121,9 @@ private:
 	void	UninitStage();
 
 	void	AssignCurrentInput();
+
+	bool	IsPlayingStatus( State verify ) const;
+	void	ClearStateUpdate( float elapsedTime );
 
 	void	CameraInit();
 	Donya::Vector3 ClampFocusPoint( const Donya::Vector3 &focusPoint, int roomID );
