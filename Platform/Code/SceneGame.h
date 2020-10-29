@@ -85,6 +85,7 @@ private:
 	int		horizDiffSignFromInitialPos	= 0;	// It is used for the status == State::Clear
 	bool	isThereClearEvent			= false;
 	bool	isThereBoss					= false;
+	bool	shouldPlayClearSE			= false;// It is used for playing the SE only once time
 	bool	wantLeave					= false;// It is valid when the status == State::Clear
 
 #if DEBUG_MODE
@@ -123,6 +124,8 @@ private:
 	void	AssignCurrentInput();
 
 	bool	IsPlayingStatus( State verify ) const;
+
+	void	ClearStateInit();
 	void	ClearStateUpdate( float elapsedTime );
 
 	void	CameraInit();

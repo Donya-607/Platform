@@ -731,13 +731,13 @@ namespace Donya
 		return true;
 	}
 
-	int AudioSystem::GetNowPlayingSoundCount( size_t handle )
+	int AudioSystem::GetNowPlayingSoundCount( size_t handle ) const
 	{
-		decltype( sounds )::iterator itrSound = sounds.find( handle );
+		decltype( sounds )::const_iterator itrSound = sounds.find( handle );
 		if ( itrSound == sounds.end() ) { return false; }
 		// else
 
-		decltype( channels )::iterator itrChannel = channels.find( handle );
+		decltype( channels )::const_iterator itrChannel = channels.find( handle );
 		return itrChannel->second->GetNowPlayingCount();
 	}
 	

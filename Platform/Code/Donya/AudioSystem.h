@@ -112,7 +112,7 @@ namespace Donya
 		/// <summary>
 		/// If failed count, or not found, returns -1.
 		/// </summary>
-		int GetNowPlayingSoundCount( size_t soundHandle );
+		int GetNowPlayingSoundCount( size_t soundHandle ) const;
 		/// <summary>
 		/// If failed count, returns -1.
 		/// </summary>

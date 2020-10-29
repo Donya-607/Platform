@@ -148,6 +148,7 @@ namespace
 
 		float fadeOutSecondOfBGM		= 1.0f;
 
+		float waitSec_PlayAppearBossSE	= 1.0f;
 		float waitSec_PlayClearSE		= 1.0f; // From the leave timing
 		float waitSecBet_ClearLeave		= 1.0f; // From the clear timing to leave
 		float waitSecBet_LeaveFade		= 1.0f; // From the leave timing to fade out
@@ -226,7 +227,11 @@ namespace
 			}
 			if ( 12 <= version )
 			{
-				archive( CEREAL_NVP( waitSec_PlayClearSE ) );
+				archive
+				(
+					CEREAL_NVP( waitSec_PlayAppearBossSE	),
+					CEREAL_NVP( waitSec_PlayClearSE			)
+				);
 			}
 			if ( 13 <= version )
 			{
@@ -288,6 +293,7 @@ namespace
 				ImGui::DragFloat( u8"‚a‚f‚l‚ÌƒtƒF[ƒhƒAƒEƒg‚É‚©‚¯‚é•b”",	&fadeOutSecondOfBGM,		0.01f );
 				ImGui::DragFloat( u8"ƒXƒNƒ[ƒ‹‚É—v‚·‚é•b”",				&scrollTakeSecond,			0.01f );
 				ImGui::DragFloat( u8"ƒ~ƒX‚©‚çƒŠƒgƒ‰ƒC‚Ü‚Å‚Ì‘Ò‹@•b”",		&waitSecondRetry,			0.01f );
+				ImGui::DragFloat( u8"ƒ{ƒX“oêŽž‚r‚dÄ¶‚Ü‚Å‚Ì‘Ò‹@•b”",	&waitSec_PlayAppearBossSE,	0.01f );
 				ImGui::DragFloat( u8"ƒNƒŠƒAŽž‚r‚dÄ¶‚Ü‚Å‚Ì‘Ò‹@•b”",		&waitSec_PlayClearSE,		0.01f );
 				ImGui::DragFloat( u8"ƒNƒŠƒA‚©‚ç‘Þê‚Ü‚Å‚Ì‘Ò‹@•b”",		&waitSecBet_ClearLeave,		0.01f );
 				ImGui::DragFloat( u8"‘Þê‚©‚çƒtƒF[ƒh‚Ü‚Å‚Ì‘Ò‹@•b”",		&waitSecBet_LeaveFade,		0.01f );
@@ -295,6 +301,7 @@ namespace
 				fadeOutSecondOfBGM		= std::max( 0.0f,  fadeOutSecondOfBGM		);
 				scrollTakeSecond		= std::max( 0.01f, scrollTakeSecond			);
 				waitSecondRetry			= std::max( 0.01f, waitSecondRetry			);
+				waitSec_PlayAppearBossSE= std::max( 0.0f,  waitSec_PlayAppearBossSE	);
 				waitSec_PlayClearSE		= std::max( 0.0f,  waitSec_PlayClearSE		);
 				waitSecBet_ClearLeave	= std::max( 0.0f,  waitSecBet_ClearLeave	);
 				waitSecBet_LeaveFade	= std::max( 0.0f,  waitSecBet_LeaveFade		);
@@ -545,7 +552,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		if ( isThereClearEvent && !isThereBoss )
 		{
 			status = State::Clear;
-			FadeOutBGM();
+			ClearStateInit();
 		}
 	}
 	else
@@ -1258,7 +1265,6 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel )
 {
 	status = State::Stage;
 	stageTimer = 0.0f;
-	clearTimer = 0.0f;
 
 	if ( currentPlayingBGM != nextBGM )
 	{
@@ -1379,6 +1385,15 @@ bool SceneGame::IsPlayingStatus( State verify ) const
 {
 	return ( status == State::Stage || status == State::VSBoss );
 }
+
+void SceneGame::ClearStateInit()
+{
+	clearTimer			= 0.0f;
+	shouldPlayClearSE	= true;
+	wantLeave			= false;
+
+	FadeOutBGM();
+}
 void SceneGame::ClearStateUpdate( float elapsedTime )
 {
 	if ( IsPlayingStatus( status ) ) { return; }
@@ -1386,14 +1401,15 @@ void SceneGame::ClearStateUpdate( float elapsedTime )
 
 	clearTimer += elapsedTime;
 
-	const auto &data = FetchParameter();
+	const auto  &data		= FetchParameter();
 	const float secPlaySE	= data.waitSec_PlayClearSE;
 	const float secFirst	= data.waitSecBet_ClearLeave;
 	const float secSecond	= data.waitSecBet_LeaveFade + secFirst;
 
-	//if ( Donya::Sound:: )
+	if ( shouldPlayClearSE && secPlaySE <= clearTimer )
 	{
-		//wantLeave = true;
+		shouldPlayClearSE = false;
+		Donya::Sound::Play( Music::Performance_ClearStage );
 	}
 	
 	if ( !wantLeave && secFirst <= clearTimer )
