@@ -486,6 +486,24 @@ namespace Donya
 			return AppendFadePoint( takeSecond, destVolume, /* applyAll = */ true );
 		}
 
+		int GetNowPlayingCount() const
+		{
+			int			count	= 0;
+			bool		playing	= false;
+			FMOD_RESULT	fr		= FMOD_OK;
+
+			for ( const auto &pChannel : channels )
+			{
+				fr = pChannel->isPlaying( &playing );
+				if ( OutputDebugErrorStringIfFMODFailed( fr ) ) { continue; }
+				// else
+
+				if ( playing ) { count++; }
+			}
+
+			return count;
+		}
+		
 		void ReleaseAll()
 		{
 			FMOD_RESULT fr = FMOD_OK;
@@ -713,7 +731,17 @@ namespace Donya
 		return true;
 	}
 
-	int AudioSystem::GetNowPlayingSoundsCount()
+	int AudioSystem::GetNowPlayingSoundCount( size_t handle )
+	{
+		decltype( sounds )::iterator itrSound = sounds.find( handle );
+		if ( itrSound == sounds.end() ) { return false; }
+		// else
+
+		decltype( channels )::iterator itrChannel = channels.find( handle );
+		return itrChannel->second->GetNowPlayingCount();
+	}
+	
+	int AudioSystem::GetNowPlayingChannelCount()
 	{
 		int rv = 0;
 		FMOD_RESULT fr = FMOD_OK;

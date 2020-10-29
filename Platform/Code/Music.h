@@ -27,6 +27,9 @@ namespace Music
 		Charge_Loop,
 		Charge_Start,
 		
+		Performance_AppearBoss,
+		Performance_ClearStage,
+
 		Player_1UP,
 		Player_Appear,
 		Player_Damage,

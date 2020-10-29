@@ -73,9 +73,13 @@ namespace Donya
 		bool AppendFadePoint( int soundIdentifier, float takeSeconds, float destinationVolume, bool isEnableForAll = false );
 
 		/// <summary>
+		/// If failed count, or not found, returns -1.
+		/// </summary>
+		int  GetNowPlayingSoundCount( int soundIdentifier );
+		/// <summary>
 		/// If failed count, returns -1.
 		/// </summary>
-		int  GetNowPlayingSoundsCount();
+		int  GetNowPlayingChannelCount();
 	}
 }
 

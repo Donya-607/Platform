@@ -274,6 +274,9 @@ void SceneLoad::Init()
 			Bundle{ ID::Charge_Loop,				"./Data/Sounds/SE/Effect/Charge_Loop.ogg",			true	},
 			Bundle{ ID::Charge_Start,				"./Data/Sounds/SE/Effect/Charge_Start.wav",			false	},
 			
+			Bundle{ ID::Performance_AppearBoss,		"./Data/Sounds/SE/Performacne/AppearBoss.ogg",		false	},
+			Bundle{ ID::Performance_ClearStage,		"./Data/Sounds/SE/Performacne/CleatStage.ogg",		false	},
+			
 			Bundle{ ID::Player_1UP,					"./Data/Sounds/SE/Player/ExtraLife.wav",			false	},
 			Bundle{ ID::Player_Appear,				"./Data/Sounds/SE/Player/Appear.ogg",				false	},
 			Bundle{ ID::Player_Damage,				"./Data/Sounds/SE/Player/Damage.wav",				false	},

@@ -110,9 +110,13 @@ namespace Donya
 		bool ReleaseAll();
 	public:
 		/// <summary>
+		/// If failed count, or not found, returns -1.
+		/// </summary>
+		int GetNowPlayingSoundCount( size_t soundHandle );
+		/// <summary>
 		/// If failed count, returns -1.
 		/// </summary>
-		int GetNowPlayingSoundsCount();
+		int GetNowPlayingChannelCount();
 	};
 }
 

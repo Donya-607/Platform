@@ -148,6 +148,7 @@ namespace
 
 		float fadeOutSecondOfBGM		= 1.0f;
 
+		float waitSec_PlayClearSE		= 1.0f; // From the leave timing
 		float waitSecBet_ClearLeave		= 1.0f; // From the clear timing to leave
 		float waitSecBet_LeaveFade		= 1.0f; // From the leave timing to fade out
 	private:
@@ -225,6 +226,10 @@ namespace
 			}
 			if ( 12 <= version )
 			{
+				archive( CEREAL_NVP( waitSec_PlayClearSE ) );
+			}
+			if ( 13 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -283,12 +288,14 @@ namespace
 				ImGui::DragFloat( u8"ＢＧＭのフェードアウトにかける秒数",	&fadeOutSecondOfBGM,		0.01f );
 				ImGui::DragFloat( u8"スクロールに要する秒数",				&scrollTakeSecond,			0.01f );
 				ImGui::DragFloat( u8"ミスからリトライまでの待機秒数",		&waitSecondRetry,			0.01f );
+				ImGui::DragFloat( u8"クリア時ＳＥ再生までの待機秒数",		&waitSec_PlayClearSE,		0.01f );
 				ImGui::DragFloat( u8"クリアから退場までの待機秒数",		&waitSecBet_ClearLeave,		0.01f );
 				ImGui::DragFloat( u8"退場からフェードまでの待機秒数",		&waitSecBet_LeaveFade,		0.01f );
 				readyFxBeginDelaySecond	= std::max( 0.0f,  readyFxBeginDelaySecond	);
 				fadeOutSecondOfBGM		= std::max( 0.0f,  fadeOutSecondOfBGM		);
 				scrollTakeSecond		= std::max( 0.01f, scrollTakeSecond			);
 				waitSecondRetry			= std::max( 0.01f, waitSecondRetry			);
+				waitSec_PlayClearSE		= std::max( 0.0f,  waitSec_PlayClearSE		);
 				waitSecBet_ClearLeave	= std::max( 0.0f,  waitSecBet_ClearLeave	);
 				waitSecBet_LeaveFade	= std::max( 0.0f,  waitSecBet_LeaveFade		);
 
@@ -357,7 +364,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				11 )
+CEREAL_CLASS_VERSION( SceneParam,				12 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
@@ -523,17 +530,17 @@ Scene::Result SceneGame::Update( float elapsedTime )
 				PlayBGM( Music::BGM_Boss );
 			}
 			else
-				if ( !pBossContainer->IsAliveIn( currentRoomID ) )
-				{
-					// TODO: Disallow the control of player here.
-					// then wait, then goto next state.
-					isThereBoss = false;
-					status = State::Stage;
+			if ( !pBossContainer->IsAliveIn( currentRoomID ) )
+			{
+				// TODO: Disallow the control of player here.
+				// then wait, then goto next state.
+				isThereBoss = false;
+				status = State::Stage;
 
-					FadeOutBGM();
-					// TODO: Play the game-BGM after a performance of destroy
-					PlayBGM( Music::BGM_Game );
-				}
+				FadeOutBGM();
+				// TODO: Play the game-BGM after a performance of destroy
+				PlayBGM( Music::BGM_Game );
+			}
 		}
 		if ( isThereClearEvent && !isThereBoss )
 		{
@@ -1380,9 +1387,15 @@ void SceneGame::ClearStateUpdate( float elapsedTime )
 	clearTimer += elapsedTime;
 
 	const auto &data = FetchParameter();
+	const float secPlaySE	= data.waitSec_PlayClearSE;
 	const float secFirst	= data.waitSecBet_ClearLeave;
 	const float secSecond	= data.waitSecBet_LeaveFade + secFirst;
 
+	//if ( Donya::Sound:: )
+	{
+		//wantLeave = true;
+	}
+	
 	if ( !wantLeave && secFirst <= clearTimer )
 	{
 		wantLeave = true;
