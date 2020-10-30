@@ -1454,7 +1454,7 @@ void SceneGame::ClearStateInit()
 }
 void SceneGame::ClearStateUpdate( float elapsedTime )
 {
-	if ( status != State::Clear ) { return; }
+	if ( status != State::Clear && status != State::WaitToFade ) { return; }
 	// else
 
 	const auto  &data		= FetchParameter();
@@ -1762,54 +1762,7 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 	if ( !pPlayer ) { return; }
 	// else
 
-	Player::Input input{};
-	if ( status == State::Clear )
-	{
-		if ( wantLeave )
-		{
-			// Discard the elapsed time when heading to destination
-			clearTimer -= elapsedTime;
-
-			const Donya::Vector3 playerPos	= pPlayer->GetPosition();
-			const Room		*pCurrentRoom	= ( pHouse ) ? pHouse->FindRoomOrNullptr( currentRoomID ) : nullptr;
-
-			Donya::Vector3	destination		= ( pCurrentRoom ) ? pCurrentRoom->GetArea().pos : playerPos;
-			destination.y = playerPos.y;
-
-			const auto prevSign = Donya::SignBit( destination.x - prevPlayerPos.x );
-			const auto currSign = Donya::SignBit( destination.x - playerPos.x );
-
-			// Arrive to destination
-			if ( currSign != prevSign )
-			{
-				pPlayer->PerformLeaving();
-				status = State::WaitToFade;
-			}
-			// Head to initial position
-			else
-			{
-				input.headToDestination = true;
-				input.wsDestination = destination;
-			}
-		}
-	}
-	else
-	if ( status == State::WaitToFade )
-	{
-		// No op
-	}
-	else
-	if ( status == State::AppearBoss )
-	{
-		const Donya::Vector3 destination = MakeBossRoomInitialPosOf( currentRoomID );
-
-		input.headToDestination	= true;
-		input.wsDestination		= destination;
-	}
-	else
-	{
-		input = currentInput;
-	}
+	const Player::Input input = MakePlayerInput( elapsedTime );
 
 	pPlayer->Update( elapsedTime, input, terrain );
 
@@ -1853,6 +1806,60 @@ Donya::Vector3 SceneGame::MakeBossRoomInitialPosOf( int roomId ) const
 
 	return destination;
 }
+Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
+{
+	Player::Input input{};
+
+	if ( status == State::AppearBoss )
+	{
+		const Donya::Vector3 destination = MakeBossRoomInitialPosOf( currentRoomID );
+
+		input.headToDestination	= true;
+		input.wsDestination		= destination;
+	}
+	else
+	if ( status == State::Clear )
+	{
+		if ( wantLeave )
+		{
+			// Discard the elapsed time when heading to destination
+			clearTimer -= elapsedTime;
+
+			const Donya::Vector3 playerPos	= pPlayer->GetPosition();
+			const Room		*pCurrentRoom	= ( pHouse ) ? pHouse->FindRoomOrNullptr( currentRoomID ) : nullptr;
+
+			Donya::Vector3	destination		= ( pCurrentRoom ) ? pCurrentRoom->GetArea().pos : playerPos;
+			destination.y = playerPos.y;
+
+			const auto prevSign = Donya::SignBit( destination.x - prevPlayerPos.x );
+			const auto currSign = Donya::SignBit( destination.x - playerPos.x );
+
+			// Arrive to destination
+			if ( currSign != prevSign )
+			{
+				pPlayer->PerformLeaving();
+				status = State::WaitToFade;
+			}
+			// Head to initial position
+			else
+			{
+				input.headToDestination = true;
+				input.wsDestination = destination;
+			}
+		}
+	}
+	else
+	if ( status == State::WaitToFade )
+	{
+		// No op
+	}
+	else
+	{
+		input = currentInput;
+	}
+
+	return input;
+}
 
 void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 {
@@ -1873,10 +1880,13 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 	};
 
 	Boss::Input input{};
-	input.wsTargetPos				= wsTargetPos;
-	input.controllerInputDirection	= currentInput.moveVelocity;
-	input.pressJump					= Contains( currentInput.useJumps, true );
-	input.pressShot					= Contains( currentInput.useShots, true );
+	input.wsTargetPos					= wsTargetPos;
+	if ( status == State::VSBoss )
+	{
+		input.controllerInputDirection	= currentInput.moveVelocity;
+		input.pressJump					= Contains( currentInput.useJumps, true );
+		input.pressShot					= Contains( currentInput.useShots, true );
+	}
 
 	pBossContainer->Update( elapsedTime, input );
 

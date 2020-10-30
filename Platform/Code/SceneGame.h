@@ -149,6 +149,7 @@ private:
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );
 	Donya::Vector3 GetPlayerPosition() const;
 	Donya::Vector3 MakeBossRoomInitialPosOf( int roomId ) const;
+	Player::Input  MakePlayerInput( float elapsedTime );
 	
 	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 
