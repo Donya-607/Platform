@@ -27,7 +27,7 @@
 
 class SceneGame : public Scene
 {
-private:
+public:
 	enum class State
 	{
 		Stage,

@@ -538,6 +538,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		isThereBoss			= ( pBossContainer	&& pBossContainer->IsThereIn( currentRoomID ) );
 	}
 
+
 	StageStateUpdate( elapsedTime );
 	AppearBossStateUpdate( elapsedTime );
 	VSBossStateUpdate( elapsedTime );
@@ -1348,7 +1349,7 @@ bool SceneGame::IsPlayingStatus( State verify ) const
 
 void SceneGame::StageStateUpdate( float elapsedTime )
 {
-	if ( status == State::Stage ) { return; }
+	if ( status != State::Stage ) { return; }
 	// else
 
 	if ( isThereBoss && pBossContainer )
@@ -1403,6 +1404,7 @@ void SceneGame::AppearBossStateUpdate( float elapsedTime )
 
 void SceneGame::VSBossStateInit()
 {
+	status = State::VSBoss;
 	PlayBGM( Music::BGM_Boss );
 }
 void SceneGame::VSBossStateUpdate( float elapsedTime )
@@ -1452,7 +1454,7 @@ void SceneGame::ClearStateInit()
 }
 void SceneGame::ClearStateUpdate( float elapsedTime )
 {
-	if ( IsPlayingStatus( status ) ) { return; }
+	if ( status != State::Clear ) { return; }
 	// else
 
 	const auto  &data		= FetchParameter();
@@ -2601,6 +2603,21 @@ namespace
 	static GuiWindow bossWindow		{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static bool enableFloatWindow = true;
 	static GuiWindow testTileWindow{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
+
+	constexpr const char *GetStateName( SceneGame::State kind )
+	{
+		switch ( kind )
+		{
+		case SceneGame::State::Stage:			return u8"Stage";
+		case SceneGame::State::AppearBoss:		return u8"AppearBoss";
+		case SceneGame::State::VSBoss:			return u8"VSBoss";
+		case SceneGame::State::Clear:			return u8"Clear";
+		case SceneGame::State::WaitToFade:		return u8"WaitToFade";
+		default: break;
+		}
+
+		return "ERROR";
+	}
 }
 void SceneGame::UseImGui( float elapsedTime )
 {
@@ -2704,6 +2721,7 @@ void SceneGame::UseImGui( float elapsedTime )
 	);
 
 	sceneParam.ShowImGuiNode( u8"ゲームシーンのパラメータ" );
+	ImGui::Text( u8"今のゲームステート：%s", GetStateName( status ) );
 
 	if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
 	{
