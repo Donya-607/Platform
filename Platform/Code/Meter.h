@@ -49,6 +49,7 @@ namespace Meter
 	public:
 		void SetDestination( float currentAmount );
 		void SetDrawOption( const Donya::Vector2 &ssPosLeftTop, const Donya::Vector3 &drawBlendColor, const Donya::Vector2 &drawScale );
+		bool NowRecovering() const;
 	private:
 		void DrawGauge( float drawDepth ) const;
 		void DrawAmount( float drawDepth ) const;

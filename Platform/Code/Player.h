@@ -102,15 +102,19 @@ public:
 		std::array<bool, variationCount> useShots  = { false, false };
 		std::array<bool, variationCount> useDashes = { false, false };
 		std::array<int,  variationCount> shiftGuns = { false, false }; // Positive:Change to next, Negative:Change to previous
+		bool			headToDestination = false;	// It priority is greater than the moveVelocity
+		Donya::Vector3	wsDestination;				// World space. It is valid when the headToDestination is true
 	public:
 		static Input GenerateEmpty()
 		{
 			Input tmp;
-			tmp.moveVelocity = Donya::Vector2::Zero();
+			tmp.moveVelocity		= Donya::Vector2::Zero();
 			tmp.useJumps.fill( false );
 			tmp.useShots.fill( false );
 			tmp.useDashes.fill( false );
 			tmp.shiftGuns.fill( false );
+			tmp.headToDestination	= false;
+			tmp.wsDestination		= Donya::Vector3::Zero();
 			return tmp;
 		}
 	};
@@ -531,6 +535,7 @@ public:
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;
 	int  GetCurrentHP() const;
+	Donya::Vector3 GetVelocity() const;
 	Donya::Collision::Box3F		GetHurtBox()		const;
 	Donya::Quaternion			GetOrientation()	const;
 	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F	&collidingHitBox ) const;

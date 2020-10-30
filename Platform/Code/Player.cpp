@@ -478,6 +478,13 @@ void Player::InputManager::Update( const Player &inst, float elapsedTime, const 
 	prev = curr;
 	curr = input;
 
+	if ( curr.headToDestination )
+	{
+		const Donya::Vector3 diff = curr.wsDestination - inst.GetPosition();
+		curr.moveVelocity.x = Donya::SignBitF( diff.x );
+		curr.moveVelocity.y = Donya::SignBitF( diff.y );
+	}
+
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
 		float &sec = keepJumpSeconds[i];
@@ -1182,10 +1189,24 @@ void Player::MoverBase::MotionUpdate( Player &inst, float elapsedTime, bool stop
 }
 void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
+	const auto prevPos = inst.GetPosition();
+
 	const auto movement		= inst.velocity * elapsedTime;
 	const auto aroundSolids	= inst.FetchAroundSolids( inst.GetHitBox(), movement, terrain );
 	inst.Actor::MoveX( movement.x, aroundSolids );
 	inst.Actor::MoveZ( movement.z, aroundSolids );
+
+	const auto currPos = inst.GetPosition();
+	const auto &currentInput = inst.inputManager.Current();
+	if ( currentInput.headToDestination )
+	{
+		const auto prevDiff		= currentInput.wsDestination - prevPos;
+		const auto currDiff		= currentInput.wsDestination - currPos;
+		const auto nowOveredX	= Donya::SignBit( currDiff.x ) != Donya::SignBit( prevDiff.x ) || IsZero( currDiff.x );
+		const auto nowOveredZ	= Donya::SignBit( currDiff.z ) != Donya::SignBit( prevDiff.z ) || IsZero( currDiff.z );
+		if ( nowOveredX ) { inst.body.pos.x = currentInput.wsDestination.x; }
+		if ( nowOveredZ ) { inst.body.pos.z = currentInput.wsDestination.z; }
+	}
 
 	// Clamp into room
 	{
@@ -1814,7 +1835,16 @@ Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player
 		// else
 		return ReleaseWay::Release;
 	}
-	
+
+	if ( currentInput.headToDestination )
+	{
+		const Donya::Vector3 diff = currentInput.wsDestination - inst.GetPosition();
+		if ( !Donya::SignBit( diff.y ) )
+		{
+			return ReleaseWay::Release;
+		}
+	}
+
 	return releaseWay;
 }
 
@@ -2455,6 +2485,10 @@ bool Player::NowGrabbingLadder() const
 int  Player::GetCurrentHP() const
 {
 	return currentHP;
+}
+Donya::Vector3 Player::GetVelocity() const
+{
+	return velocity;
 }
 Donya::Collision::Box3F	Player::GetHurtBox() const
 {

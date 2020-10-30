@@ -176,6 +176,11 @@ namespace Meter
 		sprite.color	= color;
 		sprite.scale	= scale;
 	}
+	bool Drawer::NowRecovering() const
+	{
+		const float diff = destination - current;
+		return ( Donya::SignBit( diff ) == 1 ) ? true : false;
+	}
 	void Drawer::DrawGauge( float drawDepth ) const
 	{
 		const auto &data = Parameter::GetMeter();

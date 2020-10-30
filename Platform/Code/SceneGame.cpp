@@ -152,6 +152,8 @@ namespace
 		float waitSec_PlayClearSE		= 1.0f; // From the leave timing
 		float waitSecBet_ClearLeave		= 1.0f; // From the clear timing to leave
 		float waitSecBet_LeaveFade		= 1.0f; // From the leave timing to fade out
+
+		float bossRoomInitialPosOffset	= 3.0f; // It uses only when the boss's appearing
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -235,6 +237,10 @@ namespace
 			}
 			if ( 13 <= version )
 			{
+				archive( CEREAL_NVP( bossRoomInitialPosOffset ) );
+			}
+			if ( 14 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -309,6 +315,14 @@ namespace
 				ImGui::TreePop();
 			}
 
+			if ( ImGui::TreeNode( u8"ボス登場関連" ) )
+			{
+				ImGui::DragFloat( u8"自機の定位置へのボス部屋端からの距離", &bossRoomInitialPosOffset, 0.01f );
+				bossRoomInitialPosOffset = std::max( 0.0f, bossRoomInitialPosOffset );
+
+				ImGui::TreePop();
+			}
+
 			if ( ImGui::TreeNode( u8"メータ関連" ) )
 			{
 				auto ShowPart = []( const char *caption, MeterParam *p )
@@ -371,7 +385,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				12 )
+CEREAL_CLASS_VERSION( SceneParam,				13 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
@@ -492,6 +506,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	AssignCurrentInput();
 
 	stageTimer += elapsedTime;
+	ReadyPlayer();
+
 	const float deltaTimeForMove  = ( scroll.active ) ? 0.0f : elapsedTime;
 	const float deltaTimeForAnime = ( scroll.active ) ? 0.0f : elapsedTime;
 
@@ -511,7 +527,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		currentRoomID = CalcCurrentRoomID();
 	}
 	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
-
 	if ( oldRoomID != currentRoomID )
 	{
 		if ( pSky )
@@ -523,68 +538,12 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		isThereBoss			= ( pBossContainer	&& pBossContainer->IsThereIn( currentRoomID ) );
 	}
 
-	if ( IsPlayingStatus( status ) )
-	{
-		if ( isThereBoss && pBossContainer )
-		{
-			if ( status == State::Stage )
-			{
-				status = State::VSBoss;
-				pBossContainer->StartupBossIfStandby( currentRoomID );
+	StageStateUpdate( elapsedTime );
+	AppearBossStateUpdate( elapsedTime );
+	VSBossStateUpdate( elapsedTime );
+	ClearStateUpdate( elapsedTime );
 
-				FadeOutBGM();
-				// TODO: Play the boss-BGM after a performance of boss
-				PlayBGM( Music::BGM_Boss );
-			}
-			else
-			if ( !pBossContainer->IsAliveIn( currentRoomID ) )
-			{
-				// TODO: Disallow the control of player here.
-				// then wait, then goto next state.
-				isThereBoss = false;
-				status = State::Stage;
-
-				FadeOutBGM();
-				// TODO: Play the game-BGM after a performance of destroy
-				PlayBGM( Music::BGM_Game );
-			}
-		}
-		if ( isThereClearEvent && !isThereBoss )
-		{
-			status = State::Clear;
-			ClearStateInit();
-		}
-	}
-	else
-	{
-		ClearStateUpdate( elapsedTime );
-	}
 	
-
-	// In under the READY-ing state
-	if ( !pPlayer )
-	{
-		if ( !pFxReady )
-		{
-			if ( data.readyFxBeginDelaySecond <= stageTimer )
-			{
-				const Donya::Vector3 fxReadyPos = iCamera.GetFocusPoint() + data.readyFxPosOffset;
-				pFxReady = std::make_unique<Effect::Handle>( Effect::Handle::Generate( Effect::Kind::READY, fxReadyPos ) );
-			}
-		}
-		else
-		{
-			if ( !pFxReady->IsExists() )
-			{
-				pFxReady->Stop();
-				pFxReady->Disable();
-				pFxReady.reset();
-
-				PlayerInit( playerIniter, *pMap );
-			}
-		}
-	}
-
 	PlayerUpdate( deltaTimeForMove, mapRef );
 	if ( data.waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
 	{
@@ -626,6 +585,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 		if ( pPlayer )
 		{
+			prevPlayerPos = pPlayer->GetPosition();
+
 			const float leftBorder	= Contain( transitionable, Dir::Left )
 									? -FLT_MAX
 									: currentRoomArea.Min().x;
@@ -633,8 +594,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 									? FLT_MAX
 									: currentRoomArea.Max().x;
 			pPlayer->PhysicUpdate( deltaTimeForMove, mapRef, leftBorder, rightBorder );
-			// pPlayer->PhysicUpdate( elapsedTime, mapRef, leftBorder, rightBorder );
-
+			
 			const int movedRoomID = CalcCurrentRoomID();
 			if ( movedRoomID != currentRoomID )
 			{
@@ -1386,11 +1346,107 @@ bool SceneGame::IsPlayingStatus( State verify ) const
 	return ( status == State::Stage || status == State::VSBoss );
 }
 
+void SceneGame::StageStateUpdate( float elapsedTime )
+{
+	if ( status == State::Stage ) { return; }
+	// else
+
+	if ( isThereBoss && pBossContainer )
+	{
+		AppearBossStateInit();
+	}
+}
+
+void SceneGame::AppearBossStateInit()
+{
+	status = State::AppearBoss;
+	FadeOutBGM();
+}
+void SceneGame::AppearBossStateUpdate( float elapsedTime )
+{
+	if ( status != State::AppearBoss	) { return; }
+	if ( scroll.active					) { return; }
+	// else
+
+	if ( !pBossContainer )
+	{
+		// Fail safe.
+		// The pBossContainer's StartupBossIfStandby() will make the meter, the meter will be condition of change the state.
+		// So if the pBossContainer is not exist, the game will stop.
+
+		_ASSERT_EXPR( 0, L"Error: The boss admin is invalid!" );
+		VSBossStateInit();
+		return;
+	}
+	// else
+
+	if ( pSkullMeter && !pSkullMeter->NowRecovering() )
+	{
+		VSBossStateInit();
+		return;
+	}
+	// else
+
+	const Donya::Vector3 playerPos   = pPlayer->GetPosition();
+	const Donya::Vector3 destination = MakeBossRoomInitialPosOf( currentRoomID );
+
+	const auto prevSign = Donya::SignBit( destination.x - prevPlayerPos.x );
+	const auto currSign = Donya::SignBit( destination.x - playerPos.x );
+
+	// Arrive to destination
+	if ( currSign != prevSign || !currSign )
+	{
+		pBossContainer->StartupBossIfStandby( currentRoomID );
+		// The meter will create at BossUpdate()
+	}
+}
+
+void SceneGame::VSBossStateInit()
+{
+	PlayBGM( Music::BGM_Boss );
+}
+void SceneGame::VSBossStateUpdate( float elapsedTime )
+{
+	if ( status != State::VSBoss	) { return; }
+	if ( !isThereBoss				) { return; }
+	// else
+
+	if ( !pBossContainer )
+	{
+		// Fail safe.
+		// The pBossContainer's StartupBossIfStandby() will make the meter, the meter will be condition of change the state.
+		// So if the pBossContainer is not exist, the game will stop.
+
+		_ASSERT_EXPR( 0, L"Error: The boss admin is invalid!" );
+		VSBossStateInit();
+		return;
+	}
+	// else
+
+	if ( !pBossContainer->IsAliveIn( currentRoomID ) )
+	{
+		isThereBoss = false;
+
+		if ( isThereClearEvent )
+		{
+			ClearStateInit();
+		}
+		else
+		{
+			status = State::Stage;
+			FadeOutBGM();
+		}
+
+		return;
+	}
+	// else
+}
+
 void SceneGame::ClearStateInit()
 {
-	clearTimer			= 0.0f;
-	shouldPlayClearSE	= true;
-	wantLeave			= false;
+	status		= State::Clear;
+	clearTimer	= 0.0f;
+	wantLeave	= false;
 
 	FadeOutBGM();
 }
@@ -1399,17 +1455,22 @@ void SceneGame::ClearStateUpdate( float elapsedTime )
 	if ( IsPlayingStatus( status ) ) { return; }
 	// else
 
-	clearTimer += elapsedTime;
-
 	const auto  &data		= FetchParameter();
 	const float secPlaySE	= data.waitSec_PlayClearSE;
 	const float secFirst	= data.waitSecBet_ClearLeave;
 	const float secSecond	= data.waitSecBet_LeaveFade + secFirst;
 
-	if ( shouldPlayClearSE && secPlaySE <= clearTimer )
+	const float prevTimer = clearTimer;
+	clearTimer += elapsedTime;
+
+	if ( secPlaySE <= clearTimer )
 	{
-		shouldPlayClearSE = false;
-		Donya::Sound::Play( Music::Performance_ClearStage );
+		const int currSign = Donya::SignBit( secPlaySE - clearTimer );
+		const int prevSign = Donya::SignBit( secPlaySE - prevTimer  );
+		if ( currSign != prevSign )
+		{
+			Donya::Sound::Play( Music::Performance_ClearStage );
+		}
 	}
 	
 	if ( !wantLeave && secFirst <= clearTimer )
@@ -1648,6 +1709,34 @@ Donya::Vector4x4 SceneGame::CalcLightViewMatrix() const
 	return lightCamera.CalcViewMatrix();
 }
 
+void SceneGame::ReadyPlayer()
+{
+	if ( pPlayer ) { return; }
+	// else
+
+	if ( pFxReady )
+	{
+		// Wait to the effect is end
+
+		if ( !pFxReady->IsExists() )
+		{
+			pFxReady->Stop();
+			pFxReady->Disable();
+			pFxReady.reset();
+
+			PlayerInit( playerIniter, *pMap );
+		}
+	}
+	else
+	{
+		const auto &data = FetchParameter();
+		if ( data.readyFxBeginDelaySecond <= stageTimer )
+		{
+			const Donya::Vector3 fxReadyPos = iCamera.GetFocusPoint() + data.readyFxPosOffset;
+			pFxReady = std::make_unique<Effect::Handle>( Effect::Handle::Generate( Effect::Kind::READY, fxReadyPos ) );
+		}
+	}
+}
 void SceneGame::PlayerInit( const PlayerInitializer &initializer, const Map &terrain )
 {
 	if ( pPlayer )
@@ -1685,18 +1774,11 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 			Donya::Vector3	destination		= ( pCurrentRoom ) ? pCurrentRoom->GetArea().pos : playerPos;
 			destination.y = playerPos.y;
 
-			const auto diff = playerPos.x - destination.x;
-			const int  currSign = Donya::SignBit( diff );
-
-			// It condition is the first frame when the status is Clear/WaitToFade.
-			// I should initialize the sign.
-			if ( !horizDiffSignFromInitialPos )
-			{
-				horizDiffSignFromInitialPos = currSign;
-			}
+			const auto prevSign = Donya::SignBit( destination.x - prevPlayerPos.x );
+			const auto currSign = Donya::SignBit( destination.x - playerPos.x );
 
 			// Arrive to destination
-			if ( horizDiffSignFromInitialPos != currSign || !currSign )
+			if ( currSign != prevSign )
 			{
 				pPlayer->PerformLeaving();
 				status = State::WaitToFade;
@@ -1704,8 +1786,8 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 			// Head to initial position
 			else
 			{
-				horizDiffSignFromInitialPos = currSign;
-				input.moveVelocity.x = scast<float>( -horizDiffSignFromInitialPos );
+				input.headToDestination = true;
+				input.wsDestination = destination;
 			}
 		}
 	}
@@ -1713,6 +1795,14 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 	if ( status == State::WaitToFade )
 	{
 		// No op
+	}
+	else
+	if ( status == State::AppearBoss )
+	{
+		const Donya::Vector3 destination = MakeBossRoomInitialPosOf( currentRoomID );
+
+		input.headToDestination	= true;
+		input.wsDestination		= destination;
 	}
 	else
 	{
@@ -1738,6 +1828,28 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 Donya::Vector3 SceneGame::GetPlayerPosition() const
 {
 	return ( pPlayer ) ? pPlayer->GetPosition() : playerIniter.GetWorldInitialPos();
+}
+Donya::Vector3 SceneGame::MakeBossRoomInitialPosOf( int roomId ) const
+{
+	const auto  playerPos		= pPlayer->GetPosition();
+	const float playerLookSign	= Donya::SignBitF( pPlayer->GetOrientation().LocalFront().x );
+	const Room *pCurrentRoom	= ( pHouse ) ? pHouse->FindRoomOrNullptr( currentRoomID ) : nullptr;
+
+	Donya::Vector3 destination;
+	if ( pCurrentRoom )
+	{
+		const auto room = pCurrentRoom->GetArea();
+		destination = ( playerLookSign < 0.0f ) ? room.Max() : room.Min();
+	}
+	else
+	{
+		destination = playerPos;
+	}
+		
+	destination.x += FetchParameter().bossRoomInitialPosOffset * playerLookSign;
+	destination.y = playerPos.y;
+
+	return destination;
 }
 
 void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )

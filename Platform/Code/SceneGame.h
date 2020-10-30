@@ -31,6 +31,7 @@ private:
 	enum class State
 	{
 		Stage,
+		AppearBoss,
 		VSBoss,
 		Clear,
 		WaitToFade
@@ -82,11 +83,10 @@ private:
 	float	stageTimer					= 0.0f;	// Elapsed second from start a stage
 	float	elapsedSecondsAfterMiss		= 0.0f;
 	float	clearTimer					= 0.0f;	// Elapsed second from clear a stage
-	int		horizDiffSignFromInitialPos	= 0;	// It is used for the status == State::Clear
 	bool	isThereClearEvent			= false;
 	bool	isThereBoss					= false;
-	bool	shouldPlayClearSE			= false;// It is used for playing the SE only once time
 	bool	wantLeave					= false;// It is valid when the status == State::Clear
+	Donya::Vector3 prevPlayerPos;				// It is used to judge the timing that the player arrives to desired position
 
 #if DEBUG_MODE
 	bool	nowDebugMode				= false;
@@ -125,6 +125,14 @@ private:
 
 	bool	IsPlayingStatus( State verify ) const;
 
+	void	StageStateUpdate( float elapsedTime );
+
+	void	AppearBossStateInit();
+	void	AppearBossStateUpdate( float elapsedTime );
+	
+	void	VSBossStateInit();
+	void	VSBossStateUpdate( float elapsedTime );
+
 	void	ClearStateInit();
 	void	ClearStateUpdate( float elapsedTime );
 
@@ -136,9 +144,11 @@ private:
 
 	Donya::Vector4x4 CalcLightViewMatrix() const;
 
+	void	ReadyPlayer();
 	void	PlayerInit( const PlayerInitializer &initializer, const Map &terrain );
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );
 	Donya::Vector3 GetPlayerPosition() const;
+	Donya::Vector3 MakeBossRoomInitialPosOf( int roomId ) const;
 	
 	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 
