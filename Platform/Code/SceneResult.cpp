@@ -23,6 +23,7 @@
 
 #include "Common.h"
 #include "Effect/EffectAdmin.h"
+#include "Enemies/SuperBallMachine.h"
 #include "Fader.h"
 #include "FilePath.h"
 #include "FontHelper.h"
@@ -92,6 +93,8 @@ namespace
 		ShadowMap shadowMap;
 
 		BloomApplier::Parameter bloomParam;
+
+		std::vector<Enemy::InitializeParam> enemies;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -104,7 +107,8 @@ namespace
 				CEREAL_NVP( camera.offsetFocus	),
 				CEREAL_NVP( directionalLight	),
 				CEREAL_NVP( shadowMap			),
-				CEREAL_NVP( bloomParam			)
+				CEREAL_NVP( bloomParam			),
+				CEREAL_NVP( enemies				)
 			);
 
 			if ( 1 <= version )
@@ -150,6 +154,24 @@ namespace
 			}
 
 			bloomParam.ShowImGuiNode( u8"ブルーム関連" );
+
+			if ( enemies.empty() )
+			{
+				Enemy::InitializeParam arg{};
+				enemies.emplace_back( arg );
+			}
+			if ( ImGui::TreeNode( u8"敵関連" ) )
+			{
+				ImGui::Helper::ResizeByButton( &enemies );
+
+				const int enemyCount = enemies.size();
+				for ( int i = 0; i < enemyCount; ++i )
+				{
+					enemies[i].ShowImGuiNode( Donya::MakeArraySuffix( i ) );
+				}
+
+				ImGui::TreePop();
+			}
 		}
 	#endif // USE_IMGUI
 	};
@@ -226,6 +248,9 @@ void SceneResult::Init()
 	effectAdmin.SetLightColorDiffuse( { 1.0f, 1.0f, 1.0f, 1.0f } );
 	effectAdmin.SetLightDirection	( data.directionalLight.direction.XYZ() );
 	effectAdmin.ClearInstances();
+
+	Enemy::Admin::Get().ClearInstances();
+	EnemyInit( playerIniter.GetWorldInitialPos() );
 }
 void SceneResult::Uninit()
 {
@@ -277,6 +302,13 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 
+	PlayerUpdate( elapsedTime, mapRef );
+	EnemyUpdate( elapsedTime, GetPlayerPosition() );
+	Bullet::Admin::Get().Update( elapsedTime, currentScreen );
+
+	PlayerPhysicUpdate( elapsedTime, mapRef );
+	EnemyPhysicUpdate( elapsedTime, mapRef );
+	Bullet::Admin::Get().PhysicUpdate( elapsedTime, mapRef );
 
 	if ( !Fader::Get().IsExist() )
 	{
@@ -353,7 +385,7 @@ void SceneResult::Draw( float elapsedTime )
 		: pRenderer->ActivateShaderNormalSkinning();
 
 		if ( Drawable( Kind::Player	) && pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
-		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );	}
+		if ( Drawable( Kind::Enemy	) ) { EnemyDraw( pRenderer.get() ); }
 		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() );}
 
 		( castShadow )
@@ -361,7 +393,6 @@ void SceneResult::Draw( float elapsedTime )
 		: pRenderer->DeactivateShaderNormalSkinning();
 	};
 	
-
 	const Donya::Vector4   cameraPos = Donya::Vector4{ iCamera.GetPosition(), 1.0f };
 	const Donya::Vector4x4 V = iCamera.CalcViewMatrix();
 	const Donya::Vector4x4 VP = V * iCamera.GetProjectionMatrix();
@@ -516,6 +547,7 @@ void SceneResult::Draw( float elapsedTime )
 		if ( pPlayer	) { pPlayer->DrawHitBox( pRenderer.get(), VP );					}
 		if ( pMap		) { pMap->DrawHitBoxes( currentScreen, pRenderer.get(), VP );	}
 		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
+		for ( const auto &pIt : enemies ) { if ( pIt ) { pIt->DrawHitBox( pRenderer.get(), VP ); } }
 	}
 #endif // DEBUG_MODE
 
@@ -826,9 +858,75 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 
 	pPlayer->Update( elapsedTime, currentInput, terrain );
 }
+void SceneResult::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
+{
+	if ( !pPlayer ) { return; }
+	// else
+
+	const float leftBorder  = currentScreen.Min().x;
+	const float rightBorder = currentScreen.Max().x;
+	pPlayer->PhysicUpdate( elapsedTime, terrain, leftBorder, rightBorder );
+}
 Donya::Vector3 SceneResult::GetPlayerPosition() const
 {
 	return ( pPlayer ) ? pPlayer->GetPosition() : playerIniter.GetWorldInitialPos();
+}
+
+void SceneResult::EnemyInit( const Donya::Vector3 &targetPos )
+{
+	const auto &source = FetchParameter().enemies;
+	const size_t count = source.size();
+
+	enemies.resize( count );
+	for ( size_t i = 0; i < count; ++i )
+	{
+		auto &pIt = enemies[i];
+
+		if ( pIt ) { pIt->Uninit(); }
+		pIt = std::make_unique<Enemy::SuperBallMachine>();
+		pIt->Init( source[i], targetPos, currentScreen );
+	}
+}
+void SceneResult::EnemyUpdate( float elapsedTime, const Donya::Vector3 &targetPos )
+{
+	const auto &source = FetchParameter().enemies;
+	const size_t count = source.size();
+
+	if ( enemies.size() != count )
+	{
+		EnemyInit( targetPos );
+	}
+
+	for ( size_t i = 0; i < count; ++i )
+	{
+		auto &pIt = enemies[i];
+		if ( !pIt || pIt->WillDie() )
+		{
+			if ( pIt ) { pIt->Uninit(); }
+			pIt = std::make_unique<Enemy::SuperBallMachine>();
+			pIt->Init( source[i], targetPos, currentScreen );
+		}
+
+		pIt->Update( elapsedTime, targetPos, currentScreen );
+	}
+}
+void SceneResult::EnemyPhysicUpdate( float elapsedTime, const Map &terrain )
+{
+	for ( auto &pIt : enemies )
+	{
+		if ( !pIt ) { continue; }
+		// else
+		pIt->PhysicUpdate( elapsedTime, terrain );
+	}
+}
+void SceneResult::EnemyDraw( RenderingHelper *pRenderer )
+{
+	for ( auto &pIt : enemies )
+	{
+		if ( !pIt ) { continue; }
+		// else
+		pIt->Draw( pRenderer );
+	}
 }
 
 void SceneResult::ClearBackGround() const
@@ -939,19 +1037,6 @@ void SceneResult::UseImGui()
 			return ( !loadedData.Get().empty() );
 		};
 
-		auto ApplyToEnemy	= [&]( const CSVLoader &loadedData )
-		{
-			const Donya::Vector3 playerPos = GetPlayerPosition();
-
-			Enemy::Admin::Get().ClearInstances();
-			Enemy::Admin::Get().RemakeByCSV( loadedData, playerPos, currentScreen );
-
-			if ( thenSave )
-			{
-				Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ true  );
-				Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ false );
-			}
-		};
 		auto ApplyToMap		= [&]( const CSVLoader &loadedData )
 		{
 			if ( !pMap ) { return; }
@@ -989,7 +1074,6 @@ void SceneResult::UseImGui()
 			static int readStageNumber = Definition::StageNumber::Game();
 			static BufferType bufferDirectory	{ "./../../EdittedData/"	};
 			static BufferType bufferPrefix		{ "Stage"					};
-			static BufferType bufferEnemy		{ "Enemy"					};
 			static BufferType bufferMap			{ "Map"						};
 			static BufferType bufferExtension	{ ".csv"					};
 
@@ -1022,7 +1106,6 @@ void SceneResult::UseImGui()
 
 				ProcessOf( bufferMap,	ApplyToMap		);
 				ProcessOf( bufferMap,	ApplyToPlayer	);
-				ProcessOf( bufferEnemy,	ApplyToEnemy	);
 
 				if ( pMap ) { pMap->ReloadModel( readStageNumber ); }
 			}
@@ -1030,7 +1113,6 @@ void SceneResult::UseImGui()
 			ImGui::InputInt ( u8"読み込むステージ番号",	&readStageNumber );
 			ImGui::InputText( u8"接頭辞",				bufferPrefix.data(),	bufferSize );
 			ImGui::InputText( u8"ディレクトリ",			bufferDirectory.data(),	bufferSize );
-			ImGui::InputText( u8"識別子・敵",			bufferEnemy.data(),		bufferSize );
 			ImGui::InputText( u8"識別子・マップ＆自機",	bufferMap.data(),		bufferSize );
 			ImGui::InputText( u8"拡張子",				bufferExtension.data(),	bufferSize );
 
@@ -1039,11 +1121,9 @@ void SceneResult::UseImGui()
 
 		if ( ImGui::TreeNode( u8"個別ロード" ) )
 		{
-			static bool applyEnemy	= false;
 			static bool applyMap	= true;
 			static bool applyPlayer	= true;
 
-			ImGui::Checkbox( u8"敵に適用",		&applyEnemy		);
 			ImGui::Checkbox( u8"マップに適用",	&applyMap		); ImGui::SameLine();
 			ImGui::Checkbox( u8"自機に適用",		&applyPlayer	);
 		
@@ -1055,7 +1135,6 @@ void SceneResult::UseImGui()
 				{
 					Bullet::Admin::Get().ClearInstances();
 
-					if ( applyEnemy		) { ApplyToEnemy	( loader ); }
 					if ( applyMap		) { ApplyToMap		( loader );	}
 					if ( applyPlayer	) { ApplyToPlayer	( loader ); }
 				}
@@ -1113,7 +1192,19 @@ void SceneResult::UseImGui()
 		ImGui::Text( "" );
 
 		const Donya::Vector3 playerPos = GetPlayerPosition();
-		Enemy::Admin::Get().ShowImGuiNode( u8"敵の現在", stageNumber, playerPos, currentScreen );
+		if ( ImGui::TreeNode( u8"敵たちの現在" ) )
+		{
+			const size_t count = enemies.size();
+			for ( size_t i = 0; i < count; ++i )
+			{
+				auto &pIt = enemies[i];
+				if ( !pIt ) { continue; }
+				// else
+				pIt->ShowImGuiNode( Donya::MakeArraySuffix( i ) );
+			}
+
+			ImGui::TreePop();
+		}
 		Enemy::Parameter::Update( u8"敵のパラメータ" );
 		ImGui::Text( "" );
 
