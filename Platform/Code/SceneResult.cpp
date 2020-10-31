@@ -6,7 +6,9 @@
 #undef max
 #undef min
 
+#include "Donya/Blend.h"
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
+#include "Donya/Constant.h"
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
@@ -20,11 +22,19 @@
 #endif // DEBUG_MODE
 
 #include "Common.h"
+#include "Effect/EffectAdmin.h"
 #include "Fader.h"
 #include "FilePath.h"
 #include "FontHelper.h"
 #include "Music.h"
 #include "Parameter.h"
+#include "PointLightStorage.h"
+#include "StageNumber.h"
+
+#if DEBUG_MODE
+#include "CSVLoader.h"
+#pragma comment( lib, "comdlg32.lib" ) // Used for common-dialog
+#endif // DEBUG_MODE
 
 namespace
 {
@@ -39,13 +49,63 @@ namespace
 {
 	struct SceneParam
 	{
+		struct
+		{
+			float fovDegree = 30.0f;
+			Donya::Vector3 offsetPos{ 0.0f, 5.0f, -10.0f };	// The offset of position from the player position
+			Donya::Vector3 offsetFocus;						// The offset of focus from the player position
+		}
+		camera;
 
+		Donya::Model::Constants::PerScene::DirectionalLight directionalLight;
+
+		struct ShadowMap
+		{
+			Donya::Vector3	color;			// RGB
+			float			bias = 0.03f;	// Ease an acne
+
+			float			offsetDistance	= 10.0f;				// From the player position
+			Donya::Vector3	projectDirection{  0.0f,  0.0f,  1.0f };
+			Donya::Vector3	projectDistance { 10.0f, 10.0f, 50.0f };// [m]
+			float			nearDistance	= 1.0f;					// Z near is this. Z far is projectDistance.z.
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( color			),
+					CEREAL_NVP( bias			),
+					CEREAL_NVP( offsetDistance	),
+					CEREAL_NVP( projectDirection),
+					CEREAL_NVP( projectDistance	),
+					CEREAL_NVP( nearDistance	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		ShadowMap shadowMap;
+
+		BloomApplier::Parameter bloomParam;
 	private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
-			// archive( CEREAL_NVP( x ) );
+			archive
+			(
+				CEREAL_NVP( camera.fovDegree	),
+				CEREAL_NVP( camera.offsetPos	),
+				CEREAL_NVP( camera.offsetFocus	),
+				CEREAL_NVP( directionalLight	),
+				CEREAL_NVP( shadowMap			),
+				CEREAL_NVP( bloomParam			)
+			);
 
 			if ( 1 <= version )
 			{
@@ -56,16 +116,75 @@ namespace
 	#if USE_IMGUI
 		void ShowImGuiNode()
 		{
-			
+			if ( ImGui::TreeNode( u8"カメラ" ) )
+			{
+				ImGui::DragFloat ( u8"画角（Degree）",				&camera.fovDegree,		0.1f  );
+				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&camera.offsetPos.x,	0.01f );
+				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&camera.offsetFocus.x,	0.01f );
+
+				ImGui::TreePop();
+			}
+
+			if ( ImGui::TreeNode( u8"シャドウマップ関連" ) )
+			{
+				ImGui::ColorEdit3( u8"影の色",					&shadowMap.color.x );
+				ImGui::DragFloat ( u8"アクネ用のバイアス",		&shadowMap.bias,				0.01f );
+				ImGui::DragFloat ( u8"自機からの距離",			&shadowMap.offsetDistance,		0.1f  );
+				ImGui::DragFloat3( u8"写す方向（単位ベクトル）",	&shadowMap.projectDirection.x,	0.01f );
+				ImGui::DragFloat3( u8"写す範囲ＸＹＺ",			&shadowMap.projectDistance.x,	1.0f  );
+				ImGui::DragFloat ( u8"Z-Near",					&shadowMap.nearDistance,		1.0f  );
+
+				shadowMap.offsetDistance	= std::max( 0.01f, shadowMap.offsetDistance );
+				shadowMap.projectDistance.x	= std::max( 0.01f, shadowMap.projectDistance.x );
+				shadowMap.projectDistance.y	= std::max( 0.01f, shadowMap.projectDistance.y );
+				shadowMap.projectDistance.z	= std::max( shadowMap.nearDistance + 1.0f, shadowMap.projectDistance.z );
+
+				static bool alwaysNormalize = false;
+				if ( ImGui::Button( u8"写す方向を正規化" ) || alwaysNormalize )
+				{
+					shadowMap.projectDirection.Normalize();
+				}
+				ImGui::Checkbox( u8"常に正規化する", &alwaysNormalize );
+
+				ImGui::TreePop();
+			}
+
+			bloomParam.ShowImGuiNode( u8"ブルーム関連" );
 		}
 	#endif // USE_IMGUI
 	};
 
-	// static ParamOperator<SceneParam> sceneParam{ "SceneResult" };
-	// const SceneParam &FetchParameter()
-	// {
-	// 	return sceneParam.Get();
-	// }
+	static ParamOperator<SceneParam> sceneParam{ "SceneResult" };
+	const SceneParam &FetchParameter()
+	{
+		return sceneParam.Get();
+	}
+
+#if DEBUG_MODE
+	constexpr unsigned int maxPathBufferSize = MAX_PATH;
+	std::string FetchStageFilePathByCommonDialog()
+	{
+		char chosenFullPaths[maxPathBufferSize] = { 0 };
+		char chosenFileName [maxPathBufferSize] = { 0 };
+
+		OPENFILENAMEA ofn{ 0 };
+		ofn.lStructSize		= sizeof( decltype( ofn ) );
+		ofn.hwndOwner		= Donya::GetHWnd();
+		ofn.lpstrFilter		= "CSV-file(*.csv)\0*.csv\0"
+							  "\0";
+		ofn.lpstrFile		= chosenFullPaths;
+		ofn.nMaxFile		= maxPathBufferSize;
+		ofn.lpstrFileTitle	= chosenFileName;
+		ofn.nMaxFileTitle	= maxPathBufferSize;
+		ofn.Flags			= OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR; // Prevent the current directory of this application will be changed.
+
+		auto  result = GetOpenFileNameA( &ofn );
+		if ( !result ) { return std::string{}; }
+		// else
+
+		return std::string{ ofn.lpstrFile };
+	}
+#endif // DEBUG_MODE
 }
 CEREAL_CLASS_VERSION( SceneParam, 0 )
 
@@ -73,18 +192,56 @@ void SceneResult::Init()
 {
 	Donya::Sound::Play( Music::BGM_Result );
 
+	sceneParam.LoadParameter();
+	const auto &data = FetchParameter();
+
+	constexpr int stageNo = Definition::StageNumber::Result();
+	constexpr Donya::Int2 wholeScreenSize
+	{
+		Common::ScreenWidth(),
+		Common::ScreenHeight(),
+	};
+	
 	bool result{};
 
+	result = CreateRenderers( wholeScreenSize );
+	assert( result );
+
+	result = CreateSurfaces( wholeScreenSize );
+	assert( result );
+
+	result = CreateShaders();
+	assert( result );
+
+	pMap = std::make_unique<Map>();
+	pMap->Init( stageNo, /* reloadModel = */ false );
+
+	playerIniter.LoadParameter( stageNo );
+
 	CameraInit();
+
+	Effect::Admin::Get().ClearInstances();
+	auto &effectAdmin = Effect::Admin::Get();
+	effectAdmin.SetLightColorAmbient( { 1.0f, 1.0f, 1.0f, 1.0f } );
+	effectAdmin.SetLightColorDiffuse( { 1.0f, 1.0f, 1.0f, 1.0f } );
+	effectAdmin.SetLightDirection	( data.directionalLight.direction.XYZ() );
+	effectAdmin.ClearInstances();
 }
 void SceneResult::Uninit()
 {
+	Effect::Admin::Get().ClearInstances();
 	Donya::Sound::Stop( Music::BGM_Result );
 }
 
 Scene::Result SceneResult::Update( float elapsedTime )
 {
 #if DEBUG_MODE
+	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
+	{
+		Donya::Sound::Play( Music::DEBUG_Strong );
+
+		StartFade();
+	}
 	if ( Donya::Keyboard::Trigger( VK_F5 ) )
 	{
 		nowDebugMode = !nowDebugMode;
@@ -103,9 +260,23 @@ Scene::Result SceneResult::Update( float elapsedTime )
 
 #if USE_IMGUI
 	UseImGui();
+	
+	// Apply for be able to see an adjustment immediately
+	{
+		if ( pBloomer ) { pBloomer->AssignParameter( FetchParameter().bloomParam ); }
+
+		Effect::Admin::Get().SetProjectionMatrix( iCamera.GetProjectionMatrix() );
+	}
 #endif // USE_IMGUI
 
+	PointLightStorage::Get().Clear();
+
 	controller.Update();
+
+	if ( pMap ) { pMap->Update( elapsedTime ); }
+	const Map emptyMap{}; // Used for empty argument. Fali safe.
+	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+
 
 	if ( !Fader::Get().IsExist() )
 	{
@@ -130,19 +301,221 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	return ReturnResult();
 }
 
+namespace
+{
+	enum class DrawTarget
+	{
+		Bullet	= 1 << 0,
+		Player	= 1 << 1,
+		Enemy	= 1 << 2,
+
+		All		= Bullet | Player | Enemy
+	};
+	DEFINE_ENUM_FLAG_OPERATORS( DrawTarget )
+}
 void SceneResult::Draw( float elapsedTime )
 {
-	// elapsedTime = 1.0f; // Disable
-
 	ClearBackGround();
 
-	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
+	if ( !AreRenderersReady() ) { return; }
+	// else
+
+	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix )
+	{
+		Donya::Model::Constants::PerScene::Common constant{};
+		constant.directionalLight	= directionalLight;
+		constant.eyePosition		= eyePos;
+		constant.viewMatrix			= viewMatrix;
+		constant.viewProjMatrix		= viewProjectionMatrix;
+		pRenderer->UpdateConstant( constant );
+	};
+	auto DrawObjects			= [&]( DrawTarget option, bool castShadow )
+	{
+		using Kind = DrawTarget;
+		auto Drawable = [&option]( Kind verify )
+		{
+			return scast<int>( option & verify ) != 0;
+		};
+
+		// The drawing priority is determined by the priority of the information.
+
+		( castShadow )
+		? pRenderer->ActivateShaderShadowStatic()
+		: pRenderer->ActivateShaderNormalStatic();
+
+		( castShadow )
+		? pRenderer->DeactivateShaderShadowStatic()
+		: pRenderer->DeactivateShaderNormalStatic();
+
+
+		( castShadow )
+		? pRenderer->ActivateShaderShadowSkinning()
+		: pRenderer->ActivateShaderNormalSkinning();
+
+		if ( Drawable( Kind::Player	) && pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
+		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );	}
+		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() );}
+
+		( castShadow )
+		? pRenderer->DeactivateShaderShadowSkinning()
+		: pRenderer->DeactivateShaderNormalSkinning();
+	};
 	
+
+	const Donya::Vector4   cameraPos = Donya::Vector4{ iCamera.GetPosition(), 1.0f };
+	const Donya::Vector4x4 V = iCamera.CalcViewMatrix();
+	const Donya::Vector4x4 VP = V * iCamera.GetProjectionMatrix();
+
+	const Donya::Vector4   lightPos = Donya::Vector4{ lightCamera.GetPosition(), 1.0f };
+	const Donya::Vector4x4 LV  = lightCamera.CalcViewMatrix();
+	const Donya::Vector4x4 LVP = LV * lightCamera.GetProjectionMatrix();
+
+	const auto &data = FetchParameter();
+
+	Effect::Admin::Get().SetViewMatrix( V );
+
+	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
+	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
+	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
+	pRenderer->ActivateSamplerNormal( Donya::Sampler::Defined::Point_Wrap );
+
+	pShadowMap->SetRenderTarget();
+	pShadowMap->SetViewport();
+	// Make the shadow map
+	{
+		// Update scene constant as light source
+		{
+			Donya::Model::Constants::PerScene::DirectionalLight tmpDirLight{};
+			tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
+			UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP );
+		}
+		pRenderer->ActivateConstantScene();
+
+		DrawObjects( DrawTarget::All, /* castShadow = */ true );
+
+		pRenderer->DeactivateConstantScene();
+	}
+	Donya::Surface::ResetRenderTarget();
+
+	pScreenSurface->SetRenderTarget();
+	pScreenSurface->SetViewport();
+	// Draw normal scene with shadow map
+	{
+		RenderingHelper::ShadowConstant shadowConstant{};
+
+		// Update scene and shadow constants
+		{
+			UpdateSceneConstant( data.directionalLight, cameraPos, V, VP );
+
+			shadowConstant.lightProjMatrix	= LVP;
+			shadowConstant.shadowColor		= data.shadowMap.color;
+			shadowConstant.shadowBias		= data.shadowMap.bias;
+			pRenderer->UpdateConstant( shadowConstant );
+		}
+		// Update point light constant
+		{
+			pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
+		}
+
+		pRenderer->ActivateConstantScene();
+		pRenderer->ActivateConstantPointLight();
+		pRenderer->ActivateConstantShadow();
+		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
+		pRenderer->ActivateShadowMap( *pShadowMap );
+
+		constexpr DrawTarget option = DrawTarget::All ^ DrawTarget::Bullet;
+		DrawObjects( option, /* castShadow = */ false );
+
+		// Disable shadow
+		{
+			pRenderer->DeactivateConstantShadow();
+			shadowConstant.shadowBias = 1.0f; // Make the pixel to nearest
+			pRenderer->UpdateConstant( shadowConstant );
+			pRenderer->ActivateConstantShadow();
+		}
+
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_Write );
+		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
+
+		pRenderer->DeactivateShadowMap( *pShadowMap );
+		pRenderer->DeactivateSamplerShadow();
+		pRenderer->DeactivateConstantShadow();
+		pRenderer->DeactivateConstantPointLight();
+		pRenderer->DeactivateConstantScene();
+	}
+	Donya::Surface::ResetRenderTarget();
+
+	pRenderer->DeactivateSamplerModel();
+	Donya::Rasterizer::Deactivate();
+	Donya::DepthStencil::Deactivate();
+
+	// Generate the buffers of bloom
+	{
+		constexpr Donya::Vector4 black{ 0.0f, 0.0f, 0.0f, 1.0f };
+		pBloomer->ClearBuffers( black );
+
+		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
+		Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
+
+		Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0 );
+		pBloomer->WriteLuminance( *pScreenSurface );
+		Donya::Sampler::ResetPS( 0 );
+
+		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
+		pBloomer->WriteBlur();
+		Donya::Sampler::ResetPS( 0 );
+
+		Donya::Rasterizer::Deactivate();
+		Donya::DepthStencil::Deactivate();
+	}
+
+	Donya::SetDefaultRenderTargets();
+
+	const Donya::Vector2 screenSurfaceSize = pScreenSurface->GetSurfaceSizeF();
+
+	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
+	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
+	// Draw the scene to screen
+	{
+		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
+		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+
+		pQuadShader->VS.Activate();
+		pQuadShader->PS.Activate();
+
+		pScreenSurface->SetRenderTargetShaderResourcePS( 0U );
+
+		pDisplayer->Draw
+		(
+			screenSurfaceSize,
+			Donya::Vector2::Zero()
+		);
+
+		pScreenSurface->ResetShaderResourcePS( 0U );
+
+		pQuadShader->PS.Deactivate();
+		pQuadShader->VS.Deactivate();
+
+		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+		Donya::Sampler::ResetPS( 0 );
+	}
+
+	// Add the bloom buffers
+	Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
+	pBloomer->DrawBlurBuffers( screenSurfaceSize );
+	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+
+	Donya::Rasterizer::Deactivate();
+	Donya::DepthStencil::Deactivate();
+
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
 	{
-
+		if ( pPlayer	) { pPlayer->DrawHitBox( pRenderer.get(), VP );					}
+		if ( pMap		) { pMap->DrawHitBoxes( currentScreen, pRenderer.get(), VP );	}
+		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 	}
 #endif // DEBUG_MODE
 
@@ -210,14 +583,101 @@ void SceneResult::Draw( float elapsedTime )
 #endif // DEBUG_MODE
 }
 
+bool SceneResult::CreateRenderers( const Donya::Int2 &wholeScreenSize )
+{
+	bool succeeded = true;
+
+	pRenderer = std::make_unique<RenderingHelper>();
+	if ( !pRenderer->Init() ) { succeeded = false; }
+
+	pDisplayer = std::make_unique<Donya::Displayer>();
+	if ( !pDisplayer->Init() ) { succeeded = false; }
+
+	pBloomer = std::make_unique<BloomApplier>();
+	if ( !pBloomer->Init( wholeScreenSize ) ) { succeeded = false; }
+	pBloomer->AssignParameter( FetchParameter().bloomParam );
+
+	return succeeded;
+}
+bool SceneResult::CreateSurfaces( const Donya::Int2 &wholeScreenSize )
+{
+	bool succeeded	= true;
+	bool result		= true;
+
+	pScreenSurface = std::make_unique<Donya::Surface>();
+	result = pScreenSurface->Init
+	(
+		wholeScreenSize.x,
+		wholeScreenSize.y,
+		DXGI_FORMAT_R16G16B16A16_FLOAT
+	);
+	if ( !result ) { succeeded = false; }
+	else { pScreenSurface->Clear( Donya::Color::Code::BLACK ); }
+
+	pShadowMap = std::make_unique<Donya::Surface>();
+	result = pShadowMap->Init
+	(
+		wholeScreenSize.x,
+		wholeScreenSize.y,
+		DXGI_FORMAT_R32_FLOAT, true,
+		DXGI_FORMAT_R32_TYPELESS, true
+	);
+	if ( !result ) { succeeded = false; }
+	else { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
+
+	return succeeded;
+}
+bool SceneResult::CreateShaders()
+{
+	constexpr const char *VSPath = "./Data/Shaders/DisplayQuadVS.cso";
+	constexpr const char *PSPath = "./Data/Shaders/DisplayQuadPS.cso";
+	constexpr auto IEDescs = Donya::Displayer::Vertex::GenerateInputElements();
+
+	// The vertex shader requires IE-descs as std::vector<>
+	const std::vector<D3D11_INPUT_ELEMENT_DESC> IEDescsV{ IEDescs.begin(), IEDescs.end() };
+
+	bool succeeded = true;
+
+	pQuadShader = std::make_unique<Shader>();
+	if ( !pQuadShader->VS.CreateByCSO( VSPath, IEDescsV	) ) { succeeded = false; }
+	if ( !pQuadShader->PS.CreateByCSO( PSPath			) ) { succeeded = false; }
+
+	return succeeded;
+}
+bool SceneResult::AreRenderersReady() const
+{
+	if ( !pRenderer			) { return false; }
+	if ( !pDisplayer		) { return false; }
+	if ( !pBloomer			) { return false; }
+	if ( !pScreenSurface	) { return false; }
+	if ( !pShadowMap		) { return false; }
+	if ( !pQuadShader		) { return false; }
+	// else
+	return true;
+}
+
 void SceneResult::CameraInit()
 {
-	iCamera.Init( Donya::ICamera::Mode::Look );
-	iCamera.SetZRange( 0.1f, 1000.0f );
-	iCamera.SetFOV( ToRadian( 30.0f ) );
-	iCamera.SetScreenSize( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
+	const auto &data = FetchParameter();
+
+	constexpr Donya::Vector2 screenSize{ Common::ScreenWidthF(), Common::ScreenHeightF() };
+	constexpr Donya::Vector2 defaultZRange{ 0.1f, 500.0f };
+
+	iCamera.Init				( Donya::ICamera::Mode::Look );
+	iCamera.SetZRange			( defaultZRange.x, defaultZRange.y );
+	iCamera.SetFOV				( ToRadian( data.camera.fovDegree ) );
+	iCamera.SetScreenSize		( screenSize );
+
+	lightCamera.Init			( Donya::ICamera::Mode::Look );
+	lightCamera.SetZRange		( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
+	lightCamera.SetScreenSize	( data.shadowMap.projectDistance.XY() );
+
 	AssignCameraPos();
+
 	iCamera.SetProjectionPerspective();
+	lightCamera.SetProjectionOrthographic();
+
+	Effect::Admin::Get().SetProjectionMatrix( iCamera.GetProjectionMatrix() );
 
 	// I can setting a configuration,
 	// but current data is not changed immediately.
@@ -226,21 +686,49 @@ void SceneResult::CameraInit()
 	moveInitPoint.SetNoOperation();
 	moveInitPoint.slerpPercent = 1.0f;
 	iCamera.Update( moveInitPoint );
+	lightCamera.Update( moveInitPoint );
 }
 void SceneResult::AssignCameraPos()
 {
-#if DEBUG_MODE
-	constexpr Donya::Vector3 focus{ 0.0f, 0.0f,  0.0f };
-	constexpr Donya::Vector3 eye  { 0.0f, 0.0f, -1.0f };
-	iCamera.SetPosition  ( eye   );
-	iCamera.SetFocusPoint( focus );
-#endif // DEBUG_MODE
+	const auto &data = FetchParameter();
+	const Donya::Vector3 playerPos = GetPlayerPosition();
+	
+	iCamera.SetPosition  ( playerPos + data.camera.offsetPos   );
+	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
+	
+	const Donya::Vector3 offset = -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
+	lightCamera.SetPosition  ( playerPos + offset );
+	lightCamera.SetFocusPoint( playerPos );
 }
 void SceneResult::CameraUpdate()
 {
+	const auto &data = FetchParameter();
+
+#if USE_IMGUI
+	// Apply for be able to see an adjustment immediately
+	{
+		iCamera.SetFOV( ToRadian( data.camera.fovDegree ) );
+		iCamera.SetProjectionPerspective();
+		
+		if ( nowDebugMode ) // Don't call AssignCameraPos() when debug-mode
+		{
+			const Donya::Vector3 playerPos	= GetPlayerPosition();
+			const Donya::Vector3 offset		= -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
+			lightCamera.SetPosition  ( playerPos + offset );
+			lightCamera.SetFocusPoint( playerPos );
+		}
+
+		lightCamera.SetZRange( data.shadowMap.nearDistance, data.shadowMap.projectDistance.z );
+		lightCamera.SetScreenSize( data.shadowMap.projectDistance.XY() );
+		lightCamera.SetProjectionOrthographic();
+	}
+#endif // USE_IMGUI
+
 	Donya::ICamera::Controller input{};
 	input.SetNoOperation();
 	input.slerpPercent = 1.0f;
+
+	lightCamera.Update( input );
 
 #if !DEBUG_MODE
 	AssignCameraPos();
@@ -285,16 +773,25 @@ void SceneResult::CameraUpdate()
 			constexpr float ROT_AMOUNT = ToRadian( 0.5f );
 			rotation.x = diff.x * ROT_AMOUNT;
 			rotation.y = diff.y * ROT_AMOUNT;
+
+			if ( isReverseCameraRotX ) { rotation.x *= -1.0f; }
+			if ( isReverseCameraRotY ) { rotation.y *= -1.0f; }
 		}
-		else
+	}
+
+	// Operation that ALT key is not needed 
+	{
 		if ( Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) )
 		{
 			constexpr float MOVE_SPEED = 0.05f;
-			movement.x = -diff.x * MOVE_SPEED;
+			movement.x = diff.x * MOVE_SPEED;
 			movement.y = diff.y * MOVE_SPEED;
+
+			if ( isReverseCameraMoveX ) { movement.x *= -1.0f; }
+			if ( isReverseCameraMoveY ) { movement.y *= -1.0f; }
 		}
 
-		constexpr float FRONT_SPEED = 2.0f;
+		constexpr float FRONT_SPEED = 3.0f;
 		movement.z = FRONT_SPEED * scast<float>( Donya::Mouse::WheelRot() );
 	}
 
@@ -306,7 +803,32 @@ void SceneResult::CameraUpdate()
 
 	iCamera.Update( input );
 
+	input.SetNoOperation();
+
 #endif // !DEBUG_MODE
+}
+
+void SceneResult::PlayerInit( const PlayerInitializer &initializer, const Map &terrain )
+{
+	if ( pPlayer )
+	{
+		pPlayer->Uninit();
+		pPlayer.reset();
+	}
+
+	pPlayer = std::make_unique<Player>();
+	pPlayer->Init( initializer, terrain, /* withAppearPerformance = */ false );
+}
+void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
+{
+	if ( !pPlayer ) { return; }
+	// else
+
+	pPlayer->Update( elapsedTime, currentInput, terrain );
+}
+Donya::Vector3 SceneResult::GetPlayerPosition() const
+{
+	return ( pPlayer ) ? pPlayer->GetPosition() : playerIniter.GetWorldInitialPos();
 }
 
 void SceneResult::ClearBackGround() const
@@ -335,15 +857,6 @@ void SceneResult::StartFade()
 
 Scene::Result SceneResult::ReturnResult()
 {
-#if DEBUG_MODE
-	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
-	{
-		Donya::Sound::Play( Music::DEBUG_Strong );
-
-		StartFade();
-	}
-#endif // DEBUG_MODE
-
 	// TODO: Temporary condition, should fix this
 	if ( Fader::Get().IsClosed() )
 	{
@@ -374,11 +887,272 @@ Scene::Result SceneResult::ReturnResult()
 
 #if USE_IMGUI
 void SceneResult::UseImGui()
-{
+{	
+	ImGui::SetNextWindowBgAlpha( 0.6f );
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
-	
-	// sceneParam.ShowImGuiNode( u8"リザルトシーンのパラメータ" );
+
+	sceneParam.ShowImGuiNode( u8"リザルトシーンのパラメータ" );
+
+	if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
+	{
+		static bool thenSave = true;
+		ImGui::Checkbox( u8"読み込み・適用後にセーブする", &thenSave );
+
+		auto PrepareCSVData	= []( const std::string &filePath )
+		{
+			CSVLoader loader;
+			loader.Clear();
+
+			if ( filePath.empty() || !Donya::IsExistFile( filePath ) )
+			{
+				std::string msg = u8"ファイルオープンに失敗しました。\n";
+				msg += u8"ファイル名：[" + filePath + u8"]";
+				Donya::ShowMessageBox
+				(
+					msg,
+					"Loading stage is failed",
+					MB_ICONEXCLAMATION | MB_OK
+				);
+
+				return loader;
+			}
+			// else
+
+			if ( !loader.Load( filePath ) )
+			{
+				Donya::ShowMessageBox
+				(
+					u8"パースに失敗しました。",
+					"Loading stage is failed",
+					MB_ICONEXCLAMATION | MB_OK
+				);
+				loader.Clear();
+				return loader;
+			}
+			// else
+
+			return loader;
+		};
+		auto IsValidData	= []( const CSVLoader &loadedData )
+		{
+			return ( !loadedData.Get().empty() );
+		};
+
+		auto ApplyToEnemy	= [&]( const CSVLoader &loadedData )
+		{
+			const Donya::Vector3 playerPos = GetPlayerPosition();
+
+			Enemy::Admin::Get().ClearInstances();
+			Enemy::Admin::Get().RemakeByCSV( loadedData, playerPos, currentScreen );
+
+			if ( thenSave )
+			{
+				Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ true  );
+				Enemy::Admin::Get().SaveEnemies( stageNumber, /* fromBinary = */ false );
+			}
+		};
+		auto ApplyToMap		= [&]( const CSVLoader &loadedData )
+		{
+			if ( !pMap ) { return; }
+			// else
+
+			pMap->RemakeByCSV( loadedData );
+			if ( thenSave )
+			{
+				pMap->SaveMap( stageNumber, /* fromBinary = */ true  );
+				pMap->SaveMap( stageNumber, /* fromBinary = */ false );
+			}
+		};
+		auto ApplyToPlayer	= [&]( const CSVLoader &loadedData )
+		{
+			playerIniter.RemakeByCSV( loadedData );
+
+			if ( thenSave )
+			{
+				playerIniter.SaveBin ( stageNumber );
+				playerIniter.SaveJson( stageNumber );
+			}
+
+			const Map emptyMap{}; // Used for empty argument. Fali safe.
+			const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+			PlayerInit( playerIniter, mapRef );
+		};
+		
+		if ( ImGui::TreeNode( u8"バッチロード" ) )
+		{
+			constexpr size_t bufferSize			= 128U;
+			constexpr size_t bufferSizeWithNull	= bufferSize + 1;
+			using  BufferType = std::array<char, bufferSizeWithNull>;
+
+			// These default value are my prefer
+			static int readStageNumber = Definition::StageNumber::Game();
+			static BufferType bufferDirectory	{ "./../../EdittedData/"	};
+			static BufferType bufferPrefix		{ "Stage"					};
+			static BufferType bufferEnemy		{ "Enemy"					};
+			static BufferType bufferMap			{ "Map"						};
+			static BufferType bufferExtension	{ ".csv"					};
+
+			if ( ImGui::Button( u8"読み込み開始" ) )
+			{
+				Bullet::Admin::Get().ClearInstances();
+
+				const std::string fileDirectory	= bufferDirectory.data();
+				const std::string filePrefix	= bufferPrefix.data();
+				const std::string fileExtension	= bufferExtension.data();
+				const std::string strStageNo	= ( 0 <= readStageNumber && readStageNumber < 10 ) ? "0" + std::to_string( readStageNumber ) : std::to_string( readStageNumber );
+				constexpr const char noSuffix = '_';
+				std::string	filePath{};
+				CSVLoader	loader{};
+				auto ProcessOf = [&]( const BufferType &bufferIdentify, const std::function<void( const CSVLoader & )> &ApplyToXXX )
+				{
+					filePath =	bufferDirectory.data() +
+								filePrefix + strStageNo + noSuffix +
+								bufferIdentify.data() +
+								bufferExtension.data();
+
+					loader.Clear();
+					loader = PrepareCSVData( filePath );
+
+					if ( IsValidData( loader ) )
+					{
+						ApplyToXXX( loader );
+					}
+				};
+
+				ProcessOf( bufferMap,	ApplyToMap		);
+				ProcessOf( bufferMap,	ApplyToPlayer	);
+				ProcessOf( bufferEnemy,	ApplyToEnemy	);
+
+				if ( pMap ) { pMap->ReloadModel( readStageNumber ); }
+			}
+
+			ImGui::InputInt ( u8"読み込むステージ番号",	&readStageNumber );
+			ImGui::InputText( u8"接頭辞",				bufferPrefix.data(),	bufferSize );
+			ImGui::InputText( u8"ディレクトリ",			bufferDirectory.data(),	bufferSize );
+			ImGui::InputText( u8"識別子・敵",			bufferEnemy.data(),		bufferSize );
+			ImGui::InputText( u8"識別子・マップ＆自機",	bufferMap.data(),		bufferSize );
+			ImGui::InputText( u8"拡張子",				bufferExtension.data(),	bufferSize );
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"個別ロード" ) )
+		{
+			static bool applyEnemy	= false;
+			static bool applyMap	= true;
+			static bool applyPlayer	= true;
+
+			ImGui::Checkbox( u8"敵に適用",		&applyEnemy		);
+			ImGui::Checkbox( u8"マップに適用",	&applyMap		); ImGui::SameLine();
+			ImGui::Checkbox( u8"自機に適用",		&applyPlayer	);
+		
+			if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
+			{
+				const auto filePath	= FetchStageFilePathByCommonDialog();
+				const auto loader	= PrepareCSVData( filePath );
+				if ( IsValidData( loader ) )
+				{
+					Bullet::Admin::Get().ClearInstances();
+
+					if ( applyEnemy		) { ApplyToEnemy	( loader ); }
+					if ( applyMap		) { ApplyToMap		( loader );	}
+					if ( applyPlayer	) { ApplyToPlayer	( loader ); }
+				}
+			}
+
+			static int loadMapNumber = 0;
+			ImGui::InputInt( u8"マップモデルに適用するステージ番号", &loadMapNumber );
+			if ( ImGui::Button( u8"マップモデルを読み込む" ) && pMap )
+			{
+				pMap->ReloadModel( loadMapNumber );
+			}
+
+			ImGui::TreePop();
+		}
+
+		ImGui::TreePop();
+	}
+
+	if ( ImGui::TreeNode( u8"各オブジェクトの調整" ) )
+	{
+		ImGui::InputInt( u8"現在のルーム番号", &currentRoomID );
+
+		if ( ImGui::TreeNode( u8"カメラの現在" ) )
+		{
+			ImGui::Checkbox( u8"移動方向を反転する・Ｘ", &isReverseCameraMoveX );
+			ImGui::Checkbox( u8"移動方向を反転する・Ｙ", &isReverseCameraMoveY );
+			ImGui::Checkbox( u8"回転方向を反転する・Ｘ", &isReverseCameraRotX );
+			ImGui::Checkbox( u8"回転方向を反転する・Ｙ", &isReverseCameraRotY );
+
+			auto ShowVec3 = []( const std::string &prefix, const Donya::Vector3 &v )
+			{
+				ImGui::Text( ( prefix + u8"[X:%5.2f][Y:%5.2f][Z:%5.2f]" ).c_str(), v.x, v.y, v.z );
+			};
+
+			const Donya::Vector3 cameraPos = iCamera.GetPosition();
+			ShowVec3( u8"現在位置", cameraPos );
+			ImGui::Text( "" );
+
+			const Donya::Vector3 focusPoint = iCamera.GetFocusPoint();
+			ShowVec3( u8"注視点位置", focusPoint );
+			ImGui::Text( "" );
+			ImGui::TreePop();
+		}
+		ImGui::Text( "" );
+
+		if ( pMap ) { pMap->ShowImGuiNode( u8"マップの現在", stageNumber ); }
+		ImGui::Text( "" );
+
+		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
+		Player::UpdateParameter( u8"自機のパラメータ" );
+		ImGui::Text( "" );
+
+		Bullet::Admin::Get().ShowImGuiNode( u8"弾の現在" );
+		Bullet::Parameter::Update( u8"弾のパラメータ" );
+		ImGui::Text( "" );
+
+		const Donya::Vector3 playerPos = GetPlayerPosition();
+		Enemy::Admin::Get().ShowImGuiNode( u8"敵の現在", stageNumber, playerPos, currentScreen );
+		Enemy::Parameter::Update( u8"敵のパラメータ" );
+		ImGui::Text( "" );
+
+		Meter::Parameter::Update( u8"メータのパラメータ" );
+		ImGui::Text( "" );
+
+		Effect::Admin::Get().ShowImGuiNode( u8"エフェクトのパラメータ" );
+
+		ImGui::TreePop();
+	}
+
+	if ( ImGui::TreeNode( u8"サーフェス描画" ) )
+	{
+		static Donya::Vector2 drawSize{ 320.0f, 180.0f };
+		ImGui::DragFloat2( u8"描画サイズ", &drawSize.x, 10.0f );
+		drawSize.x = std::max( 10.0f, drawSize.x );
+		drawSize.y = std::max( 10.0f, drawSize.y );
+
+		if ( pShadowMap && ImGui::TreeNode( u8"シャドウマップ" ) )
+		{
+			pShadowMap->DrawDepthStencilToImGui( drawSize );
+			ImGui::TreePop();
+		}
+		if ( pScreenSurface && ImGui::TreeNode( u8"スクリーン" ) )
+		{
+			pScreenSurface->DrawRenderTargetToImGui( drawSize );
+			ImGui::TreePop();
+		}
+		if ( pBloomer && ImGui::TreeNode( u8"ブルーム" ) )
+		{
+			ImGui::Text( u8"輝度抽出：" );
+			pBloomer->DrawHighLuminanceToImGui( drawSize );
+			ImGui::Text( u8"縮小バッファたち：" );
+			pBloomer->DrawBlurBuffersToImGui( drawSize );
+			ImGui::TreePop();
+		}
+
+		ImGui::TreePop();
+	}
 
 	ImGui::End();
 }

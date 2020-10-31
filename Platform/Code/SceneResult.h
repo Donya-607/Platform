@@ -6,25 +6,52 @@
 #include "Donya/Camera.h"
 #include "Donya/Collision.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
+#include "Donya/Displayer.h"
 #include "Donya/GamepadXInput.h"
+#include "Donya/Shader.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
+#include "Bloom.h"
+#include "Map.h"
+#include "Player.h"
 #include "Renderer.h"
 #include "Scene.h"
 
 class SceneResult : public Scene
 {
+public:
+	struct Shader
+	{
+		Donya::VertexShader VS;
+		Donya::PixelShader  PS;
+	};
 private:
-	Donya::ICamera							iCamera;
-	Donya::XInput							controller{ Donya::Gamepad::PAD_1 };
-	
-	// std::unique_ptr<RenderingHelper>		pRenderer;
-	
-	// std::unique_ptr<Player>				pPlayer;
-	// std::unique_ptr<PlayerInitializer>	pPlayerIniter;
+	Donya::ICamera						iCamera;
+	Donya::ICamera						lightCamera;
 
+	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
+	Player::Input						currentInput;
+	Donya::Collision::Box3F				currentScreen;
+	int									currentRoomID		= 0;
+	PlayerInitializer					playerIniter;
+	Player								plaeyr;
+
+	std::unique_ptr<RenderingHelper>	pRenderer;
+	std::unique_ptr<Donya::Displayer>	pDisplayer;
+	std::unique_ptr<BloomApplier>		pBloomer;
+	std::unique_ptr<Donya::Surface>		pScreenSurface;
+	std::unique_ptr<Donya::Surface>		pShadowMap;
+	std::unique_ptr<Shader>				pQuadShader;
+	std::unique_ptr<Map>				pMap;
+	std::unique_ptr<Player>				pPlayer;
+
+	int		stageNumber					= 0;
 #if DEBUG_MODE
-	bool nowDebugMode = false;
+	bool	nowDebugMode				= false;
+	bool	isReverseCameraMoveX		= true;
+	bool	isReverseCameraMoveY		= false;
+	bool	isReverseCameraRotX			= false;
+	bool	isReverseCameraRotY			= false;
 #endif // DEBUG_MODE
 public:
 	SceneResult() : Scene() {}
@@ -36,9 +63,18 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
+	bool	CreateRenderers( const Donya::Int2 &wholeScreenSize );
+	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
+	bool	CreateShaders();
+	bool	AreRenderersReady() const;
+
 	void	CameraInit();
 	void	AssignCameraPos();
 	void	CameraUpdate();
+
+	void	PlayerInit( const PlayerInitializer &initializer, const Map &terrain );
+	void	PlayerUpdate( float elapsedTime, const Map &terrain );
+	Donya::Vector3 GetPlayerPosition() const;
 
 	void	ClearBackGround() const;
 	void	StartFade();
