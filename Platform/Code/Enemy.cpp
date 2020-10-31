@@ -381,6 +381,10 @@ namespace Enemy
 
 		return ( hp - pReceivedDamage->amount <= 0 );
 	}
+	bool Base::NowWaiting() const
+	{
+		return waitForRespawn;
+	}
 	void Base::UpdateMotionIfCan( float elapsedTime, int motionIndex )
 	{
 		if ( !model.IsAssignableIndex( motionIndex ) ) { return; }
@@ -396,10 +400,6 @@ namespace Enemy
 	bool Base::OnOutSide() const
 	{
 		return onOutSideCurrent;
-	}
-	bool Base::NowWaiting() const
-	{
-		return waitForRespawn;
 	}
 	void Base::BeginWaitIfActive()
 	{

@@ -32,8 +32,8 @@ private:
 
 	Donya::XInput								controller{ Donya::Gamepad::PAD_1 };
 	Player::Input								currentInput;
-	Donya::Collision::Box3F						currentScreen;
-	int											currentRoomID		= 0;
+	Donya::Collision::Box3F						currentScreen;	// It used for a bullet's lifespan
+	int											currentRoomID	= 0;
 	PlayerInitializer							playerIniter;
 	Player										plaeyr;
 
@@ -48,7 +48,6 @@ private:
 
 	std::vector<std::unique_ptr<Enemy::Base>>	enemies;
 
-	int		stageNumber					= 0;
 #if DEBUG_MODE
 	bool	nowDebugMode				= false;
 	bool	isReverseCameraMoveX		= true;
@@ -70,6 +69,9 @@ private:
 	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
 	bool	CreateShaders();
 	bool	AreRenderersReady() const;
+
+	Donya::Vector4x4 MakeScreenTransform() const;
+	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
 
 	void	CameraInit();
 	void	AssignCameraPos();

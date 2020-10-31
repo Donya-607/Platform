@@ -53,8 +53,8 @@ namespace
 		struct
 		{
 			float fovDegree = 30.0f;
-			Donya::Vector3 offsetPos{ 0.0f, 5.0f, -10.0f };	// The offset of position from the player position
-			Donya::Vector3 offsetFocus;						// The offset of focus from the player position
+			Donya::Vector3 offsetPos{ 0.0f, 5.0f, -10.0f };
+			Donya::Vector3 offsetFocus;
 		}
 		camera;
 
@@ -122,12 +122,14 @@ namespace
 		{
 			if ( ImGui::TreeNode( u8"カメラ" ) )
 			{
-				ImGui::DragFloat ( u8"画角（Degree）",				&camera.fovDegree,		0.1f  );
-				ImGui::DragFloat3( u8"自身の座標（自機からの相対）",	&camera.offsetPos.x,	0.01f );
-				ImGui::DragFloat3( u8"注視点の座標（自機からの相対）",	&camera.offsetFocus.x,	0.01f );
+				ImGui::DragFloat ( u8"画角（Degree）",	&camera.fovDegree,		0.1f  );
+				ImGui::DragFloat3( u8"自身の座標",		&camera.offsetPos.x,	0.01f );
+				ImGui::DragFloat3( u8"注視点の座標",		&camera.offsetFocus.x,	0.01f );
 
 				ImGui::TreePop();
 			}
+
+			ImGui::Helper::ShowDirectionalLightNode( u8"平行光", &directionalLight );
 
 			if ( ImGui::TreeNode( u8"シャドウマップ関連" ) )
 			{
@@ -182,6 +184,8 @@ namespace
 		return sceneParam.Get();
 	}
 
+	static Donya::Collision::Box3F unlimitedScreen{ Donya::Vector3::Zero(), { FLT_MAX * 0.4f, FLT_MAX * 0.4f, FLT_MAX * 0.4f } };
+
 #if DEBUG_MODE
 	constexpr unsigned int maxPathBufferSize = MAX_PATH;
 	std::string FetchStageFilePathByCommonDialog()
@@ -213,6 +217,9 @@ CEREAL_CLASS_VERSION( SceneParam, 0 )
 void SceneResult::Init()
 {
 	Donya::Sound::Play( Music::BGM_Result );
+#if DEBUG_MODE
+	Donya::Sound::AppendFadePoint( Music::BGM_Result, 0.0f, 0.0f, true );
+#endif // DEBUG_MODE
 
 	sceneParam.LoadParameter();
 	const auto &data = FetchParameter();
@@ -239,6 +246,7 @@ void SceneResult::Init()
 	pMap->Init( stageNo, /* reloadModel = */ false );
 
 	playerIniter.LoadParameter( stageNo );
+	PlayerInit( playerIniter, *pMap );
 
 	CameraInit();
 
@@ -328,6 +336,8 @@ Scene::Result SceneResult::Update( float elapsedTime )
 		}
 	}
 
+	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
+	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate();
 
 	return ReturnResult();
@@ -688,6 +698,63 @@ bool SceneResult::AreRenderersReady() const
 	return true;
 }
 
+Donya::Vector4x4 SceneResult::MakeScreenTransform() const
+{
+	constexpr Donya::Vector4x4 matViewport = Donya::Vector4x4::MakeViewport( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
+
+	const Donya::Vector4x4 matViewProj = iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix();
+	return matViewProj * matViewport;
+}
+Donya::Collision::Box3F SceneResult::CalcCurrentScreenPlane() const
+{
+	const Donya::Vector4x4 toWorld = MakeScreenTransform().Inverse();
+
+	Donya::Plane xyPlane;
+	xyPlane.distance	= 0.0f;
+	xyPlane.normal		= -Donya::Vector3::Front();
+
+	auto Transform		= [&]( const Donya::Vector3 &v, float fourthParam, const Donya::Vector4x4 &m )
+	{
+		Donya::Vector4 tmp = m.Mul( v, fourthParam );
+		tmp /= tmp.w;
+		return tmp.XYZ();
+	};
+	auto CalcWorldPos	= [&]( const Donya::Vector2 &ssPos )
+	{
+		const Donya::Vector3 ssRayStart{ ssPos, 0.0f };
+		const Donya::Vector3 ssRayEnd  { ssPos, 1.0f };
+
+		const Donya::Vector3 wsRayStart	= Transform( ssRayStart,	1.0f, toWorld );
+		const Donya::Vector3 wsRayEnd	= Transform( ssRayEnd,		1.0f, toWorld );
+
+		const auto result = Donya::CalcIntersectionPoint( wsRayStart, wsRayEnd, xyPlane );
+		return result.intersection;
+	};
+
+	constexpr Donya::Vector2 screenSize
+	{
+		Common::ScreenWidthF(),
+		Common::ScreenHeightF(),
+	};
+	constexpr Donya::Vector2 LT{ 0.0f,			0.0f			};
+	constexpr Donya::Vector2 RB{ screenSize.x,	screenSize.y	};
+
+	const Donya::Vector3 nowLT = CalcWorldPos( LT );
+	const Donya::Vector3 nowRB = CalcWorldPos( RB );
+
+	const float halfWidth	= fabsf( nowRB.x - nowLT.x ) * 0.5f;
+	const float halfHeight	= fabsf( nowRB.y - nowLT.y ) * 0.5f;
+
+	Donya::Collision::Box3F nowScreen;
+	nowScreen.pos.x  = nowLT.x + halfWidth;		// Specify center
+	nowScreen.pos.y  = nowLT.y - halfHeight;	// Specify center
+	nowScreen.pos.z  = 0.0f;
+	nowScreen.size.x = halfWidth;
+	nowScreen.size.y = halfHeight;
+	nowScreen.size.z = FLT_MAX;
+	return nowScreen;
+}
+
 void SceneResult::CameraInit()
 {
 	const auto &data = FetchParameter();
@@ -723,11 +790,11 @@ void SceneResult::CameraInit()
 void SceneResult::AssignCameraPos()
 {
 	const auto &data = FetchParameter();
+	
+	iCamera.SetPosition  ( data.camera.offsetPos   );
+	iCamera.SetFocusPoint( data.camera.offsetFocus );
+	
 	const Donya::Vector3 playerPos = GetPlayerPosition();
-	
-	iCamera.SetPosition  ( playerPos + data.camera.offsetPos   );
-	iCamera.SetFocusPoint( playerPos + data.camera.offsetFocus );
-	
 	const Donya::Vector3 offset = -data.shadowMap.projectDirection * data.shadowMap.offsetDistance;
 	lightCamera.SetPosition  ( playerPos + offset );
 	lightCamera.SetFocusPoint( playerPos );
@@ -863,9 +930,7 @@ void SceneResult::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
 	if ( !pPlayer ) { return; }
 	// else
 
-	const float leftBorder  = currentScreen.Min().x;
-	const float rightBorder = currentScreen.Max().x;
-	pPlayer->PhysicUpdate( elapsedTime, terrain, leftBorder, rightBorder );
+	pPlayer->PhysicUpdate( elapsedTime, terrain, -FLT_MAX, FLT_MAX );
 }
 Donya::Vector3 SceneResult::GetPlayerPosition() const
 {
@@ -884,7 +949,7 @@ void SceneResult::EnemyInit( const Donya::Vector3 &targetPos )
 
 		if ( pIt ) { pIt->Uninit(); }
 		pIt = std::make_unique<Enemy::SuperBallMachine>();
-		pIt->Init( source[i], targetPos, currentScreen );
+		pIt->Init( source[i], targetPos, unlimitedScreen );
 	}
 }
 void SceneResult::EnemyUpdate( float elapsedTime, const Donya::Vector3 &targetPos )
@@ -900,14 +965,14 @@ void SceneResult::EnemyUpdate( float elapsedTime, const Donya::Vector3 &targetPo
 	for ( size_t i = 0; i < count; ++i )
 	{
 		auto &pIt = enemies[i];
-		if ( !pIt || pIt->WillDie() )
+		if ( !pIt || ( pIt->WillDie() || pIt->NowWaiting() ) )
 		{
 			if ( pIt ) { pIt->Uninit(); }
 			pIt = std::make_unique<Enemy::SuperBallMachine>();
-			pIt->Init( source[i], targetPos, currentScreen );
+			pIt->Init( source[i], targetPos, unlimitedScreen );
 		}
 
-		pIt->Update( elapsedTime, targetPos, currentScreen );
+		pIt->Update( elapsedTime, targetPos, unlimitedScreen );
 	}
 }
 void SceneResult::EnemyPhysicUpdate( float elapsedTime, const Map &terrain )
@@ -935,12 +1000,16 @@ void SceneResult::ClearBackGround() const
 	constexpr FLOAT BG_COLOR[4]{ gray.x, gray.y, gray.z, 1.0f };
 	Donya::ClearViews( BG_COLOR );
 
+	if ( pShadowMap		) { pShadowMap->Clear( Donya::Color::Code::BLACK );			}
+	if ( pScreenSurface	) { pScreenSurface->Clear( Donya::Vector4{ gray, 1.0f } );	}
 #if DEBUG_MODE
 	if ( nowDebugMode )
 	{
 		constexpr Donya::Vector3 teal = Donya::Color::MakeColor( Donya::Color::Code::CYAN );
 		constexpr FLOAT DEBUG_COLOR[4]{ teal.x, teal.y, teal.z, 1.0f };
 		Donya::ClearViews( DEBUG_COLOR );
+
+		if ( pScreenSurface ) { pScreenSurface->Clear( Donya::Vector4{ teal, 1.0f } ); }
 	}
 #endif // DEBUG_MODE
 }
@@ -989,6 +1058,8 @@ void SceneResult::UseImGui()
 	ImGui::SetNextWindowBgAlpha( 0.6f );
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
+
+	constexpr int stageNo = Definition::StageNumber::Result();
 
 	sceneParam.ShowImGuiNode( u8"リザルトシーンのパラメータ" );
 
@@ -1045,8 +1116,8 @@ void SceneResult::UseImGui()
 			pMap->RemakeByCSV( loadedData );
 			if ( thenSave )
 			{
-				pMap->SaveMap( stageNumber, /* fromBinary = */ true  );
-				pMap->SaveMap( stageNumber, /* fromBinary = */ false );
+				pMap->SaveMap( stageNo, /* fromBinary = */ true  );
+				pMap->SaveMap( stageNo, /* fromBinary = */ false );
 			}
 		};
 		auto ApplyToPlayer	= [&]( const CSVLoader &loadedData )
@@ -1055,8 +1126,8 @@ void SceneResult::UseImGui()
 
 			if ( thenSave )
 			{
-				playerIniter.SaveBin ( stageNumber );
-				playerIniter.SaveJson( stageNumber );
+				playerIniter.SaveBin ( stageNo );
+				playerIniter.SaveJson( stageNo );
 			}
 
 			const Map emptyMap{}; // Used for empty argument. Fali safe.
@@ -1180,7 +1251,7 @@ void SceneResult::UseImGui()
 		}
 		ImGui::Text( "" );
 
-		if ( pMap ) { pMap->ShowImGuiNode( u8"マップの現在", stageNumber ); }
+		if ( pMap ) { pMap->ShowImGuiNode( u8"マップの現在", stageNo ); }
 		ImGui::Text( "" );
 
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }

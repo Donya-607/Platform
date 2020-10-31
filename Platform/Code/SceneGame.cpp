@@ -2485,13 +2485,12 @@ void SceneGame::Collision_PlayerVSItem()
 
 void SceneGame::ClearBackGround() const
 {
-	if ( pShadowMap ) { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
-
 	constexpr Donya::Vector3 gray = Donya::Color::MakeColor( Donya::Color::Code::GRAY );
 	constexpr FLOAT BG_COLOR[4]{ gray.x, gray.y, gray.z, 1.0f };
 	Donya::ClearViews( BG_COLOR );
 
-	if ( pScreenSurface ) { pScreenSurface->Clear( Donya::Vector4{ gray, 1.0f } ); }
+	if ( pShadowMap		) { pShadowMap->Clear( Donya::Color::Code::BLACK );			}
+	if ( pScreenSurface	) { pScreenSurface->Clear( Donya::Vector4{ gray, 1.0f } );	}
 #if DEBUG_MODE
 	if ( nowDebugMode )
 	{
