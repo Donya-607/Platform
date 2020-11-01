@@ -48,6 +48,9 @@ private:
 
 	std::vector<std::unique_ptr<Enemy::Base>>	enemies;
 
+	float	currentTimer	= 0.0f;
+	float	previousTimer	= 0.0f;
+	float	extinctTime		= -1.0f; // A negative value means not extincted
 #if DEBUG_MODE
 	bool	nowDebugMode				= false;
 	bool	isReverseCameraMoveX		= true;
@@ -82,7 +85,7 @@ private:
 	void	PlayerPhysicUpdate( float elapsedTime, const Map &terrain );
 	Donya::Vector3 GetPlayerPosition() const;
 
-	void	EnemyInit( const Donya::Vector3 &targetPos );
+	void	RegenerateEnemies( const Donya::Vector3 &targetPos );
 	void	EnemyUpdate( float elapsedTime, const Donya::Vector3 &targetPos );
 	void	EnemyPhysicUpdate( float elapsedTime, const Map &terrain );
 	void	EnemyDraw( RenderingHelper *pRenderer );

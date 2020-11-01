@@ -96,6 +96,8 @@ namespace
 		BloomApplier::Parameter bloomParam;
 
 		std::vector<Enemy::InitializeParam> enemies;
+		float firstGenerateEnemySecond		= 1.0f;
+		float generateEnemyIntervalSecond	= 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -113,6 +115,14 @@ namespace
 			);
 
 			if ( 1 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( firstGenerateEnemySecond	),
+					CEREAL_NVP( generateEnemyIntervalSecond	)
+				);
+			}
+			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -165,6 +175,11 @@ namespace
 			}
 			if ( ImGui::TreeNode( u8"敵関連" ) )
 			{
+				ImGui::DragFloat( u8"初回生成までの待機秒数",			&firstGenerateEnemySecond,		0.01f );
+				ImGui::DragFloat( u8"全滅後に再生成するまでの秒数",	&generateEnemyIntervalSecond,	0.01f );
+				firstGenerateEnemySecond	= std::max( 0.0f, firstGenerateEnemySecond		);
+				generateEnemyIntervalSecond	= std::max( 0.0f, generateEnemyIntervalSecond	);
+
 				ImGui::Helper::ResizeByButton( &enemies );
 
 				const int enemyCount = enemies.size();
@@ -243,6 +258,10 @@ void SceneResult::Init()
 	result = CreateShaders();
 	assert( result );
 
+	currentTimer	= 0.0f;
+	previousTimer	= 0.0f;
+	extinctTime		= 0.0f;
+
 	pMap = std::make_unique<Map>();
 	pMap->Init( stageNo, /* reloadModel = */ false );
 
@@ -251,15 +270,16 @@ void SceneResult::Init()
 
 	CameraInit();
 
-	Effect::Admin::Get().ClearInstances();
+	Bullet::Admin::Get().ClearInstances();
+
+	Enemy::Admin::Get().ClearInstances();
+	enemies.clear();
+
 	auto &effectAdmin = Effect::Admin::Get();
 	effectAdmin.SetLightColorAmbient( { 1.0f, 1.0f, 1.0f, 1.0f } );
 	effectAdmin.SetLightColorDiffuse( { 1.0f, 1.0f, 1.0f, 1.0f } );
 	effectAdmin.SetLightDirection	( data.directionalLight.direction.XYZ() );
 	effectAdmin.ClearInstances();
-
-	Enemy::Admin::Get().ClearInstances();
-	EnemyInit( playerIniter.GetWorldInitialPos() );
 }
 void SceneResult::Uninit()
 {
@@ -306,6 +326,9 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	PointLightStorage::Get().Clear();
 
 	controller.Update();
+
+	previousTimer = currentTimer;
+	currentTimer += elapsedTime;
 
 	if ( pMap ) { pMap->Update( elapsedTime ); }
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
@@ -924,13 +947,12 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 	if ( !pPlayer ) { return; }
 	// else
 
-	static const Donya::Vector2 deadZone
+	Player::Input input{};
+	if ( Donya::SignBit( previousTimer ) == 0 )
 	{
-		Donya::XInput::GetDeadZoneLeftStick(),
-		Donya::XInput::GetDeadZoneLeftStick()
-	};
-	currentInput = Input::MakeCurrentInput( controller, deadZone );
-	pPlayer->Update( elapsedTime, currentInput, terrain );
+		input.shiftGuns.front() = true;
+	}
+	pPlayer->Update( elapsedTime, input, terrain );
 }
 void SceneResult::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
 {
@@ -944,7 +966,7 @@ Donya::Vector3 SceneResult::GetPlayerPosition() const
 	return ( pPlayer ) ? pPlayer->GetPosition() : playerIniter.GetWorldInitialPos();
 }
 
-void SceneResult::EnemyInit( const Donya::Vector3 &targetPos )
+void SceneResult::RegenerateEnemies( const Donya::Vector3 &targetPos )
 {
 	const auto &source = FetchParameter().enemies;
 	const size_t count = source.size();
@@ -958,28 +980,58 @@ void SceneResult::EnemyInit( const Donya::Vector3 &targetPos )
 		pIt = std::make_unique<Enemy::SuperBallMachine>();
 		pIt->Init( source[i], targetPos, unlimitedScreen );
 	}
+
+	extinctTime = -1.0f;
 }
 void SceneResult::EnemyUpdate( float elapsedTime, const Donya::Vector3 &targetPos )
 {
-	const auto &source = FetchParameter().enemies;
-	const size_t count = source.size();
+	const auto &data	= FetchParameter();
+	const auto &source	= data.enemies;
+	const size_t count	= source.size();
 
 	if ( enemies.size() != count )
 	{
-		EnemyInit( targetPos );
+		enemies.resize( count );
 	}
 
+	auto NowTiming = [&]( float verifySecond )
+	{
+		const int currSign = Donya::SignBit( verifySecond - currentTimer  );
+		const int prevSign = Donya::SignBit( verifySecond - previousTimer );
+		return ( currSign != prevSign || !currSign );
+	};
+	if ( NowTiming( data.firstGenerateEnemySecond ) )
+	{
+		RegenerateEnemies( targetPos );
+	}
+	else
+	if ( 0.0f <= extinctTime && NowTiming( data.generateEnemyIntervalSecond + extinctTime ) )
+	{
+		if ( data.firstGenerateEnemySecond < currentTimer )
+		{
+			RegenerateEnemies( targetPos );
+		}
+	}
+
+	bool extincted = true;
+	
 	for ( size_t i = 0; i < count; ++i )
 	{
 		auto &pIt = enemies[i];
-		if ( !pIt || ( pIt->WillDie() || pIt->NowWaiting() ) )
+		if ( !pIt ) { continue; }
+		// else
+
+		if ( !pIt->NowWaiting() && !pIt->WillDie() )
 		{
-			if ( pIt ) { pIt->Uninit(); }
-			pIt = std::make_unique<Enemy::SuperBallMachine>();
-			pIt->Init( source[i], targetPos, unlimitedScreen );
+			extincted = false;
 		}
 
 		pIt->Update( elapsedTime, targetPos, unlimitedScreen );
+	}
+
+	if ( extincted && extinctTime < 0.0f )
+	{
+		extinctTime = currentTimer;
 	}
 }
 void SceneResult::EnemyPhysicUpdate( float elapsedTime, const Map &terrain )
@@ -1321,6 +1373,11 @@ void SceneResult::UseImGui()
 		}
 
 		ImGui::TreePop();
+	}
+
+	if ( ImGui::Button( u8"リザルトシーンを初期化" ) )
+	{
+		Init();
 	}
 
 	ImGui::End();
