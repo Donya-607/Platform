@@ -90,6 +90,9 @@ private:
 	void	EnemyPhysicUpdate( float elapsedTime, const Map &terrain );
 	void	EnemyDraw( RenderingHelper *pRenderer );
 
+	void	Collision_BulletVSBullet();
+	void	Collision_BulletVSEnemy();
+
 	void	ClearBackGround() const;
 	void	StartFade();
 private:

@@ -260,7 +260,7 @@ void SceneResult::Init()
 
 	currentTimer	= 0.0f;
 	previousTimer	= 0.0f;
-	extinctTime		= 0.0f;
+	extinctTime		= -1.0f;
 
 	pMap = std::make_unique<Map>();
 	pMap->Init( stageNo, /* reloadModel = */ false );
@@ -363,6 +363,9 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate();
+
+	Collision_BulletVSBullet();
+	Collision_BulletVSEnemy();
 
 	return ReturnResult();
 }
@@ -952,6 +955,11 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 	{
 		input.shiftGuns.front() = true;
 	}
+
+#if DEBUG_MODE
+	input.useShots = Input::MakeCurrentInput( controller, {} ).useShots;
+#endif // DEBUG_MODE
+
 	pPlayer->Update( elapsedTime, input, terrain );
 }
 void SceneResult::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
@@ -1050,6 +1058,344 @@ void SceneResult::EnemyDraw( RenderingHelper *pRenderer )
 		if ( !pIt ) { continue; }
 		// else
 		pIt->Draw( pRenderer );
+	}
+}
+
+
+namespace
+{
+	Donya::Collision::IDType ExtractPlayerID( const std::unique_ptr<Player> &pPlayer )
+	{
+		return ( pPlayer ) ? pPlayer->GetHurtBox().id : Donya::Collision::invalidID;
+	}
+	bool IsPlayerBullet( const Donya::Collision::IDType playerCollisionID, const std::shared_ptr<const Bullet::Base> &pBullet )
+	{
+		if ( playerCollisionID == Donya::Collision::invalidID ) { return false; }
+		// else
+
+		const auto bulletAABB	= pBullet->GetHitBox();
+		const auto bulletSphere	= pBullet->GetHitSphere();
+		const auto activeOwnerID= ( bulletSphere.exist ) ? bulletSphere.ownerID : bulletAABB.ownerID;
+		return ( activeOwnerID == playerCollisionID ) ? true : false;
+	}
+	bool IsEnemyBullet( const Donya::Collision::IDType playerCollisionID, const std::shared_ptr<const Bullet::Base> &pBullet )
+	{
+		return !IsPlayerBullet( playerCollisionID, pBullet );
+	}
+
+	enum class SubtractorState
+	{
+		Not,
+		HasBox,
+		HasSphere
+	};
+	SubtractorState HasSubtractor( const std::shared_ptr<const Bullet::Base> &pBullet )
+	{
+		using State = SubtractorState;
+
+		if ( !pBullet ) { return State::Not; }
+		// else
+
+		if ( pBullet->GetHitBoxSubtractor().exist ) { return State::HasBox; }
+		// else
+
+		if ( pBullet->GetHitSphereSubtractor().exist ) { return State::HasSphere; }
+		// else
+
+		return State::Not;
+	}
+
+	template<typename ObjectHitBox, typename BulletHitBox>
+	bool IsHit( const ObjectHitBox &objHitBox, const std::shared_ptr<const Bullet::Base> &pBullet, const BulletHitBox &bulletHitBox, bool considerExistFlag = true )
+	{
+		namespace Col = Donya::Collision;
+
+		const SubtractorState hasSubtract = HasSubtractor( pBullet );
+
+		// Do not use subtraction version
+		if ( hasSubtract == SubtractorState::Not )
+		{
+			return Col::IsHit( objHitBox, bulletHitBox, considerExistFlag );
+		}
+		// else
+
+		// Can not use subtraction version
+		if ( !pBullet )
+		{
+			return Col::IsHit( objHitBox, bulletHitBox, considerExistFlag );
+		}
+		// else
+
+		auto IsHitImpl = [&]( const auto &hitBoxSubtractor )
+		{
+			const Col::Solid<BulletHitBox, decltype( hitBoxSubtractor )> a
+			{
+				bulletHitBox,
+				hitBoxSubtractor
+			};
+			return Col::IsHitVSSubtracted( objHitBox, a, considerExistFlag );
+		};
+
+		if ( hasSubtract == SubtractorState::HasBox )
+		{
+			return IsHitImpl( pBullet->GetHitBoxSubtractor() );
+		}
+		// else
+		if ( hasSubtract == SubtractorState::HasSphere )
+		{
+			return IsHitImpl( pBullet->GetHitSphereSubtractor() );
+		}
+		// else
+
+		_ASSERT_EXPR( 0, L"Error: Unexpected condition!" );
+		return false;
+	}
+	template<typename HitBoxA, typename HitBoxB>
+	bool IsHit( const std::shared_ptr<const Bullet::Base> &pBulletA, const HitBoxA &hitBoxA, const std::shared_ptr<const Bullet::Base> &pBulletB, const HitBoxB &hitBoxB, bool considerExistFlag = true )
+	{
+		if ( !pBulletA || !pBulletB ) { return false; }
+		// else
+
+		namespace Col = Donya::Collision;
+
+		const SubtractorState subA = HasSubtractor( pBulletA );
+		const SubtractorState subB = HasSubtractor( pBulletB );
+
+		// Do not use subtraction version
+		if ( subA == SubtractorState::Not && subB == SubtractorState::Not )
+		{
+			return Col::IsHit( hitBoxA, hitBoxB );
+		}
+		// else
+		
+		// Do not support yet
+		if ( subA != SubtractorState::Not && subB != SubtractorState::Not )
+		{
+			return Col::IsHit( hitBoxA, hitBoxB );
+		}
+		// else
+
+		if ( subA != SubtractorState::Not )
+		{
+			return IsHit( hitBoxB, pBulletA, hitBoxA, considerExistFlag );
+		}
+		// else
+		if ( subB != SubtractorState::Not )
+		{
+			return IsHit( hitBoxA, pBulletB, hitBoxB, considerExistFlag );
+		}
+		// else
+		_ASSERT_EXPR( 0, L"Error: Unexpected condition!" );
+		return false;
+	}
+}
+void SceneResult::Collision_BulletVSBullet()
+{
+	auto &bulletAdmin = Bullet::Admin::Get();
+	const size_t bulletCount = bulletAdmin.GetInstanceCount();
+
+	std::shared_ptr<const Bullet::Base> pA = nullptr;
+	std::shared_ptr<const Bullet::Base> pB = nullptr;
+	auto Protectible	= []( const std::shared_ptr<const Bullet::Base> &pBullet )
+	{
+		using D = Definition::Damage;
+		return ( pBullet ) ? D::Contain( D::Type::Protection, pBullet->GetDamage().type ) : false;
+	};
+	auto HitProcess		= [&]( const auto &hitBoxA, const auto &hitBoxB )
+	{
+		if ( !pA || !pB ) { return; }
+		// else
+
+		const bool protectibleA = Protectible( pA );
+		const bool protectibleB = Protectible( pB );
+		if ( protectibleA ) { pB->ProtectedBy( hitBoxA ); }
+		if ( protectibleB ) { pA->ProtectedBy( hitBoxB ); }
+		if ( protectibleA || protectibleB ) { return; }
+		// else
+
+		const bool destructibleA = pA->Destructible();
+		const bool destructibleB = pB->Destructible();
+		pA->CollidedToObject( destructibleB );
+		pB->CollidedToObject( destructibleA );
+	};
+	
+	const auto playerID = ExtractPlayerID( pPlayer );
+
+	for ( size_t i = 0; i < bulletCount; ++i )
+	{
+		pA = bulletAdmin.GetInstanceOrNullptr( i );
+		if ( !pA ) { continue; }
+
+		// Disallow collision between a protected bullet.
+		// Because if allowed hitting to multiple objects in the same timing,
+		// the protection attribute does not affect to some another object that collided in the same timing.
+		// That bullet's collision will be disabled at next update, but I wanna apply immediately.
+		if ( pA->WasProtected() ) { continue; }
+		// else
+
+		const auto aabbA		= pA->GetHitBox();
+		const auto sphereA		= pA->GetHitSphere();
+
+		const bool ownerA		= IsPlayerBullet( playerID, pA );
+		const bool protectibleA	= Protectible( pA );
+
+		for ( size_t j = i + 1; j < bulletCount; ++j )
+		{
+			pB = bulletAdmin.GetInstanceOrNullptr( j );
+			if ( !pB ) { continue; }
+			// else
+			if ( pB->WasProtected() ) { continue; }
+			// else
+
+			const bool ownerB		= IsPlayerBullet( playerID, pB );
+			const bool protectibleB	= Protectible( pB );
+			if ( ownerA == ownerB ) { continue; }
+			// else
+
+			// Do collide if either one of bullet is destructible or protectible
+			const bool wantCollide	=  pA->Destructible()	|| pB->Destructible()
+									|| protectibleA			|| protectibleB;
+			if ( !wantCollide ) { continue; }
+			// else
+			
+			const auto aabbB	= pB->GetHitBox();
+			const auto sphereB	= pB->GetHitSphere();
+
+			if ( aabbA.exist )
+			{
+				if ( IsHit( pA, aabbA, pB, aabbB ) )
+				{
+					HitProcess( aabbA, aabbB );
+					continue;
+				}
+				// else
+				if ( IsHit( pA, aabbA, pB, sphereB ) )
+				{
+					HitProcess( aabbA, sphereB );
+					continue;
+				}
+			}
+			else
+			if ( sphereA.exist )
+			{
+				if ( IsHit( pA, sphereA, pB, aabbB ) )
+				{
+					HitProcess( sphereA, aabbB );
+					continue;
+				}
+				// else
+				if ( IsHit( pA, sphereA, pB, sphereB ) )
+				{
+					HitProcess( sphereA, sphereB );
+					continue;
+				}
+			}
+		}
+	}
+}
+void SceneResult::Collision_BulletVSEnemy()
+{
+	auto &enemyAdmin	= Enemy::Admin::Get();
+	auto &bulletAdmin	= Bullet::Admin::Get();
+	const size_t enemyCount		= enemies.size();
+	const size_t bulletCount	= bulletAdmin.GetInstanceCount();
+
+	// Makes every call the "FindCollidingEnemyOrNullptr" returns another enemy
+	std::vector<size_t> collidedEnemyIndices{};
+	auto IsAlreadyCollided				= [&]( size_t enemyIndex )
+	{
+		const auto result = std::find( collidedEnemyIndices.begin(), collidedEnemyIndices.end(), enemyIndex );
+		return ( result != collidedEnemyIndices.end() );
+	};
+	auto FindCollidingEnemyOrNegative	= [&]( const std::shared_ptr<const Bullet::Base> &pOtherBullet, const auto &otherHitBox )
+	{
+		for ( size_t i = 0; i < enemyCount; ++i )
+		{
+			if ( IsAlreadyCollided( i ) ) { continue; }
+			// else
+
+			auto &pIt = enemies[i];
+			if ( !pIt ) { continue; }
+			// else
+
+			if ( IsHit( pIt->GetHurtBox(), pOtherBullet, otherHitBox ) )
+			{
+				collidedEnemyIndices.emplace_back( i );
+				return scast<int>( i );
+			}
+		}
+
+		return -1;
+	};
+
+	// The bullet's hit box is only either AABB or Sphere is valid
+	// (Invalid one's exist flag will false, so IsHit() will returns false)
+	Donya::Collision::Box3F		otherAABB;
+	Donya::Collision::Sphere3F	otherSphere;
+
+	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
+
+	struct ProccessResult
+	{
+		bool collided	= false;
+		bool pierced	= false;
+	};
+	auto Process = [&]( const auto &bulletBody )
+	{
+		ProccessResult result{};
+		result.collided = false;
+		result.pierced  = false;
+
+		if ( !pBullet ) { return result; }
+		// else
+
+		result.pierced = true;
+
+		int enemyIndex = FindCollidingEnemyOrNegative( pBullet, bulletBody );
+		while ( 0 <= enemyIndex )
+		{
+			result.collided = true;
+			auto &pEnemy = enemies[enemyIndex];
+
+			pEnemy->GiveDamage( pBullet->GetDamage() );
+			if ( !pEnemy->WillDie() )
+			{
+				result.pierced = false;
+			}
+
+			enemyIndex = FindCollidingEnemyOrNegative( pBullet, bulletBody );
+		}
+
+		return result;
+	};
+
+	const auto playerID = ExtractPlayerID( pPlayer );
+
+	for ( size_t i = 0; i < bulletCount; ++i )
+	{
+		pBullet = bulletAdmin.GetInstanceOrNullptr( i );
+		if ( !pBullet ) { continue; }
+		// else
+		if ( pBullet->WasProtected() ) { continue; }
+		// else
+
+		if ( IsEnemyBullet( playerID, pBullet ) ) { continue; }
+		// else
+
+		otherAABB	= pBullet->GetHitBox();
+		otherSphere	= pBullet->GetHitSphere();
+		if ( !otherAABB.exist && !otherSphere.exist ) { continue; }
+		// else
+
+		const auto result	= ( otherAABB.exist )
+							? Process( otherAABB	)
+							: Process( otherSphere	);
+		if ( result.collided )
+		{
+			pBullet->CollidedToObject( result.pierced );
+		}
+
+		collidedEnemyIndices.clear();
 	}
 }
 
