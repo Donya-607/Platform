@@ -5,6 +5,7 @@
 
 #undef max
 #undef min
+#include "cereal/types/vector.hpp"
 
 #include "Donya/Blend.h"
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
@@ -98,6 +99,10 @@ namespace
 		std::vector<Enemy::InitializeParam> enemies;
 		float firstGenerateEnemySecond		= 1.0f;
 		float generateEnemyIntervalSecond	= 1.0f;
+
+		std::vector<float> useShotTimings; // Second. The timing counts from beginning.
+		
+		float finishPerformanceSecond		= 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -119,7 +124,9 @@ namespace
 				archive
 				(
 					CEREAL_NVP( firstGenerateEnemySecond	),
-					CEREAL_NVP( generateEnemyIntervalSecond	)
+					CEREAL_NVP( generateEnemyIntervalSecond	),
+					CEREAL_NVP( useShotTimings				),
+					CEREAL_NVP( finishPerformanceSecond		)
 				);
 			}
 			if ( 2 <= version )
@@ -190,6 +197,27 @@ namespace
 
 				ImGui::TreePop();
 			}
+			if ( ImGui::TreeNode( u8"タイミング関連" ) )
+			{
+				ImGui::DragFloat( u8"演出を終えるまでの秒数", &finishPerformanceSecond, 0.01f );
+				finishPerformanceSecond = std::max( 0.0f, finishPerformanceSecond );
+
+				if ( ImGui::TreeNode( u8"ショット入力たち" ) )
+				{
+					ImGui::Helper::ResizeByButton( &useShotTimings, 0.0f );
+
+					const int count = useShotTimings.size();
+					for ( int i = 0; i < count; ++i )
+					{
+						ImGui::DragFloat( Donya::MakeArraySuffix( i ).c_str(), &useShotTimings[i], 0.01f );
+						useShotTimings[i] = std::max( 0.0f, useShotTimings[i] );
+					}
+
+					ImGui::TreePop();
+				}
+
+				ImGui::TreePop();
+			}
 		}
 	#endif // USE_IMGUI
 	};
@@ -201,6 +229,13 @@ namespace
 	}
 
 	static Donya::Collision::Box3F unlimitedScreen{ Donya::Vector3::Zero(), { FLT_MAX * 0.4f, FLT_MAX * 0.4f, FLT_MAX * 0.4f } };
+
+	bool NowTiming( float verifySecond, float currTime, float prevTime )
+	{
+		const int currSign = Donya::SignBit( verifySecond - currTime );
+		const int prevSign = Donya::SignBit( verifySecond - prevTime );
+		return ( currSign != prevSign || !currSign );
+	}
 
 #if DEBUG_MODE
 	constexpr unsigned int maxPathBufferSize = MAX_PATH;
@@ -228,7 +263,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam, 0 )
+CEREAL_CLASS_VERSION( SceneParam, 1 )
 
 void SceneResult::Init()
 {
@@ -960,6 +995,16 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 	input.useShots = Input::MakeCurrentInput( controller, {} ).useShots;
 #endif // DEBUG_MODE
 
+	const auto &timings = FetchParameter().useShotTimings;
+	for ( const auto &sec : timings )
+	{
+		if ( NowTiming( sec, currentTimer, previousTimer ) )
+		{
+			input.useShots.front() = true;
+			break;
+		}
+	}
+
 	pPlayer->Update( elapsedTime, input, terrain );
 }
 void SceneResult::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
@@ -1002,18 +1047,12 @@ void SceneResult::EnemyUpdate( float elapsedTime, const Donya::Vector3 &targetPo
 		enemies.resize( count );
 	}
 
-	auto NowTiming = [&]( float verifySecond )
-	{
-		const int currSign = Donya::SignBit( verifySecond - currentTimer  );
-		const int prevSign = Donya::SignBit( verifySecond - previousTimer );
-		return ( currSign != prevSign || !currSign );
-	};
-	if ( NowTiming( data.firstGenerateEnemySecond ) )
+	if ( NowTiming( data.firstGenerateEnemySecond, currentTimer, previousTimer ) )
 	{
 		RegenerateEnemies( targetPos );
 	}
 	else
-	if ( 0.0f <= extinctTime && NowTiming( data.generateEnemyIntervalSecond + extinctTime ) )
+	if ( 0.0f <= extinctTime && NowTiming( data.generateEnemyIntervalSecond + extinctTime, currentTimer, previousTimer ) )
 	{
 		if ( data.firstGenerateEnemySecond < currentTimer )
 		{
