@@ -1772,7 +1772,7 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 	};
 
 	input = currentInput;
-	input.shiftGuns.fill( false );
+	input.shiftGuns.fill( 0 );
 
 	auto ActivateReturning		= [&]()
 	{

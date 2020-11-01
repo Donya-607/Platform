@@ -103,6 +103,7 @@ namespace
 		std::vector<float> useShotTimings; // Second. The timing counts from beginning.
 		
 		float finishPerformanceSecond		= 1.0f;
+		float waitSecUntilFade				= 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -130,6 +131,10 @@ namespace
 				);
 			}
 			if ( 2 <= version )
+			{
+				archive( CEREAL_NVP( waitSecUntilFade ) );
+			}
+			if ( 3 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -199,8 +204,10 @@ namespace
 			}
 			if ( ImGui::TreeNode( u8"タイミング関連" ) )
 			{
-				ImGui::DragFloat( u8"演出を終えるまでの秒数", &finishPerformanceSecond, 0.01f );
-				finishPerformanceSecond = std::max( 0.0f, finishPerformanceSecond );
+				ImGui::DragFloat( u8"演出を終えるまでの秒数",		&finishPerformanceSecond,	0.01f );
+				ImGui::DragFloat( u8"演出後フェードのまでの秒数",	&waitSecUntilFade,			0.01f );
+				finishPerformanceSecond	= std::max( 0.0f, finishPerformanceSecond	);
+				waitSecUntilFade		= std::max( 0.0f, waitSecUntilFade			);
 
 				if ( ImGui::TreeNode( u8"ショット入力たち" ) )
 				{
@@ -263,13 +270,13 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam, 1 )
+CEREAL_CLASS_VERSION( SceneParam, 2 )
 
 void SceneResult::Init()
 {
 	Donya::Sound::Play( Music::BGM_Result );
 #if DEBUG_MODE
-	Donya::Sound::AppendFadePoint( Music::BGM_Result, 0.0f, 0.0f, true );
+	// Donya::Sound::AppendFadePoint( Music::BGM_Result, 0.0f, 0.0f, true );
 #endif // DEBUG_MODE
 
 	sceneParam.LoadParameter();
@@ -299,6 +306,7 @@ void SceneResult::Init()
 
 	pMap = std::make_unique<Map>();
 	pMap->Init( stageNo, /* reloadModel = */ false );
+	centerPos = CalcCenterPoint( *pMap );
 
 	playerIniter.LoadParameter( stageNo );
 	PlayerInit( playerIniter, *pMap );
@@ -365,6 +373,41 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	previousTimer = currentTimer;
 	currentTimer += elapsedTime;
 
+	const auto &data = FetchParameter();
+	if ( status == State::Performance )
+	{
+		if ( NowTiming( data.finishPerformanceSecond, currentTimer, previousTimer ) )
+		{
+			status = State::Wait;
+		}
+	}
+	else if ( !Fader::Get().IsExist() )
+	{
+		const float fadeTiming = arriveTime + data.waitSecUntilFade;
+		if ( NowTiming( fadeTiming, currentTimer, previousTimer ) )
+		{
+			StartFade();
+		}
+	}
+
+	if ( !Fader::Get().IsExist() )
+	{
+		bool shouldSkip = false;
+		if ( controller.IsConnected() )
+		{
+			shouldSkip = controller.Trigger( Donya::Gamepad::Button::A );
+		}
+		else
+		{
+			// shouldSkip = Donya::Keyboard::Trigger( 'Z' );
+		}
+
+		if ( shouldSkip )
+		{
+			StartFade();
+		}
+	}
+
 	if ( pMap ) { pMap->Update( elapsedTime ); }
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
@@ -377,25 +420,6 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	EnemyPhysicUpdate( elapsedTime, mapRef );
 	Bullet::Admin::Get().PhysicUpdate( elapsedTime, mapRef );
 
-	if ( !Fader::Get().IsExist() )
-	{
-		bool shouldSkip = false;
-		if ( controller.IsConnected() )
-		{
-			shouldSkip = controller.Trigger( Donya::Gamepad::Button::A );
-		}
-		else
-		{
-			//shouldSkip = Donya::Keyboard::Trigger( 'Z' );
-		}
-
-		if ( shouldSkip )
-		{
-			StartFade();
-		}
-	}
-
-	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate();
 
@@ -680,9 +704,13 @@ void SceneResult::Draw( float elapsedTime )
 			constant.matWorld._41 = pos.x;
 			constant.matWorld._42 = pos.y;
 			constant.matWorld._43 = pos.z;
-			// pRenderer->ProcessDrawingCube( constant );
+			pRenderer->ProcessDrawingCube( constant );
 		};
 
+		constant.drawColor = { 1.0f, 0.0f, 0.0f, 0.7f };
+		currentScreen.size.z = 1.0f;
+		//DrawCube( currentScreen.pos, currentScreen.size );
+		currentScreen.size.z = FLT_MAX * 0.5f;
 	}
 #endif // DEBUG_MODE
 }
@@ -758,6 +786,38 @@ bool SceneResult::AreRenderersReady() const
 	if ( !pQuadShader		) { return false; }
 	// else
 	return true;
+}
+
+Donya::Vector3 SceneResult::CalcCenterPoint( const Map &terrain ) const
+{
+	const auto &tiles = terrain.GetTiles();
+
+	Donya::Vector3 max{ -FLT_MAX, -FLT_MAX, -FLT_MAX };
+	Donya::Vector3 min{ +FLT_MAX, +FLT_MAX, +FLT_MAX };
+	Donya::Vector3 var;
+	for ( const auto &row : tiles )
+	{
+		for ( const auto &col : row )
+		{
+			if ( !col ) { continue; }
+			// else
+
+			var = col->GetPosition();
+
+			max.x = std::max( var.x, max.x );
+			max.y = std::max( var.y, max.y );
+			max.z = std::max( var.z, max.z );
+
+			min.x = std::min( var.x, min.x );
+			min.y = std::min( var.y, min.y );
+			min.z = std::min( var.z, min.z );
+		}
+	}
+
+	var.x = fabsf( max.x - min.x ) * 0.5f;
+	var.y = fabsf( max.y - min.y ) * 0.5f;
+	var.z = fabsf( max.z - min.z ) * 0.5f;
+	return min + var;
 }
 
 Donya::Vector4x4 SceneResult::MakeScreenTransform() const
@@ -979,6 +1039,7 @@ void SceneResult::PlayerInit( const PlayerInitializer &initializer, const Map &t
 
 	pPlayer = std::make_unique<Player>();
 	pPlayer->Init( initializer, terrain, /* withAppearPerformance = */ false );
+	prevPlayerPos = pPlayer->GetPosition();
 }
 void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 {
@@ -988,21 +1049,58 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 	Player::Input input{};
 	if ( Donya::SignBit( previousTimer ) == 0 )
 	{
-		input.shiftGuns.front() = true;
+		input.shiftGuns.front() = 1;
 	}
 
 #if DEBUG_MODE
 	input.useShots = Input::MakeCurrentInput( controller, {} ).useShots;
 #endif // DEBUG_MODE
 
-	const auto &timings = FetchParameter().useShotTimings;
-	for ( const auto &sec : timings )
+	switch ( status )
 	{
-		if ( NowTiming( sec, currentTimer, previousTimer ) )
+	case State::Performance:
 		{
-			input.useShots.front() = true;
-			break;
+			const auto &timings = FetchParameter().useShotTimings;
+			for ( const auto &sec : timings )
+			{
+				if ( NowTiming( sec, currentTimer, previousTimer ) )
+				{
+					input.useShots.front() = true;
+					break;
+				}
+			}
 		}
+		break;
+	case State::Wait:
+		{
+			const auto playerPos = pPlayer->GetPosition();
+
+			// Center of screen
+			Donya::Vector3 destination = centerPos;
+			destination.y = playerPos.y;
+
+			const auto prevSign = Donya::SignBit( destination.x - prevPlayerPos.x	);
+			const auto currSign = Donya::SignBit( destination.x - playerPos.x		);
+
+			// Arriving to destination
+			if ( currSign != prevSign || !currSign )
+			{
+				// In first time
+				if ( prevPlayerPos != playerPos )
+				{
+					pPlayer->PerformLeaving();
+					arriveTime = currentTimer;
+				}
+			}
+			// Head to initial position
+			else
+			{
+				input.headToDestination = true;
+				input.wsDestination = destination;
+			}
+		}
+		break;
+	default: break;
 	}
 
 	pPlayer->Update( elapsedTime, input, terrain );
@@ -1012,6 +1110,7 @@ void SceneResult::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
 	if ( !pPlayer ) { return; }
 	// else
 
+	prevPlayerPos = pPlayer->GetPosition();
 	pPlayer->PhysicUpdate( elapsedTime, terrain, -FLT_MAX, FLT_MAX );
 }
 Donya::Vector3 SceneResult::GetPlayerPosition() const
@@ -1468,12 +1567,16 @@ void SceneResult::StartFade()
 
 Scene::Result SceneResult::ReturnResult()
 {
-	// TODO: Temporary condition, should fix this
 	if ( Fader::Get().IsClosed() )
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
+	#if DEBUG_MODE
 		change.sceneType = Scene::Type::Title;
+		// change.sceneType = Scene::Type::Result;
+	#else
+		change.sceneType = Scene::Type::Title;
+	#endif // DEBUG_MODE
 		return change;
 	}
 

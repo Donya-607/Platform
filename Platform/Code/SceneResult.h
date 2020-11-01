@@ -21,6 +21,11 @@
 class SceneResult : public Scene
 {
 public:
+	enum class State
+	{
+		Performance,
+		Wait
+	};
 	struct Shader
 	{
 		Donya::VertexShader VS;
@@ -29,13 +34,13 @@ public:
 private:
 	Donya::ICamera								iCamera;
 	Donya::ICamera								lightCamera;
+	State										status = State::Performance;
 
 	Donya::XInput								controller{ Donya::Gamepad::PAD_1 };
 	Player::Input								currentInput;
 	Donya::Collision::Box3F						currentScreen;	// It used for a bullet's lifespan
 	int											currentRoomID	= 0;
 	PlayerInitializer							playerIniter;
-	Player										plaeyr;
 
 	std::unique_ptr<RenderingHelper>			pRenderer;
 	std::unique_ptr<Donya::Displayer>			pDisplayer;
@@ -50,7 +55,10 @@ private:
 
 	float	currentTimer	= 0.0f;
 	float	previousTimer	= 0.0f;
-	float	extinctTime		= -1.0f; // A negative value means not extincted
+	float	extinctTime		= -1.0f;	// A negative value means not extincted
+	float	arriveTime		= 0.0f;
+	Donya::Vector3 prevPlayerPos;		// It is used to judge the timing that the player arrives to desired position
+	Donya::Vector3 centerPos;
 #if DEBUG_MODE
 	bool	nowDebugMode				= false;
 	bool	isReverseCameraMoveX		= true;
@@ -72,6 +80,8 @@ private:
 	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
 	bool	CreateShaders();
 	bool	AreRenderersReady() const;
+
+	Donya::Vector3 CalcCenterPoint( const Map &terrain ) const;
 
 	Donya::Vector4x4 MakeScreenTransform() const;
 	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
