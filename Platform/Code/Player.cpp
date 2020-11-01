@@ -2228,6 +2228,7 @@ void Player::ShieldGun::ThrowShield( Player &inst, const InputManager &input )
 
 	const Donya::Vector3 direction = CalcThrowDirection( inst, input );
 	pInstance->SetVelocity( direction * Parameter().Get().shieldThrowSpeed );
+	pInstance->AllowRemovingByOutOfScreen();
 	ReleaseShieldHandle( inst );
 
 	Donya::Sound::Play( Music::Bullet_ShotShield_Throw );

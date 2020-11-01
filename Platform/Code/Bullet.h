@@ -175,6 +175,13 @@ namespace Bullet
 		virtual void SetWorldPosition( const Donya::Vector3 &wsPos );
 		virtual void SetVelocity( const Donya::Vector3 &newVelocity );
 		virtual void SetLifeTime( float second );
+		/// <summary>
+		/// Default is allow
+		/// </summary>
+		void AllowRemovingByOutOfScreen();
+		/// <summary>
+		/// Default is allow
+		/// </summary>
 		void DisallowRemovingByOutOfScreen();
 	protected:
 		virtual void GenerateCollidedEffect() const = 0;

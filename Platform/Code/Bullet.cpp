@@ -478,6 +478,10 @@ namespace Bullet
 	{
 		secondToRemove = second;
 	}
+	void Base::AllowRemovingByOutOfScreen()
+	{
+		removeIfOutScreen = true;
+	}
 	void Base::DisallowRemovingByOutOfScreen()
 	{
 		removeIfOutScreen = false;
@@ -520,6 +524,9 @@ namespace Bullet
 		// The orientation is not change
 
 		wasProtected	= ProtectedInfo::Processed;
+
+		SetLifeTime( FLT_MAX );
+		AllowRemovingByOutOfScreen();
 
 		GenerateProtectedEffect();
 		PlayProtectedSE();

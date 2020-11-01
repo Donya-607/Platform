@@ -27,6 +27,7 @@
 #include "Fader.h"
 #include "FilePath.h"
 #include "FontHelper.h"
+#include "Input.h"
 #include "Music.h"
 #include "Parameter.h"
 #include "PointLightStorage.h"
@@ -327,7 +328,7 @@ Scene::Result SceneResult::Update( float elapsedTime )
 		}
 		else
 		{
-			shouldSkip = Donya::Keyboard::Trigger( 'Z' );
+			//shouldSkip = Donya::Keyboard::Trigger( 'Z' );
 		}
 
 		if ( shouldSkip )
@@ -923,6 +924,12 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 	if ( !pPlayer ) { return; }
 	// else
 
+	static const Donya::Vector2 deadZone
+	{
+		Donya::XInput::GetDeadZoneLeftStick(),
+		Donya::XInput::GetDeadZoneLeftStick()
+	};
+	currentInput = Input::MakeCurrentInput( controller, deadZone );
 	pPlayer->Update( elapsedTime, currentInput, terrain );
 }
 void SceneResult::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
