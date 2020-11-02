@@ -41,6 +41,7 @@ namespace
 		"LadderShotRight",
 		"Brace",
 		"Appear",
+		"Winning",
 	};
 
 	static std::shared_ptr<ModelHelper::SkinningSet> pModel{};
@@ -899,6 +900,7 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 	case MotionKind::LadderShotRight:	return false;
 	case MotionKind::Brace:				return true;
 	case MotionKind::Appear:			return false;
+	case MotionKind::Winning:			return false;
 	default: break;
 	}
 
@@ -911,6 +913,10 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 	if ( IsZero( elapsedTime ) ) { return currKind; }
 	// else
 
+	if ( inst.pMover && inst.pMover->NowWinning( inst ) )
+	{
+		return MotionKind::Winning;
+	}
 	if ( inst.pMover && inst.pMover->NowAppearing( inst ) )
 	{
 		return MotionKind::Appear;
@@ -2028,6 +2034,31 @@ std::function<void()> Player::Leave::GetChangeStateMethod( Player &inst ) const
 	return []() {}; // No op
 }
 
+void Player::WinningPose::Init( Player &inst )
+{
+	MoverBase::Init( inst );
+
+	inst.velocity		= Donya::Vector3::Zero();
+	inst.hurtBox.exist	= false;
+	inst.AssignGun<BusterGun>(); // Discard shield if the ShieldGun is assigned
+}
+void Player::WinningPose::Update( Player &inst, float elapsedTime, const Map &terrain )
+{
+	MotionUpdate( inst, elapsedTime );
+}
+void Player::WinningPose::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
+{
+	// No op
+}
+bool Player::WinningPose::ShouldChangeMover( const Player &inst ) const
+{
+	return inst.motionManager.WasCurrentMotionEnded();
+}
+std::function<void()> Player::WinningPose::GetChangeStateMethod( Player &inst ) const
+{
+	return [&inst]() { inst.AssignMover<Normal>(); };
+}
+
 
 // region Mover
 #pragma endregion
@@ -2923,6 +2954,10 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	if ( ImGui::Button( u8"退場させる" ) )
 	{
 		AssignMover<Leave>();
+	}
+	if ( ImGui::Button( u8"ガッツポーズ再生" ) )
+	{
+		AssignMover<WinningPose>();
 	}
 
 	ImGui::DragFloat3	( u8"ワールド座標",					&body.pos.x,	0.01f );

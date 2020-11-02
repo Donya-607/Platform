@@ -132,6 +132,7 @@ public:
 		LadderShotRight,
 		Brace,
 		Appear,
+		Winning,
 
 		MotionCount
 	};
@@ -286,6 +287,7 @@ private:
 		virtual bool NowBracing( const Player &instance ) const { return false; }
 		virtual bool NowMiss( const Player &instance ) const { return false; }
 		virtual bool NowAppearing( const Player &instance ) const { return false; }
+		virtual bool NowWinning( const Player &instance ) const { return false; }
 		virtual bool Drawable( const Player &instance ) const { return true; }
 		virtual bool ShouldChangeMover( const Player &instance ) const = 0;
 		virtual std::function<void()> GetChangeStateMethod( Player &instance ) const = 0;
@@ -437,6 +439,19 @@ private:
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"退場"; }
+	#endif // USE_IMGUI
+	};
+	class WinningPose : public MoverBase
+	{
+	public:
+		void Init( Player &instance ) override;
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		bool NowWinning( const Player &instance ) const override { return true; }
+		bool ShouldChangeMover( const Player &instance ) const override;
+		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	#if USE_IMGUI
+		std::string GetMoverName() const override { return u8"ガッツポーズ"; }
 	#endif // USE_IMGUI
 	};
 // Mover
