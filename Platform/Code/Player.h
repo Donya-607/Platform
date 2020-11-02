@@ -445,6 +445,7 @@ private:
 	{
 	public:
 		void Init( Player &instance ) override;
+		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 		bool NowWinning( const Player &instance ) const override { return true; }

@@ -1948,6 +1948,7 @@ void Player::Appear::Init( Player &inst )
 	MoverBase::Init( inst );
 
 	inst.velocity = Donya::Vector3::Zero();
+	inst.motionManager.QuitShotMotion();
 
 	timer	= 0.0f;
 	visible	= false;
@@ -2040,7 +2041,16 @@ void Player::WinningPose::Init( Player &inst )
 
 	inst.velocity		= Donya::Vector3::Zero();
 	inst.hurtBox.exist	= false;
+	inst.motionManager.QuitShotMotion();
 	inst.AssignGun<BusterGun>(); // Discard shield if the ShieldGun is assigned
+
+	inst.UpdateOrientation( /* lookingRight = */ true );
+}
+void Player::WinningPose::Uninit( Player &inst )
+{
+	MoverBase::Uninit( inst );
+
+	inst.UpdateOrientation( /* lookingRight = */ ( inst.lookingSign < 0.0f ) ? false : true );
 }
 void Player::WinningPose::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
@@ -2766,13 +2776,15 @@ void Player::MoveVertical  ( float elapsedTime )
 }
 bool Player::NowShotable( float elapsedTime ) const
 {
-	if ( IsZero( elapsedTime )						) { return false; } // If game time is pausing
-	if ( pMover && pMover->NowAppearing( *this )	) { return false; }
+	if ( IsZero( elapsedTime )				) { return false; } // If game time is pausing
+	if ( !pMover							) { return false; }
+	if ( pMover->NowKnockBacking( *this )	) { return false; }
+	if ( pMover->NowAppearing	( *this )	) { return false; }
+	if ( pMover->NowWinning		( *this )	) { return false; }
 	// else
 
-	const bool movable		= ( pMover && !pMover->NowKnockBacking( *this ) );
-	const bool generatable	= ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
-	return ( generatable && movable ) ? true : false;
+	const bool generatable = ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
+	return ( generatable ) ? true : false;
 }
 void Player::ShotIfRequested( float elapsedTime )
 {
