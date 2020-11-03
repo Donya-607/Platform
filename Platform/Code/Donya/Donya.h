@@ -27,8 +27,8 @@ namespace Donya
 		LibraryInitializer();
 	};
 	/// <summary>
-	/// Initialize Donya's engine, if not initialized yet.<para></para>
-	/// Use Windows::Foundation::Initialize( RO_INIT_MULTITHREADED ).<para></para>
+	/// Initialize Donya library, if not initialized yet.<para></para>
+	/// Use Windows::Foundation::Initialize() with RO_INIT_SINGLETHREADED(enableMultiThreaded=false) or RO_INIT_MULTITHREADED(enableMultiThreaded=true).<para></para>
 	/// If initialize failed, returns false.<para></para>
 	/// In release mode, the isAppendFPS flag fixed to false.
 	/// </summary>
@@ -67,23 +67,32 @@ namespace Donya
 	const char *GetWindowCaption();
 
 	/// <summary>
-	/// Doing OMSetRenderTargets() with library's views, RSSetViewports().
+	/// Doing OMSetRenderTargets() with library's views, RSSetViewports().<para></para>
+	/// /// If you set nullptr to the context it uses the immediate context.
 	/// </summary>
-	void SetDefaultRenderTargets();
+	void SetDefaultRenderTargets( ID3D11DeviceContext *pContext = nullptr );
 	/// <summary>
 	/// Doing ClearRenderTargetView(), ClearDepthStencilView().<para></para>
-	/// these argument is fill color, range is 0.0f ~ 1.0f.
+	/// fill color range is 0.0f ~ 1.0f.<para></para>
+	/// If you set nullptr to the context it uses the immediate context.
 	/// </summary>
-	void ClearViews( FLOAT R = 0.0f, FLOAT G = 0.0f, FLOAT B = 0.0f, FLOAT A = 1.0f );
+	void ClearViews( FLOAT R = 0.0f, FLOAT G = 0.0f, FLOAT B = 0.0f, FLOAT A = 1.0f, ID3D11DeviceContext *pContext = nullptr );
 	/// <summary>
 	/// Doing ClearRenderTargetView(), ClearDepthStencilView().<para></para>
-	/// fill color range is 0.0f ~ 1.0f.
+	/// fill color range is 0.0f ~ 1.0f.<para></para>
+	/// If you set nullptr to the context it uses the immediate context.
 	/// </summary>
-	void ClearViews( const FLOAT ( &fillColor )[4] );
+	void ClearViews( const FLOAT ( &fillColor )[4], ID3D11DeviceContext *pContext = nullptr );
+
+	/// <summary>
+	/// Returns the result of the creation.
+	/// If the argument is nullptr, it reeturns E_INVALIDARG.
+	/// </summary>
+	HRESULT CreateDeferredContext( ID3D11DeviceContext **pOutput );
 
 	/// <summary>
 	/// Doing IDXGISwapChain::Present(), check and assertion return value.<para></para>
-	/// returns false when failed.
+	/// Returns false when failed.
 	/// </summary>
 	bool Present( UINT syncInterval = 0, UINT flags = 0 );
 
@@ -98,7 +107,7 @@ namespace Donya
 	ID3D11DeviceContext	*GetImmediateContext();
 
 	/// <summary>
-	/// This namespace there for Donya engine.
+	/// This namespace there for Donya library.
 	/// </summary>
 	namespace Private
 	{

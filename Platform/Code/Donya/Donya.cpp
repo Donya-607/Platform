@@ -1143,42 +1143,54 @@ namespace Donya
 		return smg->windowCaptionConfig.caption.c_str();
 	}
 
-	void SetDefaultRenderTargets()
+	void SetDefaultRenderTargets( ID3D11DeviceContext *pContext )
 	{
 		Donya::Sprite::Flush();
 
-		Donya::GetImmediateContext()->OMSetRenderTargets
+		if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
+
+		pContext->OMSetRenderTargets
 		(
 			1,
 			smg->d3d11.renderTargetView.GetAddressOf(),
 			smg->d3d11.depthStencilView.Get()
 		);
-		Donya::GetImmediateContext()->RSSetViewports
+		pContext->RSSetViewports
 		(
 			1,
 			&smg->d3d11.viewport
 		);
 	}
-	void ClearViews( FLOAT R, FLOAT G, FLOAT B, FLOAT A )
+	void ClearViews( FLOAT R, FLOAT G, FLOAT B, FLOAT A, ID3D11DeviceContext *pContext )
 	{
 		const FLOAT fillColor[4] = { R, G, B, A };
-		ClearViews( fillColor );
+		ClearViews( fillColor, pContext );
 	}
-	void ClearViews( const FLOAT( &fillColor )[4] )
+	void ClearViews( const FLOAT( &fillColor )[4], ID3D11DeviceContext *pContext )
 	{
-		Donya::GetImmediateContext()->ClearRenderTargetView
+		if ( !pContext ) { pContext = Donya::GetImmediateContext(); }
+
+		pContext->ClearRenderTargetView
 		(
 			smg->d3d11.renderTargetView.Get(),
 			fillColor
 		);
 
-		Donya::GetImmediateContext()->ClearDepthStencilView
+		pContext->ClearDepthStencilView
 		(
 			smg->d3d11.depthStencilView.Get(),
 			D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 			1.0f,
 			0
 		);
+	}
+
+	HRESULT CreateDeferredContext( ID3D11DeviceContext **pOutput )
+	{
+		if ( !pOutput ) { return E_INVALIDARG; }
+		// else
+
+		return GetDevice()->CreateDeferredContext( 0, pOutput );
 	}
 
 	bool Present( UINT syncInterval, UINT flags )
@@ -1190,7 +1202,7 @@ namespace Donya
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData( ImGui::GetDrawData() );
 
-	#endif
+	#endif // USE_IMGUI
 
 		HRESULT hr = smg->d3d11.swapChain->Present( syncInterval, flags );
 
