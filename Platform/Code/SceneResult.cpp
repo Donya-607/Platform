@@ -303,6 +303,7 @@ void SceneResult::Init()
 	currentTimer	= 0.0f;
 	previousTimer	= 0.0f;
 	extinctTime		= -1.0f;
+	arriveTime		= 0.0f;
 
 	pMap = std::make_unique<Map>();
 	pMap->Init( stageNo, /* reloadModel = */ false );
@@ -1086,9 +1087,9 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 			if ( currSign != prevSign || !currSign )
 			{
 				// In first time
-				if ( prevPlayerPos != playerPos )
+				if ( !IsZero( prevPlayerPos.x - playerPos.x ) )
 				{
-					pPlayer->PerformLeaving();
+					pPlayer->PerformWinning();
 					arriveTime = currentTimer;
 				}
 			}

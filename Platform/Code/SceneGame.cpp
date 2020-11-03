@@ -421,7 +421,7 @@ void SceneGame::Init()
 	stageNumber = Definition::StageNumber::Game();
 
 	playerIniter.LoadParameter( stageNumber );
-
+	
 	InitStage( currentPlayingBGM, stageNumber, /* reloadModel = */ true );
 }
 void SceneGame::Uninit()
@@ -653,6 +653,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate( elapsedTime );
+
+	UpdatePlayerIniter();
 
 	// Kill the player if fall out from current room
 	if ( pPlayer && !pPlayer->NowMiss() )
@@ -952,6 +954,7 @@ void SceneGame::Draw( float elapsedTime )
 		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		Enemy ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		Item  ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
+		checkPoint.DrawHitBoxes( pRenderer.get(), VP );
 		if ( pHouse			) { pHouse->DrawHitBoxes( pRenderer.get(), VP );				}
 	}
 #endif // DEBUG_MODE
@@ -1294,6 +1297,7 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel )
 
 	// Initialize a non-dependent objects
 
+	checkPoint.LoadParameter( stageNumber );
 
 	pClearEvent = std::make_unique<ClearEvent>();
 	pClearEvent->Init( stageNo );
@@ -1764,7 +1768,17 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 
 	const Player::Input input = MakePlayerInput( elapsedTime );
 
+	const bool prevIsWinning = pPlayer->NowWinningPose();
 	pPlayer->Update( elapsedTime, input, terrain );
+	const bool currIsWinning = pPlayer->NowWinningPose();
+
+	if ( status == State::WaitToFade )
+	{
+		if ( !currIsWinning && prevIsWinning )
+		{
+			pPlayer->PerformLeaving();
+		}
+	}
 
 	if ( pPlayer->NowMiss() )
 	{
@@ -1835,9 +1849,9 @@ Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
 			const auto currSign = Donya::SignBit( destination.x - playerPos.x );
 
 			// Arrive to destination
-			if ( currSign != prevSign )
+			if ( currSign != prevSign || !currSign )
 			{
-				pPlayer->PerformLeaving();
+				pPlayer->PerformWinning();
 				status = State::WaitToFade;
 			}
 			// Head to initial position
@@ -1859,6 +1873,20 @@ Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
 	}
 
 	return input;
+}
+
+void SceneGame::UpdatePlayerIniter()
+{
+	if ( !pPlayer ) { return; }
+	// else
+
+	const auto pArea = checkPoint.FetchPassedPointOrNullptr( pPlayer->GetHitBox() );
+	if ( !pArea ) { return; }
+	// else
+
+	playerIniter.AssignParameter( pArea->GetWorldInitialPos(), pArea->ShouldLookingRight() );
+
+	pArea->Deactivate();
 }
 
 void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
@@ -2857,6 +2885,16 @@ void SceneGame::UseImGui( float elapsedTime )
 			const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 			PlayerInit( playerIniter, mapRef );
 		};
+		auto ApplyToCheckPt	= [&]( const CSVLoader &loadedData )
+		{
+			checkPoint.RemakeByCSV( loadedData );
+
+			if ( thenSave )
+			{
+				checkPoint.SaveBin ( stageNumber );
+				checkPoint.SaveJson( stageNumber );
+			}
+		};
 		auto ApplyToRoom	= [&]( const CSVLoader &loadedData )
 		{
 			if ( !pHouse ) { return; }
@@ -2919,6 +2957,7 @@ void SceneGame::UseImGui( float elapsedTime )
 				ProcessOf( bufferRoom,	ApplyToRoom		);
 				ProcessOf( bufferClear,	ApplyToClear	);
 				ProcessOf( bufferMap,	ApplyToPlayer	);
+				ProcessOf( bufferMap,	ApplyToCheckPt	);
 				ProcessOf( bufferBoss,	ApplyToBoss		);
 				ProcessOf( bufferEnemy,	ApplyToEnemy	);
 				ProcessOf( bufferItem,	ApplyToItem		);
@@ -2950,6 +2989,7 @@ void SceneGame::UseImGui( float elapsedTime )
 			static bool applyItem	= false;
 			static bool applyMap	= true;
 			static bool applyPlayer	= true;
+			static bool applyCheckPt= true;
 			static bool applyRoom	= false;
 
 			ImGui::Checkbox( u8"ボスに適用",				&applyBoss		);
@@ -2957,7 +2997,8 @@ void SceneGame::UseImGui( float elapsedTime )
 			ImGui::Checkbox( u8"敵に適用",				&applyEnemy		);
 			ImGui::Checkbox( u8"アイテムに適用",			&applyItem		);
 			ImGui::Checkbox( u8"マップに適用",			&applyMap		); ImGui::SameLine();
-			ImGui::Checkbox( u8"自機に適用",				&applyPlayer	);
+			ImGui::Checkbox( u8"自機に適用",				&applyPlayer	); ImGui::SameLine();
+			ImGui::Checkbox( u8"中間ポイントに適用",		&applyCheckPt	);
 			ImGui::Checkbox( u8"ルームに適用",			&applyRoom		);
 		
 			if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
@@ -2974,6 +3015,7 @@ void SceneGame::UseImGui( float elapsedTime )
 					if ( applyItem		) { ApplyToItem		( loader ); }
 					if ( applyMap		) { ApplyToMap		( loader );	}
 					if ( applyPlayer	) { ApplyToPlayer	( loader );	currentRoomID = CalcCurrentRoomID(); }
+					if ( applyCheckPt	) { ApplyToCheckPt	( loader );	}
 					if ( applyRoom		) { ApplyToRoom		( loader );	currentRoomID = CalcCurrentRoomID(); }
 				}
 			}
@@ -3023,6 +3065,7 @@ void SceneGame::UseImGui( float elapsedTime )
 
 		if ( pMap    ) { pMap->ShowImGuiNode( u8"マップの現在", stageNumber ); }
 		if ( pHouse  ) { pHouse->ShowImGuiNode( u8"部屋の現在", stageNumber ); }
+		checkPoint.ShowImGuiNode( u8"中間ポイントの現在", stageNumber );
 		ImGui::Text( "" );
 
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }

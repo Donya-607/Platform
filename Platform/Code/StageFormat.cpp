@@ -15,6 +15,7 @@ namespace StageFormat
 		case Normal:			return "Normal";
 		case Ladder:			return "Ladder";
 		case Needle:			return "Needle";
+		case CheckPoint:		return "CheckPoint";
 		default: break;
 		}
 

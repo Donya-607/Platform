@@ -14,6 +14,7 @@
 
 #include "Boss.h"
 #include "Bloom.h"
+#include "CheckPoint.h"
 #include "ClearEvent.h"
 #include "Effect/Effect.h"
 #include "Map.h"
@@ -59,6 +60,7 @@ private:
 	int									currentRoomID		= 0;
 	Music::ID							currentPlayingBGM	= Music::BGM_Game;
 	PlayerInitializer					playerIniter;
+	CheckPoint::Container				checkPoint;
 
 	Scene::Type							nextScene			= Scene::Type::Null;
 	State								status				= State::Stage;
@@ -151,6 +153,8 @@ private:
 	Donya::Vector3 MakeBossRoomInitialPosOf( int roomId ) const;
 	Player::Input  MakePlayerInput( float elapsedTime );
 	
+	void	UpdatePlayerIniter();
+
 	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 
 	int		CalcCurrentRoomID() const;

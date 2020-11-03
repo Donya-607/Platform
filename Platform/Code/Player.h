@@ -550,6 +550,7 @@ public:
 public:
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;
+	bool NowWinningPose() const;
 	int  GetCurrentHP() const;
 	Donya::Vector3 GetVelocity() const;
 	Donya::Collision::Box3F		GetHurtBox()		const;
@@ -564,6 +565,7 @@ public:
 public:
 	void KillMe();
 	void KillMeIfCollideToKillAreas( float elapsedTime, const Map &terrain );
+	void PerformWinning();
 	void PerformLeaving();
 private:
 	void GiveDamageImpl( const Definition::Damage &damage, float distLeft, float distRight ) const;

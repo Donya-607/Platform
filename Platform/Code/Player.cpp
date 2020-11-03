@@ -128,7 +128,7 @@ void PlayerInitializer::RemakeByCSV( const CSVLoader &loadedData )
 
 		lookingRight = ( id == StageFormat::StartPointRight );
 		wsInitialPos = Map::ToWorldPos( r, c, /* alignToCenterOfTile = */ true );
-		wsInitialPos.y -= Tile::unitWholeSize * 0.5f;
+		wsInitialPos.y -= Tile::unitWholeSize * 0.5f; // To bottom
 		return true;
 	};
 
@@ -2069,7 +2069,6 @@ std::function<void()> Player::WinningPose::GetChangeStateMethod( Player &inst ) 
 	return [&inst]() { inst.AssignMover<Normal>(); };
 }
 
-
 // region Mover
 #pragma endregion
 
@@ -2524,6 +2523,10 @@ bool Player::NowGrabbingLadder() const
 {
 	return ( pMover && pMover->NowGrabbingLadder( *this ) ) ? true : false;
 }
+bool Player::NowWinningPose() const
+{
+	return ( pMover && pMover->NowWinning( *this ) ) ? true : false;
+}
 int  Player::GetCurrentHP() const
 {
 	return currentHP;
@@ -2589,6 +2592,10 @@ void Player::KillMeIfCollideToKillAreas( float elapsedTime, const Map &terrain )
 			return;
 		}
 	}
+}
+void Player::PerformWinning()
+{
+	AssignMover<WinningPose>();
 }
 void Player::PerformLeaving()
 {

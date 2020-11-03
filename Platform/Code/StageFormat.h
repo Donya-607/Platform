@@ -16,6 +16,7 @@ namespace StageFormat
 		Normal			= 4,
 		Ladder			= 5,
 		Needle			= 6,
+		CheckPoint		= 7,
 
 		RoomStart		= 8,					// [RoomStart <= N <= RoomLast] is room identifier
 		RoomLast		= RoomStart + 7 + 8 + 8,// [RoomStart <= N <= RoomLast] is room identifier
