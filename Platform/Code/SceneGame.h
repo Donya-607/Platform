@@ -20,6 +20,7 @@
 #include "Map.h"
 #include "Music.h"
 #include "ObjectBase.h"
+#include "PauseProcessor.h"
 #include "Player.h"
 #include "Renderer.h"
 #include "Room.h"
@@ -71,6 +72,8 @@ private:
 	std::unique_ptr<Donya::Surface>		pScreenSurface;
 	std::unique_ptr<Donya::Surface>		pShadowMap;
 	std::unique_ptr<Shader>				pQuadShader;
+	std::unique_ptr<PauseProcessor>		pPauser;
+
 	std::unique_ptr<Meter::Drawer>		pPlayerMeter;
 	std::unique_ptr<Meter::Drawer>		pSkullMeter;
 	std::unique_ptr<Effect::Handle>		pFxReady;
@@ -124,6 +127,10 @@ private:
 	void	UninitStage();
 
 	void	AssignCurrentInput();
+	
+	float	PauseUpdate( float elapsedTime );
+	void	BeginPause();
+	void	EndPause();
 
 	bool	IsPlayingStatus( State verify ) const;
 

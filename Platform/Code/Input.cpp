@@ -4,6 +4,20 @@
 
 namespace Input
 {
+	bool HasButtonInput( const Player::Input &input )
+	{
+		return
+			HasTrue( input.useJumps  )
+		||	HasTrue( input.useShots  )
+		||	HasTrue( input.useDashes )
+		||	HasTrue( input.shiftGuns )
+		;
+	}
+	bool HasStickInput( const Player::Input &input )
+	{
+		return !input.moveVelocity.IsZero();
+	}
+	
 	Player::Input MakeCurrentInput( const Donya::XInput &controller, const Donya::Vector2 &deadZone )
 	{
 		Player::Input input{};
@@ -62,5 +76,12 @@ namespace Input
 		if ( pressDown	) { input.moveVelocity.y -= 1.0f; } // World space direction
 
 		return input;
+	}
+
+	bool IsPauseRequested( const Donya::XInput &controller )
+	{
+		const bool button	= controller.Trigger( Donya::Gamepad::Button::START );
+		const bool key		= Donya::Keyboard::Trigger( 'P' );
+		return button || key;
 	}
 }

@@ -200,6 +200,7 @@
     <ClCompile Include="Code\ModelHelper.cpp" />
     <ClCompile Include="Code\ObjectBase.cpp" />
     <ClCompile Include="Code\Parameter.cpp" />
+    <ClCompile Include="Code\PauseProcessor.cpp" />
     <ClCompile Include="Code\Player.cpp" />
     <ClCompile Include="Code\PointLightStorage.cpp" />
     <ClCompile Include="Code\Renderer.cpp" />
@@ -307,6 +308,7 @@
     <ClInclude Include="Code\Music.h" />
     <ClInclude Include="Code\ObjectBase.h" />
     <ClInclude Include="Code\Parameter.h" />
+    <ClInclude Include="Code\PauseProcessor.h" />
     <ClInclude Include="Code\Player.h" />
     <ClInclude Include="Code\PlayerParam.h" />
     <ClInclude Include="Code\PointLightStorage.h" />

@@ -1298,31 +1298,6 @@ bool SceneTitle::AreRenderersReady() const
 	return true;
 }
 
-namespace
-{
-	template<typename T>
-	constexpr bool HasTrue( const std::array<T, Player::Input::variationCount> &arr )
-	{
-		for ( const auto &it : arr )
-		{
-			if ( it ) { return true; }
-		}
-		return false;
-	}
-	bool HasButtonInput( const Player::Input &input )
-	{
-		return
-			HasTrue( input.useJumps  )
-		||	HasTrue( input.useShots  )
-		||	HasTrue( input.useDashes )
-		||	HasTrue( input.shiftGuns )
-		;
-	}
-	bool HasStickInput( const Player::Input &input )
-	{
-		return !input.moveVelocity.IsZero();
-	}
-}
 void SceneTitle::UpdateInput()
 {
 	controller.Update();
@@ -1354,7 +1329,7 @@ void SceneTitle::UpdateChooseItem()
 	const bool trgRight		= Tilted( curr.moveVelocity.x, +1 ) && !Tilted( prev.moveVelocity.x, +1 );
 	const bool trgUp		= Tilted( curr.moveVelocity.y, +1 ) && !Tilted( prev.moveVelocity.y, +1 );
 	const bool trgDown		= Tilted( curr.moveVelocity.y, -1 ) && !Tilted( prev.moveVelocity.y, -1 );
-	const bool trgDecide	= HasTrue( curr.useShots ) && !HasTrue( prev.useShots );
+	const bool trgDecide	= Input::HasTrue( curr.useShots ) && !Input::HasTrue( prev.useShots );
 
 #if 1 // CAN_NOT_SELECT_OPTION
 	const bool willChoice = ( trgLeft || trgRight || trgUp || trgDown || trgDecide );
@@ -1410,7 +1385,7 @@ void SceneTitle::UpdatePerformance( float elapsedTime )
 	// else
 
 	// Skip performance
-	if ( HasButtonInput( currentInput ) && !HasButtonInput( previousInput ) )
+	if ( Input::HasButtonInput( currentInput ) && !Input::HasButtonInput( previousInput ) )
 	{
 		StartFade();
 	}
@@ -1786,7 +1761,7 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 
 	if ( currCameraStatus == CameraState::Attract )
 	{
-		if ( HasButtonInput( input ) || HasStickInput( input ) )
+		if ( Input::HasButtonInput( input ) || Input::HasStickInput( input ) )
 		{
 			ChangeCameraState( CameraState::Controllable );
 		}
@@ -1796,7 +1771,7 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 	}
 	else if ( currCameraStatus == CameraState::Controllable )
 	{
-		if ( HasButtonInput( input ) || HasStickInput( input ) )
+		if ( Input::HasButtonInput( input ) || Input::HasStickInput( input ) )
 		{
 			DeactivateReturning();
 			elapsedSecondSinceLastInput = 0.0f;

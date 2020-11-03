@@ -9,25 +9,27 @@
 #include "Donya/Vector.h"
 
 #include "Common.h"
+#include "Effect/EffectAdmin.h"
 #include "FilePath.h"
 #include "Music.h"
+#include "Input.h"
 
 #undef max
 #undef min
 
 void ScenePause::Init()
 {
-	
+	Effect::Admin::Get().SetUpdateSpeed( 0.0f );
 }
 
 void ScenePause::Uninit()
 {
-
+	Effect::Admin::Get().SetUpdateSpeed( 1.0f );
 }
 
 Scene::Result ScenePause::Update( float elapsedTime )
 {
-	controller.Update();
+	UpdateInput();
 
 	UpdateChooseItem();
 
@@ -36,30 +38,51 @@ Scene::Result ScenePause::Update( float elapsedTime )
 
 void ScenePause::Draw( float elapsedTime )
 {
-	
+	const float oldDepth = Donya::Sprite::GetDrawDepth();
+	Donya::Sprite::SetDrawDepth( 0.0f );
+	Donya::Sprite::DrawRect
+	(
+		Common::HalfScreenWidthF(),	Common::HalfScreenWidthF(),
+		Common::ScreenWidthF(),		Common::ScreenWidthF(),
+		Donya::Color::Code::BLACK,
+		0.5f
+	);
+	Donya::Sprite::SetDrawDepth( oldDepth );
+}
+
+void ScenePause::UpdateInput()
+{
+	static const Donya::Vector2 deadZone
+	{
+		Donya::XInput::GetDeadZoneLeftStick(),
+		Donya::XInput::GetDeadZoneLeftStick()
+	};
+
+	controller.Update();
+	previousInput = currentInput;
+	currentInput  = Input::MakeCurrentInput( controller, deadZone );
 }
 
 void ScenePause::UpdateChooseItem()
 {
-	bool left{}, right{};
-	left  = controller.Trigger( Donya::Gamepad::Button::LEFT  );
-	right = controller.Trigger( Donya::Gamepad::Button::RIGHT );
-	if ( !left )
+	auto Tilted = []( float value, int sign )
 	{
-		left  = controller.TriggerStick( Donya::Gamepad::StickDirection::LEFT );
-	}
-	if ( !right )
-	{
-		right = controller.TriggerStick( Donya::Gamepad::StickDirection::RIGHT );
-	}
+		return Donya::SignBit( value ) == sign;
+	};
+
+	const auto &prev		= previousInput;
+	const auto &curr		= currentInput;
+	const bool back			= Tilted( curr.moveVelocity.y, -1 ) && !Tilted( prev.moveVelocity.y, -1 );
+	const bool advance		= Tilted( curr.moveVelocity.y, +1 ) && !Tilted( prev.moveVelocity.y, +1 );
+	const bool trgDecide	= Input::HasTrue( curr.useShots ) && !Input::HasTrue( prev.useShots );
 
 	int index = scast<int>( choice );
 	int oldIndex = index;
 
-	if ( left  ) { index--; }
-	if ( right ) { index++; }
+	if ( back		) { index--; }
+	if ( advance	) { index++; }
 
-	index = std::max( 0, std::min( scast<int>( Choice::ReTry ), index ) );
+	index = std::max( 0, std::min( scast<int>( Choice::ItemCount ) - 1, index ) );
 
 	if ( index != oldIndex )
 	{
@@ -73,7 +96,7 @@ void ScenePause::UpdateChooseItem()
 
 Scene::Result ScenePause::ReturnResult()
 {
-	if ( Donya::Keyboard::Trigger( 'P' ) || controller.Trigger( Donya::Gamepad::Button::START ) )
+	if ( controller.Trigger( Donya::Gamepad::Button::START ) || Donya::Keyboard::Trigger( 'P' ) )
 	{
 	#if DEBUG_MODE
 		Donya::Sound::Play( Music::DEBUG_Weak );

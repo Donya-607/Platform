@@ -20,7 +20,13 @@ namespace Math
 	{
 		const int pointCount = static_cast<int>( points.size() );
 		
-		if ( pointCount <= 2 )
+		if ( pointCount < 2 )
+		{
+			assert( !"Error: Can not calc Bezier-Curve!" );
+			return T{};
+		}
+		// else
+		if ( pointCount == 2 )
 		{
 			return Impl::CalcInteriorPoint( points[0], points[1], t );
 		}

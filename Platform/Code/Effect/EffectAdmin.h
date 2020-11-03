@@ -27,6 +27,7 @@ namespace Effect
 	private:
 		Effekseer::Manager				*pManager			= nullptr;
 		EffekseerRendererDX11::Renderer	*pRenderer			= nullptr;
+		float							updateSpeed			= 1.0f;
 		bool							wasInitialized		= false;
 	private:
 		class Instance
@@ -52,6 +53,7 @@ namespace Effect
 
 		void Draw();
 	public:
+		void SetUpdateSpeed( float updateFactor );
 		void SetLightColorAmbient( const Donya::Vector4 &color );
 		void SetLightColorAmbient( const Donya::Vector3 &color, float alpha = 1.0f );
 		void SetLightColorDiffuse( const Donya::Vector4 &color );

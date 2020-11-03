@@ -190,7 +190,7 @@ namespace Effect
 		// else
 
 		constexpr float toBePerFrame = 60.0f;
-		pManager->Update( elapsedTime * toBePerFrame );
+		pManager->Update( elapsedTime * updateSpeed * toBePerFrame );
 
 		auto result = std::remove_if
 		(
@@ -217,6 +217,10 @@ namespace Effect
 		pRenderer->EndRendering();
 	}
 
+	void Admin::SetUpdateSpeed( float factor )
+	{
+		updateSpeed = factor;
+	}
 	void Admin::SetLightColorAmbient( const Donya::Vector4 &color )
 	{
 		if ( !wasInitialized )

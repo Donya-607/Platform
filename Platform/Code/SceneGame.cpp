@@ -505,6 +505,9 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	controller.Update();
 	AssignCurrentInput();
 
+	const float updateSpeedFactor = PauseUpdate( elapsedTime );
+	elapsedTime *= updateSpeedFactor;
+
 	stageTimer += elapsedTime;
 	ReadyPlayer();
 
@@ -1074,6 +1077,13 @@ void SceneGame::Draw( float elapsedTime )
 		line.Flush( VP );
 	}
 #endif // DEBUG_MODE
+
+
+
+	if ( pPauser )
+	{
+		pPauser->Draw( elapsedTime );
+	}
 }
 
 bool SceneGame::CreateRenderers( const Donya::Int2 &wholeScreenSize )
@@ -1344,6 +1354,72 @@ void SceneGame::AssignCurrentInput()
 {
 	const auto &deadZone = FetchParameter().deadZone;
 	currentInput = Input::MakeCurrentInput( controller, deadZone );
+}
+
+float SceneGame::PauseUpdate( float elapsedTime )
+{
+	float updateSpeedFactor = 1.0f;
+
+	if ( !pPauser )
+	{
+		if ( Input::IsPauseRequested( controller ) )
+		{
+			BeginPause();
+			updateSpeedFactor = 0.0f;
+		}
+		
+		/*
+		I must skip the frame that beginning timing of pause.
+		The beginning and resume trigger(IsPauseRequested()) is shared between here and the PauseProcessor,
+		so if did not skip here, the below process will gets the shared trigger,  and resume the pause.
+		*/
+
+		return updateSpeedFactor;
+	}
+	// else
+
+	updateSpeedFactor = 0.0f;
+
+	using Cmd = PauseProcessor::Result::Command;
+
+	const auto result = pPauser->Update( elapsedTime, controller );
+	if ( result.command == Cmd::Noop ) { return updateSpeedFactor; }
+	// else
+
+	switch ( result.command )
+	{
+	case Cmd::Resume:
+		{
+			EndPause();
+			updateSpeedFactor = 1.0f;
+		}
+		break;
+	case Cmd::ChangeScene:
+		{
+			EndPause();
+			StartFade( result.nextScene );
+			updateSpeedFactor = 1.0f;
+
+			if ( pPlayer ) { pPlayer->PerformLeaving(); }
+		}
+	default:
+		break;
+	}
+
+	return updateSpeedFactor;
+}
+void  SceneGame::BeginPause()
+{
+	pPauser = std::make_unique<PauseProcessor>();
+	pPauser->Init();
+}
+void  SceneGame::EndPause()
+{
+	if ( !pPauser ) { return; }
+	// else
+
+	pPauser->Uninit();
+	pPauser.reset();
 }
 
 bool SceneGame::IsPlayingStatus( State verify ) const
@@ -2559,9 +2635,8 @@ Scene::Result SceneGame::ReturnResult()
 	}
 	// else
 
-	bool requestPause	= controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT ) || Donya::Keyboard::Trigger( 'P' );
-	bool allowPause		= !Fader::Get().IsExist();
-	if ( 0 && requestPause && allowPause )
+	const bool pausable = !Fader::Get().IsExist() && status != State::Clear && status != State::WaitToFade;
+	if ( 0 && Input::IsPauseRequested( controller ) && pausable )
 	{
 	#if DEBUG_MODE
 		Donya::Sound::Play( Music::DEBUG_Weak );

@@ -2,6 +2,7 @@
 
 #include "Donya/GamepadXInput.h"
 
+#include "Player.h"
 #include "Scene.h"
 
 class ScenePause : public Scene
@@ -12,11 +13,15 @@ private:
 		Nil			= -1,
 		BackToTitle	= 0,
 		Resume,
-		ReTry,
+
+		ItemCount,
 	};
 private:
 	Choice			choice = Choice::Nil;
 	Donya::XInput	controller{ Donya::XInput::PadNumber::PAD_1 };
+
+	Player::Input	previousInput;
+	Player::Input	currentInput;
 public:
 	ScenePause() : Scene() {}
 public:
@@ -27,6 +32,8 @@ public:
 
 	void	Draw( float elapsedTime );
 private:
+	void	UpdateInput();
+
 	void	UpdateChooseItem();
 
 	Result	ReturnResult();
