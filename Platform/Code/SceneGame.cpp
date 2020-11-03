@@ -390,9 +390,80 @@ CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
 {
-	currentPlayingBGM = Music::BGM_Game;
-	Donya::Sound::Play( currentPlayingBGM );
+	status		= State::FirstInitialize;
+	stageNumber	= Definition::StageNumber::Game();
 
+	constexpr auto CoInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
+	auto InitObjects	= [&CoInitValue]( SceneGame *pScene, SceneGame::Thread::Result *pResult )
+	{
+		if ( !pScene || !pResult ) { assert( !"HUMAN ERROR" ); return; }
+		// else
+
+		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		if ( FAILED( hr ) )
+		{
+			pResult->WriteResult( /* wasSucceeded = */ false );
+			return;
+		}
+		// else
+
+		bool succeeded	= true;
+		bool result		= true;
+
+		PauseProcessor::LoadParameter();
+		sceneParam.LoadParameter();
+		pScene->playerIniter.LoadParameter( pScene->stageNumber );
+
+					pScene->pSky = std::make_unique<Sky>();
+		result =	pScene->pSky->Init();
+		if ( !result ) { succeeded = false; }
+
+		pScene->pMap = std::make_unique<Map>();
+
+		pScene->InitStage( pScene->currentPlayingBGM, pScene->stageNumber, /* reloadModel = */ true );
+
+		pResult->WriteResult( succeeded );
+		CoUninitialize();
+	};
+	auto InitRenderers	= [&CoInitValue]( SceneGame *pScene, SceneGame::Thread::Result *pResult )
+	{
+		if ( !pScene || !pResult ) { assert( !"HUMAN ERROR" ); return; }
+		// else
+
+		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		if ( FAILED( hr ) )
+		{
+			pResult->WriteResult( /* wasSucceeded = */ false );
+			return;
+		}
+		// else
+
+		bool succeeded	= true;
+		bool result		= true;
+
+		constexpr Donya::Int2 wholeScreenSize
+		{
+			Common::ScreenWidth(),
+			Common::ScreenHeight(),
+		};
+
+		result = pScene->CreateRenderers( wholeScreenSize );
+		if ( !result ) { succeeded = false; }
+
+		result = pScene->CreateSurfaces( wholeScreenSize );
+		if ( !result ) { succeeded = false; }
+
+		result = pScene->CreateShaders();
+		if ( !result ) { succeeded = false; }
+
+		pResult->WriteResult( succeeded );
+		CoUninitialize();
+	};
+
+	thObjects.pThread	= std::make_unique<std::thread>( InitObjects,	this, &thObjects.result		);
+	thRenderers.pThread	= std::make_unique<std::thread>( InitRenderers,	this, &thRenderers.result	);
+
+	/*
 	sceneParam.LoadParameter();
 	PauseProcessor::LoadParameter();
 
@@ -419,11 +490,10 @@ void SceneGame::Init()
 
 	pMap = std::make_unique<Map>();
 
-	stageNumber = Definition::StageNumber::Game();
-
 	playerIniter.LoadParameter( stageNumber );
 	
-	InitStage( currentPlayingBGM, stageNumber, /* reloadModel = */ true );
+	InitStage( currentPlayingBGM, stageNumber, / reloadModel = / true );
+	*/
 }
 void SceneGame::Uninit()
 {
@@ -440,39 +510,42 @@ void SceneGame::Uninit()
 Scene::Result SceneGame::Update( float elapsedTime )
 {
 #if DEBUG_MODE
-	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
+	if ( status != State::FirstInitialize )
 	{
-		Donya::Sound::Play( Music::DEBUG_Strong );
-
-		if ( Donya::Keyboard::Press( VK_SHIFT ) )
+		if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
 		{
-			if ( Donya::Keyboard::Press( VK_CONTROL ) )
+			Donya::Sound::Play( Music::DEBUG_Strong );
+
+			if ( Donya::Keyboard::Press( VK_SHIFT ) )
 			{
-				StartFade( Scene::Type::Over );
+				if ( Donya::Keyboard::Press( VK_CONTROL ) )
+				{
+					StartFade( Scene::Type::Over );
+				}
+				else
+				{
+					StartFade( Scene::Type::Result );
+				}
 			}
 			else
 			{
-				StartFade( Scene::Type::Result );
+				StartFade( Scene::Type::Title );
 			}
 		}
-		else
+		if ( Donya::Keyboard::Trigger( VK_F5 ) )
 		{
-			StartFade( Scene::Type::Title );
-		}
-	}
-	if ( Donya::Keyboard::Trigger( VK_F5 ) )
-	{
-		nowDebugMode = !nowDebugMode;
+			nowDebugMode = !nowDebugMode;
 
-		if ( nowDebugMode )
-		{
-			iCamera.ChangeMode( Donya::ICamera::Mode::Satellite );
-		}
-		else
-		{
-			iCamera.SetOrientation( Donya::Quaternion::Identity() );
-			lightCamera.SetOrientation( Donya::Quaternion::Identity() );
-			CameraInit();
+			if ( nowDebugMode )
+			{
+				iCamera.ChangeMode( Donya::ICamera::Mode::Satellite );
+			}
+			else
+			{
+				iCamera.SetOrientation( Donya::Quaternion::Identity() );
+				lightCamera.SetOrientation( Donya::Quaternion::Identity() );
+				CameraInit();
+			}
 		}
 	}
 #endif // DEBUG_MODE
@@ -481,6 +554,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	UseImGui( elapsedTime );
 
 	// Apply for be able to see an adjustment immediately
+	if ( status != State::FirstInitialize )
 	{
 		if ( pBloomer ) { pBloomer->AssignParameter( FetchParameter().bloomParam ); }
 
@@ -489,6 +563,15 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		if ( pSkullMeter  ) { pSkullMeter->SetDrawOption( data.skullMeter.hpDrawPos, data.skullMeter.hpDrawColor, data.skullMeter.hpDrawScale ); }
 	}
 #endif // USE_IMGUI
+
+
+	if ( status == State::FirstInitialize )
+	{
+		FirstInitStateUpdate( elapsedTime );
+		Scene::Result noop{ Scene::Request::NONE, Scene::Type::Null };
+		return noop;
+	}
+	// else
 
 
 	const auto &data = FetchParameter();
@@ -716,6 +799,13 @@ namespace
 void SceneGame::Draw( float elapsedTime )
 {
 	ClearBackGround();
+
+	if ( status == State::FirstInitialize )
+	{
+		FirstInitStateDraw( elapsedTime );
+		return;
+	}
+	// else
 
 	if ( !AreRenderersReady() ) { return; }
 	// else
@@ -1427,6 +1517,55 @@ void  SceneGame::EndPause()
 bool SceneGame::IsPlayingStatus( State verify ) const
 {
 	return ( status == State::Stage || status == State::VSBoss );
+}
+
+void SceneGame::FirstInitStateUpdate( float elapsedTime )
+{
+	if ( status != State::FirstInitialize ) { return; }
+	// else
+
+	if ( thObjects.result.Finished()	) { return; }
+	if ( thRenderers.result.Finished()	) { return; }
+	// else
+
+	// TODO: Insert a fade in fx
+
+	status = State::Stage;
+}
+void SceneGame::FirstInitStateDraw( float elapsedTime )
+{
+	if ( status != State::FirstInitialize ) { return; }
+	// else
+
+#if DEBUG_MODE
+
+	const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
+	if ( !pFontRenderer ) { return; }
+	// else
+
+	constexpr Donya::Vector2 pivot			{ 0.5f, 0.5f };
+	constexpr Donya::Vector4 white			{ 1.0f, 1.0f, 1.0f, 1.0f };
+	constexpr Donya::Vector4 selectColor	= white;
+	constexpr Donya::Vector4 unselectColor	{ 0.4f, 0.4f, 0.4f, 1.0f };
+
+	constexpr Donya::Vector2 halfScreenSize
+	{
+		Common::HalfScreenWidthF(),
+		Common::HalfScreenHeightF(),
+	};
+
+	pFontRenderer->DrawExt
+	(
+		L"-‚k‚n‚`‚c‚h‚m‚f-",
+		halfScreenSize,
+		pivot,
+		2.0f,
+		white
+	);
+
+	Donya::Sprite::Flush();
+
+#endif // DEBUG_MODE
 }
 
 void SceneGame::StageStateUpdate( float elapsedTime )
@@ -2595,6 +2734,9 @@ void SceneGame::ClearBackGround() const
 	constexpr FLOAT BG_COLOR[4]{ gray.x, gray.y, gray.z, 1.0f };
 	Donya::ClearViews( BG_COLOR );
 
+	if ( status == State::FirstInitialize ) { return; }
+	// else
+
 	if ( pShadowMap		) { pShadowMap->Clear( Donya::Color::Code::BLACK );			}
 	if ( pScreenSurface	) { pScreenSurface->Clear( Donya::Vector4{ gray, 1.0f } );	}
 #if DEBUG_MODE
@@ -3026,7 +3168,7 @@ void SceneGame::UseImGui( float elapsedTime )
 				ProcessOf( bufferEnemy,	ApplyToEnemy	);
 				ProcessOf( bufferItem,	ApplyToItem		);
 
-				if ( pMap ) { pMap->ReloadModel( readStageNumber ); }
+				if ( pMap ) { pMap->LoadModel( readStageNumber ); }
 
 				currentRoomID = CalcCurrentRoomID();
 			}
@@ -3088,7 +3230,7 @@ void SceneGame::UseImGui( float elapsedTime )
 			ImGui::InputInt( u8"ƒ}ƒbƒvƒ‚ƒfƒ‹‚É“K—p‚·‚éƒXƒe[ƒW”Ô†", &loadMapNumber );
 			if ( ImGui::Button( u8"ƒ}ƒbƒvƒ‚ƒfƒ‹‚ð“Ç‚Ýž‚Þ" ) && pMap )
 			{
-				pMap->ReloadModel( loadMapNumber );
+				pMap->LoadModel( loadMapNumber );
 			}
 
 			ImGui::TreePop();

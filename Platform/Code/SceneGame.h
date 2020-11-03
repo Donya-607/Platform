@@ -2,6 +2,8 @@
 
 #include <array>
 #include <memory>
+#include <mutex>
+#include <thread>
 #include <vector>
 
 #include "Donya/Camera.h"
@@ -32,6 +34,7 @@ class SceneGame : public Scene
 public:
 	enum class State
 	{
+		FirstInitialize,
 		Stage,
 		AppearBoss,
 		VSBoss,
@@ -50,6 +53,34 @@ public:
 		Donya::VertexShader VS;
 		Donya::PixelShader  PS;
 	};
+	struct Thread
+	{
+		struct Result
+		{
+			bool		finished  = false;
+			bool		succeeded = false;
+			std::mutex	mutex;
+		public:
+			void WriteResult( bool wasSucceeded )
+			{
+				std::lock_guard<std::mutex> lock( mutex );
+				finished  = true;
+				succeeded = wasSucceeded;
+			}
+			bool Finished()
+			{
+				std::lock_guard<std::mutex> lock( mutex );
+				return finished;
+			}
+			bool Succeeded()
+			{
+				std::lock_guard<std::mutex> lock( mutex );
+				return succeeded;
+			}
+		};
+		Result result;
+		std::unique_ptr<std::thread> pThread;
+	};
 private:
 	Donya::ICamera						iCamera;
 	Scroll								scroll;
@@ -64,7 +95,7 @@ private:
 	CheckPoint::Container				checkPoint;
 
 	Scene::Type							nextScene			= Scene::Type::Null;
-	State								status				= State::Stage;
+	State								status				= State::FirstInitialize;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 	std::unique_ptr<Donya::Displayer>	pDisplayer;
@@ -92,6 +123,9 @@ private:
 	bool	isThereBoss					= false;
 	bool	wantLeave					= false;// It is valid when the status == State::Clear
 	Donya::Vector3 prevPlayerPos;				// It is used to judge the timing that the player arrives to desired position
+
+	Thread	thObjects;
+	Thread	thRenderers;
 
 #if DEBUG_MODE
 	bool	nowDebugMode				= false;
@@ -133,6 +167,9 @@ private:
 	void	EndPause();
 
 	bool	IsPlayingStatus( State verify ) const;
+
+	void	FirstInitStateUpdate( float elapsedTime );
+	void	FirstInitStateDraw( float elapsedTime );
 
 	void	StageStateUpdate( float elapsedTime );
 

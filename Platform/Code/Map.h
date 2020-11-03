@@ -127,6 +127,7 @@ public:
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBoxes( const Donya::Collision::Box3F &wsScreenHitBox, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
+	bool LoadModel( int loadStageNumber );
 	void ReleaseModel();
 	/// <summary>
 	/// Returns tiles forming as: [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
@@ -177,7 +178,6 @@ private:
 	bool LoadMap( int stageNumber, bool fromBinary );
 #if USE_IMGUI
 public:
-	void ReloadModel( int loadStageNumber );
 	void RemakeByCSV( const CSVLoader &loadedData );
 	void SaveMap( int stageNumber, bool fromBinary );
 public:

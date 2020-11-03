@@ -377,6 +377,22 @@ void Map::DrawHitBoxes( const Donya::Collision::Box3F &wsScreen, RenderingHelper
 		}
 	);
 }
+bool Map::LoadModel( int loadStageNumber )
+{
+	const bool loadResult = LoadStageModel( &pModel, loadStageNumber );
+	if ( !loadResult )
+	{
+		std::string msg = u8"マップの読み込みに失敗しました。\n";
+		msg += u8"ステージ番号：[" + std::to_string( loadStageNumber ) + u8"]";
+		Donya::ShowMessageBox
+		(
+			msg,
+			"Loading stage is failed",
+			MB_ICONEXCLAMATION | MB_OK
+		);
+	}
+	return loadResult;
+}
 void Map::ReleaseModel()
 {
 	pModel.reset();
@@ -476,21 +492,6 @@ bool Map::LoadMap( int stageNumber, bool fromBinary )
 			: tmp.LoadJSON	( *this, filePath.c_str(), ID );
 }
 #if USE_IMGUI
-void Map::ReloadModel( int loadStageNumber )
-{
-	const bool loadResult = LoadStageModel( &pModel, loadStageNumber );
-	if ( !loadResult )
-	{
-		std::string msg = u8"マップの読み込みに失敗しました。\n";
-		msg += u8"ステージ番号：[" + std::to_string( loadStageNumber ) + u8"]";
-		Donya::ShowMessageBox
-		(
-			msg,
-			"Loading stage is failed",
-			MB_ICONEXCLAMATION | MB_OK
-		);
-	}
-}
 void Map::RemakeByCSV( const CSVLoader &loadedData )
 {
 	auto IsTileID	= []( int id )

@@ -1726,7 +1726,7 @@ void SceneResult::UseImGui()
 				ProcessOf( bufferMap,	ApplyToMap		);
 				ProcessOf( bufferMap,	ApplyToPlayer	);
 
-				if ( pMap ) { pMap->ReloadModel( readStageNumber ); }
+				if ( pMap ) { pMap->LoadModel( readStageNumber ); }
 			}
 
 			ImGui::InputInt ( u8"読み込むステージ番号",	&readStageNumber );
@@ -1763,7 +1763,7 @@ void SceneResult::UseImGui()
 			ImGui::InputInt( u8"マップモデルに適用するステージ番号", &loadMapNumber );
 			if ( ImGui::Button( u8"マップモデルを読み込む" ) && pMap )
 			{
-				pMap->ReloadModel( loadMapNumber );
+				pMap->LoadModel( loadMapNumber );
 			}
 
 			ImGui::TreePop();
