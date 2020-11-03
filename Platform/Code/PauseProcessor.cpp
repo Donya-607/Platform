@@ -193,9 +193,15 @@ void PauseProcessor::UpdateChooseItem()
 		const bool right	= Tilted( curr.moveVelocity.x, +1 ) && !Tilted( prev.moveVelocity.x, +1 );
 		const bool left		= Tilted( curr.moveVelocity.x, -1 ) && !Tilted( prev.moveVelocity.x, -1 );
 
-		if ( left || right || decided )
+		if ( left || right )
 		{
 			choice = scast<Choice>( 0 );
+		}
+		else
+		if ( decided )
+		{
+			choice  = scast<Choice>( 0 );
+			decided = false;
 		}
 		else
 		if ( up )
