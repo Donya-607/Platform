@@ -13,7 +13,7 @@
 
 namespace
 {
-	constexpr auto mbTellFatalError = MB_OK | MB_ICONERROR;
+	constexpr auto mbTellFatalError	= MB_OK | MB_ICONERROR;
 }
 
 INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _In_ LPWSTR cmdLine, _In_ INT cmdShow )

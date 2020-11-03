@@ -34,6 +34,8 @@
 #include "Parameter.h"
 #include "Player.h"
 
+#define LOAD_EFFECT_BY_ANOTHER_THREAD ( false )
+
 
 namespace
 {
@@ -118,13 +120,14 @@ void SceneLoad::Init()
 
 	sceneParam.LoadParameter();
 	
-	constexpr auto CoInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
-	auto LoadingEffects	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	constexpr auto coInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
+	auto LoadingEffects	= [coInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
 	{
 		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
 		// else
 
-		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+	#if LOAD_EFFECT_BY_ANOTHER_THREAD
+		HRESULT hr = CoInitializeEx( NULL, coInitValue );
 		if ( FAILED( hr ) )
 		{
 			std::lock_guard<std::mutex> lock( *pSucceedMutex );
@@ -134,6 +137,7 @@ void SceneLoad::Init()
 			return;
 		}
 		// else
+	#endif // LOAD_EFFECT_BY_ANOTHER_THREAD
 
 		bool succeeded = true;
 		constexpr size_t kindCount = scast<size_t>( Effect::Kind::KindCount );
@@ -151,14 +155,16 @@ void SceneLoad::Init()
 		*pFinishFlag  = true;
 		*pSucceedFlag = succeeded;
 
+	#if LOAD_EFFECT_BY_ANOTHER_THREAD
 		CoUninitialize();
+	#endif // LOAD_EFFECT_BY_ANOTHER_THREAD
 	};
-	auto LoadingModels	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	auto LoadingModels	= [coInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
 	{
 		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
 		// else
 
-		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		HRESULT hr = CoInitializeEx( NULL, coInitValue );
 		if ( FAILED( hr ) )
 		{
 			std::lock_guard<std::mutex> lock( *pSucceedMutex );
@@ -186,12 +192,12 @@ void SceneLoad::Init()
 
 		CoUninitialize();
 	};
-	auto LoadingSprites	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	auto LoadingSprites	= [coInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
 	{
 		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
 		// else
 
-		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		HRESULT hr = CoInitializeEx( NULL, coInitValue );
 		if ( FAILED( hr ) )
 		{
 			std::lock_guard<std::mutex> lock( *pSucceedMutex );
@@ -221,12 +227,12 @@ void SceneLoad::Init()
 
 		CoUninitialize();
 	};
-	auto LoadingSounds	= [&CoInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	auto LoadingSounds	= [coInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
 	{
 		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
 		// else
 
-		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		HRESULT hr = CoInitializeEx( NULL, coInitValue );
 		if ( FAILED( hr ) )
 		{
 			std::lock_guard<std::mutex> lock( *pSucceedMutex );
@@ -326,8 +332,11 @@ void SceneLoad::Init()
 	finishSounds	= false;
 	allSucceeded	= true;
 
-	// pThreadEffects	= std::make_unique<std::thread>( LoadingEffects,	&finishEffects,	&allSucceeded, &succeedMutex );
+#if LOAD_EFFECT_BY_ANOTHER_THREAD
+	pThreadEffects	= std::make_unique<std::thread>( LoadingEffects,	&finishEffects,	&allSucceeded, &succeedMutex );
+#else
 	LoadingEffects( &finishEffects,	&allSucceeded, &succeedMutex );
+#endif // LOAD_EFFECT_BY_ANOTHER_THREAD
 
 	pThreadModels	= std::make_unique<std::thread>( LoadingModels,		&finishModels,	&allSucceeded, &succeedMutex );
 	pThreadSounds	= std::make_unique<std::thread>( LoadingSounds,		&finishSounds,	&allSucceeded, &succeedMutex );

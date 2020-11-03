@@ -393,13 +393,13 @@ void SceneGame::Init()
 	status		= State::FirstInitialize;
 	stageNumber	= Definition::StageNumber::Game();
 
-	constexpr auto CoInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
-	auto InitObjects	= [&CoInitValue]( SceneGame *pScene, SceneGame::Thread::Result *pResult )
+	constexpr auto coInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
+	auto InitObjects	= [coInitValue]( SceneGame *pScene, SceneGame::Thread::Result *pResult )
 	{
 		if ( !pScene || !pResult ) { assert( !"HUMAN ERROR" ); return; }
 		// else
 
-		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		HRESULT hr = CoInitializeEx( NULL, coInitValue );
 		if ( FAILED( hr ) )
 		{
 			pResult->WriteResult( /* wasSucceeded = */ false );
@@ -425,12 +425,12 @@ void SceneGame::Init()
 		pResult->WriteResult( succeeded );
 		CoUninitialize();
 	};
-	auto InitRenderers	= [&CoInitValue]( SceneGame *pScene, SceneGame::Thread::Result *pResult )
+	auto InitRenderers	= [coInitValue]( SceneGame *pScene, SceneGame::Thread::Result *pResult )
 	{
 		if ( !pScene || !pResult ) { assert( !"HUMAN ERROR" ); return; }
 		// else
 
-		HRESULT hr = CoInitializeEx( NULL, CoInitValue );
+		HRESULT hr = CoInitializeEx( NULL, coInitValue );
 		if ( FAILED( hr ) )
 		{
 			pResult->WriteResult( /* wasSucceeded = */ false );
@@ -1524,8 +1524,8 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 	if ( status != State::FirstInitialize ) { return; }
 	// else
 
-	if ( thObjects.result.Finished()	) { return; }
-	if ( thRenderers.result.Finished()	) { return; }
+	if ( !thObjects.result.Finished()	) { return; }
+	if ( !thRenderers.result.Finished()	) { return; }
 	// else
 
 	// TODO: Insert a fade in fx
@@ -2860,9 +2860,37 @@ namespace
 
 		return "ERROR";
 	}
+
+	constexpr float bgAlpha = 0.6f;
 }
 void SceneGame::UseImGui( float elapsedTime )
 {
+	if ( status == State::FirstInitialize )
+	{
+		ImGui::SetNextWindowBgAlpha( bgAlpha );
+		if ( ImGui::BeginIfAllowed() )
+		{
+			ImGui::Text( u8"よみこみちゅう……" );
+
+			bool prgrObj = thObjects.result.Finished();
+			bool prgrRnd = thRenderers.result.Finished();
+			bool doneObj = thObjects.result.Succeeded();
+			bool doneRnd = thRenderers.result.Succeeded();
+			ImGui::Checkbox( u8"終了・OBJ", &prgrObj );
+			ImGui::SameLine();
+			ImGui::Checkbox( u8"成功・OBJ", &doneObj );
+			
+			ImGui::Checkbox( u8"終了・RNDR", &prgrRnd );
+			ImGui::SameLine();
+			ImGui::Checkbox( u8"成功・RNDR", &doneRnd );
+
+			ImGui::End();
+		}
+
+		return;
+	}
+	// else
+
 	if ( nowDebugMode )
 	{
 		debugTeller.SetNextWindow();
@@ -2949,7 +2977,7 @@ void SceneGame::UseImGui( float elapsedTime )
 		SetPlayerToBeforeBossRoom();
 	}
 
-	ImGui::SetNextWindowBgAlpha( 0.6f );
+	ImGui::SetNextWindowBgAlpha( bgAlpha );
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 
