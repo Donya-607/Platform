@@ -1363,7 +1363,8 @@ float SceneGame::PauseUpdate( float elapsedTime )
 
 	if ( !pPauser )
 	{
-		if ( Input::IsPauseRequested( controller ) )
+		const bool pausable = pPlayer && !Fader::Get().IsExist() && status != State::Clear && status != State::WaitToFade;
+		if ( Input::IsPauseRequested( controller ) && pausable )
 		{
 			BeginPause();
 			updateSpeedFactor = 0.0f;
