@@ -394,6 +394,7 @@ void SceneGame::Init()
 	Donya::Sound::Play( currentPlayingBGM );
 
 	sceneParam.LoadParameter();
+	PauseProcessor::LoadParameter();
 
 	constexpr Donya::Int2 wholeScreenSize
 	{
@@ -1411,7 +1412,7 @@ float SceneGame::PauseUpdate( float elapsedTime )
 void  SceneGame::BeginPause()
 {
 	pPauser = std::make_unique<PauseProcessor>();
-	pPauser->Init();
+	pPauser->Init( currentPlayingBGM );
 }
 void  SceneGame::EndPause()
 {
@@ -2635,20 +2636,6 @@ Scene::Result SceneGame::ReturnResult()
 	}
 	// else
 
-	const bool pausable = !Fader::Get().IsExist() && status != State::Clear && status != State::WaitToFade;
-	if ( 0 && Input::IsPauseRequested( controller ) && pausable )
-	{
-	#if DEBUG_MODE
-		Donya::Sound::Play( Music::DEBUG_Weak );
-	#endif // DEBUG_MODE
-
-		Scene::Result pause{};
-		pause.AddRequest( Scene::Request::ADD_SCENE );
-		pause.sceneType = Scene::Type::Pause;
-		return pause;
-	}
-	// else
-
 	Scene::Result noop{ Scene::Request::NONE, Scene::Type::Null };
 	return noop;
 }
@@ -2834,6 +2821,7 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	sceneParam.ShowImGuiNode( u8"ゲームシーンのパラメータ" );
 	ImGui::Text( u8"今のゲームステート：%s", GetStateName( status ) );
+	PauseProcessor::UpdateParameter();
 
 	if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
 	{

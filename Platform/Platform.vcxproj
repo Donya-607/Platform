@@ -308,6 +308,7 @@
     <ClInclude Include="Code\Music.h" />
     <ClInclude Include="Code\ObjectBase.h" />
     <ClInclude Include="Code\Parameter.h" />
+    <ClInclude Include="Code\PauseParam.h" />
     <ClInclude Include="Code\PauseProcessor.h" />
     <ClInclude Include="Code\Player.h" />
     <ClInclude Include="Code\PlayerParam.h" />
