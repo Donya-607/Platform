@@ -989,9 +989,14 @@ void SceneGame::Draw( float elapsedTime )
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
 		Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
 
+		const float oldDepth = Donya::Sprite::GetDrawDepth();
+		Donya::Sprite::SetDrawDepth( 0.0f );
+
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0 );
 		pBloomer->WriteLuminance( *pScreenSurface );
 		Donya::Sampler::ResetPS( 0 );
+
+		Donya::Sprite::SetDrawDepth( oldDepth );
 
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
 		pBloomer->WriteBlur();
@@ -1034,9 +1039,14 @@ void SceneGame::Draw( float elapsedTime )
 
 	// Add the bloom buffers
 	{
+		const float oldDepth = Donya::Sprite::GetDrawDepth();
+		Donya::Sprite::SetDrawDepth( 0.0f );
+
 		Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
 		pBloomer->DrawBlurBuffers( screenSurfaceSize );
 		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+
+		Donya::Sprite::SetDrawDepth( oldDepth );
 	}
 
 	Donya::Rasterizer::Deactivate();
