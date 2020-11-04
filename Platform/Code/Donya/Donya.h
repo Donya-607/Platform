@@ -86,9 +86,9 @@ namespace Donya
 
 	/// <summary>
 	/// Returns the result of the creation.
-	/// If the argument is nullptr, it reeturns E_INVALIDARG.
+	/// If the address is nullptr, it returns E_INVALIDARG.
 	/// </summary>
-	HRESULT CreateDeferredContext( ID3D11DeviceContext **pOutput );
+	HRESULT CreateDeferredContext( ID3D11DeviceContext **pOutputAddress );
 
 	/// <summary>
 	/// Doing IDXGISwapChain::Present(), check and assertion return value.<para></para>

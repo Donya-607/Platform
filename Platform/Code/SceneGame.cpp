@@ -390,6 +390,8 @@ CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
 
 void SceneGame::Init()
 {
+	PlayBGM( currentPlayingBGM );
+
 	status		= State::FirstInitialize;
 	stageNumber	= Definition::StageNumber::Game();
 
@@ -420,7 +422,8 @@ void SceneGame::Init()
 
 		pScene->pMap = std::make_unique<Map>();
 
-		pScene->InitStage( pScene->currentPlayingBGM, pScene->stageNumber, /* reloadModel = */ true );
+		constexpr auto stayFirstState = State::FirstInitialize;
+		pScene->InitStage( pScene->currentPlayingBGM, pScene->stageNumber, /* reloadModel = */ true, stayFirstState );
 
 		pResult->WriteResult( succeeded );
 		CoUninitialize();
@@ -460,8 +463,8 @@ void SceneGame::Init()
 		CoUninitialize();
 	};
 
-	thObjects.pThread	= std::make_unique<std::thread>( InitObjects,	this, &thObjects.result		);
-	thRenderers.pThread	= std::make_unique<std::thread>( InitRenderers,	this, &thRenderers.result	);
+	thObjects.pThread	= std::make_unique<std::thread>( InitObjects,	this, &thObjects.result );
+	thRenderers.pThread	= std::make_unique<std::thread>( InitRenderers,	this, &thRenderers.result );
 
 	/*
 	sceneParam.LoadParameter();
@@ -1030,9 +1033,11 @@ void SceneGame::Draw( float elapsedTime )
 	}
 
 	// Add the bloom buffers
-	Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
-	pBloomer->DrawBlurBuffers( screenSurfaceSize );
-	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+	{
+		Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
+		pBloomer->DrawBlurBuffers( screenSurfaceSize );
+		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+	}
 
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
@@ -1206,7 +1211,6 @@ bool SceneGame::CreateSurfaces( const Donya::Int2 &wholeScreenSize )
 		DXGI_FORMAT_R16G16B16A16_FLOAT
 	);
 	if ( !result ) { succeeded = false; }
-	else { pScreenSurface->Clear( Donya::Color::Code::BLACK ); }
 
 	pShadowMap = std::make_unique<Donya::Surface>();
 	result = pShadowMap->Init
@@ -1217,7 +1221,6 @@ bool SceneGame::CreateSurfaces( const Donya::Int2 &wholeScreenSize )
 		DXGI_FORMAT_R32_TYPELESS, true
 	);
 	if ( !result ) { succeeded = false; }
-	else { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
 
 	return succeeded;
 }
@@ -1326,9 +1329,9 @@ Donya::Collision::Box3F SceneGame::CalcCurrentScreenPlane() const
 	return nowScreen;
 }
 
-void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel )
+void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, State destState )
 {
-	status = State::Stage;
+	status = destState;
 	stageTimer = 0.0f;
 
 	if ( currentPlayingBGM != nextBGM )
@@ -1528,9 +1531,29 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 	if ( !thRenderers.result.Finished()	) { return; }
 	// else
 
-	// TODO: Insert a fade in fx
+	auto JoinThenRelease = []( std::unique_ptr<std::thread> *p )
+	{
+		if ( !p ) { return; }
+		// else
+		
+		auto &th = *p;
+		if ( !th ) { return; }
+		// else
+
+		if ( th->joinable() )
+		{
+			th->join();
+		}
+
+		th.reset();
+	};
+
+	JoinThenRelease( &thObjects.pThread		);
+	JoinThenRelease( &thRenderers.pThread	);
 
 	status = State::Stage;
+
+	// TODO: Insert a fade in fx
 }
 void SceneGame::FirstInitStateDraw( float elapsedTime )
 {

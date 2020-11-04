@@ -23,14 +23,14 @@ namespace Donya
 		*ppImmediateContext = Donya::GetImmediateContext();
 	}
 
-	void Surface::SetRenderTargets( const std::vector<Surface> &surfaces, ID3D11DeviceContext *pImmediateContext )
+	void Surface::SetRenderTargets( const std::vector<Surface> &surfaces, ID3D11DeviceContext *pContext )
 	{
 		Donya::Sprite::Flush();
 
 		if ( surfaces.empty() ) { return; }
 		// else
 
-		SetDefaultIfNull( &pImmediateContext );
+		SetDefaultIfNull( &pContext );
 
 		constexpr size_t availableCount = scast<size_t>( D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT );
 		const size_t surfaceCount = std::min( availableCount, surfaces.size() );
@@ -41,13 +41,13 @@ namespace Donya
 		}
 
 		ComPtr<ID3D11DepthStencilView> pDSV = surfaces.front().GetDepthStencilView();
-		pImmediateContext->OMSetRenderTargets( surfaceCount, rtvPtrs.data(), pDSV.Get() );
+		pContext->OMSetRenderTargets( surfaceCount, rtvPtrs.data(), pDSV.Get() );
 	}
-	void Surface::ResetRenderTargets( size_t resetCount, ID3D11DeviceContext *pImmediateContext )
+	void Surface::ResetRenderTargets( size_t resetCount, ID3D11DeviceContext *pContext )
 	{
 		Donya::Sprite::Flush();
 
-		SetDefaultIfNull( &pImmediateContext );
+		SetDefaultIfNull( &pContext );
 
 		constexpr size_t maxSlot = scast<size_t>( D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT );
 		resetCount = std::min( maxSlot, resetCount );
@@ -59,7 +59,7 @@ namespace Donya
 		}
 
 		ID3D11DepthStencilView *nullDSV = nullptr;
-		pImmediateContext->OMSetRenderTargets( resetCount, nullRTVs.data(), nullDSV );
+		pContext->OMSetRenderTargets( resetCount, nullRTVs.data(), nullDSV );
 
 		// Activate the library's default views for fail-safe.
 		ResetRenderTarget();
@@ -261,94 +261,94 @@ namespace Donya
 		return pDSSRV;
 	}
 
-	void Surface::SetRenderTarget( ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::SetRenderTarget( ID3D11DeviceContext *pContext ) const
 	{
 		Donya::Sprite::Flush();
 
-		SetDefaultIfNull( &pImmediateContext );
-		pImmediateContext->OMSetRenderTargets( 1U, pRTV.GetAddressOf(), pDSV.Get() );
+		SetDefaultIfNull( &pContext );
+		pContext->OMSetRenderTargets( 1U, pRTV.GetAddressOf(), pDSV.Get() );
 	}
 
-	void Surface::Clear( const Donya::Vector4 clearColor, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::Clear( const Donya::Vector4 clearColor, ID3D11DeviceContext *pContext ) const
 	{
-		SetDefaultIfNull( &pImmediateContext );
+		SetDefaultIfNull( &pContext );
 
 		const FLOAT colors[4]{ clearColor.x, clearColor.y, clearColor.z, clearColor.w };
-		if ( pRTV ) { pImmediateContext->ClearRenderTargetView( pRTV.Get(), colors ); }
-		if ( pDSV ) { pImmediateContext->ClearDepthStencilView( pDSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 ); }
+		if ( pRTV ) { pContext->ClearRenderTargetView( pRTV.Get(), colors ); }
+		if ( pDSV ) { pContext->ClearDepthStencilView( pDSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 ); }
 	}
-	void Surface::Clear( Donya::Color::Code   clearColor, float alpha, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::Clear( Donya::Color::Code   clearColor, float alpha, ID3D11DeviceContext *pContext ) const
 	{
 		Clear
 		(
 			Donya::Vector4{ Donya::Color::MakeColor( clearColor ), alpha },
-			pImmediateContext
+			pContext
 		);
 	}
 
-	void Surface::SetRenderTargetShaderResourceVS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::SetRenderTargetShaderResourceVS( unsigned int slot, ID3D11DeviceContext *pContext ) const
 	{
-		SetDefaultIfNull( &pImmediateContext );
-		pImmediateContext->VSSetShaderResources( slot, 1U, pRTSRV.GetAddressOf() );
+		SetDefaultIfNull( &pContext );
+		pContext->VSSetShaderResources( slot, 1U, pRTSRV.GetAddressOf() );
 	}
-	void Surface::SetDepthStencilShaderResourceVS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::SetDepthStencilShaderResourceVS( unsigned int slot, ID3D11DeviceContext *pContext ) const
 	{
-		SetDefaultIfNull( &pImmediateContext );
-		pImmediateContext->VSSetShaderResources( slot, 1U, pDSSRV.GetAddressOf() );
+		SetDefaultIfNull( &pContext );
+		pContext->VSSetShaderResources( slot, 1U, pDSSRV.GetAddressOf() );
 	}
-	void Surface::SetRenderTargetShaderResourceGS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::SetRenderTargetShaderResourceGS( unsigned int slot, ID3D11DeviceContext *pContext ) const
 	{
-		SetDefaultIfNull( &pImmediateContext );
-		pImmediateContext->GSSetShaderResources( slot, 1U, pRTSRV.GetAddressOf() );
+		SetDefaultIfNull( &pContext );
+		pContext->GSSetShaderResources( slot, 1U, pRTSRV.GetAddressOf() );
 	}
-	void Surface::SetDepthStencilShaderResourceGS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::SetDepthStencilShaderResourceGS( unsigned int slot, ID3D11DeviceContext *pContext ) const
 	{
-		SetDefaultIfNull( &pImmediateContext );
-		pImmediateContext->GSSetShaderResources( slot, 1U, pDSSRV.GetAddressOf() );
+		SetDefaultIfNull( &pContext );
+		pContext->GSSetShaderResources( slot, 1U, pDSSRV.GetAddressOf() );
 	}
-	void Surface::SetRenderTargetShaderResourcePS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::SetRenderTargetShaderResourcePS( unsigned int slot, ID3D11DeviceContext *pContext ) const
 	{
 		assert( this );
-		SetDefaultIfNull( &pImmediateContext );
-		pImmediateContext->PSSetShaderResources( slot, 1U, pRTSRV.GetAddressOf() );
+		SetDefaultIfNull( &pContext );
+		pContext->PSSetShaderResources( slot, 1U, pRTSRV.GetAddressOf() );
 	}
-	void Surface::SetDepthStencilShaderResourcePS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::SetDepthStencilShaderResourcePS( unsigned int slot, ID3D11DeviceContext *pContext ) const
 	{
 		assert( this );
-		SetDefaultIfNull( &pImmediateContext );
-		pImmediateContext->PSSetShaderResources( slot, 1U, pDSSRV.GetAddressOf() );
+		SetDefaultIfNull( &pContext );
+		pContext->PSSetShaderResources( slot, 1U, pDSSRV.GetAddressOf() );
 	}
 	
-	void Surface::ResetShaderResourceVS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::ResetShaderResourceVS( unsigned int slot, ID3D11DeviceContext *pContext ) const
 	{
-		SetDefaultIfNull( &pImmediateContext );
+		SetDefaultIfNull( &pContext );
 
 		ID3D11ShaderResourceView *pNullSRV = nullptr;
-		pImmediateContext->VSSetShaderResources( slot, 1U, &pNullSRV );
+		pContext->VSSetShaderResources( slot, 1U, &pNullSRV );
 	}
-	void Surface::ResetShaderResourceGS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::ResetShaderResourceGS( unsigned int slot, ID3D11DeviceContext *pContext ) const
 	{
-		SetDefaultIfNull( &pImmediateContext );
+		SetDefaultIfNull( &pContext );
 
 		ID3D11ShaderResourceView *pNullSRV = nullptr;
-		pImmediateContext->GSSetShaderResources( slot, 1U, &pNullSRV );
+		pContext->GSSetShaderResources( slot, 1U, &pNullSRV );
 	}
-	void Surface::ResetShaderResourcePS( unsigned int slot, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::ResetShaderResourcePS( unsigned int slot, ID3D11DeviceContext *pContext ) const
 	{
-		SetDefaultIfNull( &pImmediateContext );
+		SetDefaultIfNull( &pContext );
 
 		ID3D11ShaderResourceView *pNullSRV = nullptr;
-		pImmediateContext->PSSetShaderResources( slot, 1U, &pNullSRV );
+		pContext->PSSetShaderResources( slot, 1U, &pNullSRV );
 	}
 
-	void Surface::SetViewport( const Donya::Vector2 &ssLTPos, ID3D11DeviceContext *pImmediateContext ) const
+	void Surface::SetViewport( const Donya::Vector2 &ssLTPos, ID3D11DeviceContext *pContext ) const
 	{
-		SetDefaultIfNull( &pImmediateContext );
+		SetDefaultIfNull( &pContext );
 
 		viewport.TopLeftX = ssLTPos.x;
 		viewport.TopLeftY = ssLTPos.y;
 
-		pImmediateContext->RSSetViewports( 1U, &viewport );
+		pContext->RSSetViewports( 1U, &viewport );
 	}
 
 #if USE_IMGUI

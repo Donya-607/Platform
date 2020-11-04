@@ -45,10 +45,6 @@ bool  BloomApplier::Init( const Donya::Int2 &wholeScreenSize )
 				wholeSize.y,
 				format
 			);
-			if ( result )
-			{
-				p->Clear( Donya::Color::Code::BLACK );
-			}
 
 			return result;
 		};

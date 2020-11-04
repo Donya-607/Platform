@@ -19,13 +19,13 @@ namespace Donya
 		/// <summary>
 		/// Set render-target views.You should call together a SetViewport().<para></para>
 		/// The viewport size and depth-stencil view will using first surface's.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		static void SetRenderTargets( const std::vector<Surface> &surfaces, ID3D11DeviceContext *pImmediateContext = nullptr );
+		static void SetRenderTargets( const std::vector<Surface> &surfaces, ID3D11DeviceContext *pContext = nullptr );
 		/// <summary>
 		/// Reset to null the render targets from zero slot to max slot.
 		/// </summary>
-		static void ResetRenderTargets( size_t resetCount, ID3D11DeviceContext *pImmediateContext = nullptr );
+		static void ResetRenderTargets( size_t resetCount, ID3D11DeviceContext *pContext = nullptr );
 		/// <summary>
 		/// Set a default render-target. This is same as call Donya::SetDefaultRenderTargets() fuction(at Donya.h).
 		/// </summary>
@@ -74,71 +74,71 @@ namespace Donya
 	public:
 		/// <summary>
 		/// Set render-target to me.You should call together the SetViewport().<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void SetRenderTarget( ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void SetRenderTarget( ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Clear render-target view, depth-stencil view.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void Clear( const Donya::Vector4 clearColor, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void Clear( const Donya::Vector4 clearColor, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Clear render-target view, depth-stencil view.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void Clear( Donya::Color::Code clearColor, float alpha = 1.0f, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void Clear( Donya::Color::Code clearColor, float alpha = 1.0f, ID3D11DeviceContext *pContext = nullptr ) const;
 	public:
 		/// <summary>
 		/// Set render-target's shader-resource view to vertex-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void SetRenderTargetShaderResourceVS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void SetRenderTargetShaderResourceVS( unsigned int setSlot, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Set depth-stencil's shader-resource view to vertex-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void SetDepthStencilShaderResourceVS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void SetDepthStencilShaderResourceVS( unsigned int setSlot, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Set render-target's shader-resource view to geometry-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void SetRenderTargetShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void SetRenderTargetShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Set depth-stencil's shader-resource view to geometry-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void SetDepthStencilShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void SetDepthStencilShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Set render-target's shader-resource view to pixel-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void SetRenderTargetShaderResourcePS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void SetRenderTargetShaderResourcePS( unsigned int setSlot, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Set depth-stencil's shader-resource view to pixel-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void SetDepthStencilShaderResourcePS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void SetDepthStencilShaderResourcePS( unsigned int setSlot, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Set the NULL shader-resource view to vertex-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void ResetShaderResourceVS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void ResetShaderResourceVS( unsigned int setSlot, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Set the NULL shader-resource view to pixel-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void ResetShaderResourcePS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void ResetShaderResourcePS( unsigned int setSlot, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Set the NULL shader-resource view to geometry-shader.<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void ResetShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void ResetShaderResourceGS( unsigned int setSlot, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
 		/// Set only the viewport. You should call this together when call SetRenderTarget().<para></para>
 		/// You can specify the setting position by use "ssLTPos"(screen-space, left-top).<para></para>
-		/// If set nullptr to pImmediateContext, a default device will be used.
+		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
-		void SetViewport( const Donya::Vector2 &ssLTPos = { 0.0f, 0.0f }, ID3D11DeviceContext *pImmediateContext = nullptr ) const;
+		void SetViewport( const Donya::Vector2 &ssLTPos = { 0.0f, 0.0f }, ID3D11DeviceContext *pContext = nullptr ) const;
 	public:
 	#if USE_IMGUI
 		/// <summary>
