@@ -201,6 +201,7 @@
     <ClCompile Include="Code\ObjectBase.cpp" />
     <ClCompile Include="Code\Parameter.cpp" />
     <ClCompile Include="Code\PauseProcessor.cpp" />
+    <ClCompile Include="Code\Performances\LoadPart.cpp" />
     <ClCompile Include="Code\Player.cpp" />
     <ClCompile Include="Code\PointLightStorage.cpp" />
     <ClCompile Include="Code\Renderer.cpp" />
@@ -310,6 +311,8 @@
     <ClInclude Include="Code\Parameter.h" />
     <ClInclude Include="Code\PauseParam.h" />
     <ClInclude Include="Code\PauseProcessor.h" />
+    <ClInclude Include="Code\Performances\LoadParam.h" />
+    <ClInclude Include="Code\Performances\LoadPart.h" />
     <ClInclude Include="Code\Player.h" />
     <ClInclude Include="Code\PlayerParam.h" />
     <ClInclude Include="Code\PointLightStorage.h" />

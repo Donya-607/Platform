@@ -386,7 +386,7 @@ namespace
 #endif // DEBUG_MODE
 }
 CEREAL_CLASS_VERSION( SceneParam,				13 )
-CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0 )
+CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0  )
 
 void SceneGame::Init()
 {
