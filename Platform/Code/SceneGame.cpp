@@ -56,6 +56,7 @@ namespace
 #endif // DEBUG_MODE
 
 #if USE_IMGUI
+	static bool dontFinishLoadState	= false;
 	static bool projectLightCamera	= false;
 	static bool drawLightSources	= false;
 #endif // USE_IMGUI
@@ -395,6 +396,14 @@ void SceneGame::Init()
 	status		= State::FirstInitialize;
 	stageNumber	= Definition::StageNumber::Game();
 
+	constexpr Donya::Vector2 ssCenterPos
+	{
+		Common::HalfScreenWidthF(),
+		Common::HalfScreenHeightF(),
+	};
+	loadPerformer.Init();
+	loadPerformer.Start( ssCenterPos );
+
 	constexpr auto coInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
 	auto InitObjects	= [coInitValue]( SceneGame *pScene, SceneGame::Thread::Result *pResult )
 	{
@@ -413,6 +422,7 @@ void SceneGame::Init()
 		bool result		= true;
 
 		PauseProcessor::LoadParameter();
+		Performer::LoadPart::LoadParameter();
 		sceneParam.LoadParameter();
 		pScene->playerIniter.LoadParameter( pScene->stageNumber );
 
@@ -465,38 +475,6 @@ void SceneGame::Init()
 
 	thObjects.pThread	= std::make_unique<std::thread>( InitObjects,	this, &thObjects.result );
 	thRenderers.pThread	= std::make_unique<std::thread>( InitRenderers,	this, &thRenderers.result );
-
-	/*
-	sceneParam.LoadParameter();
-	PauseProcessor::LoadParameter();
-
-	constexpr Donya::Int2 wholeScreenSize
-	{
-		Common::ScreenWidth(),
-		Common::ScreenHeight(),
-	};
-	
-	bool result{};
-
-	result = CreateRenderers( wholeScreenSize );
-	assert( result );
-
-	result = CreateSurfaces( wholeScreenSize );
-	assert( result );
-
-	result = CreateShaders();
-	assert( result );
-
-	pSky = std::make_unique<Sky>();
-	result = pSky->Init();
-	assert( result );
-
-	pMap = std::make_unique<Map>();
-
-	playerIniter.LoadParameter( stageNumber );
-	
-	InitStage( currentPlayingBGM, stageNumber, / reloadModel = / true );
-	*/
 }
 void SceneGame::Uninit()
 {
@@ -504,6 +482,8 @@ void SceneGame::Uninit()
 
 	if ( pMap ) { pMap->ReleaseModel(); }
 	pMap.reset();
+
+	loadPerformer.Uninit();
 
 	Effect::Admin::Get().ClearInstances();
 
@@ -1010,8 +990,8 @@ void SceneGame::Draw( float elapsedTime )
 
 	const Donya::Vector2 screenSurfaceSize = pScreenSurface->GetSurfaceSizeF();
 
-	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
+	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
 	// Draw the scene to screen
 	{
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
@@ -1036,7 +1016,9 @@ void SceneGame::Draw( float elapsedTime )
 		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 		Donya::Sampler::ResetPS( 0 );
 	}
+	Donya::DepthStencil::Deactivate();
 
+	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_NoWrite );
 	// Add the bloom buffers
 	{
 		const float oldDepth = Donya::Sprite::GetDrawDepth();
@@ -1048,9 +1030,9 @@ void SceneGame::Draw( float elapsedTime )
 
 		Donya::Sprite::SetDrawDepth( oldDepth );
 	}
+	Donya::DepthStencil::Deactivate();
 
 	Donya::Rasterizer::Deactivate();
-	Donya::DepthStencil::Deactivate();
 
 #if DEBUG_MODE
 	// Object's hit/hurt boxes
@@ -1537,6 +1519,8 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 	if ( status != State::FirstInitialize ) { return; }
 	// else
 
+	loadPerformer.Update( elapsedTime );
+
 	if ( !thObjects.result.Finished()	) { return; }
 	if ( !thRenderers.result.Finished()	) { return; }
 	// else
@@ -1561,6 +1545,11 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 	JoinThenRelease( &thObjects.pThread		);
 	JoinThenRelease( &thRenderers.pThread	);
 
+#if USE_IMGUI
+	if ( dontFinishLoadState ) { return; }
+	// else
+#endif // USE_IMGUI
+
 	status = State::Stage;
 
 	// TODO: Insert a fade in fx
@@ -1570,34 +1559,37 @@ void SceneGame::FirstInitStateDraw( float elapsedTime )
 	if ( status != State::FirstInitialize ) { return; }
 	// else
 
+	loadPerformer.Draw( 0.0f );
+
 #if DEBUG_MODE
-
-	const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
-	if ( !pFontRenderer ) { return; }
-	// else
-
-	constexpr Donya::Vector2 pivot			{ 0.5f, 0.5f };
-	constexpr Donya::Vector4 white			{ 1.0f, 1.0f, 1.0f, 1.0f };
-	constexpr Donya::Vector4 selectColor	= white;
-	constexpr Donya::Vector4 unselectColor	{ 0.4f, 0.4f, 0.4f, 1.0f };
-
-	constexpr Donya::Vector2 halfScreenSize
+	if ( 0 )
 	{
-		Common::HalfScreenWidthF(),
-		Common::HalfScreenHeightF(),
-	};
+		const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
+		if ( !pFontRenderer ) { return; }
+		// else
 
-	pFontRenderer->DrawExt
-	(
-		L"-‚k‚n‚`‚c‚h‚m‚f-",
-		halfScreenSize,
-		pivot,
-		2.0f,
-		white
-	);
+		constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
+		constexpr Donya::Vector4 white{ 1.0f, 1.0f, 1.0f, 1.0f };
+		constexpr Donya::Vector4 selectColor = white;
+		constexpr Donya::Vector4 unselectColor{ 0.4f, 0.4f, 0.4f, 1.0f };
 
-	Donya::Sprite::Flush();
+		constexpr Donya::Vector2 halfScreenSize
+		{
+			Common::HalfScreenWidthF(),
+			Common::HalfScreenHeightF(),
+		};
 
+		pFontRenderer->DrawExt
+		(
+			L"-‚k‚n‚`‚c‚h‚m‚f-",
+			halfScreenSize,
+			pivot,
+			2.0f,
+			white
+		);
+
+		Donya::Sprite::Flush();
+	}
 #endif // DEBUG_MODE
 }
 
@@ -2905,6 +2897,8 @@ void SceneGame::UseImGui( float elapsedTime )
 		{
 			ImGui::Text( u8"‚æ‚İ‚±‚İ‚¿‚ã‚¤cc" );
 
+			ImGui::Checkbox( u8"ƒ[ƒh‰æ–Ê‚Ì‚Ü‚Ü~‚ß‚é", &dontFinishLoadState );
+
 			bool prgrObj = thObjects.result.Finished();
 			bool prgrRnd = thRenderers.result.Finished();
 			bool doneObj = thObjects.result.Succeeded();
@@ -2916,6 +2910,8 @@ void SceneGame::UseImGui( float elapsedTime )
 			ImGui::Checkbox( u8"I—¹ERNDR", &prgrRnd );
 			ImGui::SameLine();
 			ImGui::Checkbox( u8"¬Œ÷ERNDR", &doneRnd );
+
+			Performer::LoadPart::ShowImGuiNode( u8"ƒ[ƒh‰‰o‚Ìİ’è" );
 
 			ImGui::End();
 		}
@@ -3360,6 +3356,8 @@ void SceneGame::UseImGui( float elapsedTime )
 		ImGui::Text( "" );
 
 		Effect::Admin::Get().ShowImGuiNode( u8"ƒGƒtƒFƒNƒg‚Ìƒpƒ‰ƒ[ƒ^" );
+
+		Performer::LoadPart::ShowImGuiNode( u8"ƒ[ƒh‰‰o‚Ìİ’è" );
 
 		ImGui::TreePop();
 	}

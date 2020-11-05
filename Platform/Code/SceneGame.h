@@ -23,6 +23,7 @@
 #include "Music.h"
 #include "ObjectBase.h"
 #include "PauseProcessor.h"
+#include "Performances/LoadPart.h"
 #include "Player.h"
 #include "Renderer.h"
 #include "Room.h"
@@ -96,6 +97,8 @@ private:
 
 	Scene::Type							nextScene			= Scene::Type::Null;
 	State								status				= State::FirstInitialize;
+
+	Performer::LoadPart					loadPerformer;
 
 	std::unique_ptr<RenderingHelper>	pRenderer;
 	std::unique_ptr<Donya::Displayer>	pDisplayer;

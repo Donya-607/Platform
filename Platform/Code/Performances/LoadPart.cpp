@@ -103,6 +103,23 @@ namespace Performer
 		if ( !active ) { return; }
 		// else
 
+	#if USE_IMGUI
+		// Apply the modification as immediately
+		{
+			const auto &data = Parameter::Get().partIcon;
+			// Assign the parameters without sprite identifier
+			sprite = data.config;
+
+			// Assign the sprite identifier only
+			constexpr auto attr = SpriteAttribute::LoadingIcon;
+			const bool result = sprite.LoadSprite( GetSpritePath( attr ), GetSpriteInstanceCount( attr ) );
+			if ( !result )
+			{
+				_ASSERT_EXPR( 0, L"Error: Load the Loading-Icon is failed!" );
+			}
+		}
+	#endif // USE_IMGUI
+
 		timer += elapsedTime;
 
 		const auto &data = Parameter::Get().partIcon;
@@ -114,13 +131,25 @@ namespace Performer
 		}
 		// else
 
-		const float angle		= ToRadian( timer * 360.0f );
-		const float cycleSpeed	= 1.0f / ( data.cycleSecond * 2.0f );
-		// Use only semicircle part(0.0f ~ pi) of sine
-		const float t			= fabsf( sinf( angle * cycleSpeed ) );
+		// Fail safe
+		if ( data.bounceOffsets.size() < 2 )
+		{
+			bounce = Donya::Vector2::Zero();
+			return;
+		}
+		if ( data.bounceStretches.size() < 2 )
+		{
+			bounce = Donya::Vector2::Zero();
+			return;
+		}
+		// else
 
-		bounce  = Math::CalcBezierCurve( data.bounceOffsets,	t );
-		stretch = Math::CalcBezierCurve( data.bounceStretches,	t );
+		const float cycleSpeed	= 1.0f / data.cycleSecond;
+		const float angle		= ToRadian( timer * 360.0f );
+		const float sin_01		= ( sinf( angle * cycleSpeed ) + 1.0f ) * 0.5f;
+
+		bounce  = Math::CalcBezierCurve( data.bounceOffsets,	sin_01 );
+		stretch = Math::CalcBezierCurve( data.bounceStretches,	sin_01 );
 	}
 	void LoadPart::Icon::Draw( float drawDepth )
 	{
@@ -131,7 +160,7 @@ namespace Performer
 		const auto oldScale	= sprite.scale;
 
 		sprite.pos += basePos + bounce;
-		sprite.scale.Product( stretch );
+		sprite.scale = Donya::Vector2::Product( sprite.scale, stretch );
 		sprite.Draw( drawDepth );
 
 		sprite.pos		= oldPos;
@@ -159,7 +188,7 @@ namespace Performer
 			return ( *str ) ? 1 + Length( str + 1 ) : 0;
 		}
 		constexpr const wchar_t *showingStr = L"Loading...";
-		constexpr int    showingStrCount  = Length( showingStr ) + 1;
+		constexpr int    showingStrCount  = Length( showingStr );
 		constexpr float  showingStrCountF = scast<float>( showingStrCount );
 		constexpr size_t showingStrCountS = scast<size_t>( showingStrCount );
 	}
@@ -179,6 +208,16 @@ namespace Performer
 	{
 		if ( !active ) { return; }
 		// else
+
+	#if USE_IMGUI
+		// Apply the modification as immediately
+		{
+			const auto &data = Parameter::Get().partString;
+			scale		= data.config.scale;
+			posOffset	= data.config.pos;
+			pivot		= data.config.origin;
+		}
+	#endif // USE_IMGUI
 
 		if ( popWeights.size() != showingStrCountS )
 		{
@@ -207,18 +246,17 @@ namespace Performer
 
 			const float currentStartSec	= data.staySecond + ( data.partPopSecond * iF );
 			const float currentEndSec	= currentStartSec + data.partPopSecond;
-			if	(
-					currentStartSec	<= timer - data.popInflRange ||
-					currentEndSec	>= timer + data.popInflRange
-				)
+			const float left  = timer - data.popInflRange;
+			const float right = timer + data.popInflRange;
+			if ( currentStartSec - data.popInflRange <= timer && timer < currentEndSec + data.popInflRange )
 			{
-				character = 0.0f;
-				continue;
+				character = 1.0f;
 			}
-			// else
-
-			// TODO: lerp the weight by distance
-			character = 1.0f;
+			else
+			{
+				// TODO: lerp the weight by distance
+				character = 0.0f;
+			}
 		}
 	}
 	void LoadPart::String::Draw( float drawDepth )
@@ -232,6 +270,9 @@ namespace Performer
 
 		const auto &data = Parameter::Get().partString;
 
+		const float oldDepth = Donya::Sprite::GetDrawDepth();
+		Donya::Sprite::SetDrawDepth( drawDepth );
+
 		Donya::Vector2 popAmount;
 		Donya::Vector2 drawPosOffset;
 		Donya::Vector2 drawnLength;
@@ -243,12 +284,14 @@ namespace Performer
 
 			drawnLength = pRenderer->DrawExt
 			(
-				showingStr,
+				std::wstring{ showingStr[i] },
 				baseDrawPos + drawPosOffset + popAmount,
 				pivot, scale
 			);
 			drawPosOffset.x += drawnLength.x;
 		}
+
+		Donya::Sprite::SetDrawDepth( oldDepth );
 	}
 	void LoadPart::String::Start( const Donya::Vector2 &ssBasePos )
 	{
