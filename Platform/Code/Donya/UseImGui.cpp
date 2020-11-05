@@ -4,6 +4,8 @@
 
 #include "Donya.h"		// Use for GetWindowCaption()
 
+#include "../Math.h"	// Use CalcBezierCurve()
+
 #undef max
 #undef min
 
@@ -266,6 +268,45 @@ namespace ImGui
 			}
 
 			if ( useTreeNode ) { ImGui::TreePop(); }
+		}
+
+		void ShowBezier2DNode( const std::string &nodeCaption, std::vector<Donya::Vector2> *pCtrlPoints, float rangeMin, float rangeMax )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			constexpr Donya::Vector2 append{ 1.0f, 1.0f };
+			ResizeByButton( pCtrlPoints, append );
+			if ( pCtrlPoints->size() < 2 )
+			{
+				pCtrlPoints->resize( 2 );
+			}
+
+			const int pointCount = pCtrlPoints->size();
+			std::string caption;
+			for ( int i = 0; i < pointCount; ++i )
+			{
+				caption = Donya::MakeArraySuffix( i );
+				ImGui::SliderFloat2( caption.c_str(), &pCtrlPoints->at( i ).x, rangeMin, rangeMax );
+			}
+
+			ImGui::Text( "" ); // Line feed
+
+			static std::unordered_map<std::string, float> checkers;
+			auto found =  checkers.find( nodeCaption );
+			if ( found == checkers.end() )
+			{
+				checkers.insert( std::make_pair( nodeCaption, 0.0f ) );
+				found = checkers.find( nodeCaption );
+			}
+
+			auto &timer = found->second;
+			ImGui::SliderFloat( u8"確認用タイマ", &timer, 0.0f, 1.0f );
+
+			Donya::Vector2 result = Math::CalcBezierCurve( *pCtrlPoints, timer );
+			ImGui::SliderFloat2( u8"ベジェ曲線適用結果", &result.x, rangeMin, rangeMax );
+
+			ImGui::TreePop();
 		}
 	}
 }

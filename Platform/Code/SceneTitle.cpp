@@ -408,6 +408,9 @@ namespace
 					ImGui::DragFloat( u8"必要秒数", pTakeSecond, 0.01f );
 					*pTakeSecond = std::max( 0.001f, *pTakeSecond );
 
+					ImGui::Helper::ShowBezier2DNode( u8"ベジェ曲線の制御点", pCtrlPoints, rangeMinMax.x, rangeMinMax.y );
+
+					/*
 					ImGui::Helper::ResizeByButton( pCtrlPoints, appendScale );
 					if ( pCtrlPoints->size() < 2 )
 					{
@@ -437,6 +440,7 @@ namespace
 
 					Donya::Vector2 result = Math::CalcBezierCurve( *pCtrlPoints, timer );
 					ImGui::SliderFloat2( u8"ベジェ曲線適用結果", &result.x, rangeMinMax.x, rangeMinMax.y );
+					*/
 
 					ImGui::TreePop();
 				};

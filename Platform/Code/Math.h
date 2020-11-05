@@ -13,10 +13,11 @@ namespace Math
 		}
 	}
 	/// <summary>
-	/// The points count must be greater-eq than 2
+	/// The points count must be greater-eq than 2.
+	/// 0.0f &lt;= t &lt;= 1.0f
 	/// </summary>
 	template<typename T>
-	T CalcBezierCurve( const std::vector<T> points, float t )
+	T CalcBezierCurve( const std::vector<T> &points, float t )
 	{
 		const int pointCount = static_cast<int>( points.size() );
 		

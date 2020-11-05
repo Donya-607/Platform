@@ -32,6 +32,7 @@ enum class SpriteAttribute
 	FMODLogoBlack,
 	FMODLogoWhite,
 
+	LoadingIcon,
 	TitleLogo,
 	
 	Meter,
