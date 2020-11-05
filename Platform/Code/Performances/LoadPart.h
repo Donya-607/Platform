@@ -54,6 +54,7 @@ namespace Performer
 		float	BGMaskAlpha	= 1.0f;
 		Icon	partIcon;
 		String	partString;
+		bool	active		= false;
 	public:
 		void Init();
 		void Uninit();

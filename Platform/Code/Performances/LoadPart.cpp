@@ -3,6 +3,7 @@
 
 #include "../Donya/Sprite.h"
 
+#include "../Common.h"
 #include "../FontHelper.h"
 #include "../Math.h"
 #include "../Parameter.h"
@@ -263,26 +264,60 @@ namespace Performer
 
 	void LoadPart::Init()
 	{
+		timer		= 0.0f;
+		BGMaskAlpha	= 1.0f;
+		active		= false;
 
+		partIcon.Init();
+		partString.Init();
 	}
 	void LoadPart::Uninit()
 	{
-
+		// No op
 	}
 	void LoadPart::Update( float elapsedTime )
 	{
+		if ( !active ) { return; }
+		// else
 
+		timer += elapsedTime;
+
+		partIcon.Update( elapsedTime );
+		partString.Update( elapsedTime );
 	}
 	void LoadPart::Draw( float drawDepth )
 	{
+		if ( !active ) { return; }
+		// else
 
+		const float oldDepth = Donya::Sprite::GetDrawDepth();
+		Donya::Sprite::SetDrawDepth( drawDepth );
+		Donya::Sprite::DrawRect
+		(
+			Common::HalfScreenWidthF(),	Common::HalfScreenWidthF(),
+			Common::ScreenWidthF(),		Common::ScreenWidthF(),
+			Donya::Color::Code::BLACK,
+			BGMaskAlpha
+		);
+		Donya::Sprite::SetDrawDepth( oldDepth );
+
+		partIcon.Draw( drawDepth );
+		partString.Draw( drawDepth );
 	}
 	void LoadPart::Start( const Donya::Vector2 &ssBasePos )
 	{
+		timer		= 0.0f;
+		BGMaskAlpha	= 1.0f;
+		active		= true;
 
+		partIcon.Start( ssBasePos );
+		partString.Start( ssBasePos );
 	}
 	void LoadPart::Stop()
 	{
+		active = false;
 
+		partIcon.Stop();
+		partString.Stop();
 	}
 }
