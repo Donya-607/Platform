@@ -148,46 +148,54 @@ namespace Donya
 			bool Init( const Holder &fontData, size_t maxInstanceCount = 512U );
 		public:
 			/// <summary>
+			/// It returns the drawn length in screen space.
 			/// Using the Donya::Sprite internally. So you should care the flush timing because the sprite using batching process.
 			/// </summary>
-			void Draw( const wchar_t *string,					const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+			Donya::Vector2 Draw( const wchar_t *string,					const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 			/// <summary>
+			/// It returns the drawn length in screen space.
 			/// Using the Donya::Sprite internally. So you should care the flush timing because the sprite using batching process.
 			/// </summary>
-			void Draw( const std::wstring &string,				const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+			Donya::Vector2 Draw( const std::wstring &string,				const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 			/// <summary>
+			/// It returns the drawn length in screen space.
 			/// Using the Donya::Sprite internally. So you should care the flush timing because the sprite using batching process.
 			/// </summary>
-			void DrawExt( const wchar_t *string,				const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector2 &drawScale = { 1.0f, 1.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+			Donya::Vector2 DrawExt( const wchar_t *string,				const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector2 &drawScale = { 1.0f, 1.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 			/// <summary>
+			/// It returns the drawn length in screen space.
 			/// Using the Donya::Sprite internally. So you should care the flush timing because the sprite using batching process.
 			/// </summary>
-			void DrawExt( const std::wstring &string,			const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector2 &drawScale = { 1.0f, 1.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+			Donya::Vector2 DrawExt( const std::wstring &string,			const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector2 &drawScale = { 1.0f, 1.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 		private: // FIXME: Font::Renderer::DrawStretched, Ext is not working expectedly.
 			/// <summary>
 			/// Draw the string by keeping the size within the bounds of "ssDrawSize".
 			/// If you set minus value(e.g. -1.0f) to "ssDrawSize", It will using the original size.<para></para>
+			/// It returns the drawn length in screen space.
 			/// Using the Donya::Sprite internally. So you should care the flush timing because the sprite using batching process.
 			/// </summary>
-			void DrawStretched( const wchar_t *string,			const Donya::Vector2 &ssPos, const Donya::Vector2 &ssDrawSize, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+			Donya::Vector2 DrawStretched( const wchar_t *string,			const Donya::Vector2 &ssPos, const Donya::Vector2 &ssDrawSize, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 			/// <summary>
 			/// Draw the string by keeping the size within the bounds of "ssDrawSize".
 			/// If you set minus value(e.g. -1.0f) to "ssDrawSize", It will using the original size.<para></para>
+			/// It returns the drawn length in screen space.
 			/// Using the Donya::Sprite internally. So you should care the flush timing because the sprite using batching process.
 			/// </summary>
-			void DrawStretched( const std::wstring &string,		const Donya::Vector2 &ssPos, const Donya::Vector2 &ssDrawSize, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+			Donya::Vector2 DrawStretched( const std::wstring &string,		const Donya::Vector2 &ssPos, const Donya::Vector2 &ssDrawSize, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 			/// <summary>
 			/// Draw the string by keeping the size within the bounds of "ssDrawSize".
 			/// If you set minus value(e.g. -1.0f) to "ssDrawSize", It will using the original size.<para></para>
+			/// It returns the drawn length in screen space.
 			/// Using the Donya::Sprite internally. So you should care the flush timing because the sprite using batching process.
 			/// </summary>
-			void DrawStretchedExt( const wchar_t *string,		const Donya::Vector2 &ssPos, const Donya::Vector2 &ssDrawSize, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector2 &drawScale = { 1.0f, 1.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+			Donya::Vector2 DrawStretchedExt( const wchar_t *string,		const Donya::Vector2 &ssPos, const Donya::Vector2 &ssDrawSize, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector2 &drawScale = { 1.0f, 1.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 			/// <summary>
 			/// Draw the string by keeping the size within the bounds of "ssDrawSize".
 			/// If you set minus value(e.g. -1.0f) to "ssDrawSize", It will using the original size.<para></para>
+			/// It returns the drawn length in screen space.
 			/// Using the Donya::Sprite internally. So you should care the flush timing because the sprite using batching process.
 			/// </summary>
-			void DrawStretchedExt( const std::wstring &string,	const Donya::Vector2 &ssPos, const Donya::Vector2 &ssDrawSize, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector2 &drawScale = { 1.0f, 1.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
+			Donya::Vector2 DrawStretchedExt( const std::wstring &string,	const Donya::Vector2 &ssPos, const Donya::Vector2 &ssDrawSize, const Donya::Vector2 &pivot01 = { 0.0f, 0.0f }, const Donya::Vector2 &drawScale = { 1.0f, 1.0f }, const Donya::Vector4 &blendColor = { 1.0f, 1.0f, 1.0f, 1.0f } ) const;
 		};
 	}
 }

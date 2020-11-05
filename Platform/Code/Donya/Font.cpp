@@ -387,31 +387,31 @@ namespace Donya
 			constexpr Donya::Vector2 defaultScale	{ 1.0f, 1.0f };
 			constexpr Donya::Vector2 defaultSize	{-1.0f,-1.0f };
 		}
-		void Renderer::Draw( const wchar_t *string,					const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
+		Donya::Vector2 Renderer::Draw( const wchar_t *string,					const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
 		{
-			DrawStretchedExt( string,			ssPos, defaultSize, pivot, defaultScale, color );
+			return DrawStretchedExt( string,			ssPos, defaultSize, pivot, defaultScale, color );
 		}
-		void Renderer::Draw( const std::wstring &string,			const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
+		Donya::Vector2 Renderer::Draw( const std::wstring &string,			const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
 		{
-			DrawStretchedExt( string.c_str(),	ssPos, defaultSize, pivot, defaultScale, color );
+			return DrawStretchedExt( string.c_str(),	ssPos, defaultSize, pivot, defaultScale, color );
 		}
-		void Renderer::DrawExt( const wchar_t *string,				const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
+		Donya::Vector2 Renderer::DrawExt( const wchar_t *string,				const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
 		{
-			DrawStretchedExt( string,			ssPos, defaultSize, pivot, scale, color );
+			return DrawStretchedExt( string,			ssPos, defaultSize, pivot, scale, color );
 		}
-		void Renderer::DrawExt( const std::wstring &string,			const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
+		Donya::Vector2 Renderer::DrawExt( const std::wstring &string,			const Donya::Vector2 &ssPos, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
 		{
-			DrawStretchedExt( string.c_str(),	ssPos, defaultSize, pivot, scale, color );
+			return DrawStretchedExt( string.c_str(),	ssPos, defaultSize, pivot, scale, color );
 		}
-		void Renderer::DrawStretched( const wchar_t *string,		const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
+		Donya::Vector2 Renderer::DrawStretched( const wchar_t *string,		const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
 		{
-			DrawStretchedExt( string,			ssPos, ssSize, pivot, defaultScale, color );
+			return DrawStretchedExt( string,			ssPos, ssSize, pivot, defaultScale, color );
 		}
-		void Renderer::DrawStretched( const std::wstring &string,	const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
+		Donya::Vector2 Renderer::DrawStretched( const std::wstring &string,	const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector4 &color ) const
 		{
-			DrawStretchedExt( string.c_str(),	ssPos, ssSize, pivot, defaultScale, color );
+			return DrawStretchedExt( string.c_str(),	ssPos, ssSize, pivot, defaultScale, color );
 		}
-		void Renderer::DrawStretchedExt( const wchar_t *string,		const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
+		Donya::Vector2 Renderer::DrawStretchedExt( const wchar_t *string,		const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
 		{
 			// FIXME: "ssSize"(screen space size) specification is not working if specified valid value(not defaultSize, not minus value).
 			/*
@@ -530,10 +530,12 @@ namespace Donya
 					color.w, color.x, color.y, color.z
 				);
 			}
+
+			return drawSize;
 		}
-		void Renderer::DrawStretchedExt( const std::wstring &string,	const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
+		Donya::Vector2 Renderer::DrawStretchedExt( const std::wstring &string,	const Donya::Vector2 &ssPos, const Donya::Vector2 &ssSize, const Donya::Vector2 &pivot, const Donya::Vector2 &scale, const Donya::Vector4 &color ) const
 		{
-			DrawStretchedExt( string.c_str(),	ssPos, ssSize, pivot, scale, color );
+			return DrawStretchedExt( string.c_str(),	ssPos, ssSize, pivot, scale, color );
 		}
 	}
 }

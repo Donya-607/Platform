@@ -37,6 +37,7 @@ namespace Performer
 			float			timer = 0.0f;
 			Donya::Vector2	scale{ 1.0f, 1.0f };
 			Donya::Vector2	posOffset{};
+			Donya::Vector2	pivot{ 0.5f, 0.5f };
 			Donya::Vector2	basePos{};
 			bool			active = false;
 		public:

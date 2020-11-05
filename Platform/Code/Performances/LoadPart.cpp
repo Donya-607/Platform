@@ -79,6 +79,7 @@ namespace Performer
 
 	void LoadPart::Icon::Init()
 	{
+		timer  = 0.0f;
 		active = false;
 
 		const auto &data = Parameter::Get().partIcon;
@@ -148,23 +149,39 @@ namespace Performer
 
 	void LoadPart::String::Init()
 	{
+		timer = 0.0f;
 
+		const auto &data = Parameter::Get().partString;
+
+		scale		= data.config.scale;
+		posOffset	= data.config.pos;
+		pivot		= data.config.origin;
 	}
 	void LoadPart::String::Update( float elapsedTime )
 	{
+		if ( !active ) { return; }
+		// else
+
 		timer += elapsedTime;
+
+
 	}
 	void LoadPart::String::Draw( float drawDepth )
 	{
+		if ( !active ) { return; }
+		// else
+
 
 	}
 	void LoadPart::String::Start( const Donya::Vector2 &ssBasePos )
 	{
-
+		timer	= 0.0f;
+		basePos	= ssBasePos;
+		active	= true;
 	}
 	void LoadPart::String::Stop()
 	{
-
+		active = false;
 	}
 
 
