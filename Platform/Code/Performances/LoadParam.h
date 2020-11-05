@@ -51,6 +51,7 @@ namespace Performer
 			UIObject		config; // "pos" is used as posOffset
 			float			staySecond		= 1.0f;
 			float			partPopSecond	= 1.0f;
+			float			popInflRange	= 0.2f;
 			Donya::Vector2	popOffset;
 		private:
 			friend class cereal::access;
@@ -62,6 +63,7 @@ namespace Performer
 					CEREAL_NVP( config			),
 					CEREAL_NVP( staySecond		),
 					CEREAL_NVP( partPopSecond	),
+					CEREAL_NVP( popInflRange	),
 					CEREAL_NVP( popOffset		)
 				);
 

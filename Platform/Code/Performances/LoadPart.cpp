@@ -3,6 +3,7 @@
 
 #include "../Donya/Sprite.h"
 
+#include "../FontHelper.h"
 #include "../Math.h"
 #include "../Parameter.h"
 
@@ -63,8 +64,10 @@ namespace Performer
 		config.ShowImGuiNode( u8"äÓñ{ê›íË" );
 		ImGui::DragFloat( u8"ê√é~Ç∑ÇÈïbêî",				&staySecond,	0.01f );
 		ImGui::DragFloat( u8"äeï∂éöÇÃíµÇÀÇ…Ç©ÇØÇÈïbêî",	&partPopSecond,	0.01f );
+		ImGui::DragFloat( u8"íµÇÀÇçsÇ§ïbêîÇÃëOå„îÕàÕ",	&popInflRange,	0.01f );
 		staySecond		= std::max( 0.0f,	staySecond		);
 		partPopSecond	= std::max( 0.01f,	partPopSecond	);
+		popInflRange	= std::max( 0.0f,	popInflRange	);
 		ImGui::DragFloat2( u8"íµÇÀÇÃà⁄ìÆó ", &popOffset.x, 1.0f );
 
 		ImGui::TreePop();
@@ -147,9 +150,23 @@ namespace Performer
 	}
 
 
+	namespace
+	{
+		constexpr int Length( const wchar_t *str )
+		{
+			// See https://stackoverflow.com/questions/25890784/computing-length-of-a-c-string-at-compile-time-is-this-really-a-constexpr
+			return ( *str ) ? 1 + Length( str + 1 ) : 0;
+		}
+		constexpr const wchar_t *showingStr = L"Loading...";
+		constexpr int    showingStrCount  = Length( showingStr ) + 1;
+		constexpr float  showingStrCountF = scast<float>( showingStrCount );
+		constexpr size_t showingStrCountS = scast<size_t>( showingStrCount );
+	}
 	void LoadPart::String::Init()
 	{
 		timer = 0.0f;
+
+		popWeights.resize( showingStrCount, 0.0f );
 
 		const auto &data = Parameter::Get().partString;
 
@@ -162,16 +179,75 @@ namespace Performer
 		if ( !active ) { return; }
 		// else
 
+		if ( popWeights.size() != showingStrCountS )
+		{
+			_ASSERT_EXPR( 0, L"Error: Character count did not match!" );
+			popWeights.resize( showingStrCount, 0.0f );
+		}
+
+		const auto &data = Parameter::Get().partString;
+		const float wholeCycleSecond = data.staySecond + ( data.partPopSecond * showingStrCountF );
+
 		timer += elapsedTime;
+		timer = fmodf( timer, wholeCycleSecond );
 
+		if ( timer < data.staySecond )
+		{
+			for ( auto &it : popWeights ) { it = 0.0f; }
+			return;
+		}
+		// else
 
+		for ( int i = 0; i < showingStrCount; ++i )
+		{
+			auto &character = popWeights[i];
+
+			float iF = scast<float>( i );
+
+			const float currentStartSec	= data.staySecond + ( data.partPopSecond * iF );
+			const float currentEndSec	= currentStartSec + data.partPopSecond;
+			if	(
+					currentStartSec	<= timer - data.popInflRange ||
+					currentEndSec	>= timer + data.popInflRange
+				)
+			{
+				character = 0.0f;
+				continue;
+			}
+			// else
+
+			// TODO: lerp the weight by distance
+			character = 1.0f;
+		}
 	}
 	void LoadPart::String::Draw( float drawDepth )
 	{
 		if ( !active ) { return; }
 		// else
 
+		const auto pRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
+		if ( !pRenderer ) { return; }
+		// else
 
+		const auto &data = Parameter::Get().partString;
+
+		Donya::Vector2 popAmount;
+		Donya::Vector2 drawPosOffset;
+		Donya::Vector2 drawnLength;
+		const Donya::Vector2 baseDrawPos = basePos + posOffset;
+		for ( int i = 0; i < showingStrCount; ++i )
+		{
+			const float &weight = popWeights[i];
+			popAmount = data.popOffset * weight;
+
+			drawnLength = pRenderer->DrawExt
+			(
+				showingStr,
+				baseDrawPos + drawPosOffset + popAmount,
+				pivot, scale
+			);
+			drawPosOffset.x += drawnLength.x;
+		}
 	}
 	void LoadPart::String::Start( const Donya::Vector2 &ssBasePos )
 	{

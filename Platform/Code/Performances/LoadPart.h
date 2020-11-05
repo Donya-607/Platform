@@ -35,6 +35,7 @@ namespace Performer
 		{
 		private:
 			float			timer = 0.0f;
+			std::vector<float> popWeights; // 0.0f[stay] ~ 1.0f[pop]. size() == string-length
 			Donya::Vector2	scale{ 1.0f, 1.0f };
 			Donya::Vector2	posOffset{};
 			Donya::Vector2	pivot{ 0.5f, 0.5f };

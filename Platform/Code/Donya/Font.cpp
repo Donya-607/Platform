@@ -429,7 +429,7 @@ namespace Donya
 			const Donya::Vector2 &fontSize	= info.GetFontSize();
 
 			const size_t strLength = wcslen( string );
-			if ( strLength < 1 ) { return; }
+			if ( strLength < 1 ) { return Donya::Vector2::Zero(); }
 			// else
 
 			struct Instance
