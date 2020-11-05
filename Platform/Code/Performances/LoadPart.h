@@ -26,7 +26,7 @@ namespace Performer
 		public:
 			void Init();
 			void Update( float elapsedTime );
-			void Draw( float drawDepth );
+			void Draw( float drawDepth, float drawAlpha );
 		public:
 			void Start( const Donya::Vector2 &ssBasePos );
 			void Stop();
@@ -44,24 +44,22 @@ namespace Performer
 		public:
 			void Init();
 			void Update( float elapsedTime );
-			void Draw( float drawDepth );
+			void Draw( float drawDepth, float drawAlpha );
 		public:
 			void Start( const Donya::Vector2 &ssBasePos );
 			void Stop();
 		};
 	private:
 		float	timer		= 0.0f;
-		float	BGMaskAlpha	= 1.0f;
+		float	alpha		= 1.0f;
 		Icon	partIcon;
 		String	partString;
 		bool	active		= false;
 	public:
 		void Init();
 		void Uninit();
-
-		void Update( float elapsedTime );
-
-		void Draw( float drawDepth );
+		void UpdateIfActive( float elapsedTime );
+		void DrawIfActive( float drawDepth );
 	public:
 		void Start( const Donya::Vector2 &ssBasePos );
 		void Stop();

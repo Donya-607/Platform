@@ -77,6 +77,8 @@ namespace Performer
 	{
 		partIcon.ShowImGuiNode	( u8"アイコン設定"	);
 		partString.ShowImGuiNode( u8"文字列設定"		);
+		ImGui::DragFloat( u8"フェードアウトにかける秒数", &fadeSecond, 0.01f );;
+		fadeSecond = std::max( 0.0f, fadeSecond );
 	}
 #endif // USE_IMGUI
 
@@ -151,19 +153,22 @@ namespace Performer
 		bounce  = Math::CalcBezierCurve( data.bounceOffsets,	sin_01 );
 		stretch = Math::CalcBezierCurve( data.bounceStretches,	sin_01 );
 	}
-	void LoadPart::Icon::Draw( float drawDepth )
+	void LoadPart::Icon::Draw( float drawDepth, float drawAlpha )
 	{
-		if ( !active ) { return; }
+		if ( !active && drawAlpha <= 0.0f ) { return; }
 		// else
 
 		const auto oldPos	= sprite.pos;
+		const auto oldAlpha	= sprite.alpha;
 		const auto oldScale	= sprite.scale;
 
 		sprite.pos += basePos + bounce;
 		sprite.scale = Donya::Vector2::Product( sprite.scale, stretch );
+		sprite.alpha *= drawAlpha;
 		sprite.Draw( drawDepth );
 
 		sprite.pos		= oldPos;
+		sprite.alpha	= oldAlpha;
 		sprite.scale	= oldScale;
 	}
 	void LoadPart::Icon::Start( const Donya::Vector2 &ssBasePos )
@@ -259,9 +264,9 @@ namespace Performer
 			}
 		}
 	}
-	void LoadPart::String::Draw( float drawDepth )
+	void LoadPart::String::Draw( float drawDepth, float drawAlpha )
 	{
-		if ( !active ) { return; }
+		if ( !active && drawAlpha <= 0.0f ) { return; }
 		// else
 
 		const auto pRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
@@ -276,7 +281,8 @@ namespace Performer
 		Donya::Vector2 popAmount;
 		Donya::Vector2 drawPosOffset;
 		Donya::Vector2 drawnLength;
-		const Donya::Vector2 baseDrawPos = basePos + posOffset;
+		const Donya::Vector2 baseDrawPos	= basePos + posOffset;
+		const Donya::Vector4 drawColor		{ 1.0f, 1.0f, 1.0f, drawAlpha };
 		for ( int i = 0; i < showingStrCount; ++i )
 		{
 			const float &weight = popWeights[i];
@@ -286,7 +292,8 @@ namespace Performer
 			(
 				std::wstring{ showingStr[i] },
 				baseDrawPos + drawPosOffset + popAmount,
-				pivot, scale
+				pivot, scale,
+				drawColor
 			);
 			drawPosOffset.x += drawnLength.x;
 		}
@@ -307,9 +314,9 @@ namespace Performer
 
 	void LoadPart::Init()
 	{
-		timer		= 0.0f;
-		BGMaskAlpha	= 1.0f;
-		active		= false;
+		timer	= 0.0f;
+		alpha	= 1.0f;
+		active	= false;
 
 		partIcon.Init();
 		partString.Init();
@@ -318,19 +325,38 @@ namespace Performer
 	{
 		// No op
 	}
-	void LoadPart::Update( float elapsedTime )
+	void LoadPart::UpdateIfActive( float elapsedTime )
 	{
-		if ( !active ) { return; }
-		// else
+		if ( !active )
+		{
+			const auto &fadeSec = Parameter::Get().fadeSecond;
+			if ( IsZero( fadeSec ) )
+			{
+				alpha = 0.0f;
+			}
+			else
+			{
+				const float toOpaque = 1.0f / fadeSec;
+				alpha -= toOpaque * elapsedTime;
+			}
+
+			if ( alpha <= 0.0f )
+			{
+				alpha = 0.0f;
+				partIcon.Stop();
+				partString.Stop();
+				return;
+			}
+		}
 
 		timer += elapsedTime;
 
 		partIcon.Update( elapsedTime );
 		partString.Update( elapsedTime );
 	}
-	void LoadPart::Draw( float drawDepth )
+	void LoadPart::DrawIfActive( float drawDepth )
 	{
-		if ( !active ) { return; }
+		if ( !active && alpha <= 0.0f ) { return; }
 		// else
 
 		const float oldDepth = Donya::Sprite::GetDrawDepth();
@@ -340,18 +366,18 @@ namespace Performer
 			Common::HalfScreenWidthF(),	Common::HalfScreenWidthF(),
 			Common::ScreenWidthF(),		Common::ScreenWidthF(),
 			Donya::Color::Code::BLACK,
-			BGMaskAlpha
+			alpha
 		);
 		Donya::Sprite::SetDrawDepth( oldDepth );
 
-		partIcon.Draw( drawDepth );
-		partString.Draw( drawDepth );
+		partIcon.Draw	( drawDepth, alpha );
+		partString.Draw	( drawDepth, alpha );
 	}
 	void LoadPart::Start( const Donya::Vector2 &ssBasePos )
 	{
-		timer		= 0.0f;
-		BGMaskAlpha	= 1.0f;
-		active		= true;
+		timer	= 0.0f;
+		alpha	= 1.0f;
+		active	= true;
 
 		partIcon.Start( ssBasePos );
 		partString.Start( ssBasePos );
@@ -360,7 +386,6 @@ namespace Performer
 	{
 		active = false;
 
-		partIcon.Stop();
-		partString.Stop();
+		// The parts is still update until completely fade-outed(alpha <= 0.0f)
 	}
 }

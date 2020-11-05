@@ -80,6 +80,7 @@ namespace Performer
 	public:
 		Icon	partIcon;
 		String	partString;
+		float	fadeSecond = 0.5f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -93,6 +94,10 @@ namespace Performer
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( fadeSecond ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -102,6 +107,6 @@ namespace Performer
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Performer::LoadParam,			0 )
+CEREAL_CLASS_VERSION( Performer::LoadParam,			1 )
 CEREAL_CLASS_VERSION( Performer::LoadParam::Icon,	0 )
 CEREAL_CLASS_VERSION( Performer::LoadParam::String,	0 )

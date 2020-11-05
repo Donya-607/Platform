@@ -547,6 +547,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 #endif // USE_IMGUI
 
+	loadPerformer.UpdateIfActive( elapsedTime );
 
 	if ( status == State::FirstInitialize )
 	{
@@ -785,7 +786,7 @@ void SceneGame::Draw( float elapsedTime )
 
 	if ( status == State::FirstInitialize )
 	{
-		FirstInitStateDraw( elapsedTime );
+		loadPerformer.DrawIfActive( 0.0f );
 		return;
 	}
 	// else
@@ -1172,6 +1173,8 @@ void SceneGame::Draw( float elapsedTime )
 	{
 		pPauser->Draw( elapsedTime );
 	}
+
+	loadPerformer.DrawIfActive( 0.0f );
 }
 
 bool SceneGame::CreateRenderers( const Donya::Int2 &wholeScreenSize )
@@ -1519,8 +1522,6 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 	if ( status != State::FirstInitialize ) { return; }
 	// else
 
-	loadPerformer.Update( elapsedTime );
-
 	if ( !thObjects.result.Finished()	) { return; }
 	if ( !thRenderers.result.Finished()	) { return; }
 	// else
@@ -1551,46 +1552,9 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 #endif // USE_IMGUI
 
 	status = State::Stage;
+	loadPerformer.Stop();
 
 	// TODO: Insert a fade in fx
-}
-void SceneGame::FirstInitStateDraw( float elapsedTime )
-{
-	if ( status != State::FirstInitialize ) { return; }
-	// else
-
-	loadPerformer.Draw( 0.0f );
-
-#if DEBUG_MODE
-	if ( 0 )
-	{
-		const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
-		if ( !pFontRenderer ) { return; }
-		// else
-
-		constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
-		constexpr Donya::Vector4 white{ 1.0f, 1.0f, 1.0f, 1.0f };
-		constexpr Donya::Vector4 selectColor = white;
-		constexpr Donya::Vector4 unselectColor{ 0.4f, 0.4f, 0.4f, 1.0f };
-
-		constexpr Donya::Vector2 halfScreenSize
-		{
-			Common::HalfScreenWidthF(),
-			Common::HalfScreenHeightF(),
-		};
-
-		pFontRenderer->DrawExt
-		(
-			L"-ＬＯＡＤＩＮＧ-",
-			halfScreenSize,
-			pivot,
-			2.0f,
-			white
-		);
-
-		Donya::Sprite::Flush();
-	}
-#endif // DEBUG_MODE
 }
 
 void SceneGame::StageStateUpdate( float elapsedTime )
@@ -3356,7 +3320,18 @@ void SceneGame::UseImGui( float elapsedTime )
 		ImGui::Text( "" );
 
 		Effect::Admin::Get().ShowImGuiNode( u8"エフェクトのパラメータ" );
+		ImGui::Text( "" );
 
+		if ( ImGui::Button( u8"ロード演出を再終了" ) )
+		{
+			constexpr Donya::Vector2 ssCenterPos
+			{
+				Common::HalfScreenWidthF(),
+				Common::HalfScreenHeightF(),
+			};
+			loadPerformer.Start( ssCenterPos );
+			loadPerformer.Stop();
+		}
 		Performer::LoadPart::ShowImGuiNode( u8"ロード演出の設定" );
 
 		ImGui::TreePop();

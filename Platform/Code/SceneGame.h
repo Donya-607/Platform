@@ -172,8 +172,7 @@ private:
 	bool	IsPlayingStatus( State verify ) const;
 
 	void	FirstInitStateUpdate( float elapsedTime );
-	void	FirstInitStateDraw( float elapsedTime );
-
+	
 	void	StageStateUpdate( float elapsedTime );
 
 	void	AppearBossStateInit();
