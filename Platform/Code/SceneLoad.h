@@ -4,31 +4,24 @@
 #include <mutex>
 #include <thread>
 
-#include "Donya/Font.h"
 #include "Donya/UseImGui.h"
 
+#include "Performances/LoadPart.h"
 #include "Scene.h"
+#include "Thread.h"
 
 class SceneLoad : public Scene
 {
 private:
-	bool finishEffects	= false;
-	bool finishModels	= false;
-	bool finishSounds	= false;
-	bool finishSprites	= false;
-	std::unique_ptr<std::thread> pThreadModels	= nullptr;
-	std::unique_ptr<std::thread> pThreadSounds	= nullptr;
-	std::unique_ptr<std::thread> pThreadSprites	= nullptr;
+	Thread thEffects;
+	Thread thModels;
+	Thread thSounds;
+	Thread thSprites;
 
-	bool allSucceeded	= true;
-	std::mutex	succeedMutex;
-
-	std::unique_ptr<Donya::Font::Renderer>	pFontRenderer;
-	float		fontAlpha		= 1.0f;
-	float		flushingTimer	= 0.0f;
+	Performer::LoadPart loadPerformer;
 
 #if DEBUG_MODE
-	float		elapsedTimer	= 0;
+	float elapsedTimer	= 0;
 #endif // DEBUG_MODE
 public:
 	SceneLoad() : Scene() {}
@@ -46,10 +39,8 @@ public:
 private:
 	void	ReleaseAllThread();
 private:
-	bool	SpritesInit();
-	void	SpritesUpdate( float elapsedTime );
-private:
-	bool	IsFinished() const;
+	bool	AllFinished() const;
+	bool	AllSucceeded() const;
 private:
 	void	ClearBackGround() const;
 	void	StartFade() const;

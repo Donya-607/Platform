@@ -405,7 +405,7 @@ void SceneGame::Init()
 	loadPerformer.Start( ssCenterPos );
 
 	constexpr auto coInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
-	auto InitObjects	= [coInitValue]( SceneGame *pScene, SceneGame::Thread::Result *pResult )
+	auto InitObjects	= [coInitValue]( SceneGame *pScene, Thread::Result *pResult )
 	{
 		if ( !pScene || !pResult ) { assert( !"HUMAN ERROR" ); return; }
 		// else
@@ -438,7 +438,7 @@ void SceneGame::Init()
 		pResult->WriteResult( succeeded );
 		CoUninitialize();
 	};
-	auto InitRenderers	= [coInitValue]( SceneGame *pScene, SceneGame::Thread::Result *pResult )
+	auto InitRenderers	= [coInitValue]( SceneGame *pScene, Thread::Result *pResult )
 	{
 		if ( !pScene || !pResult ) { assert( !"HUMAN ERROR" ); return; }
 		// else
@@ -1526,25 +1526,8 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 	if ( !thRenderers.result.Finished()	) { return; }
 	// else
 
-	auto JoinThenRelease = []( std::unique_ptr<std::thread> *p )
-	{
-		if ( !p ) { return; }
-		// else
-		
-		auto &th = *p;
-		if ( !th ) { return; }
-		// else
-
-		if ( th->joinable() )
-		{
-			th->join();
-		}
-
-		th.reset();
-	};
-
-	JoinThenRelease( &thObjects.pThread		);
-	JoinThenRelease( &thRenderers.pThread	);
+	thObjects.JoinThenRelease();
+	thRenderers.JoinThenRelease();
 
 #if USE_IMGUI
 	if ( dontFinishLoadState ) { return; }

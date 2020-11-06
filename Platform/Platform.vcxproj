@@ -332,6 +332,7 @@
     <ClInclude Include="Code\StageFormat.h" />
     <ClInclude Include="Code\Enemies\Togehero.h" />
     <ClInclude Include="Code\StageNumber.h" />
+    <ClInclude Include="Code\Thread.h" />
     <ClInclude Include="Code\UI.h" />
     <ClInclude Include="External\Cereal\include\cereal\access.hpp" />
     <ClInclude Include="External\Cereal\include\cereal\archives\adapters.hpp" />

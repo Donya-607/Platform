@@ -29,6 +29,7 @@
 #include "Room.h"
 #include "Scene.h"
 #include "Sky.h"
+#include "Thread.h"
 
 class SceneGame : public Scene
 {
@@ -53,34 +54,6 @@ public:
 	{
 		Donya::VertexShader VS;
 		Donya::PixelShader  PS;
-	};
-	struct Thread
-	{
-		struct Result
-		{
-			bool		finished  = false;
-			bool		succeeded = false;
-			std::mutex	mutex;
-		public:
-			void WriteResult( bool wasSucceeded )
-			{
-				std::lock_guard<std::mutex> lock( mutex );
-				finished  = true;
-				succeeded = wasSucceeded;
-			}
-			bool Finished()
-			{
-				std::lock_guard<std::mutex> lock( mutex );
-				return finished;
-			}
-			bool Succeeded()
-			{
-				std::lock_guard<std::mutex> lock( mutex );
-				return succeeded;
-			}
-		};
-		Result result;
-		std::unique_ptr<std::thread> pThread;
 	};
 private:
 	Donya::ICamera						iCamera;

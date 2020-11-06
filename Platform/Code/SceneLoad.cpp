@@ -119,21 +119,26 @@ void SceneLoad::Init()
 #endif // USE_IMGUI
 
 	sceneParam.LoadParameter();
+	Performer::LoadPart::LoadParameter();
+	constexpr Donya::Vector2 ssCenterPos
+	{
+		Common::HalfScreenWidthF(),
+		Common::HalfScreenHeightF(),
+	};
+	loadPerformer.Init();
+	loadPerformer.Start( ssCenterPos );
 	
 	constexpr auto coInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
-	auto LoadingEffects	= [coInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	auto LoadingEffects	= [coInitValue]( Thread::Result *pResult )
 	{
-		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
+		if ( !pResult ) { assert( !"HUMAN ERROR" ); return; }
 		// else
 
 	#if LOAD_EFFECT_BY_ANOTHER_THREAD
 		HRESULT hr = CoInitializeEx( NULL, coInitValue );
 		if ( FAILED( hr ) )
 		{
-			std::lock_guard<std::mutex> lock( *pSucceedMutex );
-
-			*pFinishFlag  = true;
-			*pSucceedFlag = false;
+			pResult->WriteResult( /* wasSucceeded = */ false );
 			return;
 		}
 		// else
@@ -151,26 +156,21 @@ void SceneLoad::Init()
 		
 		_ASSERT_EXPR( succeeded, L"Failed: Effects load is failed." );
 
-		std::lock_guard<std::mutex> lock( *pSucceedMutex );
-		*pFinishFlag  = true;
-		*pSucceedFlag = succeeded;
+		pResult->WriteResult( succeeded );
 
 	#if LOAD_EFFECT_BY_ANOTHER_THREAD
 		CoUninitialize();
 	#endif // LOAD_EFFECT_BY_ANOTHER_THREAD
 	};
-	auto LoadingModels	= [coInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	auto LoadingModels	= [coInitValue]( Thread::Result *pResult )
 	{
-		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
+		if ( !pResult ) { assert( !"HUMAN ERROR" ); return; }
 		// else
 
 		HRESULT hr = CoInitializeEx( NULL, coInitValue );
 		if ( FAILED( hr ) )
 		{
-			std::lock_guard<std::mutex> lock( *pSucceedMutex );
-
-			*pFinishFlag  = true;
-			*pSucceedFlag = false;
+			pResult->WriteResult( /* wasSucceeded = */ false );
 			return;
 		}
 		// else
@@ -186,24 +186,19 @@ void SceneLoad::Init()
 		
 		_ASSERT_EXPR( succeeded, L"Failed: Models load is failed." );
 
-		std::lock_guard<std::mutex> lock( *pSucceedMutex );
-		*pFinishFlag  = true;
-		*pSucceedFlag = succeeded;
+		pResult->WriteResult( succeeded );
 
 		CoUninitialize();
 	};
-	auto LoadingSprites	= [coInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	auto LoadingSprites	= [coInitValue]( Thread::Result *pResult )
 	{
-		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
+		if ( !pResult ) { assert( !"HUMAN ERROR" ); return; }
 		// else
 
 		HRESULT hr = CoInitializeEx( NULL, coInitValue );
 		if ( FAILED( hr ) )
 		{
-			std::lock_guard<std::mutex> lock( *pSucceedMutex );
-
-			*pFinishFlag  = true;
-			*pSucceedFlag = false;
+			pResult->WriteResult( /* wasSucceeded = */ false );
 			return;
 		}
 		// else
@@ -221,24 +216,19 @@ void SceneLoad::Init()
 		
 		_ASSERT_EXPR( succeeded, L"Failed: Sprites load is failed." );
 
-		std::lock_guard<std::mutex> lock( *pSucceedMutex );
-		*pFinishFlag  = true;
-		*pSucceedFlag = succeeded;
+		pResult->WriteResult( succeeded );
 
 		CoUninitialize();
 	};
-	auto LoadingSounds	= [coInitValue]( bool *pFinishFlag, bool *pSucceedFlag, std::mutex *pSucceedMutex )
+	auto LoadingSounds	= [coInitValue]( Thread::Result *pResult )
 	{
-		if ( !pFinishFlag || !pSucceedFlag ) { assert( !"Error: Flag ptr is null!" ); return; }
+		if ( !pResult ) { assert( !"HUMAN ERROR" ); return; }
 		// else
 
 		HRESULT hr = CoInitializeEx( NULL, coInitValue );
 		if ( FAILED( hr ) )
 		{
-			std::lock_guard<std::mutex> lock( *pSucceedMutex );
-
-			*pFinishFlag  = true;
-			*pSucceedFlag = false;
+			pResult->WriteResult( /* wasSucceeded = */ false );
 			return;
 		}
 		// else
@@ -320,36 +310,27 @@ void SceneLoad::Init()
 
 		_ASSERT_EXPR( succeeded, L"Failed: Sounds load is failed." );
 
-		std::lock_guard<std::mutex> lock( *pSucceedMutex );
-		*pFinishFlag  = true;
-		*pSucceedFlag = succeeded;
+		pResult->WriteResult( succeeded );
 
 		CoUninitialize();
 	};
 
-	finishModels	= false;
-	finishSprites	= false;
-	finishSounds	= false;
-	allSucceeded	= true;
-
 #if LOAD_EFFECT_BY_ANOTHER_THREAD
-	pThreadEffects	= std::make_unique<std::thread>( LoadingEffects,	&finishEffects,	&allSucceeded, &succeedMutex );
+	thEffects.pThread	= std::make_unique<std::thread>( LoadingModels, &thEffects.result );
 #else
-	LoadingEffects( &finishEffects,	&allSucceeded, &succeedMutex );
+	LoadingEffects( &thEffects.result );
 #endif // LOAD_EFFECT_BY_ANOTHER_THREAD
 
-	pThreadModels	= std::make_unique<std::thread>( LoadingModels,		&finishModels,	&allSucceeded, &succeedMutex );
-	pThreadSounds	= std::make_unique<std::thread>( LoadingSounds,		&finishSounds,	&allSucceeded, &succeedMutex );
-	pThreadSprites	= std::make_unique<std::thread>( LoadingSprites,	&finishSprites,	&allSucceeded, &succeedMutex );
-
-	if ( !SpritesInit() )
-	{
-		_ASSERT_EXPR( 0, L"Error: Loading sprites does not works!" );
-	}
+	thModels.pThread	= std::make_unique<std::thread>( LoadingModels,		&thModels.result  );
+	thSounds.pThread	= std::make_unique<std::thread>( LoadingSounds,		&thSounds.result  );
+	thSprites.pThread	= std::make_unique<std::thread>( LoadingSprites,	&thSprites.result );
 }
 void SceneLoad::Uninit()
 {
 	ReleaseAllThread();
+
+	loadPerformer.Stop();
+	loadPerformer.Uninit();
 }
 
 Scene::Result SceneLoad::Update( float elapsedTime )
@@ -362,11 +343,11 @@ Scene::Result SceneLoad::Update( float elapsedTime )
 	elapsedTimer += elapsedTime;
 #endif // DEBUG_MODE
 
-	SpritesUpdate( elapsedTime );
+	loadPerformer.UpdateIfActive( elapsedTime );
 
-	if ( !Fader::Get().IsExist() && IsFinished() )
+	if ( !Fader::Get().IsExist() && AllFinished() )
 	{
-		if ( allSucceeded )
+		if ( AllSucceeded() )
 		{
 		#if USE_IMGUI
 			if ( !stopFadeout )
@@ -388,9 +369,7 @@ Scene::Result SceneLoad::Update( float elapsedTime )
 
 			ReleaseAllThread();
 
-			// Prevent a true being returned by IsFinished().
-			finishSprites	= false;
-			finishSounds	= false;
+			exit( -1 );
 		}
 	}
 
@@ -401,85 +380,34 @@ void SceneLoad::Draw( float elapsedTime )
 {
 	ClearBackGround();
 
-	const auto &data = FetchParameter();
-	constexpr Donya::Vector2 pivot{ 0.5f, 0.5f };
-	pFontRenderer->DrawExt
-	(
-		L"Now Loading...",
-		data.sprLoadPos, pivot,
-		data.sprLoadScale,
-		{ 1.0f, 1.0f, 1.0f, fontAlpha }
-	);
+	loadPerformer.DrawIfActive( 0.0f );
 }
 
 void SceneLoad::ReleaseAllThread()
 {
-	auto JoinThenRelease = []( std::unique_ptr<std::thread> &p )
-	{
-		if ( p )
-		{ 
-			if ( p->joinable() )
-			{
-				p->join();
-			}
-
-			p.reset();
-		}
-	};
-
-	JoinThenRelease( pThreadModels	);
-	JoinThenRelease( pThreadSprites	);
-	JoinThenRelease( pThreadSounds	);
+	thEffects.JoinThenRelease();
+	thModels.JoinThenRelease();
+	thSounds.JoinThenRelease();
+	thSprites.JoinThenRelease();
 }
 
-bool SceneLoad::SpritesInit()
+bool SceneLoad::AllFinished() const
 {
-	const auto &data = FetchParameter();
+	if ( !thEffects	.result.Finished() ) { return false; }
+	if ( !thModels	.result.Finished() ) { return false; }
+	if ( !thSounds	.result.Finished() ) { return false; }
+	if ( !thSprites	.result.Finished() ) { return false; }
 
-	bool succeeded = true;
-
-	auto pFontLoader = std::make_unique<Donya::Font::Holder>();
-#if DEBUG_MODE
-	const auto binPath = MakeFontPathBinary( FontAttribute::Main );
-	if ( Donya::IsExistFile( binPath ) )
-	{
-		if ( !pFontLoader->LoadByCereal( binPath ) ) { succeeded = false; }
-	}
-	else
-	{
-		if ( !pFontLoader->LoadFntFile( MakeFontPathFnt( FontAttribute::Main ) ) ) { succeeded = false; }
-		pFontLoader->SaveByCereal( binPath );
-	}
-#else
-	if ( !pFontLoader->LoadByCereal( MakeFontPathBinary( FontAttribute::Main ) ) ) { succeeded = false; }
-#endif // DEBUG_MODE
-	pFontRenderer = std::make_unique<Donya::Font::Renderer>();
-	if ( !pFontRenderer->Init( *pFontLoader ) ) { succeeded = false; }
-
-	fontAlpha		= 1.0f;
-	flushingTimer	= 0.0f;
-
-	return succeeded;
+	return true;
 }
-void SceneLoad::SpritesUpdate( float elapsedTime )
+bool SceneLoad::AllSucceeded() const
 {
-	const auto &data = FetchParameter();
+	if ( !thEffects	.result.Succeeded() ) { return false; }
+	if ( !thModels	.result.Succeeded() ) { return false; }
+	if ( !thSounds	.result.Succeeded() ) { return false; }
+	if ( !thSprites	.result.Succeeded() ) { return false; }
 
-	if ( !IsZero( data.sprLoadFlushingInterval ) )
-	{
-		const float sinIncrement = 360.0f / ( 60.0f * data.sprLoadFlushingInterval );
-		flushingTimer += sinIncrement * elapsedTime;
-
-		const float sin_01 = ( sinf( flushingTimer ) + 1.0f ) * 0.5f;
-		const float shake  = sin_01 * data.sprLoadFlushingRange;
-
-		fontAlpha = std::max( data.sprLoadMinAlpha, std::min( 1.0f, shake ) );
-	}
-}
-
-bool SceneLoad::IsFinished() const
-{
-	return ( finishEffects && finishModels && finishSprites && finishSounds );
+	return true;
 }
 
 void SceneLoad::ClearBackGround() const
@@ -535,10 +463,10 @@ void SceneLoad::UseImGui()
 				return ( v ) ? "True" : "False";
 			};
 
-			ImGui::Text( u8"終了フラグ・エフェクト[%s]",	GetBoolStr( finishEffects	).c_str() );
-			ImGui::Text( u8"終了フラグ・モデル[%s]",		GetBoolStr( finishModels	).c_str() );
-			ImGui::Text( u8"終了フラグ・スプライト[%s]",	GetBoolStr( finishSprites	).c_str() );
-			ImGui::Text( u8"終了フラグ・サウンド[%s]",	GetBoolStr( finishSounds	).c_str() );
+			ImGui::Text( u8"終了フラグ・エフェクト[%s]",	GetBoolStr( thEffects	.result.Finished() ).c_str() );
+			ImGui::Text( u8"終了フラグ・モデル[%s]",		GetBoolStr( thModels	.result.Finished() ).c_str() );
+			ImGui::Text( u8"終了フラグ・スプライト[%s]",	GetBoolStr( thSounds	.result.Finished() ).c_str() );
+			ImGui::Text( u8"終了フラグ・サウンド[%s]",	GetBoolStr( thSprites	.result.Finished() ).c_str() );
 			
 			ImGui::Text( u8"経過時間：[%6.3f]", elapsedTimer );
 
