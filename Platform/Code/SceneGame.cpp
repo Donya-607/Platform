@@ -391,8 +391,6 @@ CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0  )
 
 void SceneGame::Init()
 {
-	PlayBGM( currentPlayingBGM );
-
 	status		= State::FirstInitialize;
 	stageNumber	= Definition::StageNumber::Game();
 
@@ -1537,7 +1535,7 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 	status = State::Stage;
 	loadPerformer.Stop();
 
-	// TODO: Insert a fade in fx
+	PlayBGM( currentPlayingBGM );
 }
 
 void SceneGame::StageStateUpdate( float elapsedTime )
