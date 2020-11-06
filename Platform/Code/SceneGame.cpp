@@ -155,6 +155,8 @@ namespace
 		float waitSecBet_LeaveFade		= 1.0f; // From the leave timing to fade out
 
 		float bossRoomInitialPosOffset	= 3.0f; // It uses only when the boss's appearing
+
+		Donya::Vector2 ssLoadingDrawPos;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -241,6 +243,10 @@ namespace
 				archive( CEREAL_NVP( bossRoomInitialPosOffset ) );
 			}
 			if ( 14 <= version )
+			{
+				archive( CEREAL_NVP( ssLoadingDrawPos ) );
+			}
+			if ( 15 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -346,6 +352,7 @@ namespace
 
 			if ( ImGui::TreeNode( u8"その他" ) )
 			{
+				ImGui::DragFloat2( u8"Loading：表示座標", &ssLoadingDrawPos.x );
 				ImGui::DragFloat3( u8"READY：表示座標（注視点からの相対）", &readyFxPosOffset.x, 0.01f );
 				ImGui::SliderFloat2( u8"スティックのデッドゾーン", &deadZone.x, 0.0f, 1.0f );
 				ImGui::TreePop();
@@ -386,21 +393,18 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				13 )
+CEREAL_CLASS_VERSION( SceneParam,				14 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0  )
 
 void SceneGame::Init()
 {
+	sceneParam.LoadParameter();
+
 	status		= State::FirstInitialize;
 	stageNumber	= Definition::StageNumber::Game();
 
-	constexpr Donya::Vector2 ssCenterPos
-	{
-		Common::HalfScreenWidthF(),
-		Common::HalfScreenHeightF(),
-	};
 	loadPerformer.Init();
-	loadPerformer.Start( ssCenterPos );
+	loadPerformer.Start( FetchParameter().ssLoadingDrawPos, Donya::Color::Code::BLACK );
 
 	constexpr auto coInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
 	auto InitObjects	= [coInitValue]( SceneGame *pScene, Thread::Result *pResult )
@@ -421,7 +425,6 @@ void SceneGame::Init()
 
 		PauseProcessor::LoadParameter();
 		Performer::LoadPart::LoadParameter();
-		sceneParam.LoadParameter();
 		pScene->playerIniter.LoadParameter( pScene->stageNumber );
 
 					pScene->pSky = std::make_unique<Sky>();
@@ -3305,12 +3308,7 @@ void SceneGame::UseImGui( float elapsedTime )
 
 		if ( ImGui::Button( u8"ロード演出を再終了" ) )
 		{
-			constexpr Donya::Vector2 ssCenterPos
-			{
-				Common::HalfScreenWidthF(),
-				Common::HalfScreenHeightF(),
-			};
-			loadPerformer.Start( ssCenterPos );
+			loadPerformer.Start( FetchParameter().ssLoadingDrawPos, Donya::Color::Code::BLACK );
 			loadPerformer.Stop();
 		}
 		Performer::LoadPart::ShowImGuiNode( u8"ロード演出の設定" );

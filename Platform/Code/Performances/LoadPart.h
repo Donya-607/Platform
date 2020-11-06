@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Donya/Color.h"
 #include "../Donya/Vector.h"
 
 #include "../UI.h"
@@ -55,13 +56,14 @@ namespace Performer
 		Icon	partIcon;
 		String	partString;
 		bool	active		= false;
+		Donya::Vector3 maskColor{ 0.0f, 0.0f, 0.0f };
 	public:
 		void Init();
 		void Uninit();
 		void UpdateIfActive( float elapsedTime );
 		void DrawIfActive( float drawDepth );
 	public:
-		void Start( const Donya::Vector2 &ssBasePos );
+		void Start( const Donya::Vector2 &ssBasePos, const Donya::Color::Code &color );
 		void Stop();
 	};
 }

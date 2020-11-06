@@ -314,9 +314,10 @@ namespace Performer
 
 	void LoadPart::Init()
 	{
-		timer	= 0.0f;
-		alpha	= 1.0f;
-		active	= false;
+		timer		= 0.0f;
+		alpha		= 1.0f;
+		active		= false;
+		maskColor	= { 0.0f, 0.0f, 0.0f };
 
 		partIcon.Init();
 		partString.Init();
@@ -365,19 +366,19 @@ namespace Performer
 		(
 			Common::HalfScreenWidthF(),	Common::HalfScreenWidthF(),
 			Common::ScreenWidthF(),		Common::ScreenWidthF(),
-			Donya::Color::Code::BLACK,
-			alpha
+			maskColor.x, maskColor.y, maskColor.z, alpha
 		);
 		Donya::Sprite::SetDrawDepth( oldDepth );
 
 		partIcon.Draw	( drawDepth, alpha );
 		partString.Draw	( drawDepth, alpha );
 	}
-	void LoadPart::Start( const Donya::Vector2 &ssBasePos )
+	void LoadPart::Start( const Donya::Vector2 &ssBasePos, const Donya::Color::Code &color )
 	{
-		timer	= 0.0f;
-		alpha	= 1.0f;
-		active	= true;
+		timer		= 0.0f;
+		alpha		= 1.0f;
+		active		= true;
+		maskColor	= Donya::Color::MakeColor( color );
 
 		partIcon.Start( ssBasePos );
 		partString.Start( ssBasePos );

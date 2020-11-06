@@ -41,24 +41,13 @@ namespace
 {
 	struct Member
 	{
-		float sprLoadScale				= 1.0f;
-		float sprLoadFlushingInterval	= 1.0f;
-		float sprLoadFlushingRange		= 1.0f;
-		float sprLoadMinAlpha			= 0.0f;
-		Donya::Vector2 sprLoadPos{ 960.0f, 540.0f };
+		Donya::Vector2 ssLoadingDrawPos{ 800.0f, 450.0f };
 	private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
-			archive
-			(
-				CEREAL_NVP( sprLoadScale			),
-				CEREAL_NVP( sprLoadFlushingInterval	),
-				CEREAL_NVP( sprLoadFlushingRange	),
-				CEREAL_NVP( sprLoadMinAlpha			),
-				CEREAL_NVP( sprLoadPos				)
-			);
+			archive( CEREAL_NVP( ssLoadingDrawPos ) );
 
 			if ( 1 <= version )
 			{
@@ -69,28 +58,7 @@ namespace
 	#if USE_IMGUI
 		void ShowImGuiNode()
 		{
-			auto Clamp = []( auto *v, const auto &min, const auto &max )
-			{
-				*v = std::max( min, std::max( min, *v ) );
-			};
-
-			if ( ImGui::TreeNode( u8"スプライトの調整" ) )
-			{
-				if ( ImGui::TreeNode( u8"ロード中" ) )
-				{
-					ImGui::DragFloat( u8"スケール",			&sprLoadScale,				0.1f );
-					ImGui::DragFloat( u8"点滅周期（秒）",		&sprLoadFlushingInterval,	0.1f );
-					ImGui::DragFloat( u8"点滅範囲",			&sprLoadFlushingRange,		0.1f );
-					ImGui::DragFloat( u8"最低アルファ値",		&sprLoadMinAlpha,			0.1f );
-					ImGui::DragFloat2( u8"スクリーン座標",	&sprLoadPos.x );
-
-					Clamp( &sprLoadMinAlpha, 0.0f, sprLoadMinAlpha );
-
-					ImGui::TreePop();
-				}
-
-				ImGui::TreePop();
-			}
+			ImGui::DragFloat2( u8"Loading：表示座標", &ssLoadingDrawPos.x );
 		}
 	#endif // USE_IMGUI
 	};
@@ -120,13 +88,9 @@ void SceneLoad::Init()
 
 	sceneParam.LoadParameter();
 	Performer::LoadPart::LoadParameter();
-	constexpr Donya::Vector2 ssCenterPos
-	{
-		Common::HalfScreenWidthF(),
-		Common::HalfScreenHeightF(),
-	};
+
 	loadPerformer.Init();
-	loadPerformer.Start( ssCenterPos );
+	loadPerformer.Start( FetchParameter().ssLoadingDrawPos, Donya::Color::Code::GRAY );
 	
 	constexpr auto coInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
 	auto LoadingEffects	= [coInitValue]( Thread::Result *pResult )
