@@ -8,6 +8,7 @@
 #include "Common.h"
 #include "FontHelper.h"
 #include "Input.h"
+#include "Music.h"
 #include "PauseParam.h"
 
 namespace
@@ -196,22 +197,33 @@ void PauseProcessor::UpdateChooseItem()
 		if ( left || right )
 		{
 			choice = scast<Choice>( 0 );
+
+			( decided )
+			? Donya::Sound::Play( Music::UI_Decide )
+			: Donya::Sound::Play( Music::UI_Choose );
+		}
+		else
+		if ( up )
+		{
+			choice = scast<Choice>( 0 );
+			( decided )
+			? Donya::Sound::Play( Music::UI_Decide )
+			: Donya::Sound::Play( Music::UI_Choose );
+		}
+		else
+		if ( down )
+		{
+			choice = scast<Choice>( lastItem );
+			( decided )
+			? Donya::Sound::Play( Music::UI_Decide )
+			: Donya::Sound::Play( Music::UI_Choose );
 		}
 		else
 		if ( decided )
 		{
 			choice  = scast<Choice>( 0 );
 			decided = false;
-		}
-		else
-		if ( up )
-		{
-			choice = scast<Choice>( 0 );
-		}
-		else
-		if ( down )
-		{
-			choice = scast<Choice>( lastItem );
+			Donya::Sound::Play( Music::UI_Choose );
 		}
 
 		return;
@@ -227,9 +239,14 @@ void PauseProcessor::UpdateChooseItem()
 
 	if ( index != oldIndex )
 	{
-	#if DEBUG_MODE
-		Donya::Sound::Play( Music::DEBUG_Weak );
-	#endif // DEBUG_MODE
+		( decided )
+		? Donya::Sound::Play( Music::UI_Decide )
+		: Donya::Sound::Play( Music::UI_Choose );
+	}
+	else
+	if ( decided )
+	{
+		Donya::Sound::Play( Music::UI_Decide );
 	}
 
 	choice = scast<Choice>( index );

@@ -254,6 +254,9 @@ void SceneLoad::Init()
 			
 			Bundle{ ID::SuperBallMachine_Shot,		"./Data/Sounds/SE/Enemy/SBM_Shot.wav",				false	},
 			
+			Bundle{ ID::UI_Choose,					"./Data/Sounds/SE/UI/Choose.ogg",					false	},
+			Bundle{ ID::UI_Decide,					"./Data/Sounds/SE/UI/Decide.ogg",					false	},
+			
 			#if DEBUG_MODE
 			Bundle{ ID::DEBUG_Strong,				"./Data/Sounds/SE/_DEBUG/Strong.wav",				false	},
 			Bundle{ ID::DEBUG_Weak,					"./Data/Sounds/SE/_DEBUG/Weak.wav",					false	},

@@ -1320,8 +1320,6 @@ void SceneTitle::UpdateChooseItem()
 	if ( wasDecided ) { return; }
 	// else
 
-	// TODO: Play choice SE
-
 	auto Tilted = []( float value, int sign )
 	{
 		return Donya::SignBit( value ) == sign;
@@ -1342,6 +1340,8 @@ void SceneTitle::UpdateChooseItem()
 		chooseItem = Choice::Start;
 	}
 #else
+	// TODO: Play choice SE
+
 	// If do not selected
 	if ( chooseItem == Choice::ItemCount )
 	{
@@ -1364,6 +1364,7 @@ void SceneTitle::UpdateChooseItem()
 	if ( trgDecide && chooseSelectableItem )
 	{
 		wasDecided = trgDecide;
+		Donya::Sound::Play( Music::UI_Decide );
 	}
 }
 

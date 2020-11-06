@@ -1503,6 +1503,8 @@ void  SceneGame::BeginPause()
 {
 	pPauser = std::make_unique<PauseProcessor>();
 	pPauser->Init( currentPlayingBGM );
+
+	Donya::Sound::Play( Music::UI_Decide );
 }
 void  SceneGame::EndPause()
 {
@@ -1511,6 +1513,8 @@ void  SceneGame::EndPause()
 
 	pPauser->Uninit();
 	pPauser.reset();
+
+	Donya::Sound::Play( Music::UI_Decide );
 }
 
 bool SceneGame::IsPlayingStatus( State verify ) const

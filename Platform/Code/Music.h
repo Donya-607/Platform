@@ -46,6 +46,9 @@ namespace Music
 		Skull_Roar,
 
 		SuperBallMachine_Shot,
+
+		UI_Choose,
+		UI_Decide,
 		
 	#if DEBUG_MODE
 		DEBUG_Strong,
