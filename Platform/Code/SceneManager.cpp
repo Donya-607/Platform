@@ -10,7 +10,6 @@
 #include "SceneGame.h"
 #include "SceneLoad.h"
 #include "SceneLogo.h"
-#include "ScenePause.h"
 #include "SceneOver.h"
 #include "SceneResult.h"
 #include "SceneTitle.h"
@@ -184,7 +183,6 @@ void SceneMng::PushScene( Scene::Type type, bool toFront )
 	case Scene::Type::Game:		PushSceneImpl<SceneGame>  ( toFront ); return;
 	case Scene::Type::Over:		PushSceneImpl<SceneOver>  ( toFront ); return;
 	case Scene::Type::Result:	PushSceneImpl<SceneResult>( toFront ); return;
-	case Scene::Type::Pause:	PushSceneImpl<ScenePause> ( toFront ); return;
 	default: _ASSERT_EXPR( 0, L"Error: The scene does not exist."   ); return;
 	}
 }

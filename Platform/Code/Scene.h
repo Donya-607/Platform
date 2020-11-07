@@ -22,7 +22,6 @@ public:
 		Game,
 		Over,
 		Result,
-		Pause,
 	};
 	struct Result
 	{
