@@ -13,6 +13,7 @@
 
 #include "Bloom.h"
 #include "Enemy.h"
+#include "Input.h"
 #include "Map.h"
 #include "Meter.h"
 #include "Player.h"
@@ -49,6 +50,7 @@ private:
 	std::unique_ptr<Donya::Surface>				pScreenSurface;
 	std::unique_ptr<Donya::Surface>				pShadowMap;
 	std::unique_ptr<Shader>						pQuadShader;
+	std::unique_ptr<Input::Explainer>			pInputExplainer;
 	std::unique_ptr<Map>						pMap;
 	std::unique_ptr<Player>						pPlayer;
 	std::unique_ptr<Meter::Drawer>				pMeter;

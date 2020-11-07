@@ -3,9 +3,15 @@
 #include <array>
 
 #include "Donya/GamepadXInput.h"
+#include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
 #include "Player.h"
+#include "UI.h"
+
+#if USE_IMGUI
+#include <string>
+#endif // USE_IMGUI
 
 namespace Input
 {
@@ -24,4 +30,40 @@ namespace Input
 	Player::Input MakeCurrentInput( const Donya::XInput &controller, const Donya::Vector2 &stickDeadZone );
 
 	bool IsPauseRequested( const Donya::XInput &controller );
+}
+namespace Input
+{
+	enum class Type
+	{
+		ShiftWeapon_Back,
+		ShiftWeapon_Advance,
+
+		TypeCount
+	};
+	constexpr const char *GetTypeName( Type type )
+	{
+		switch ( type )
+		{
+		case Type::ShiftWeapon_Back:	return "ShiftWeapon_Back";
+		case Type::ShiftWeapon_Advance:	return "ShiftWeapon_Advance";
+		default: break;
+		}
+
+		return "ERROR";
+	}
+
+	void LoadParameter();
+#if USE_IMGUI
+	void UpdateParameter( const std::string &nodeCaption );
+#endif // USE_IMGUI
+
+	class Explainer
+	{
+	private:
+		size_t  spriteId = NULL;
+		mutable UIObject sheet;
+	public:
+		bool Init();
+		void Draw( Type type, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssScale = { 1.0f, 1.0f }, float drawDepth = 0.0f ) const;
+	};
 }

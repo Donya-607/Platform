@@ -29,6 +29,7 @@
 #include "Fader.h"
 #include "FilePath.h"
 #include "Item.h"
+#include "Input.h"
 #include "Meter.h"
 #include "Music.h"
 #include "Parameter.h"
@@ -88,6 +89,7 @@ void SceneLoad::Init()
 
 	sceneParam.LoadParameter();
 	Performer::LoadPart::LoadParameter();
+	Input::LoadParameter();
 
 	loadPerformer.Init();
 	loadPerformer.Start( FetchParameter().ssLoadingDrawPos, Donya::Color::Code::GRAY );
@@ -176,7 +178,9 @@ void SceneLoad::Init()
 		};
 
 		bool succeeded = true;
-		if ( !MakeTextureCache( Attr::TitleLogo ) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::TitleLogo		) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::InputButtons	) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::Meter			) ) { succeeded = false; }
 		
 		_ASSERT_EXPR( succeeded, L"Failed: Sprites load is failed." );
 

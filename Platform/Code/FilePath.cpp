@@ -131,6 +131,9 @@ namespace
 		case SpriteAttribute::TitleLogo:
 			return Make( L"Title/Logo.png",		2U );
 		
+		case SpriteAttribute::InputButtons:
+			return Make( L"UI/InputButtons.png",16U );
+		
 		case SpriteAttribute::Meter:
 			return Make( L"UI/Meter.png",		16U );
 

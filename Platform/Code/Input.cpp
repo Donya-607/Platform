@@ -1,6 +1,10 @@
 #include "Input.h"
 
 #include "Donya/Keyboard.h"
+#include "Donya/Sprite.h"
+
+#include "InputParam.h"
+#include "Parameter.h"
 
 namespace Input
 {
@@ -83,5 +87,68 @@ namespace Input
 		const bool button	= controller.Trigger( Donya::Gamepad::Button::START );
 		const bool key		= Donya::Keyboard::Trigger( 'P' );
 		return button || key;
+	}
+}
+namespace Input
+{
+	static ParamOperator<Parameter> parameter{ "Input" };
+	void LoadParameter()
+	{
+		parameter.LoadParameter();
+	}
+	const Parameter &FetchParameter()
+	{
+		return parameter.Get();
+	}
+#if USE_IMGUI
+	void UpdateParameter( const std::string &nodeCaption )
+	{
+		parameter.ShowImGuiNode( nodeCaption );
+	}
+#endif // USE_IMGUI
+
+
+	constexpr size_t typeCount = scast<size_t>( Type::TypeCount );
+
+#if USE_IMGUI
+	void Parameter::ShowImGuiNode()
+	{
+		if ( texViews.size() != typeCount )
+		{
+			texViews.resize( typeCount );
+		}
+		if ( ImGui::TreeNode( u8"テクスチャ情報設定" ) )
+		{
+			for ( size_t i = 0; i < typeCount; ++i )
+			{
+				texViews[i].ShowImGuiNode( GetTypeName( scast<Type>( i ) ) );
+			}
+
+			ImGui::TreePop();
+		}
+	}
+#endif // USE_IMGUI
+
+
+	bool Explainer::Init()
+	{
+		constexpr SpriteAttribute attr = SpriteAttribute::InputButtons;
+		spriteId = Donya::Sprite::Load( GetSpritePath( attr ), GetSpriteInstanceCount( attr ) );
+		sheet.AssignSpriteID( spriteId );
+
+		return ( spriteId == NULL ) ? false : true;
+	}
+	void Explainer::Draw( Type type, const Donya::Vector2 &ssPos, const Donya::Vector2 &scale, float drawDepth ) const
+	{
+		const auto &data = FetchParameter();
+		if ( data.texViews.size() != typeCount ) { return; }
+		// else
+
+		sheet = data.texViews[scast<size_t>( type )];
+		sheet.AssignSpriteID( spriteId );
+		sheet.pos	= ssPos;
+		sheet.scale	= Donya::Vector2::Product( sheet.scale, scale );
+
+		sheet.Draw( drawDepth );
 	}
 }

@@ -299,6 +299,7 @@
     <ClInclude Include="Code\Grid.h" />
     <ClInclude Include="Code\Icon.h" />
     <ClInclude Include="Code\Input.h" />
+    <ClInclude Include="Code\InputParam.h" />
     <ClInclude Include="Code\Item.h" />
     <ClInclude Include="Code\ItemParam.h" />
     <ClInclude Include="Code\Map.h" />

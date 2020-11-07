@@ -28,7 +28,6 @@
 #include "Fader.h"
 #include "FilePath.h"
 #include "FontHelper.h"
-#include "Input.h"
 #include "Music.h"
 #include "Parameter.h"
 #include "PointLightStorage.h"
@@ -110,11 +109,11 @@ namespace
 		float waitSecUntilFade				= 1.0f;
 
 		Donya::Vector2 ssMeterDrawPos;
-		Donya::Vector2 ssMeterDrawScale;
+		Donya::Vector2 ssMeterDrawScale{ 1.0f, 1.0f };
 		struct ShiftInput
 		{
 			Donya::Vector2 ssPos;
-			Donya::Vector2 ssScale;
+			Donya::Vector2 ssScale{ 1.0f, 1.0f };
 		private:
 			friend class cereal::access;
 			template<class Archive>
@@ -342,6 +341,7 @@ void SceneResult::Init()
 #endif // DEBUG_MODE
 
 	sceneParam.LoadParameter();
+	Input::LoadParameter();
 	const auto &data = FetchParameter();
 
 	constexpr int stageNo = Definition::StageNumber::Result();
@@ -360,6 +360,10 @@ void SceneResult::Init()
 	assert( result );
 
 	result = CreateShaders();
+	assert( result );
+
+	pInputExplainer = std::make_unique<Input::Explainer>();
+	result = pInputExplainer->Init();
 	assert( result );
 
 	currentTimer	= 0.0f;
@@ -742,6 +746,11 @@ void SceneResult::Draw( float elapsedTime )
 	if ( pMeter )
 	{
 		pMeter->DrawIcon( Meter::Icon::Player );
+	}
+	if ( pInputExplainer )
+	{
+		pInputExplainer->Draw( Input::Type::ShiftWeapon_Back,		data.drawingShiftBack.ssPos,	data.drawingShiftBack.ssScale		);
+		pInputExplainer->Draw( Input::Type::ShiftWeapon_Advance,	data.drawingShiftAdvance.ssPos,	data.drawingShiftAdvance.ssScale	);
 	}
 
 	Donya::Sprite::SetDrawDepth( oldDepth );
@@ -1895,6 +1904,10 @@ void SceneResult::UseImGui()
 		ImGui::Text( "" );
 
 		Effect::Admin::Get().ShowImGuiNode( u8"エフェクトのパラメータ" );
+		ImGui::Text( "" );
+		
+		Input::UpdateParameter( u8"インプットのパラメータ" );
+		ImGui::Text( "" );
 
 		ImGui::TreePop();
 	}
