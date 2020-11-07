@@ -133,6 +133,8 @@ namespace
 		};
 		ShiftInput drawingShiftBack;
 		ShiftInput drawingShiftAdvance;
+
+		float firstShiftGunSecond = 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -174,6 +176,10 @@ namespace
 				);
 			}
 			if ( 4 <= version )
+			{
+				archive( CEREAL_NVP( firstShiftGunSecond ) );
+			}
+			if ( 5 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -243,8 +249,10 @@ namespace
 			}
 			if ( ImGui::TreeNode( u8"タイミング関連" ) )
 			{
-				ImGui::DragFloat( u8"演出を終えるまでの秒数",		&finishPerformanceSecond,	0.01f );
-				ImGui::DragFloat( u8"演出後フェードのまでの秒数",	&waitSecUntilFade,			0.01f );
+				ImGui::DragFloat( u8"武器を切り替えるまでの待機秒数",	&firstShiftGunSecond,		0.01f );
+				ImGui::DragFloat( u8"演出を終えるまでの秒数",			&finishPerformanceSecond,	0.01f );
+				ImGui::DragFloat( u8"演出後フェードのまでの秒数",		&waitSecUntilFade,			0.01f );
+				firstShiftGunSecond		= std::max( 0.0f, firstShiftGunSecond		);
 				finishPerformanceSecond	= std::max( 0.0f, finishPerformanceSecond	);
 				waitSecUntilFade		= std::max( 0.0f, waitSecUntilFade			);
 
@@ -330,7 +338,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				3 )
+CEREAL_CLASS_VERSION( SceneParam,				4 )
 CEREAL_CLASS_VERSION( SceneParam::ShiftInput,	0 )
 
 void SceneResult::Init()
@@ -1119,8 +1127,10 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 	if ( !pPlayer ) { return; }
 	// else
 
+	const auto &data = FetchParameter();
+
 	Player::Input input{};
-	if ( Donya::SignBit( previousTimer ) == 0 )
+	if ( NowTiming( data.firstShiftGunSecond, currentTimer, previousTimer ) )
 	{
 		input.shiftGuns.front() = 1;
 	}
@@ -1133,7 +1143,7 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 	{
 	case State::Performance:
 		{
-			const auto &timings = FetchParameter().useShotTimings;
+			const auto &timings = data.useShotTimings;
 			for ( const auto &sec : timings )
 			{
 				if ( NowTiming( sec, currentTimer, previousTimer ) )
@@ -1180,7 +1190,6 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 
 	if ( pMeter )
 	{
-		const auto &data = FetchParameter();
 		pMeter->SetDrawOption( data.ssMeterDrawPos, pPlayer->GetThemeColor(), data.ssMeterDrawScale );
 	}
 }
