@@ -1179,6 +1179,10 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 				{
 					pPlayer->PerformWinning();
 					arriveTime = currentTimer;
+					if ( pInputExplainer )
+					{
+						pInputExplainer->Notify();
+					}
 				}
 			}
 			// Head to initial position
