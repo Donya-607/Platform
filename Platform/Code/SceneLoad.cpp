@@ -405,9 +405,9 @@ Scene::Result SceneLoad::ReturnResult()
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
 	#if DEBUG_MODE
-		// change.sceneType = Scene::Type::Game;
+		change.sceneType = Scene::Type::Game;
 		// change.sceneType = Scene::Type::Title;
-		change.sceneType = Scene::Type::Result;
+		// change.sceneType = Scene::Type::Result;
 	#else
 		change.sceneType = Scene::Type::Title;
 	#endif // DEBUG_MODE

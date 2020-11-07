@@ -159,7 +159,7 @@ void SceneOver::Draw( float elapsedTime )
 	{
 		constexpr Donya::Vector2 pivot { 0.5f, 0.5f };
 		constexpr Donya::Vector2 center{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
-		constexpr Donya::Vector4 color { Donya::Color::MakeColor( Donya::Color::Code::PURPLE ), 1.0f };
+		constexpr Donya::Vector4 color { Donya::Color::MakeColor( Donya::Color::Code::LIGHT_GRAY ), 1.0f };
 		constexpr Donya::Vector2 scale { 4.0f, 4.0f };
 
 		pFontRenderer->DrawExt( L"GAME OVER", center, pivot, scale, color );
