@@ -1865,13 +1865,12 @@ namespace Donya
 			XMFLOAT2 size{};
 			it->second->GetTextureSize( &size.x, &size.y );
 
-			return DrawGeneral
+			return DrawGeneralExt
 			(
 				sprId,
-				scrX, scrY,
-				size.x * scaleX, size.y * scaleY,
-				0, 0,
-				size.x, size.y,
+				scrX, scrY, size.x, size.y,
+				0.0f, 0.0f, size.x, size.y,
+				scaleX, scaleY,
 				degree, center,
 				alpha, R, G, B
 			);
@@ -2028,13 +2027,12 @@ namespace Donya
 		}
 		bool DrawPartExt( size_t sprId, float scrX, float scrY, float texX, float texY, float texW, float texH, float scaleX, float scaleY, float degree, DirectX::XMFLOAT2 center, float alpha, float R, float G, float B )
 		{
-			return DrawGeneral
+			return DrawGeneralExt
 			(
 				sprId,
-				scrX, scrY,
-				texW * scaleX,
-				texH * scaleY,
+				scrX, scrY, texW, texH,
 				texX, texY, texW, texH,
+				scaleX, scaleY,
 				degree, center,
 				alpha, R, G, B
 			);

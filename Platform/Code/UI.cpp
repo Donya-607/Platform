@@ -34,7 +34,7 @@ bool UIObject::DrawPart( float depth ) const
 	Donya::Sprite::SetDrawDepth( depth );
 
 	const Donya::Vector2 wholeTexSize = GetSpriteSize().Float();
-
+	
 	const bool result =
 	Donya::Sprite::DrawPartExt
 	(
@@ -43,7 +43,7 @@ bool UIObject::DrawPart( float depth ) const
 		texPos.x,	texPos.y,
 		texSize.x,	texSize.y,
 		scale.x,	scale.y,
-		degree,		origin.Product( wholeTexSize ).Product( scale ),
+		degree,		origin.Product( texSize ).Product( scale ),
 		alpha,		color.x,	color.y,	color.z
 	);
 
