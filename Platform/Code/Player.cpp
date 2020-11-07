@@ -1001,6 +1001,10 @@ void Player::ShotManager::Init()
 }
 void Player::ShotManager::Update( const Player &inst, float elapsedTime, const InputManager &input )
 {
+	// Make do not release/charge when pausing
+	if ( IsZero( elapsedTime ) ) { return; }
+	// else
+
 	prevChargeSecond = currChargeSecond;
 	nowTrigger = false;
 
@@ -1087,7 +1091,7 @@ bool Player::ShotManager::NowTriggered( const InputManager &input ) const
 
 	return false;
 }
-Player::ShotLevel Player::ShotManager::CalcChargeLevel()
+Player::ShotLevel Player::ShotManager::CalcChargeLevel() const
 {
 	const auto &chargeParams = Parameter().Get().chargeParams;
 
@@ -1113,7 +1117,7 @@ Player::ShotLevel Player::ShotManager::CalcChargeLevel()
 
 	return ShotLevel::Normal;
 }
-Donya::Vector3 Player::ShotManager::CalcEmissiveColor()
+Donya::Vector3 Player::ShotManager::CalcEmissiveColor() const
 {
 	constexpr size_t paramCount = scast<size_t>( Player::ShotLevel::LevelCount );
 	constexpr Donya::Vector3 defaultColor = Donya::Vector3::Zero();
@@ -1298,14 +1302,21 @@ void Player::MoverBase::AssignBodyParameter( Player &inst )
 
 void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
-	const auto &input = inst.inputManager.Current();
-
 	inst.MoveHorizontal( elapsedTime );
+
+	const auto &input = inst.inputManager.Current();
+	const bool nowPausing = IsZero( elapsedTime );
 
 	// Deformity of MoveVertical()
 	{
+		// Make to can not act if game time is pausing
+		if ( nowPausing )
+		{
+			inst.Fall( elapsedTime );
+		}
+		else
 		// Jump condition and resolve vs slide condition
-		if ( inst.WillUseJump() && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
+		if ( inst.WillUseJump() )
 		{
 			const int jumpInputIndex = inst.inputManager.UseJumpIndex();
 			assert( 0 <= jumpInputIndex && jumpInputIndex < Input::variationCount );
@@ -1338,7 +1349,7 @@ void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain
 	inst.ShotIfRequested( elapsedTime );
 
 	// Try to grabbing ladder if the game time is not pausing
-	if ( !gotoSlide && !IsZero( elapsedTime ) )
+	if ( !gotoSlide && !nowPausing )
 	{
 		auto IsLadder	= [&]( const std::shared_ptr<const Tile> &targetTile )
 		{

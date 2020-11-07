@@ -249,8 +249,8 @@ private:
 		Donya::Vector3	EmissiveColor()		const { return emissiveColor;		}
 	private:
 		bool NowTriggered( const InputManager &input ) const;
-		ShotLevel		CalcChargeLevel();
-		Donya::Vector3	CalcEmissiveColor();
+		ShotLevel		CalcChargeLevel() const;
+		Donya::Vector3	CalcEmissiveColor() const;
 		void PlayLoopSFXIfStopping();
 		void StopLoopSFXIfPlaying( bool forcely = false );
 	};
