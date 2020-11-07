@@ -57,11 +57,13 @@ namespace
 			}
 		}
 	public:
+	#if USE_IMGUI
 		void ShowImGuiNode()
 		{
 			ImGui::DragFloat( u8"ëJà⁄Ç‹Ç≈ÇÃë“ã@ïbêî", &waitToFadeSecond, 0.01f );
 			waitToFadeSecond = std::max( 0.0f, waitToFadeSecond );
 		}
+	#endif // USE_IMGUI
 	};
 
 	static ParamOperator<SceneParam> sceneParam{ "SceneOver" };
@@ -118,6 +120,7 @@ Scene::Result SceneOver::Update( float elapsedTime )
 		}
 	}
 
+#if 0
 	if ( !Fader::Get().IsExist() )
 	{
 		bool shouldSkip = false;
@@ -135,6 +138,7 @@ Scene::Result SceneOver::Update( float elapsedTime )
 			StartFade();
 		}
 	}
+#endif // 0
 
 	return ReturnResult();
 }
