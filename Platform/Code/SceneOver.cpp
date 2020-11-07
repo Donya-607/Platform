@@ -18,6 +18,7 @@
 #endif // DEBUG_MODE
 
 #include "Common.h"
+#include "Effect/EffectAdmin.h"
 #include "Fader.h"
 #include "FontHelper.h"
 #include "Music.h"
@@ -73,15 +74,19 @@ CEREAL_CLASS_VERSION( SceneParam, 0 )
 
 void SceneOver::Init()
 {
-	Donya::Sound::Play( Music::BGM_Over );
-
 	Player::Remaining::Set( Player::Parameter().Get().initialRemainCount );
 
 	timer = 0.0f;
+
+	Effect::Admin::Get().ClearInstances();
+
+	Donya::Sound::Play( Music::BGM_Over );
 }
 void SceneOver::Uninit()
 {
 	Donya::Sound::Stop( Music::BGM_Over );
+
+	Effect::Admin::Get().ClearInstances();
 }
 
 Scene::Result SceneOver::Update( float elapsedTime )

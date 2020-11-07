@@ -506,8 +506,6 @@ CEREAL_CLASS_VERSION( Member::Camera,		1  )
 
 void SceneTitle::Init()
 {
-	Donya::Sound::Play( Music::BGM_Title );
-
 	sceneParam.LoadParameter();
 	const auto &data = FetchParameter();
 
@@ -597,6 +595,8 @@ void SceneTitle::Init()
 	effectAdmin.SetLightColorAmbient( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
 	effectAdmin.SetLightColorDiffuse( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
 	effectAdmin.SetLightDirection	( data.directionalLight.direction.XYZ() );
+
+	Donya::Sound::Play( Music::BGM_Title );
 }
 void SceneTitle::Uninit()
 {
