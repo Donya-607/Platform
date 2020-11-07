@@ -39,7 +39,9 @@ namespace Input
 			}
 		};
 	public:
-		std::vector<Part> texViews; // size() == Input::Type::TypeCount
+		std::vector<Part>			texViews; // size() == Input::Type::TypeCount
+		std::vector<Donya::Vector2>	notifyingStretches; // Used for bezier-curve
+		float						notifyingSecond = 1.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -48,6 +50,14 @@ namespace Input
 			archive( CEREAL_NVP( texViews ) );
 
 			if ( 1 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( notifyingStretches	),
+					CEREAL_NVP( notifyingSecond		)
+				);
+			}
+			if ( 2 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -58,5 +68,5 @@ namespace Input
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Input::Parameter,			0 )
+CEREAL_CLASS_VERSION( Input::Parameter,			1 )
 CEREAL_CLASS_VERSION( Input::Parameter::Part,	0 )

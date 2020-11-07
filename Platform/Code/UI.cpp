@@ -43,7 +43,7 @@ bool UIObject::DrawPart( float depth ) const
 		texPos.x,	texPos.y,
 		texSize.x,	texSize.y,
 		scale.x,	scale.y,
-		degree,		origin.Product( wholeTexSize ),
+		degree,		origin.Product( wholeTexSize ).Product( scale ),
 		alpha,		color.x,	color.y,	color.z
 	);
 

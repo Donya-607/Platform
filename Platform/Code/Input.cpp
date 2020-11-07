@@ -4,6 +4,7 @@
 #include "Donya/Sprite.h"
 
 #include "InputParam.h"
+#include "Math.h"
 #include "Parameter.h"
 
 namespace Input
@@ -133,6 +134,11 @@ namespace Input
 
 			ImGui::TreePop();
 		}
+
+		constexpr Donya::Vector2 scaleRange{ -5.0f, 5.0f };
+		ImGui::Helper::ShowBezier2DNode( u8"アピール時の伸縮設定", &notifyingStretches, scaleRange.x, scaleRange.y );
+		ImGui::DragFloat( u8"アピールにかける秒数", &notifyingSecond, 0.01f );
+		notifyingSecond = std::max( 0.01f, notifyingSecond );
 	}
 #endif // USE_IMGUI
 
@@ -145,6 +151,34 @@ namespace Input
 
 		return ( spriteId == NULL ) ? false : true;
 	}
+	void Explainer::Update( float elapsedTime )
+	{
+		if ( !performing ) { return; }
+		// else
+
+		const auto &data = FetchParameter();
+
+		timer += elapsedTime;
+
+		const auto &stretches = data.notifyingStretches;
+		if ( stretches.size() < 2 )
+		{
+			stretch = { 1.0f, 1.0f };
+			return;
+		}
+		// else
+		if ( data.notifyingSecond <= timer || IsZero( data.notifyingSecond ) )
+		{
+			timer		= data.notifyingSecond;
+			stretch		= stretches.back();
+			performing	= false;
+			return;
+		}
+		// else
+
+		const float t = timer / data.notifyingSecond; // Scaling into 0.0f ~ 1.0f
+		stretch = Math::CalcBezierCurve( stretches, t );
+	}
 	void Explainer::Draw( Type type, bool showController, const Donya::Vector2 &ssPos, const Donya::Vector2 &scale, float drawDepth ) const
 	{
 		const auto &data = FetchParameter();
@@ -156,8 +190,14 @@ namespace Input
 		sheet = ( showController ) ? view.controller : view.keyboard;
 		sheet.AssignSpriteID( spriteId );
 		sheet.pos	= ssPos;
-		sheet.scale	= Donya::Vector2::Product( sheet.scale, scale );
+		sheet.scale	= Donya::Vector2::Product( stretch, Donya::Vector2::Product( sheet.scale, scale ) );
 
 		sheet.DrawPart( drawDepth );
+	}
+	void Explainer::Notify()
+	{
+		timer		= 0.0f;
+		stretch		= { 1.0f, 1.0f };
+		performing	= true;
 	}
 }

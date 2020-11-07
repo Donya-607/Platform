@@ -62,8 +62,15 @@ namespace Input
 	private:
 		size_t  spriteId = NULL;
 		mutable UIObject sheet;
+	private:
+		float			timer = 0.0f;
+		Donya::Vector2	stretch{ 1.0f, 1.0f };
+		bool			performing = false;
 	public:
 		bool Init();
+		void Update( float elapsedTime );
 		void Draw( Type type, bool showControllerType, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssScale = { 1.0f, 1.0f }, float drawDepth = 0.0f ) const;
+	public:
+		void Notify();
 	};
 }

@@ -511,6 +511,8 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	Collision_BulletVSBullet();
 	Collision_BulletVSEnemy();
 
+	if ( pInputExplainer ) { pInputExplainer->Update( elapsedTime ); }
+
 	return ReturnResult();
 }
 
@@ -1133,6 +1135,10 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 	if ( NowTiming( data.firstShiftGunSecond, currentTimer, previousTimer ) )
 	{
 		input.shiftGuns.front() = 1;
+		if ( pInputExplainer )
+		{
+			pInputExplainer->Notify();
+		}
 	}
 
 #if DEBUG_MODE
@@ -1921,6 +1927,10 @@ void SceneResult::UseImGui()
 		Effect::Admin::Get().ShowImGuiNode( u8"エフェクトのパラメータ" );
 		ImGui::Text( "" );
 		
+		if ( pInputExplainer && ImGui::Button( u8"インプットをアピール" ) )
+		{
+			pInputExplainer->Notify();
+		}
 		Input::UpdateParameter( u8"インプットのパラメータ" );
 		ImGui::Text( "" );
 
