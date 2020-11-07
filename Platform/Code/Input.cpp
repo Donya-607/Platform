@@ -119,9 +119,14 @@ namespace Input
 		}
 		if ( ImGui::TreeNode( u8"テクスチャ情報設定" ) )
 		{
+			std::string caption;
 			for ( size_t i = 0; i < typeCount; ++i )
 			{
-				texViews[i].ShowImGuiNode( GetTypeName( scast<Type>( i ) ) );
+				caption = GetTypeName( scast<Type>( i ) );
+
+				auto &v = texViews[i];
+				v.keyboard.ShowImGuiNode	( caption + u8"・キーボード"		);
+				v.controller.ShowImGuiNode	( caption + u8"・コントローラ"	);
 			}
 
 			ImGui::TreePop();
@@ -138,17 +143,19 @@ namespace Input
 
 		return ( spriteId == NULL ) ? false : true;
 	}
-	void Explainer::Draw( Type type, const Donya::Vector2 &ssPos, const Donya::Vector2 &scale, float drawDepth ) const
+	void Explainer::Draw( Type type, bool showController, const Donya::Vector2 &ssPos, const Donya::Vector2 &scale, float drawDepth ) const
 	{
 		const auto &data = FetchParameter();
 		if ( data.texViews.size() != typeCount ) { return; }
 		// else
 
-		sheet = data.texViews[scast<size_t>( type )];
+		const auto &view = data.texViews[scast<size_t>( type )];
+
+		sheet = ( showController ) ? view.controller : view.keyboard;
 		sheet.AssignSpriteID( spriteId );
 		sheet.pos	= ssPos;
 		sheet.scale	= Donya::Vector2::Product( sheet.scale, scale );
 
-		sheet.Draw( drawDepth );
+		sheet.DrawPart( drawDepth );
 	}
 }

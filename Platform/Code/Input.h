@@ -64,6 +64,6 @@ namespace Input
 		mutable UIObject sheet;
 	public:
 		bool Init();
-		void Draw( Type type, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssScale = { 1.0f, 1.0f }, float drawDepth = 0.0f ) const;
+		void Draw( Type type, bool showControllerType, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssScale = { 1.0f, 1.0f }, float drawDepth = 0.0f ) const;
 	};
 }

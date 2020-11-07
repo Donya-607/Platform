@@ -749,8 +749,14 @@ void SceneResult::Draw( float elapsedTime )
 	}
 	if ( pInputExplainer )
 	{
-		pInputExplainer->Draw( Input::Type::ShiftWeapon_Back,		data.drawingShiftBack.ssPos,	data.drawingShiftBack.ssScale		);
-		pInputExplainer->Draw( Input::Type::ShiftWeapon_Advance,	data.drawingShiftAdvance.ssPos,	data.drawingShiftAdvance.ssScale	);
+		const auto ssOffset			= data.ssMeterDrawPos;
+		const bool showController	= controller.IsConnected();
+		auto Draw = [&]( Input::Type type, const SceneParam::ShiftInput &data )
+		{
+			pInputExplainer->Draw( type, showController, data.ssPos + ssOffset, data.ssScale );
+		};
+		Draw( Input::Type::ShiftWeapon_Back,	data.drawingShiftBack		);
+		Draw( Input::Type::ShiftWeapon_Advance,	data.drawingShiftAdvance	);
 	}
 
 	Donya::Sprite::SetDrawDepth( oldDepth );
