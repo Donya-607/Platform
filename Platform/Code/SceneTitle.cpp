@@ -1392,7 +1392,19 @@ void SceneTitle::UpdatePerformance( float elapsedTime )
 	// Skip performance
 	if ( Input::HasButtonInput( currentInput ) && !Input::HasButtonInput( previousInput ) )
 	{
-		StartFade();
+		bool skipable = true;
+		if ( pBoss )
+		{
+			if ( Donya::Collision::IsHit( pBoss->GetHurtBox(), currentScreen ) )
+			{
+				skipable = false;
+			}
+		}
+
+		if ( skipable )
+		{
+			StartFade();
+		}
 	}
 
 	performTimer += elapsedTime;
@@ -1842,7 +1854,6 @@ void SceneTitle::BossUpdate( float elapsedTime, const Donya::Vector3 &targetPos 
 	// else
 
 	const auto &data = FetchParameter();
-	
 	const bool toLeave = data.leaveBossDelaySec <= afterDecidedTimer;
 
 	Boss::Input input;
@@ -1943,6 +1954,17 @@ void SceneTitle::UseImGui()
 	constexpr int stageNo = Definition::StageNumber::Title();
 
 	sceneParam.ShowImGuiNode( u8"タイトルシーンのパラメータ" );
+
+	bool withinInside = false;
+	if ( pBoss )
+	{
+		const auto hitbox = pBoss->GetHurtBox();
+		if ( Donya::Collision::IsHit( hitbox, currentScreen ) )
+		{
+			withinInside = true;
+		}
+	}
+	ImGui::Checkbox( u8"ボスは画面内におさまっているか", &withinInside );
 
 	if ( ImGui::TreeNode( u8"ステート関連" ) )
 	{
