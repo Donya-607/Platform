@@ -2980,6 +2980,7 @@ void Player::ShiftGunIfNeeded()
 	if ( index >= kindCount	) { index = 0; }
 
 	AssignGunByKind( scast<GunKind>( index ) );
+	Donya::Sound::Play( Music::Player_ShiftGun );
 }
 Donya::Vector4x4 Player::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 {

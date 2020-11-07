@@ -38,6 +38,7 @@ namespace Music
 		Player_Landing,
 		Player_Leave,
 		Player_Miss,
+		Player_ShiftGun,
 		
 		RecoverHP,
 

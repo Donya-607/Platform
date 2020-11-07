@@ -48,12 +48,13 @@ namespace Input
 			input.useJumps[0]	= controller.Press( Button::A	);
 			input.useShots[0]	= controller.Press( Button::X	);
 			input.useDashes[0]	= controller.Press( Button::LT	);
-			input.shiftGuns[0]	= controller.Press( Button::PRESS_R	);
+			input.shiftGuns[0]	= controller.Press( Button::RB	) ? +1 : 0;
 			if ( 2 <= Player::Input::variationCount )
 			{
 			input.useJumps[1]	= controller.Press( Button::B	);
 			input.useShots[1]	= controller.Press( Button::Y	);
 			input.useDashes[1]	= controller.Press( Button::RT	);
+			input.shiftGuns[1]	= controller.Press( Button::LB	) ? -1 : 0;
 			}
 		}
 		else
@@ -66,11 +67,12 @@ namespace Input
 			input.useJumps[0]	= Donya::Keyboard::Press( 'Z'	);
 			input.useShots[0]	= Donya::Keyboard::Press( 'X'	);
 			input.useDashes[0]	= Donya::Keyboard::Press( 'A'	);
-			input.shiftGuns[0]	= Donya::Keyboard::Press( 'C'	);
+			input.shiftGuns[0]	= Donya::Keyboard::Press( 'E'	) ? +1 : 0;
 			if ( 2 <= Player::Input::variationCount )
 			{
 			input.useJumps[1]	= Donya::Keyboard::Press( VK_RSHIFT	);
 			input.useShots[1]	= Donya::Keyboard::Press( 'S'	);
+			input.shiftGuns[1]	= Donya::Keyboard::Press( 'W'	) ? -1 : 0;
 			}
 		}
 

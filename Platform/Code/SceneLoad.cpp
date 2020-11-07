@@ -249,6 +249,7 @@ void SceneLoad::Init()
 			Bundle{ ID::Player_Landing,				"./Data/Sounds/SE/Player/Landing.wav",				false	},
 			Bundle{ ID::Player_Leave,				"./Data/Sounds/SE/Player/Leave.ogg",				false	},
 			Bundle{ ID::Player_Miss,				"./Data/Sounds/SE/Player/Miss.wav",					false	},
+			Bundle{ ID::Player_ShiftGun,			"./Data/Sounds/SE/Player/ShiftGun.ogg",				false	},
 			
 			Bundle{ ID::RecoverHP,					"./Data/Sounds/SE/Effect/RecoverHP.wav",			false	},
 			
