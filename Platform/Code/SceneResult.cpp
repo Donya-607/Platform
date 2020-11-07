@@ -656,35 +656,10 @@ void SceneResult::Draw( float elapsedTime )
 
 		pFontRenderer->Draw
 		(
-			L"YOU GOT",
+			L"YOU GOT A NEW WEAPON!",
 			center + Donya::Vector2{ 0.0f, -320.0f },
 			pivot
 		);
-		pFontRenderer->Draw
-		(
-			L"SPECIAL WEAPON",
-			center + Donya::Vector2{ 0.0f, -256.0f },
-			pivot
-		);
-		
-		if ( controller.IsConnected() )
-		{
-			pFontRenderer->Draw
-			(
-				L"PRESS A TO SKIP",
-				center + Donya::Vector2{ 0.0f, 256.0f },
-				pivot
-			);
-		}
-		else
-		{
-			pFontRenderer->Draw
-			(
-				L"PRESS Z TO SKIP",
-				center + Donya::Vector2{ 0.0f, 256.0f },
-				pivot
-			);
-		}
 
 		Donya::Sprite::Flush();
 	}
