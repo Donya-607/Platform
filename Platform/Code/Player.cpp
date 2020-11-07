@@ -84,6 +84,25 @@ namespace
 	{
 		return pModel;
 	}
+
+	constexpr const char *GetGunName( Player::GunKind kind )
+	{
+		switch ( kind )
+		{
+		case Player::GunKind::Buster:	return "BusterGun";
+		case Player::GunKind::Shield:	return "ShieldGun";
+		default: break;
+		}
+
+		return "ERROR";
+	}
+
+	constexpr Donya::Vector3 defaultThemeColor
+	{ // These values are from GUI
+		0.5882353186607361f,
+		0.8901960849761963f,
+		0.6862745285034180f,
+	};
 }
 
 Donya::Vector3	PlayerInitializer::GetWorldInitialPos() const { return wsInitialPos; }
@@ -457,6 +476,24 @@ void PlayerParam::ShowImGuiNode()
 		ladderMoveSpeed		= std::max( 0.01f,	ladderMoveSpeed		);
 		ladderShotLagSecond	= std::max( 0.0f,	ladderShotLagSecond	);
 
+		ImGui::TreePop();
+	}
+
+	constexpr size_t themeCount = scast<size_t>( Player::GunKind::GunCount );
+	if ( themeColors.size() != themeCount )
+	{
+		themeColors.resize( themeCount, Donya::Vector3{ 1.0f, 1.0f, 1.0f } );
+	}
+	if ( ImGui::TreeNode( u8"テーマ色設定" ) )
+	{
+		for ( size_t i = 0; i < themeCount; ++i )
+		{
+			ImGui::ColorEdit3
+			(
+				GetGunName( scast<Player::GunKind>( i ) ),
+				&themeColors[i].x
+			);
+		}
 		ImGui::TreePop();
 	}
 
@@ -2087,6 +2124,19 @@ void Player::GunBase::Update( Player &inst, float elapsedTime )
 {
 	// No op
 }
+Donya::Vector3 Player::GunBase::GetThemeColor() const
+{
+	const auto &source = Parameter().Get().themeColors;
+	const size_t sourceCount = source.size();
+	if ( sourceCount != scast<size_t>( GunKind::GunCount ) ) { return defaultThemeColor; }
+	// else
+
+	const size_t index = scast<size_t>( GetKind() );
+	if ( sourceCount <= index ) { return defaultThemeColor; }
+	// else
+
+	return source[index];
+}
 
 bool Player::BusterGun::Chargeable() const
 {
@@ -2545,6 +2595,10 @@ Donya::Quaternion		Player::GetOrientation() const
 {
 	return orientation;
 }
+Donya::Vector3			Player::GetThemeColor() const
+{
+	return ( pGun ) ? pGun->GetThemeColor() : defaultThemeColor;
+}
 void Player::GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F &collidingHitBox ) const
 {
 	const auto myCenter		= body.WorldPosition();
@@ -2952,7 +3006,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::DragInt		( u8"現在の体力",					&currentHP );
 	ImGui::Text			( u8"現在のステート：%s",				pMover->GetMoverName().c_str() );
 	ImGui::Text			( u8"現在のモーション：%s",			KIND_NAMES[scast<int>( motionManager.CurrentKind() )] );
-	ImGui::Text			( u8"現在の銃口：%d",					pGun->GetKind() );
+	ImGui::Text			( u8"現在の銃口：%d",					pGun->GetGunName().c_str() );
 
 	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );

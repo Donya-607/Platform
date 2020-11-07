@@ -474,6 +474,10 @@ private:
 		virtual void Fire( Player &instance, const InputManager &input ) = 0;
 	public:
 		virtual GunKind GetKind() const = 0;
+		virtual Donya::Vector3 GetThemeColor() const;
+	#if USE_IMGUI
+		virtual std::string GetGunName() const = 0;
+	#endif // USE_IMGUI
 	};
 	class BusterGun : public GunBase
 	{
@@ -484,6 +488,12 @@ private:
 	public:
 		GunKind GetKind() const override
 		{ return GunKind::Buster; }
+	#if USE_IMGUI
+		std::string GetGunName() const override
+		{
+			return "BusterGun";
+		}
+	#endif // USE_IMGUI
 	};
 	class ShieldGun : public GunBase
 	{
@@ -500,6 +510,12 @@ private:
 	public:
 		GunKind GetKind() const override
 		{ return GunKind::Shield; }
+	#if USE_IMGUI
+		std::string GetGunName() const override
+		{
+			return "ShieldGun";
+		}
+	#endif // USE_IMGUI
 	private:
 		void ReleaseShieldHandle( Player &instance );
 		Donya::Vector3 CalcThrowDirection( const Player &instance, const InputManager &input ) const;
@@ -552,9 +568,10 @@ public:
 	bool NowGrabbingLadder() const;
 	bool NowWinningPose() const;
 	int  GetCurrentHP() const;
-	Donya::Vector3 GetVelocity() const;
-	Donya::Collision::Box3F		GetHurtBox()		const;
-	Donya::Quaternion			GetOrientation()	const;
+	Donya::Vector3			GetVelocity()		const;
+	Donya::Collision::Box3F	GetHurtBox()		const;
+	Donya::Quaternion		GetOrientation()	const;
+	Donya::Vector3			GetThemeColor()		const;
 	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Box3F	&collidingHitBox ) const;
 	void GiveDamage( const Definition::Damage &damage, const Donya::Collision::Sphere3F	&collidingHitBox ) const;
 	/// <summary>

@@ -86,6 +86,8 @@ public:
 
 	float						shieldThrowSpeed = 1.0f;
 	Donya::Vector3				shieldPosOffset{ 0.0f, 0.0f, 0.0f };
+
+	std::vector<Donya::Vector3> themeColors;	// It size() == Player::GunKind::GunCount
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -193,6 +195,10 @@ private:
 		}
 		if ( 14 <= version )
 		{
+			archive( CEREAL_NVP( themeColors ) );
+		}
+		if ( 15 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -201,4 +207,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 13 )
+CEREAL_CLASS_VERSION( PlayerParam, 14 )

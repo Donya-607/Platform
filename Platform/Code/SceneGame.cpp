@@ -1953,7 +1953,7 @@ void SceneGame::PlayerInit( const PlayerInitializer &initializer, const Map &ter
 	const float maxHP		= scast<float>( Player::Parameter().Get().maxHP );
 	pPlayerMeter = std::make_unique<Meter::Drawer>();
 	pPlayerMeter->Init( maxHP, maxHP, maxHP );
-	pPlayerMeter->SetDrawOption( meterData.hpDrawPos, meterData.hpDrawColor, meterData.hpDrawScale );
+	pPlayerMeter->SetDrawOption( meterData.hpDrawPos, pPlayer->GetThemeColor(), meterData.hpDrawScale );
 }
 void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 {
@@ -1985,7 +1985,10 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 
 	if ( pPlayerMeter )
 	{
+		const auto &meterData = FetchParameter().playerMeter;
+		
 		pPlayerMeter->SetDestination( scast<float>( pPlayer->GetCurrentHP() ) );
+		pPlayerMeter->SetDrawOption( meterData.hpDrawPos, pPlayer->GetThemeColor(), meterData.hpDrawScale );
 	}
 }
 Donya::Vector3 SceneGame::GetPlayerPosition() const

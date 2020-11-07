@@ -14,6 +14,7 @@
 #include "Bloom.h"
 #include "Enemy.h"
 #include "Map.h"
+#include "Meter.h"
 #include "Player.h"
 #include "Renderer.h"
 #include "Scene.h"
@@ -50,6 +51,7 @@ private:
 	std::unique_ptr<Shader>						pQuadShader;
 	std::unique_ptr<Map>						pMap;
 	std::unique_ptr<Player>						pPlayer;
+	std::unique_ptr<Meter::Drawer>				pMeter;
 
 	std::vector<std::unique_ptr<Enemy::Base>>	enemies;
 

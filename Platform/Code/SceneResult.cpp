@@ -46,6 +46,10 @@ namespace
 #else
 	constexpr bool IOFromBinary = true;
 #endif // DEBUG_MODE
+
+#if USE_IMGUI
+	static bool dontAdvanceTimer = false;
+#endif // USE_IMGUI
 }
 
 namespace
@@ -104,6 +108,32 @@ namespace
 		
 		float finishPerformanceSecond		= 1.0f;
 		float waitSecUntilFade				= 1.0f;
+
+		Donya::Vector2 ssMeterDrawPos;
+		Donya::Vector2 ssMeterDrawScale;
+		struct ShiftInput
+		{
+			Donya::Vector2 ssPos;
+			Donya::Vector2 ssScale;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( ssPos	),
+					CEREAL_NVP( ssScale	)
+				);
+
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+		};
+		ShiftInput drawingShiftBack;
+		ShiftInput drawingShiftAdvance;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -135,6 +165,16 @@ namespace
 				archive( CEREAL_NVP( waitSecUntilFade ) );
 			}
 			if ( 3 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( ssMeterDrawPos		),
+					CEREAL_NVP( ssMeterDrawScale	),
+					CEREAL_NVP( drawingShiftBack	),
+					CEREAL_NVP( drawingShiftAdvance	)
+				);
+			}
+			if ( 4 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -225,6 +265,27 @@ namespace
 
 				ImGui::TreePop();
 			}
+
+			if ( ImGui::TreeNode( u8"アイコン関連" ) )
+			{
+				ImGui::DragFloat2( u8"顔描画座標（メータのもの）",	&ssMeterDrawPos.x );
+				ImGui::DragFloat2( u8"顔描画スケール",			&ssMeterDrawScale.x, 0.01f );
+
+				auto Show = []( const char *nodeCaption, ShiftInput *p )
+				{
+					if ( !ImGui::TreeNode( nodeCaption ) ) { return; }
+					// else
+
+					ImGui::DragFloat2( u8"座標",		&p->ssPos.x );
+					ImGui::DragFloat2( u8"スケール",	&p->ssScale.x, 0.01f );
+
+					ImGui::TreePop();
+				};
+				Show( u8"前へ・武器替え表示", &drawingShiftBack );
+				Show( u8"次へ・武器替え表示", &drawingShiftAdvance );
+
+				ImGui::TreePop();
+			}
 		}
 	#endif // USE_IMGUI
 	};
@@ -270,7 +331,8 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam, 2 )
+CEREAL_CLASS_VERSION( SceneParam,				3 )
+CEREAL_CLASS_VERSION( SceneParam::ShiftInput,	0 )
 
 void SceneResult::Init()
 {
@@ -311,6 +373,10 @@ void SceneResult::Init()
 
 	playerIniter.LoadParameter( stageNo );
 	PlayerInit( playerIniter, *pMap );
+
+	pMeter = std::make_unique<Meter::Drawer>();
+	pMeter->Init( 0.0f, 0.0f, 0.0f );
+	pMeter->SetDrawOption( data.ssMeterDrawPos, pPlayer->GetThemeColor(), data.ssMeterDrawScale );
 
 	CameraInit();
 
@@ -373,6 +439,12 @@ Scene::Result SceneResult::Update( float elapsedTime )
 
 	previousTimer = currentTimer;
 	currentTimer += elapsedTime;
+#if USE_IMGUI
+	if ( dontAdvanceTimer )
+	{
+		currentTimer = previousTimer;
+	}
+#endif // USE_IMGUI
 
 	const auto &data = FetchParameter();
 	if ( status == State::Performance )
@@ -648,6 +720,9 @@ void SceneResult::Draw( float elapsedTime )
 	}
 #endif // DEBUG_MODE
 
+	const float oldDepth = Donya::Sprite::GetDrawDepth();
+	Donya::Sprite::SetDrawDepth( 0.0f );
+
 	const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
 	if ( pFontRenderer )
 	{
@@ -663,6 +738,13 @@ void SceneResult::Draw( float elapsedTime )
 
 		Donya::Sprite::Flush();
 	}
+
+	if ( pMeter )
+	{
+		pMeter->DrawIcon( Meter::Icon::Player );
+	}
+
+	Donya::Sprite::SetDrawDepth( oldDepth );
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -1080,6 +1162,12 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 	}
 
 	pPlayer->Update( elapsedTime, input, terrain );
+
+	if ( pMeter )
+	{
+		const auto &data = FetchParameter();
+		pMeter->SetDrawOption( data.ssMeterDrawPos, pPlayer->GetThemeColor(), data.ssMeterDrawScale );
+	}
 }
 void SceneResult::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
 {
@@ -1585,6 +1673,7 @@ void SceneResult::UseImGui()
 	constexpr int stageNo = Definition::StageNumber::Result();
 
 	sceneParam.ShowImGuiNode( u8"リザルトシーンのパラメータ" );
+	ImGui::Checkbox( u8"タイマの更新を止める", &dontAdvanceTimer );
 
 	if ( ImGui::TreeNode( u8"ステージファイルの読み込み" ) )
 	{
