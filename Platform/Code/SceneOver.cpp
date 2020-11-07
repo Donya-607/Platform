@@ -1,27 +1,24 @@
 #include "SceneOver.h"
 
-#include <algorithm>				// Use std::find
 #include <vector>
 
 #undef max
 #undef min
 
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
-#include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
 #include "Donya/Sprite.h"
-#include "Donya/Template.h"			// Use Clamp
 #include "Donya/Useful.h"
 #include "Donya/Vector.h"
 #if DEBUG_MODE
+#include "Donya/Keyboard.h"
 #include "Donya/Mouse.h"
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
 
 #include "Common.h"
 #include "Fader.h"
-#include "FilePath.h"
 #include "FontHelper.h"
 #include "Music.h"
 #include "Parameter.h"
@@ -35,19 +32,23 @@ namespace
 #else
 	constexpr bool IOFromBinary = true;
 #endif // DEBUG_MODE
+
+#if USE_IMGUI
+	static bool dontTransition = false;
+#endif // USE_IMGUI
 }
 
 namespace
 {
 	struct SceneParam
 	{
-
+		float waitToFadeSecond = 3.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
-			// archive( CEREAL_NVP( x ) );
+			archive( CEREAL_NVP( waitToFadeSecond ) );
 
 			if ( 1 <= version )
 			{
@@ -57,15 +58,16 @@ namespace
 	public:
 		void ShowImGuiNode()
 		{
-			
+			ImGui::DragFloat( u8"遷移までの待機秒数", &waitToFadeSecond, 0.01f );
+			waitToFadeSecond = std::max( 0.0f, waitToFadeSecond );
 		}
 	};
 
-	// static ParamOperator<SceneParam> sceneParam{ "SceneOver" };
-	// const SceneParam &FetchParameter()
-	// {
-	// 	return sceneParam.Get();
-	// }
+	static ParamOperator<SceneParam> sceneParam{ "SceneOver" };
+	const SceneParam &FetchParameter()
+	{
+		return sceneParam.Get();
+	}
 }
 CEREAL_CLASS_VERSION( SceneParam, 0 )
 
@@ -73,11 +75,9 @@ void SceneOver::Init()
 {
 	Donya::Sound::Play( Music::BGM_Over );
 
-	bool result{};
-
 	Player::Remaining::Set( Player::Parameter().Get().initialRemainCount );
 
-	CameraInit();
+	timer = 0.0f;
 }
 void SceneOver::Uninit()
 {
@@ -87,19 +87,11 @@ void SceneOver::Uninit()
 Scene::Result SceneOver::Update( float elapsedTime )
 {
 #if DEBUG_MODE
-	if ( Donya::Keyboard::Trigger( VK_F5 ) )
+	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
 	{
-		nowDebugMode = !nowDebugMode;
+		Donya::Sound::Play( Music::DEBUG_Strong );
 
-		if ( nowDebugMode )
-		{
-			iCamera.ChangeMode( Donya::ICamera::Mode::Satellite );
-		}
-		else
-		{
-			iCamera.SetOrientation( Donya::Quaternion::Identity() );
-			iCamera.Init( Donya::ICamera::Mode::Look );
-		}
+		StartFade();
 	}
 #endif // DEBUG_MODE
 
@@ -108,6 +100,18 @@ Scene::Result SceneOver::Update( float elapsedTime )
 #endif // USE_IMGUI
 
 	controller.Update();
+
+	timer += elapsedTime;
+	if ( FetchParameter().waitToFadeSecond <= timer )
+	{
+		if ( !Fader::Get().IsExist() )
+		{
+		#if USE_IMGUI
+			if(!dontTransition )
+		#endif // USE_IMGUI
+			StartFade();
+		}
+	}
 
 	if ( !Fader::Get().IsExist() )
 	{
@@ -127,19 +131,12 @@ Scene::Result SceneOver::Update( float elapsedTime )
 		}
 	}
 
-	CameraUpdate();
-
 	return ReturnResult();
 }
 
 void SceneOver::Draw( float elapsedTime )
 {
-	// elapsedTime = 1.0f; // Disable
-
 	ClearBackGround();
-
-	const Donya::Vector4x4 VP{ iCamera.CalcViewMatrix() * iCamera.GetProjectionMatrix() };
-	
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )
@@ -154,131 +151,11 @@ void SceneOver::Draw( float elapsedTime )
 		constexpr Donya::Vector2 pivot { 0.5f, 0.5f };
 		constexpr Donya::Vector2 center{ Common::HalfScreenWidthF(), Common::HalfScreenHeightF() };
 		constexpr Donya::Vector4 color { Donya::Color::MakeColor( Donya::Color::Code::PURPLE ), 1.0f };
+		constexpr Donya::Vector2 scale { 4.0f, 4.0f };
 
-		pFontRenderer->Draw( L"GAME OVER", center, pivot, color );
+		pFontRenderer->DrawExt( L"GAME OVER", center, pivot, scale, color );
 		Donya::Sprite::Flush();
 	}
-
-#if DEBUG_MODE
-	if ( Common::IsShowCollision() )
-	{
-		Donya::Model::Cube::Constant constant;
-		constant.matViewProj	= VP;
-		constant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 0.6f };
-		constant.lightDirection = Donya::Vector3{ 0.0f, -1.0f, 0.0f };
-		
-		auto DrawCube = [&]( const Donya::Vector3 &pos, const Donya::Vector3 &scale = { 1.0f, 1.0f, 1.0f } )
-		{
-			constant.matWorld._11 = scale.x * 2.0f;
-			constant.matWorld._22 = scale.y * 2.0f;
-			constant.matWorld._33 = scale.z * 2.0f;
-			constant.matWorld._41 = pos.x;
-			constant.matWorld._42 = pos.y;
-			constant.matWorld._43 = pos.z;
-			// pRenderer->ProcessDrawingCube( constant );
-		};
-
-	}
-#endif // DEBUG_MODE
-}
-
-void SceneOver::CameraInit()
-{
-	iCamera.Init( Donya::ICamera::Mode::Look );
-	iCamera.SetZRange( 0.1f, 1000.0f );
-	iCamera.SetFOV( ToRadian( 30.0f ) );
-	iCamera.SetScreenSize( { Common::ScreenWidthF(), Common::ScreenHeightF() } );
-	AssignCameraPos();
-	iCamera.SetProjectionPerspective();
-
-	// I can setting a configuration,
-	// but current data is not changed immediately.
-	// So update here.
-	Donya::ICamera::Controller moveInitPoint{};
-	moveInitPoint.SetNoOperation();
-	moveInitPoint.slerpPercent = 1.0f;
-	iCamera.Update( moveInitPoint );
-}
-void SceneOver::AssignCameraPos()
-{
-#if DEBUG_MODE
-	constexpr Donya::Vector3 focus{ 0.0f, 0.0f,  0.0f };
-	constexpr Donya::Vector3 eye  { 0.0f, 0.0f, -1.0f };
-	iCamera.SetPosition  ( eye   );
-	iCamera.SetFocusPoint( focus );
-#endif // DEBUG_MODE
-}
-void SceneOver::CameraUpdate()
-{
-	Donya::ICamera::Controller input{};
-	input.SetNoOperation();
-	input.slerpPercent = 1.0f;
-
-#if !DEBUG_MODE
-	AssignCameraPos();
-	iCamera.Update( input );
-#else
-	if ( !nowDebugMode )
-	{
-		AssignCameraPos();
-		iCamera.Update( input );
-		return;
-	}
-	// else
-
-	static Donya::Int2 prevMouse{};
-	static Donya::Int2 currMouse{};
-
-	prevMouse = currMouse;
-
-	auto nowMouse = Donya::Mouse::Coordinate();
-	currMouse.x = scast<int>( nowMouse.x );
-	currMouse.y = scast<int>( nowMouse.y );
-
-	bool  isInputMouseButton = Donya::Mouse::Press( Donya::Mouse::Kind::LEFT ) || Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) || Donya::Mouse::Press( Donya::Mouse::Kind::RIGHT );
-	bool  isDriveMouse = ( prevMouse != currMouse ) || Donya::Mouse::WheelRot() || isInputMouseButton;
-	if ( !isDriveMouse )
-	{
-		input.SetNoOperation();
-		iCamera.Update( input );
-		return;
-	}
-	// else
-
-	const Donya::Vector2 diff = ( currMouse - prevMouse ).Float();
-	
-	Donya::Vector3 movement{};
-	Donya::Vector3 rotation{};
-
-	if ( Donya::Keyboard::Press( VK_MENU ) )
-	{
-		if ( Donya::Mouse::Press( Donya::Mouse::Kind::LEFT ) )
-		{
-			constexpr float ROT_AMOUNT = ToRadian( 0.5f );
-			rotation.x = diff.x * ROT_AMOUNT;
-			rotation.y = diff.y * ROT_AMOUNT;
-		}
-		else
-		if ( Donya::Mouse::Press( Donya::Mouse::Kind::MIDDLE ) )
-		{
-			constexpr float MOVE_SPEED = 0.05f;
-			movement.x = -diff.x * MOVE_SPEED;
-			movement.y = diff.y * MOVE_SPEED;
-		}
-
-		constexpr float FRONT_SPEED = 2.0f;
-		movement.z = FRONT_SPEED * scast<float>( Donya::Mouse::WheelRot() );
-	}
-
-	input.moveVelocity		= movement;
-	input.yaw				= rotation.x;
-	input.pitch				= rotation.y;
-	input.roll				= 0.0f;
-	input.moveInLocalSpace	= true;
-
-	iCamera.Update( input );
-
-#endif // !DEBUG_MODE
 }
 
 void SceneOver::ClearBackGround() const
@@ -286,15 +163,6 @@ void SceneOver::ClearBackGround() const
 	constexpr Donya::Vector3 gray = Donya::Color::MakeColor( Donya::Color::Code::GRAY );
 	constexpr FLOAT BG_COLOR[4]{ gray.x, gray.y, gray.z, 1.0f };
 	Donya::ClearViews( BG_COLOR );
-
-#if DEBUG_MODE
-	if ( nowDebugMode )
-	{
-		constexpr Donya::Vector3 teal = Donya::Color::MakeColor( Donya::Color::Code::CYAN );
-		constexpr FLOAT DEBUG_COLOR[4]{ teal.x, teal.y, teal.z, 1.0f };
-		Donya::ClearViews( DEBUG_COLOR );
-	}
-#endif // DEBUG_MODE
 }
 void SceneOver::StartFade()
 {
@@ -307,16 +175,6 @@ void SceneOver::StartFade()
 
 Scene::Result SceneOver::ReturnResult()
 {
-#if DEBUG_MODE
-	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
-	{
-		Donya::Sound::Play( Music::DEBUG_Strong );
-
-		StartFade();
-	}
-#endif // DEBUG_MODE
-
-	// TODO: Temporary condition, should fix this
 	if ( Fader::Get().IsClosed() )
 	{
 		Scene::Result change{};
@@ -324,21 +182,6 @@ Scene::Result SceneOver::ReturnResult()
 		change.sceneType = Scene::Type::Title;
 		return change;
 	}
-
-	bool requestPause	= controller.Trigger( Donya::Gamepad::Button::START ) || controller.Trigger( Donya::Gamepad::Button::SELECT ) || Donya::Keyboard::Trigger( 'P' );
-	bool allowPause		= !Fader::Get().IsExist();
-	if ( 0 && requestPause && allowPause )
-	{
-	#if DEBUG_MODE
-		Donya::Sound::Play( Music::DEBUG_Weak );
-	#endif // DEBUG_MODE
-
-		Scene::Result pause{};
-		pause.AddRequest( Scene::Request::ADD_SCENE );
-		pause.sceneType = Scene::Type::Pause;
-		return pause;
-	}
-	// else
 
 	Scene::Result noop{ Scene::Request::NONE, Scene::Type::Null };
 	return noop;
@@ -350,7 +193,9 @@ void SceneOver::UseImGui()
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 	
-	// sceneParam.ShowImGuiNode( u8"ゲームオーバーシーンのパラメータ" );
+	sceneParam.ShowImGuiNode( u8"ゲームオーバーシーンのパラメータ" );
+
+	ImGui::Checkbox( u8"遷移を止める", &dontTransition );
 
 	ImGui::End();
 }
