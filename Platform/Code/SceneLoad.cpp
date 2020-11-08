@@ -260,8 +260,8 @@ void SceneLoad::Init()
 			Bundle{ ID::UI_Decide,					"./Data/Sounds/SE/UI/Decide.ogg",					false	},
 			
 			#if DEBUG_MODE
-			Bundle{ ID::DEBUG_Strong,				"./Data/Sounds/SE/_DEBUG/Strong.wav",				false	},
-			Bundle{ ID::DEBUG_Weak,					"./Data/Sounds/SE/_DEBUG/Weak.wav",					false	},
+			Bundle{ ID::DEBUG_Strong,				"./Data/Sounds/SE/UI/Decide.ogg",					false	},
+			Bundle{ ID::DEBUG_Weak,					"./Data/Sounds/SE/UI/Choose.ogg",					false	},
 			#endif // DEBUG_MODE
 		};
 
