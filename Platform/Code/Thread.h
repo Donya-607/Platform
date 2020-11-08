@@ -35,6 +35,11 @@ public:
 	Result result;
 	std::unique_ptr<std::thread> pThread = nullptr;
 public:
+	~Thread()
+	{
+		JoinThenRelease();
+	}
+public:
 	void JoinThenRelease()
 	{
 		if ( !pThread ) { return; }

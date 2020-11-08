@@ -81,6 +81,7 @@ namespace
 
 		float scrollTakeSecond	= 1.0f;	// The second required for scrolling
 		float waitSecondRetry	= 1.0f; // Waiting second between Miss ~ Re-try
+		float waitSecondToOver	= 2.0f; // Waiting second between Miss ~ GameOver
 
 		struct ShadowMap
 		{
@@ -248,6 +249,10 @@ namespace
 			}
 			if ( 15 <= version )
 			{
+				archive( CEREAL_NVP( waitSecondToOver ) );
+			}
+			if ( 16 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -306,6 +311,7 @@ namespace
 				ImGui::DragFloat( u8"‚a‚f‚l‚ÌƒtƒF[ƒhƒAƒEƒg‚É‚©‚¯‚é•b”",	&fadeOutSecondOfBGM,		0.01f );
 				ImGui::DragFloat( u8"ƒXƒNƒ[ƒ‹‚É—v‚·‚é•b”",				&scrollTakeSecond,			0.01f );
 				ImGui::DragFloat( u8"ƒ~ƒX‚©‚çƒŠƒgƒ‰ƒC‚Ü‚Å‚Ì‘Ò‹@•b”",		&waitSecondRetry,			0.01f );
+				ImGui::DragFloat( u8"ƒ~ƒX‚©‚çƒQ[ƒ€ƒI[ƒo[‚Ü‚Å‚Ì‘Ò‹@•b”",	&waitSecondToOver,			0.01f );
 				ImGui::DragFloat( u8"ƒ{ƒX“oêŽž‚r‚dÄ¶‚Ü‚Å‚Ì‘Ò‹@•b”",	&waitSec_PlayAppearBossSE,	0.01f );
 				ImGui::DragFloat( u8"ƒNƒŠƒAŽž‚r‚dÄ¶‚Ü‚Å‚Ì‘Ò‹@•b”",		&waitSec_PlayClearSE,		0.01f );
 				ImGui::DragFloat( u8"ƒNƒŠƒA‚©‚ç‘Þê‚Ü‚Å‚Ì‘Ò‹@•b”",		&waitSecBet_ClearLeave,		0.01f );
@@ -314,6 +320,7 @@ namespace
 				fadeOutSecondOfBGM		= std::max( 0.0f,  fadeOutSecondOfBGM		);
 				scrollTakeSecond		= std::max( 0.01f, scrollTakeSecond			);
 				waitSecondRetry			= std::max( 0.01f, waitSecondRetry			);
+				waitSecondToOver		= std::max( 0.01f, waitSecondToOver			);
 				waitSec_PlayAppearBossSE= std::max( 0.0f,  waitSec_PlayAppearBossSE	);
 				waitSec_PlayClearSE		= std::max( 0.0f,  waitSec_PlayClearSE		);
 				waitSecBet_ClearLeave	= std::max( 0.0f,  waitSecBet_ClearLeave	);
@@ -393,7 +400,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				14 )
+CEREAL_CLASS_VERSION( SceneParam,				15 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0  )
 
 void SceneGame::Init()
@@ -618,15 +625,15 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	
 	PlayerUpdate( deltaTimeForMove, mapRef );
-	if ( data.waitSecondRetry <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
+	const bool  nextIsGameOver		= Player::Remaining::Get() <= 0;
+	const float &waitSecondForMiss	= ( nextIsGameOver ) ? data.waitSecondToOver : data.waitSecondRetry;
+	if ( waitSecondForMiss <= elapsedSecondsAfterMiss && !Fader::Get().IsExist() )
 	{
-		elapsedSecondsAfterMiss = 0.0f;
-
 		const int remaining = Player::Remaining::Get();
 		if ( remaining <= 0 )
 		{
 			StartFade( Scene::Type::Over );
-			// The remaining count will be re-set at transitioned scene.
+			// The remaining count will be re-set at transitioned scene
 		}
 		else
 		{
@@ -1328,6 +1335,7 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 {
 	status = destState;
 	stageTimer = 0.0f;
+	elapsedSecondsAfterMiss = 0.0f;
 
 	if ( currentPlayingBGM != nextBGM )
 	{
