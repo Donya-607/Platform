@@ -638,7 +638,7 @@ private:
 	bool WillUseJump() const;
 	void Fall( float elapsedTime );
 	void Landing();
-	void ShiftGunIfNeeded();
+	void ShiftGunIfNeeded( float elapsedTime );
 private:
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 public:

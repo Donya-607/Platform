@@ -2459,7 +2459,7 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 		ChangeMethod();
 	}
 
-	ShiftGunIfNeeded();
+	ShiftGunIfNeeded( elapsedTime );
 	pGun->Update( *this, elapsedTime );
 
 	prevSlidingStatus = pMover->NowSliding( *this );
@@ -2974,13 +2974,17 @@ void Player::Landing()
 
 	velocity.y = 0.0f;
 }
-void Player::ShiftGunIfNeeded()
+void Player::ShiftGunIfNeeded( float elapsedTime )
 {
 	if ( !pGun ) { return; }
 	// else
 
 	const int shiftSign = inputManager.ShiftGun();
 	if ( !shiftSign ) { return; }
+	// else
+
+	// Make can not shift by button when pausing
+	if ( IsZero( elapsedTime ) ) { return; }
 	// else
 
 	constexpr int kindCount = scast<int>( GunKind::GunCount );

@@ -180,12 +180,16 @@ void PauseProcessor::UpdateChooseItem()
 	{
 		return Donya::SignBit( value ) == sign;
 	};
+	auto Triggered = []( const auto &currInputs, const auto &prevInputs )
+	{
+		return Input::HasTrue( currInputs ) && !Input::HasTrue( prevInputs );
+	};
 
 	const auto &prev	= previousInput;
 	const auto &curr	= currentInput;
 	const bool up		= Tilted( curr.moveVelocity.y, +1 ) && !Tilted( prev.moveVelocity.y, +1 );
 	const bool down		= Tilted( curr.moveVelocity.y, -1 ) && !Tilted( prev.moveVelocity.y, -1 );
-	decided				= Input::HasTrue( curr.useShots ) && !Input::HasTrue( prev.useShots );
+	decided				= Triggered( curr.useShots, prev.useShots ) || Triggered( curr.useJumps, prev.useJumps );
 
 	constexpr int lastItem = scast<int>( Choice::ItemCount ) - 1;
 

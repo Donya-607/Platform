@@ -48,13 +48,13 @@ namespace Input
 		
 			input.useJumps[0]	= controller.Press( Button::A	);
 			input.useShots[0]	= controller.Press( Button::X	);
-			input.useDashes[0]	= controller.Press( Button::LT	);
+			input.useDashes[0]	= controller.Press( Button::RT	);
 			input.shiftGuns[0]	= controller.Press( Button::RB	) ? +1 : 0;
 			if ( 2 <= Player::Input::variationCount )
 			{
 			input.useJumps[1]	= controller.Press( Button::B	);
 			input.useShots[1]	= controller.Press( Button::Y	);
-			input.useDashes[1]	= controller.Press( Button::RT	);
+			input.useDashes[1]	= controller.Press( Button::LT	);
 			input.shiftGuns[1]	= controller.Press( Button::LB	) ? -1 : 0;
 			}
 		}
