@@ -625,7 +625,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		const int remaining = Player::Remaining::Get();
 		if ( remaining <= 0 )
 		{
-			FadeOutBGM();
 			StartFade( Scene::Type::Over );
 			// The remaining count will be re-set at transitioned scene.
 		}
@@ -1452,7 +1451,11 @@ float SceneGame::PauseUpdate( float elapsedTime )
 
 	if ( !pPauser )
 	{
-		const bool pausable = pPlayer && !Fader::Get().IsExist() && status != State::Clear && status != State::WaitToFade;
+		const bool pausable =
+			pPlayer && !pPlayer->NowMiss() &&
+			!Fader::Get().IsExist() &&
+			status != State::Clear && status != State::WaitToFade
+			;
 		if ( Input::IsPauseRequested( controller ) && pausable )
 		{
 			BeginPause();
@@ -1977,6 +1980,16 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 
 	if ( pPlayer->NowMiss() )
 	{
+		// First frame when the player missing
+		if ( IsZero( elapsedSecondsAfterMiss ) )
+		{
+			const int remaining = Player::Remaining::Get();
+			if ( remaining <= 0 )
+			{
+				FadeOutBGM();
+			}
+		}
+
 		elapsedSecondsAfterMiss += elapsedTime;
 	}
 	else

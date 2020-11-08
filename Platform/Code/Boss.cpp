@@ -1,11 +1,14 @@
 #include "Boss.h"
 
+#include "Donya/Sound.h"
+
 #include "Common.h"
 #include "Bosses/Skull.h"
 #include "Effect/EffectAdmin.h"
 #include "FilePath.h"
 #include "Map.h"			// Use Map::ToWorldPos()
 #include "ModelHelper.h"
+#include "Music.h"
 
 #if USE_IMGUI
 #include "Parameter.h"
@@ -351,6 +354,7 @@ namespace Boss
 		hp -= pReceivedDamage->amount;
 		if ( hp <= 0 )
 		{
+			Donya::Sound::Play( Music::Player_Miss );
 			Effect::Admin::Get().GenerateInstance( Effect::Kind::Death, GetPosition() );
 			DieMoment();
 		}
