@@ -1593,9 +1593,10 @@ void SceneGame::AppearBossStateUpdate( float elapsedTime )
 	const auto currSign = Donya::SignBit( destination.x - playerPos.x );
 
 	// Arrive to destination
-	if ( currSign != prevSign || !currSign )
+	if ( currSign != prevSign )
 	{
 		pBossContainer->StartupBossIfStandby( currentRoomID );
+		Donya::Sound::Play( Music::Performance_AppearBoss );
 		// The meter will create at BossUpdate()
 	}
 }

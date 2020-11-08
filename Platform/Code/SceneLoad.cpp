@@ -223,9 +223,6 @@ void SceneLoad::Init()
 			Bundle{ ID::BGM_Over,					"./Data/Sounds/BGM/GameOver.ogg",					false	},
 			Bundle{ ID::BGM_Result,					"./Data/Sounds/BGM/Result.ogg",						true	},
 
-			Bundle{ ID::Boss_Appear,				"./Data/Sounds/SE/Boss/BossPerformance.ogg",		false	},
-			Bundle{ ID::Boss_Defeated,				"./Data/Sounds/SE/Boss/BossDefeated.ogg",			false	},
-
 			Bundle{ ID::Bullet_HitBuster,			"./Data/Sounds/SE/Bullet/Hit_Buster.wav",			false	},
 			Bundle{ ID::Bullet_HitShield,			"./Data/Sounds/SE/Bullet/Hit_Shield.wav",			false	},
 			Bundle{ ID::Bullet_Protected,			"./Data/Sounds/SE/Bullet/Protected.wav",			false	},

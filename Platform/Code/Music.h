@@ -12,9 +12,6 @@ namespace Music
 		BGM_Over,
 		BGM_Result,
 
-		Boss_Appear,
-		Boss_Defeated,
-
 		Bullet_HitBuster,
 		Bullet_HitShield,
 		Bullet_Protected,
