@@ -1645,6 +1645,9 @@ void Player::GrabLadder::Init( Player &inst )
 	inst.lookingSign= inst.lookingSign * -1.0f; // Indicates implicitly the direction that the player should advance
 	if ( IsZero( inst.lookingSign ) ) { inst.lookingSign = 1.0f; } // Fail safe
 
+	// Prevent to be exposed the above reversing when grabbing a ladder when the player poses the shot motion
+	inst.motionManager.QuitShotMotion();
+
 	inst.velocity	= 0.0f;
 	LookToFront( inst );
 	inst.onGround	= false;
