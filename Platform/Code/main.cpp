@@ -14,6 +14,8 @@
 namespace
 {
 	constexpr auto mbTellFatalError	= MB_OK | MB_ICONERROR;
+	constexpr UINT waitToSync		= 1U;
+	constexpr UINT dontWaitToSync	= 0U;
 }
 
 INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _In_ LPWSTR cmdLine, _In_ INT cmdShow )
@@ -64,6 +66,13 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 	}
 	// else
 
+#if DEBUG_MODE
+	constexpr UINT syncInterval = dontWaitToSync;
+	// constexpr UINT syncInterval = waitToSync;
+#else
+	constexpr UINT syncInterval = waitToSync;
+#endif // DEBUG_MODE
+
 	while ( Donya::MessageLoop() )
 	{
 		Donya::ClearViews();
@@ -72,7 +81,7 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 		framework.Update( Donya::GetElapsedTime() );
 
 		framework.Draw( Donya::GetElapsedTime() );
-		Donya::Present();
+		Donya::Present( syncInterval );
 	}
 
 	framework.Uninit();
