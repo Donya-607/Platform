@@ -2253,7 +2253,12 @@ void Player::ShieldGun::ReleaseShieldHandle( Player &inst )
 Donya::Vector3 Player::ShieldGun::CalcThrowDirection( const Player &inst, const InputManager &input ) const
 {
 	const Donya::Vector2 stick = input.Current().moveVelocity.Unit();
-	if ( stick.IsZero() ) { return inst.orientation.LocalFront(); }
+	if ( stick.IsZero() )
+	{
+		return	( inst.lookingSign < 0.0f ) // Except the front
+				? -Donya::Vector3::Right()
+				: Donya::Vector3::Right();
+	}
 	// else
 
 	// Convert to 4 directions(right, up, left, down)
@@ -3022,7 +3027,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::DragInt		( u8"現在の体力",					&currentHP );
 	ImGui::Text			( u8"現在のステート：%s",				pMover->GetMoverName().c_str() );
 	ImGui::Text			( u8"現在のモーション：%s",			KIND_NAMES[scast<int>( motionManager.CurrentKind() )] );
-	ImGui::Text			( u8"現在の銃口：%d",					pGun->GetGunName().c_str() );
+	ImGui::Text			( u8"現在の銃口：%s",					pGun->GetGunName().c_str() );
 
 	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );
