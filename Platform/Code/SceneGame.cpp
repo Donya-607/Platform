@@ -115,6 +115,8 @@ namespace
 		};
 		ShadowMap shadowMap;
 
+		RenderingHelper::VoxelizeConstant voxelize;
+
 		BloomApplier::Parameter bloomParam;
 
 		Donya::Vector2 deadZone{ 0.3f, 0.3f }; // The stick input is valid if the value greater than this
@@ -253,6 +255,10 @@ namespace
 			}
 			if ( 16 <= version )
 			{
+				archive( CEREAL_NVP( voxelize ) );
+			}
+			if ( 17 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -304,6 +310,8 @@ namespace
 			}
 
 			bloomParam.ShowImGuiNode( u8"ブルーム関連" );
+
+			voxelize.ShowImGuiNode( u8"ボクセライズ関連" );
 
 			if ( ImGui::TreeNode( u8"秒数関連" ) )
 			{
@@ -400,7 +408,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				15 )
+CEREAL_CLASS_VERSION( SceneParam,				16 )
 CEREAL_CLASS_VERSION( SceneParam::ShadowMap,	0  )
 
 void SceneGame::Init()
@@ -929,6 +937,10 @@ void SceneGame::Draw( float elapsedTime )
 			shadowConstant.shadowBias		= data.shadowMap.bias;
 			pRenderer->UpdateConstant( shadowConstant );
 		}
+		// Update voxelize constant
+		{
+			pRenderer->UpdateConstant( data.voxelize );
+		}
 		// Update point light constant
 		{
 			pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
@@ -937,6 +949,7 @@ void SceneGame::Draw( float elapsedTime )
 		pRenderer->ActivateConstantScene();
 		pRenderer->ActivateConstantPointLight();
 		pRenderer->ActivateConstantShadow();
+		pRenderer->ActivateConstantVoxelize();
 		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		pRenderer->ActivateShadowMap( *pShadowMap );
 
@@ -959,6 +972,7 @@ void SceneGame::Draw( float elapsedTime )
 
 		pRenderer->DeactivateShadowMap( *pShadowMap );
 		pRenderer->DeactivateSamplerShadow();
+		pRenderer->DeactivateConstantVoxelize();
 		pRenderer->DeactivateConstantShadow();
 		pRenderer->DeactivateConstantPointLight();
 		pRenderer->DeactivateConstantScene();

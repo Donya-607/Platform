@@ -119,6 +119,8 @@ namespace
 		};
 		ShadowMap shadowMap;
 
+		RenderingHelper::VoxelizeConstant voxelize;
+
 		BloomApplier::Parameter bloomParam;
 
 		std::vector<Donya::Vector2> itemPositions; // size() == SceneTitle::Choice::ItemCount
@@ -271,6 +273,10 @@ namespace
 			}
 			if ( 11 <= version )
 			{
+				archive( CEREAL_NVP( voxelize ) );
+			}
+			if ( 12 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -333,6 +339,8 @@ namespace
 			}
 
 			bloomParam.ShowImGuiNode( u8"ブルーム関連" );
+
+			voxelize.ShowImGuiNode( u8"ボクセライズ関連" );
 
 			constexpr size_t itemCount = scast<size_t>( SceneTitle::Choice::ItemCount );
 			if ( itemPositions.size() != itemCount )
@@ -500,7 +508,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( Member,				10 )
+CEREAL_CLASS_VERSION( Member,				11 )
 CEREAL_CLASS_VERSION( Member::ShadowMap,	0  )
 CEREAL_CLASS_VERSION( Member::Camera,		1  )
 
@@ -909,6 +917,10 @@ void SceneTitle::Draw( float elapsedTime )
 			shadowConstant.shadowBias		= data.shadowMap.bias;
 			pRenderer->UpdateConstant( shadowConstant );
 		}
+		// Update voxelize constant
+		{
+			pRenderer->UpdateConstant( data.voxelize );
+		}
 		// Update point light constant
 		{
 			pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
@@ -917,6 +929,7 @@ void SceneTitle::Draw( float elapsedTime )
 		pRenderer->ActivateConstantScene();
 		pRenderer->ActivateConstantPointLight();
 		pRenderer->ActivateConstantShadow();
+		pRenderer->ActivateConstantVoxelize();
 		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		pRenderer->ActivateShadowMap( *pShadowMap );
 
@@ -939,6 +952,7 @@ void SceneTitle::Draw( float elapsedTime )
 
 		pRenderer->DeactivateShadowMap( *pShadowMap );
 		pRenderer->DeactivateSamplerShadow();
+		pRenderer->DeactivateConstantVoxelize();
 		pRenderer->DeactivateConstantShadow();
 		pRenderer->DeactivateConstantPointLight();
 		pRenderer->DeactivateConstantScene();

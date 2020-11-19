@@ -4,14 +4,16 @@
 #include <string>
 #include <vector>
 
-#include "Donya/Shader.h"
-#include "Donya/Surface.h"
 #include "Donya/CBuffer.h"
 #include "Donya/Model.h"
 #include "Donya/ModelCommon.h"
 #include "Donya/ModelPose.h"
 #include "Donya/ModelPrimitive.h"
 #include "Donya/ModelRenderer.h"
+#include "Donya/Serializer.h"
+#include "Donya/Shader.h"
+#include "Donya/Surface.h"
+#include "Donya/UseImGui.h"		// Use USE_IMGUI macro
 
 class RenderingHelper
 {
@@ -21,6 +23,33 @@ public:
 		Donya::Vector4x4	lightProjMatrix;	// The view-projection matrix that was used to making shadow map. The view-projection of light-source.
 		Donya::Vector3		shadowColor;		// RGB
 		float				shadowBias = 0.03f;	// Used for ease a shadow acne
+	};
+	struct VoxelizeConstant
+	{
+		float				voxelSize		= 1.0f;
+		float				edgeSize		= 0.0f; // 0.0f ~ 1.0f
+		float				edgeDarkness	= 0.5f; // 0.0f ~ 1.0f
+		float				_padding;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive
+			(
+				CEREAL_NVP( voxelSize		),
+				CEREAL_NVP( edgeSize		),
+				CEREAL_NVP( edgeDarkness	)
+			);
+			if ( 1 <= version )
+			{
+				// archive();
+			}
+		}
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const char *nodeCaption );
+	#endif // USE_IMGUI
 	};
 private:
 	struct CBuffer
@@ -33,6 +62,8 @@ private:
 			model;
 		Donya::CBuffer<ShadowConstant>
 			shadow;
+		Donya::CBuffer<VoxelizeConstant>
+			voxelize;
 	public:
 		bool Create();
 	};
@@ -80,22 +111,25 @@ private:
 public:
 	bool Init();
 public:
-	void UpdateConstant( const Donya::Model::Constants::PerScene::Common &constant );
-	void UpdateConstant( const Donya::Model::Constants::PerScene::PointLightRoom &constant );
-	void UpdateConstant( const Donya::Model::Constants::PerModel::Common &constant );
-	void UpdateConstant( const ShadowConstant &constant );
+	void UpdateConstant( const Donya::Model::Constants::PerScene::Common			&constant );
+	void UpdateConstant( const Donya::Model::Constants::PerScene::PointLightRoom	&constant );
+	void UpdateConstant( const Donya::Model::Constants::PerModel::Common			&constant );
+	void UpdateConstant( const ShadowConstant	&constant );
+	void UpdateConstant( const VoxelizeConstant	&constant );
 	void UpdateConstant( const Donya::Model::Cube::Constant		&constant );	// For primitive.
 	void UpdateConstant( const Donya::Model::Sphere::Constant	&constant );	// For primitive.
 	void ActivateConstantScene();
 	void ActivateConstantPointLight();
 	void ActivateConstantModel();
 	void ActivateConstantShadow();
+	void ActivateConstantVoxelize();
 	void ActivateConstantCube();	// For primitive.
 	void ActivateConstantSphere();	// For primitive.
 	void DeactivateConstantScene();
 	void DeactivateConstantPointLight();
 	void DeactivateConstantModel();
 	void DeactivateConstantShadow();
+	void DeactivateConstantVoxelize();
 	void DeactivateConstantCube();	// For primitive.
 	void DeactivateConstantSphere();// For primitive.
 public:
@@ -160,3 +194,4 @@ public:
 	/// </summary>
 	void ProcessDrawingSphere( const Donya::Model::Sphere::Constant &constant );
 };
+CEREAL_CLASS_VERSION( RenderingHelper::VoxelizeConstant, 0 )

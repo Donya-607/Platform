@@ -16,6 +16,7 @@ namespace Config
 
 		Shadow,
 		PointLight,
+		Voxelize,
 
 		ConstantCount
 	};
@@ -44,6 +45,7 @@ namespace Config
 
 		/* Shadow	*/	RegisterDesc::Make( 4, /* setVS = */ true,	/* setPS = */ true	),
 		/* PointLight*/	RegisterDesc::Make( 5, /* setVS = */ false,	/* setPS = */ true	),
+		/* Voxelize	*/	RegisterDesc::Make( 6, /* setVS = */ false,	/* setPS = */ true	),
 	};
 	static constexpr RegisterDesc textures[TextureName::TextureCount]
 	{
@@ -53,6 +55,22 @@ namespace Config
 	};
 }
 
+#if USE_IMGUI
+void RenderingHelper::VoxelizeConstant::ShowImGuiNode( const char *nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption ) ) { return; }
+	// else
+
+	ImGui::DragFloat	( u8"ƒ{ƒNƒZƒ‹ƒTƒCƒY",	&voxelSize,		0.001f );
+	ImGui::SliderFloat	( u8"h’[h‚Ì•",		&edgeSize,		0.0f, 1.0f );
+	ImGui::SliderFloat	( u8"h’[h‚Ì–¾‚é‚³",	&edgeDarkness,	0.0f, 1.0f );
+
+	voxelSize = std::max( 0.0001f, voxelSize );
+
+	ImGui::TreePop();
+}
+#endif // USE_IMGUI
+
 bool RenderingHelper::CBuffer::Create()
 {
 	bool succeeded = true;
@@ -60,6 +78,7 @@ bool RenderingHelper::CBuffer::Create()
 	if ( !pointLight.Create() ) { succeeded = false; }
 	if ( !model		.Create() ) { succeeded = false; }
 	if ( !shadow	.Create() ) { succeeded = false; }
+	if ( !voxelize	.Create() ) { succeeded = false; }
 	return succeeded;
 }
 
@@ -161,6 +180,10 @@ void RenderingHelper::UpdateConstant( const ShadowConstant &constant )
 {
 	pCBuffer->shadow.data = constant;
 }
+void RenderingHelper::UpdateConstant( const VoxelizeConstant &constant )
+{
+	pCBuffer->voxelize.data = constant;
+}
 void RenderingHelper::UpdateConstant( const Donya::Model::Cube::Constant	&constant )
 {
 	pPrimitive->rendererCube.UpdateConstant( constant );
@@ -189,6 +212,11 @@ void RenderingHelper::ActivateConstantShadow()
 	constexpr auto desc = Config::constants[Config::Shadow];
 	pCBuffer->shadow.Activate( desc.setSlot, desc.setVS, desc.setPS );
 }
+void RenderingHelper::ActivateConstantVoxelize()
+{
+	constexpr auto desc = Config::constants[Config::Voxelize];
+	pCBuffer->voxelize.Activate( desc.setSlot, desc.setVS, desc.setPS );
+}
 void RenderingHelper::ActivateConstantCube()
 {
 	pPrimitive->rendererCube.ActivateConstant();
@@ -212,6 +240,10 @@ void RenderingHelper::DeactivateConstantModel()
 void RenderingHelper::DeactivateConstantShadow()
 {
 	pCBuffer->shadow.Deactivate();
+}
+void RenderingHelper::DeactivateConstantVoxelize()
+{
+	pCBuffer->voxelize.Deactivate();
 }
 void RenderingHelper::DeactivateConstantCube()
 {

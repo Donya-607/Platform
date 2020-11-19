@@ -50,6 +50,9 @@ VS_OUT main( VS_IN vin )
 	vin.pos.w			=  1.0f;
 	vin.normal.w		=  0.0f;
 	vin.tangent.w		=  0.0f;
+	
+	float3   msPos		= vin.pos.xyz;
+	
 	ApplyBoneMatrices( vin.weights, vin.bones, vin.pos, vin.normal, vin.tangent );
 
 	float4x4 W			=  mul( cbAdjustMatrix, cbWorld );
@@ -61,6 +64,7 @@ VS_OUT main( VS_IN vin )
 	float4x4 VT			=  mul( cbView, MakeMatrixToTangentSpace( vsTangent, vsNormal ) );
 
 	VS_OUT vout			=  ( VS_OUT )( 0 );
+	vout.msPos			=  msPos;
 	vout.wsPos			=  mul( vin.pos, W );
 	vout.svPos			=  mul( vin.pos, WVP );
 	vout.lssPosNDC		=  mul( vin.pos, WLP );
@@ -69,5 +73,6 @@ VS_OUT main( VS_IN vin )
 	vout.tsEyeVec		=  normalize( mul( cbEyePosition - vout.wsPos, VT ) );
 	vout.texCoord		=  vin.texCoord;
 	vout.shadowMapUV	=  NDCToTexCoord( vout.lssPosNDC.xy );
+	
 	return vout;
 }
