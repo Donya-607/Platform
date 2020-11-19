@@ -18,13 +18,14 @@ cbuffer CBForPointLight : register( b5 )
 
 cbuffer CBForVoxelize : register( b6 )
 {
+	// Default value do not darken
 	float		cbVoxelSize		= 1.0f;
 	float		cbEdgeSize		= 0.0f;	// 0.0f ~ 1.0f
 	float		cbEdgeDarkness	= 1.0f;	// 0.0f ~ 1.0f
 	float		cb_paddings_b6;
 };
 
-float CalcVoxelEdgeBrightness( in float3 pos )
+float CalcVoxelEdgeBrightness( in float3 msPos, in float3 wsPos, in float3 wsEyePos )
 {
 	const float3 axes[3] =
 	{
@@ -32,9 +33,9 @@ float CalcVoxelEdgeBrightness( in float3 pos )
 		float3( 0.0f, 1.0f, 0.0f ),
 		float3( 0.0f, 0.0f, 1.0f )
 	};
+	const float eyeDist		= length( wsEyePos - wsPos );
+	const float darkness	= saturate( cbEdgeDarkness * eyeDist );
 
-	float	edgeBrightness = 1.0f;
-	
 	float3	projPos		= float3( 0.0f, 0.0f, 0.0f );
 	float	t			= 0.0f;
 	float	near		= 0.0;
@@ -44,7 +45,7 @@ float CalcVoxelEdgeBrightness( in float3 pos )
 	[unroll]
 	for ( uint i = 0; i < 3; ++i )
 	{
-		projPos	=  abs( axes[i] * dot( pos, axes[i] ) );
+		projPos	=  abs( axes[i] * dot( msPos, axes[i] ) );
 		t		=  fmod( length( projPos ), cbVoxelSize );
 		t		/= cbVoxelSize; // Normalize
 		
@@ -56,7 +57,7 @@ float CalcVoxelEdgeBrightness( in float3 pos )
 	}
 
 	// return ( 2 <= insideCount ) ? 1.0f : cbEdgeDarkness;
-	return lerp( cbEdgeDarkness, 1.0f, step( 2, insideCount ) );
+	return lerp( darkness, 1.0f, step( 2, insideCount ) );
 }
 
 Texture2D		diffuseMap			: register( t0 );
@@ -100,7 +101,7 @@ float4 main( VS_OUT pin ) : SV_TARGET
 			totalLight		+= cbAmbient.rgb * cbAmbient.w;
 
 	float3	resultColor		=  diffuseMapColor.rgb * totalLight * cbDrawColor.rgb;
-			resultColor		*= CalcVoxelEdgeBrightness( pin.msPos );
+			resultColor		*= CalcVoxelEdgeBrightness( pin.msPos, pin.wsPos.xyz, cbEyePosition.xyz );
 	
 	float	pixelDepth		=  pin.lssPosNDC.z - cbShadowBias;
 	float	shadowMapDepth	=  shadowMap.Sample( shadowMapSampler, pin.shadowMapUV ).r;
