@@ -274,6 +274,7 @@ namespace Boss
 	void Skull::Shot::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 		inst.Fall( elapsedTime );
+		inst.LookingToTarget( input.wsTargetPos );
 		inst.UpdateInvincibleExistence();
 
 		timer += elapsedTime;
