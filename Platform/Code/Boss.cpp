@@ -289,13 +289,13 @@ namespace Boss
 		}
 	#endif // DEBUG_MODE
 	}
-	bool Base::NowDead() const
-	{
-		return isDead;
-	}
 	bool Base::NowProtecting() const
 	{
 		return false; // Usually
+	}
+	bool Base::NowDead() const
+	{
+		return isDead;
 	}
 	bool Base::ShouldRemove() const
 	{

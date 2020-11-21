@@ -22,6 +22,8 @@ namespace Boss
 			Shield_Ready,
 			Shield_Expand,
 			Run,
+			Appear_Begin,
+			Appear_End,
 
 			MotionCount
 		};
@@ -52,6 +54,8 @@ namespace Boss
 			virtual void Uninit( Skull &instance );
 			virtual void Update( Skull &instance, float elapsedTime, const Input &input );
 			virtual void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain );
+			virtual bool NowAppearing( const Skull &instance ) const { return false; }
+			virtual bool NowRecoverHPTiming( const Skull &instance ) const { return false; }
 			virtual bool ShouldChangeMover( const Skull &instance ) const = 0;
 			virtual std::function<void()> GetChangeStateMethod( Skull &instance ) const = 0;
 		#if USE_IMGUI
@@ -61,11 +65,15 @@ namespace Boss
 		class AppearPerformance : public MoverBase
 		{
 		private:
-			bool wasLanding = false;
+			float	oldTimeAfterLanding		= 0.0f;
+			float	elapsedTimeAfterLanding	= 0.0f;
+			bool	wasLanding				= false;
 		public:
 			void Init( Skull &instance ) override;
 			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
 			void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain ) override;
+			bool NowAppearing( const Skull &instance ) const override;
+			bool NowRecoverHPTiming( const Skull &instance ) const override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
@@ -195,6 +203,8 @@ namespace Boss
 		void Draw( RenderingHelper *pRenderer ) const override;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
 	public:
+		bool				NowAppearing()			const override;
+		bool				NowRecoverHPTiming()	const override;
 		float				GetGravity()			const override;
 		float				GetInvincibleSecond()	const override;
 		float				GetInvincibleInterval()	const override;
@@ -237,6 +247,10 @@ namespace Boss
 		float				invincibleSecond		= 0.5f;
 		float				invincibleFlushInterval = 0.1f;	// Second
 		
+		float				appearRecoverHPTiming	= 1.0f;	// Second
+		float				appearRoarTiming		= 1.0f;	// Second
+		float				appearWaitMotionSec		= 1.0f;
+
 		float				shotBeginLagSecond		= 1.0f;
 		float				shotFireIntervalSecond	= 1.0f;
 		float				shotEndLagSecond		= 1.0f;
@@ -363,6 +377,15 @@ namespace Boss
 			}
 			if ( 10 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( appearRecoverHPTiming	),
+					CEREAL_NVP( appearRoarTiming		),
+					CEREAL_NVP( appearWaitMotionSec		)
+				);
+			}
+			if ( 11 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -375,4 +398,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 9 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 10 )

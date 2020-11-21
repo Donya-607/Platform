@@ -50,6 +50,8 @@ namespace Boss
 			case Skull::MotionKind::Shield_Ready:	return u8"Shield_Ready";
 			case Skull::MotionKind::Shield_Expand:	return u8"Shield_Expand";
 			case Skull::MotionKind::Run:			return u8"Run";
+			case Skull::MotionKind::Appear_Begin:	return u8"Appear_Begin";
+			case Skull::MotionKind::Appear_End:		return u8"Appear_End";
 			default: break;
 			}
 
@@ -123,6 +125,8 @@ namespace Boss
 		case Skull::MotionKind::Shield_Ready:	return true;
 		case Skull::MotionKind::Shield_Expand:	return false;
 		case Skull::MotionKind::Run:			return true;
+		case Skull::MotionKind::Appear_Begin:	return false;
+		case Skull::MotionKind::Appear_End:		return false;
 		default: break;
 		}
 
@@ -143,19 +147,82 @@ namespace Boss
 	void Skull::AppearPerformance::Init( Skull &inst )
 	{
 		inst.AppearInit();
+
+		elapsedTimeAfterLanding = 0.0f;
+
+		if ( inst.motionManager.CurrentMotionKind() != MotionKind::Jump )
+		{
+			_ASSERT_EXPR( 0, L"Error: Unexpected state! You call this before initialize the motion-manager?" );
+			// Fail safe
+			inst.motionManager.ChangeMotion( inst, MotionKind::Jump, /* resetTimerIfSameMotion = */ true );
+		}
 	}
 	void Skull::AppearPerformance::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 		inst.AppearUpdate( elapsedTime, input );
 		inst.LookingToTarget( input.wsTargetPos );
+
+		const auto nowKind = inst.motionManager.CurrentMotionKind();
+
+		if ( nowKind == MotionKind::Jump )
+		{
+			if ( wasLanding )
+			{
+				inst.motionManager.ChangeMotion( inst, MotionKind::Appear_Begin );
+			}
+
+			return;
+		}
+		// else
+
+		const auto &data = Parameter::GetSkull();
+
+		oldTimeAfterLanding		=  elapsedTimeAfterLanding;
+		elapsedTimeAfterLanding	+= elapsedTime;
+
+		const int oldRoarSign = Donya::SignBit( data.appearRoarTiming - oldTimeAfterLanding		);
+		const int nowRoarSign = Donya::SignBit( data.appearRoarTiming - elapsedTimeAfterLanding	);
+		if ( oldRoarSign != nowRoarSign )
+		{
+			Donya::Sound::Play( Music::Skull_Roar );
+		}
+
+		switch ( nowKind )
+		{
+		case MotionKind::Appear_Begin:
+			if ( data.appearWaitMotionSec <= elapsedTimeAfterLanding )
+			{
+				inst.motionManager.ChangeMotion( inst, MotionKind::Appear_End );
+			}
+			return;
+		case MotionKind::Appear_End:
+			return;
+		default:
+			_ASSERT_EXPR( 0, L"Error: Unexpected state!" );
+			return;
+		}
 	}
 	void Skull::AppearPerformance::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
 	{
 		wasLanding = inst.AppearPhysicUpdate( elapsedTime, terrain );
 	}
+	bool Skull::AppearPerformance::NowAppearing( const Skull &inst ) const
+	{
+		return true;
+	}
+	bool Skull::AppearPerformance::NowRecoverHPTiming( const Skull &inst ) const
+	{
+		const auto &data  =  Parameter::GetSkull();
+		const int oldSign =  Donya::SignBit( data.appearRecoverHPTiming - oldTimeAfterLanding		);
+		const int nowSign =  Donya::SignBit( data.appearRecoverHPTiming - elapsedTimeAfterLanding	);
+		return  ( oldSign != nowSign );
+	}
 	bool Skull::AppearPerformance::ShouldChangeMover( const Skull &inst ) const
 	{
-		return wasLanding; // For now, transition as immediately if the falling is finished
+		if ( inst.motionManager.CurrentMotionKind() != MotionKind::Appear_End ) { return false; }
+		// else
+
+		return inst.motionManager.WasCurrentMotionEnded( inst );
 	}
 	std::function<void()> Skull::AppearPerformance::GetChangeStateMethod( Skull &inst ) const
 	{
@@ -774,6 +841,18 @@ namespace Boss
 	{
 		Base::DrawHitBox( pRenderer, matVP );
 	}
+	bool Skull::NowAppearing() const
+	{
+		return ( pMover && pMover->NowAppearing( *this ) );
+	}
+	bool Skull::NowRecoverHPTiming() const
+	{
+		return ( pMover && pMover->NowRecoverHPTiming( *this ) );
+	}
+	float Skull::GetGravity() const
+	{
+		return Parameter::GetSkull().gravity;
+	}
 	float Skull::GetInvincibleSecond() const
 	{
 		return Parameter::GetSkull().invincibleSecond;
@@ -781,10 +860,6 @@ namespace Boss
 	float Skull::GetInvincibleInterval() const
 	{
 		return Parameter::GetSkull().invincibleFlushInterval;
-	}
-	float Skull::GetGravity() const
-	{
-		return Parameter::GetSkull().gravity;
 	}
 	Kind Skull::GetKind() const { return Kind::Skull; }
 	Definition::Damage Skull::GetTouchDamage() const
@@ -879,6 +954,18 @@ namespace Boss
 				
 				ImGui::TreePop();
 			}
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"ìoèÍä÷òA" ) )
+		{
+			ImGui::DragFloat( u8"ÇgÇoÉoÅ[âÒïúÇ‹Ç≈ÇÃë“ã@ïbêî",		&appearRecoverHPTiming,	0.01f );
+			ImGui::DragFloat( u8"ñiÇ¶ê∫çƒê∂Ç‹Ç≈ÇÃë“ã@ïbêî",		&appearRoarTiming,		0.01f );
+			ImGui::DragFloat( u8"ìoèÍÉÇÅ[ÉVÉáÉìèIóπå„ÇÃë“ã@ïbêî",	&appearWaitMotionSec,	0.01f );
+			appearRecoverHPTiming	= std::max( 0.0f, appearRecoverHPTiming	);
+			appearRoarTiming		= std::max( 0.0f, appearRoarTiming		);
+			appearWaitMotionSec		= std::max( 0.0f, appearWaitMotionSec	);
 
 			ImGui::TreePop();
 		}

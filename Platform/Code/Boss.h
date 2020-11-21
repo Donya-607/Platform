@@ -156,29 +156,31 @@ namespace Boss
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
-		virtual bool				NowDead()			const;
-		virtual bool				NowProtecting()		const;
-		virtual bool				ShouldRemove()		const;
-		virtual int					GetCurrentHP()		const;
-		virtual int					GetRoomID()			const;
+		virtual bool				NowAppearing()			const = 0;
+		virtual bool				NowRecoverHPTiming()	const = 0;
+		virtual bool				NowProtecting()			const;
+		virtual bool				NowDead()				const;
+		virtual bool				ShouldRemove()			const;
+		virtual int					GetCurrentHP()			const;
+		virtual int					GetRoomID()				const;
 		using				 Actor::GetHitBox;
-		Donya::Collision::Box3F		GetHurtBox()		const;
-		Donya::Vector3				GetVelocity()		const;
+		Donya::Collision::Box3F		GetHurtBox()			const;
+		Donya::Vector3				GetVelocity()			const;
 		/// <summary>
 		/// Returns absolute value
 		/// </summary>
-		virtual float				GetGravity()		const = 0;
+		virtual float				GetGravity()			const = 0;
 		virtual float				GetInvincibleSecond()	const = 0;
 		virtual float				GetInvincibleInterval()	const = 0;
-		virtual Kind				GetKind()			const = 0;
-		InitializeParam				GetInitializer()	const;
-		virtual Definition::Damage	GetTouchDamage()	const = 0;
+		virtual Kind				GetKind()				const = 0;
+		InitializeParam				GetInitializer()		const;
+		virtual Definition::Damage	GetTouchDamage()		const = 0;
 		virtual void				GiveDamage( const Definition::Damage &damage ) const;
 		/// <summary>
 		/// GiveDamage() is not apply damage as immediately, so if you wanna know to will dead by GiveDamage(), you should use this instead of NowDead().
 		/// It may return false even when NowDead() is true.
 		/// </summary>
-		virtual bool				WillDie()			const;
+		virtual bool				WillDie()				const;
 	public:
 		void UpdateOrientation( bool lookingRight );
 	protected:

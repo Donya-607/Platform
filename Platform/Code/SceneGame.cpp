@@ -621,6 +621,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 			pSky->AdvanceHourTo( pCurrentRoom->GetHour(), data.scrollTakeSecond );
 		}
 
+		const bool oldIsThereBoss = isThereBoss;
+
 		isThereClearEvent	= ( pClearEvent		&& pClearEvent->IsThereIn( currentRoomID ) );
 		isThereBoss			= ( pBossContainer	&& pBossContainer->IsThereIn( currentRoomID ) );
 	}
@@ -1604,13 +1606,6 @@ void SceneGame::AppearBossStateUpdate( float elapsedTime )
 	}
 	// else
 
-	if ( pSkullMeter && !pSkullMeter->NowRecovering() )
-	{
-		VSBossStateInit();
-		return;
-	}
-	// else
-
 	const Donya::Vector3 playerPos   = pPlayer->GetPosition();
 	const Donya::Vector3 destination = MakeBossRoomInitialPosOf( currentRoomID );
 
@@ -1622,7 +1617,34 @@ void SceneGame::AppearBossStateUpdate( float elapsedTime )
 	{
 		pBossContainer->StartupBossIfStandby( currentRoomID );
 		Donya::Sound::Play( Music::Performance_AppearBoss );
-		// The meter will create at BossUpdate()
+		
+		// Only generate the meter
+		pSkullMeter = std::make_unique<Meter::Drawer>();
+		pSkullMeter->Init( 0.0f, 0.0f, 0.0f );
+
+		const auto &data = FetchParameter();
+		pSkullMeter->SetDrawOption( data.skullMeter.hpDrawPos, data.skullMeter.hpDrawColor, data.skullMeter.hpDrawScale );
+	}
+
+	const auto pBoss = pBossContainer->GetBossOrNullptr( currentRoomID );
+	if ( pBoss )
+	{
+		if ( pBoss->NowRecoverHPTiming() )
+		{
+			if ( !pSkullMeter ) { pSkullMeter = std::make_unique<Meter::Drawer>(); }
+
+			// TODO: If create another boss kind, fix this
+			const float maxHP = scast<float>( Boss::Parameter::GetSkull().hp );
+			pSkullMeter->Init( maxHP, 0.0f, maxHP );
+
+			const auto &data = FetchParameter();
+			pSkullMeter->SetDrawOption( data.skullMeter.hpDrawPos, data.skullMeter.hpDrawColor, data.skullMeter.hpDrawScale );
+		}
+
+		if ( !pBoss->NowAppearing() )
+		{
+			VSBossStateInit();
+		}
 	}
 }
 
