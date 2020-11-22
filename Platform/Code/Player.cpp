@@ -684,7 +684,7 @@ void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
 	
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		const std::string caption = u8"ジャンプ入力を離したか" + Donya::MakeArraySuffix( i ) + u8":%5.3f";
+		std::string caption = u8"ジャンプ入力を離したか" + Donya::MakeArraySuffix( i );
 		ImGui::Checkbox( caption.c_str(), &wasReleasedJumps[i] );
 	}
 
