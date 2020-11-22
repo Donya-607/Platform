@@ -2977,6 +2977,8 @@ void Player::Fall( float elapsedTime )
 
 	nowGravity = std::max( -data.gravityMax, nowGravity );
 
+	const float oldVSpeed = velocity.y;
+
 	// Control the Y velocity when the moment that jump input now released
 	const bool nowReleaseMoment = ( jumpInputIndex < 0 && 0 <= inputManager.UseJumpIndex( /* getCurrent = */ false ) ); // Current is off(index < 0), Previous is on(0 <= index)
 	if ( nowReleaseMoment && 0.0f < velocity.y ) // Enable only rising
@@ -2988,8 +2990,6 @@ void Player::Fall( float elapsedTime )
 	{
 		velocity.y -= nowGravity * gravityFactor * elapsedTime;
 	}
-
-	const float oldVSpeed = velocity.y;
 	velocity.y = std::max( -data.maxFallSpeed, velocity.y );
 
 	if ( Donya::SignBit( velocity.y ) != Donya::SignBit( oldVSpeed ) )
