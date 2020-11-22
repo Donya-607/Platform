@@ -18,40 +18,45 @@
 struct PlayerParam
 {
 public:
-	int		maxHP				= 28;
-	int		maxBusterCount		= 3;		// Max generatable count of buster at same time.
-	int		maxRemainCount		= 9;
-	int		initialRemainCount	= 2;
-	float	moveSpeed			= 1.0f;
-	float	slideMoveSpeed		= 1.0f;
-	float	slideMoveSeconds	= 1.0f;
-	float	ladderMoveSpeed		= 1.0f;
-	float	ladderShotLagSecond	= 0.5f;
-	float	jumpStrength		= 1.0f;
-	float	jumpBufferSecond	= 0.2f;		// Allow second of pre-input
-	float	gravity				= 1.0f;
-	float	gravityResistance	= 0.5f;		// Multiply to gravity if while pressing a jump key
-	float	resistableSeconds	= 0.5f;
-	float	maxFallSpeed		= 1.0f;
-	float	knockBackSeconds	= 0.5f;
-	float	knockBackSpeed		= 1.0f;		// X speed
-	float	braceStandFactor	= 2.0f;
-	float	invincibleSeconds	= 2.0f;
-	float	flushingInterval	= 0.1f;		// Seconds
-	float	emissiveTransFactor	= 0.3f;
-	float	appearDelaySecond	= 0.5f;		// Seconds
-	float	leaveDelaySecond	= 0.5f;		// Seconds
-	Donya::Collision::Box3F		hitBox;			// VS a terrain
-	Donya::Collision::Box3F		hurtBox;		// VS an attack(e.g. enemy)
-	Donya::Collision::Box3F		slideHitBox;	// VS a terrain when sliding
-	Donya::Collision::Box3F		slideHurtBox;	// VS an attack(e.g. enemy) when sliding
-	Donya::Collision::Box3F		ladderGrabArea;	// It using for considering to continue to grab the ladder
-	Bullet::FireDesc			fireParam;
-	std::vector<float>			animePlaySpeeds;// It size() == Player::MotionKind::MotionCount
+	int		maxHP					= 28;
+	int		maxBusterCount			= 3;			// Max generatable count of buster at same time.
+	int		maxRemainCount			= 9;
+	int		initialRemainCount		= 2;
+	float	moveSpeed				= 1.0f;
+	float	slideMoveSpeed			= 1.0f;
+	float	slideMoveSeconds		= 1.0f;
+	float	ladderMoveSpeed			= 1.0f;
+	float	ladderShotLagSecond		= 0.5f;
+	float	jumpStrength			= 1.0f;
+	float	jumpBufferSecond		= 0.2f;			// Allow second of pre-input
+	float	jumpCancelledVSpeedMax	= 1.0f;			// Max Y speed of the moment that jump input now released
+	float	gravityRising			= 1.0f;
+	float	gravityRisingAccel		= 1.0f;
+	float	gravityFalling			= 1.0f;
+	float	gravityFallingAccel		= 1.0f;
+	float	gravityMax				= 1.0f;
+	float	gravityResistance		= 0.5f;			// Multiply to gravity if while pressing a jump key
+	float	resistableSeconds		= 0.5f;
+	float	maxFallSpeed			= 1.0f;
+	float	knockBackSeconds		= 0.5f;
+	float	knockBackSpeed			= 1.0f;			// X speed
+	float	braceStandFactor		= 2.0f;
+	float	invincibleSeconds		= 2.0f;
+	float	flushingInterval		= 0.1f;			// Seconds
+	float	emissiveTransFactor		= 0.3f;
+	float	appearDelaySecond		= 0.5f;			// Seconds
+	float	leaveDelaySecond		= 0.5f;			// Seconds
+	Donya::Collision::Box3F			hitBox;			// VS a terrain
+	Donya::Collision::Box3F			hurtBox;		// VS an attack(e.g. enemy)
+	Donya::Collision::Box3F			slideHitBox;	// VS a terrain when sliding
+	Donya::Collision::Box3F			slideHurtBox;	// VS an attack(e.g. enemy) when sliding
+	Donya::Collision::Box3F			ladderGrabArea;	// It using for considering to continue to grab the ladder
+	Bullet::FireDesc				fireParam;
+	std::vector<float>				animePlaySpeeds;// It size() == Player::MotionKind::MotionCount
 
-	ModelHelper::PartApply		normalLeftArm;
-	ModelHelper::PartApply		ladderLeftArm;
-	ModelHelper::PartApply		ladderRightArm;
+	ModelHelper::PartApply			normalLeftArm;
+	ModelHelper::PartApply			ladderLeftArm;
+	ModelHelper::PartApply			ladderRightArm;
 
 	struct PerChargeLevel
 	{
@@ -82,12 +87,12 @@ public:
 			}
 		}
 	};
-	std::vector<PerChargeLevel>	chargeParams;	// It size() == Player::ShotLevel::LevelCount
+	std::vector<PerChargeLevel>		chargeParams;	// It size() == Player::ShotLevel::LevelCount
 
-	float						shieldThrowSpeed = 1.0f;
-	Donya::Vector3				shieldPosOffset{ 0.0f, 0.0f, 0.0f };
+	float							shieldThrowSpeed = 1.0f;
+	Donya::Vector3					shieldPosOffset{ 0.0f, 0.0f, 0.0f };
 
-	std::vector<Donya::Vector3> themeColors;	// It size() == Player::GunKind::GunCount
+	std::vector<Donya::Vector3>		themeColors;	// It size() == Player::GunKind::GunCount
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -97,7 +102,6 @@ private:
 		(
 			CEREAL_NVP( moveSpeed			),
 			CEREAL_NVP( jumpStrength		),
-			CEREAL_NVP( gravity				),
 			CEREAL_NVP( gravityResistance	),
 			CEREAL_NVP( resistableSeconds	),
 			CEREAL_NVP( maxFallSpeed		),
@@ -199,6 +203,18 @@ private:
 		}
 		if ( 15 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( jumpCancelledVSpeedMax	),
+				CEREAL_NVP( gravityRising			),
+				CEREAL_NVP( gravityRisingAccel		),
+				CEREAL_NVP( gravityFalling			),
+				CEREAL_NVP( gravityFallingAccel		),
+				CEREAL_NVP( gravityMax				)
+			);
+		}
+		if ( 16 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -207,4 +223,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 14 )
+CEREAL_CLASS_VERSION( PlayerParam, 15 )

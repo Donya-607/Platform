@@ -337,25 +337,30 @@ void PlayerParam::ShowImGuiNode()
 {
 	if ( ImGui::TreeNode( u8"汎用設定" ) )
 	{
-		ImGui::DragFloat( u8"登場時の出現タイミング（秒）",&appearDelaySecond,	0.01f	);
-		ImGui::DragFloat( u8"退場時の消滅タイミング（秒）",&leaveDelaySecond,	0.01f	);
-		ImGui::DragInt  ( u8"最大体力",					&maxHP						);
-		ImGui::DragInt  ( u8"最大残機数",				&maxRemainCount				);
-		ImGui::DragInt  ( u8"初期残機数",				&initialRemainCount			);
-		ImGui::DragFloat( u8"移動速度",					&moveSpeed,			0.01f	);
-		ImGui::DragFloat( u8"スライディング速度",			&slideMoveSpeed,	0.01f	);
-		ImGui::DragFloat( u8"スライディング秒数",			&slideMoveSeconds,	0.01f	);
-		ImGui::DragFloat( u8"ジャンプ力",				&jumpStrength,		0.01f	);
-		ImGui::DragFloat( u8"ジャンプの先行入力受付秒数",	&jumpBufferSecond,	0.01f	);
-		ImGui::DragFloat( u8"重力",						&gravity,			0.01f	);
-		ImGui::SliderFloat( u8"重力抵抗力",				&gravityResistance,	0.0f, 1.0f );
-		ImGui::DragFloat( u8"重力抵抗可能秒数",			&resistableSeconds,	0.01f	);
-		ImGui::DragFloat( u8"最高落下速度",				&maxFallSpeed,		0.01f	);
-		ImGui::DragFloat( u8"のけぞる秒数",				&knockBackSeconds,	0.01f	);
-		ImGui::DragFloat( u8"のけぞり速度",				&knockBackSpeed,	0.01f	);
-		ImGui::DragFloat( u8"のけぞり抵抗時の短縮倍率",	&braceStandFactor,	0.01f	);
-		ImGui::DragFloat( u8"無敵秒数",					&invincibleSeconds,	0.01f	);
-		ImGui::DragFloat( u8"無敵中点滅間隔（秒）",		&flushingInterval,	0.01f	);
+		ImGui::DragFloat( u8"登場時の出現タイミング（秒）",&appearDelaySecond,		0.01f	);
+		ImGui::DragFloat( u8"退場時の消滅タイミング（秒）",&leaveDelaySecond,		0.01f	);
+		ImGui::DragInt  ( u8"最大体力",					&maxHP							);
+		ImGui::DragInt  ( u8"最大残機数",				&maxRemainCount					);
+		ImGui::DragInt  ( u8"初期残機数",				&initialRemainCount				);
+		ImGui::DragFloat( u8"移動速度",					&moveSpeed,				0.01f	);
+		ImGui::DragFloat( u8"スライディング速度",			&slideMoveSpeed,		0.01f	);
+		ImGui::DragFloat( u8"スライディング秒数",			&slideMoveSeconds,		0.01f	);
+		ImGui::DragFloat( u8"ジャンプ力",				&jumpStrength,			0.01f	);
+		ImGui::DragFloat( u8"ジャンプの先行入力受付秒数",	&jumpBufferSecond,		0.01f	);
+		ImGui::DragFloat( u8"ジャンプ解除時のＹ速度",		&jumpCancelledVSpeedMax,0.01f	);
+		ImGui::DragFloat( u8"重力・上昇中",				&gravityRising,			0.01f	);
+		ImGui::DragFloat( u8"重力加速・上昇中",			&gravityRisingAccel,	0.01f	);
+		ImGui::DragFloat( u8"重力・下降中",				&gravityFalling,		0.01f	);
+		ImGui::DragFloat( u8"重力加速・下降中",			&gravityFallingAccel,	0.01f	);
+		ImGui::DragFloat( u8"最大重力",					&gravityMax,			0.01f	);
+		ImGui::SliderFloat( u8"重力抵抗力",				&gravityResistance,		0.0f, 1.0f );
+		ImGui::DragFloat( u8"重力抵抗可能秒数",			&resistableSeconds,		0.01f	);
+		ImGui::DragFloat( u8"最高落下速度",				&maxFallSpeed,			0.01f	);
+		ImGui::DragFloat( u8"のけぞる秒数",				&knockBackSeconds,		0.01f	);
+		ImGui::DragFloat( u8"のけぞり速度",				&knockBackSpeed,		0.01f	);
+		ImGui::DragFloat( u8"のけぞり抵抗時の短縮倍率",	&braceStandFactor,		0.01f	);
+		ImGui::DragFloat( u8"無敵秒数",					&invincibleSeconds,		0.01f	);
+		ImGui::DragFloat( u8"無敵中点滅間隔（秒）",		&flushingInterval,		0.01f	);
 
 		auto MakePositive	= []( float *v )
 		{
@@ -369,7 +374,9 @@ void PlayerParam::ShowImGuiNode()
 		MakePositive( &slideMoveSeconds		);
 		MakePositive( &jumpStrength			);
 		MakePositive( &jumpBufferSecond		);
-		MakePositive( &gravity				);
+		MakePositive( &gravityRising		);
+		MakePositive( &gravityFalling		);
+		MakePositive( &gravityMax			);
 		MakePositive( &resistableSeconds	);
 		MakePositive( &maxFallSpeed			);
 		MakePositive( &knockBackSeconds		);
@@ -2914,6 +2921,7 @@ void Player::Jump( int inputIndex )
 
 	onGround	= false;
 	velocity.y	= data.jumpStrength;
+	nowGravity	= data.gravityRising;
 	inputManager.KeepSecondJumpInput()[inputIndex]	= 0.0f;
 	inputManager.WasReleasedJumpInput()[inputIndex]	= false;
 	Donya::Sound::Play( Music::Player_Jump );
@@ -2936,7 +2944,8 @@ void Player::Fall( float elapsedTime )
 {
 	const auto &data = Parameter().Get();
 
-	bool resistGravity = false;
+	float gravityFactor = 1.0f;
+	bool  nowResisting  = false;
 	const bool canResist = !( pMover && pMover->NowKnockBacking( *this ) );
 	const int jumpInputIndex = inputManager.UseJumpIndex();
 	if ( 0 <= jumpInputIndex && canResist )
@@ -2945,7 +2954,8 @@ void Player::Fall( float elapsedTime )
 		{
 			if ( inputManager.KeepSecondJumpInput()[jumpInputIndex] < data.resistableSeconds )
 			{
-				resistGravity = true;
+				nowResisting  = true;
+				gravityFactor = data.gravityResistance;
 			}
 		}
 	}
@@ -2954,19 +2964,38 @@ void Player::Fall( float elapsedTime )
 		inputManager.WasReleasedJumpInput().fill( true );
 	}
 
-#if 0 // Control the Y velocity when the jump input was released. do not works correctly
-	const bool nowReleaseMoment = ( jumpInputIndex < 0 && 0 < inputManager.UseJumpIndex( /* getCurrent = */ false ) ); // Current is off(index < 0), Previous is on(0 < index)
-	if ( nowReleaseMoment )
-	{
-		velocity.y = 0.0f;
-	}
-#endif // 0
 
-	const float applyGravity =	( resistGravity )
-								? data.gravity * data.gravityResistance
-								: data.gravity;
-	velocity.y -= applyGravity * elapsedTime;
+	if ( onGround )
+	{
+		nowGravity = data.gravityRising;
+	}
+	else if ( !nowResisting )
+	{
+		const float  &acceleration = ( 0.0f <= velocity.y ) ? data.gravityRisingAccel : data.gravityFallingAccel;
+		nowGravity += acceleration * elapsedTime;
+	}
+
+	nowGravity = std::max( -data.gravityMax, nowGravity );
+
+	// Control the Y velocity when the moment that jump input now released
+	const bool nowReleaseMoment = ( jumpInputIndex < 0 && 0 <= inputManager.UseJumpIndex( /* getCurrent = */ false ) ); // Current is off(index < 0), Previous is on(0 <= index)
+	if ( nowReleaseMoment && 0.0f < velocity.y ) // Enable only rising
+	{
+		velocity.y = std::min( velocity.y, data.jumpCancelledVSpeedMax );
+	}
+	// Apply the gravity as usually
+	else
+	{
+		velocity.y -= nowGravity * gravityFactor * elapsedTime;
+	}
+
+	const float oldVSpeed = velocity.y;
 	velocity.y = std::max( -data.maxFallSpeed, velocity.y );
+
+	if ( Donya::SignBit( velocity.y ) != Donya::SignBit( oldVSpeed ) )
+	{
+		nowGravity = ( 0.0f <= velocity.y ) ? data.gravityRising : data.gravityFalling;
+	}
 }
 void Player::Landing()
 {
@@ -3031,6 +3060,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text			( u8"現在のステート：%s",				pMover->GetMoverName().c_str() );
 	ImGui::Text			( u8"現在のモーション：%s",			KIND_NAMES[scast<int>( motionManager.CurrentKind() )] );
 	ImGui::Text			( u8"現在の銃口：%s",					pGun->GetGunName().c_str() );
+	ImGui::Text			( u8"現在の重力：%5.3f", nowGravity );
 
 	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );

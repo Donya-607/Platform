@@ -538,6 +538,7 @@ private:
 	std::unique_ptr<GunBase>		pGun					= nullptr;
 	std::shared_ptr<Bullet::Base>	pBullet					= nullptr;
 	std::weak_ptr<const Tile>		pTargetLadder{};				// It only used for initialization of Player::GrabLadder as reference
+	float							nowGravity				= 0.0f;
 	int								currentHP				= 1;
 	float							lookingSign				= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
 	bool							onGround				= false;
