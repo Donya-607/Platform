@@ -157,6 +157,10 @@ namespace Boss
 			inst.motionManager.ChangeMotion( inst, MotionKind::Jump, /* resetTimerIfSameMotion = */ true );
 		}
 	}
+	void Skull::AppearPerformance::Uninit( Skull &inst )
+	{
+		inst.detectingLimitSecond = Parameter::GetSkull().detectFirstWaitSec;
+	}
 	void Skull::AppearPerformance::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
 		inst.AppearUpdate( elapsedTime, input );
@@ -238,8 +242,13 @@ namespace Boss
 	void Skull::DetectTargetAction::Init( Skull &inst )
 	{
 		inst.velocity = 0.0f;
-
 		inst.motionManager.ChangeMotion( inst, MotionKind::Idle );
+
+		timer = 0.0f;
+	}
+	void Skull::DetectTargetAction::Uninit( Skull &inst )
+	{
+		inst.detectingLimitSecond = Parameter::GetSkull().detectWaitSecMax;
 	}
 	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
@@ -250,26 +259,28 @@ namespace Boss
 		if ( nextState != Destination::None ) { return; }
 		// else
 
-		auto AssignShot = [&]()
+		auto AssignShot		= [&]()
 		{
 			nextState = Destination::Shot;
 			inst.RegisterPreviousBehavior( Behavior::Shot );
 		};
-		auto AssignJump = [&]()
+		auto AssignJump		= [&]()
 		{
 			nextState		= Destination::Jump;
 			inst.aimingPos	= input.wsTargetPos;
 			inst.RegisterPreviousBehavior( Behavior::Jump );
 		};
-		auto PrevActionIs = [&]( Behavior comparison )
+		auto PrevActionIs	= [&]( Behavior verify )
 		{
-			return ( inst.previousBehaviors.front() == comparison );
+			return ( inst.previousBehaviors.front() == verify );
 		};
-
-		// Shot detection
-		if ( !IsZero( input.controllerInputDirection.x ) )
+		auto WillContinueTo	= [&]( Behavior verify )
 		{
-			if ( IsContinuingSameAction( inst ) && PrevActionIs( Behavior::Shot ) )
+			return IsContinuingSameAction( inst ) && PrevActionIs( verify );
+		};
+		auto ChooseShot		= [&]()
+		{
+			if ( WillContinueTo( Behavior::Shot ) )
 			{
 				AssignJump();
 			}
@@ -277,7 +288,23 @@ namespace Boss
 			{
 				AssignShot();
 			}
+		};
+		auto ChooseJump		= [&]()
+		{
+			if ( WillContinueTo( Behavior::Jump ) )
+			{
+				AssignShot();
+			}
+			else
+			{
+				AssignJump();
+			}
+		};
 
+		// Shot detection
+		if ( !IsZero( input.controllerInputDirection.x ) )
+		{
+			ChooseShot();
 			return;
 		}
 		// else
@@ -288,18 +315,20 @@ namespace Boss
 				!input.pressShot && inst.previousInput.pressShot
 			)
 		{
-			if ( IsContinuingSameAction( inst ) && PrevActionIs( Behavior::Jump ) )
-			{
-				AssignShot();
-			}
-			else
-			{
-				AssignJump();
-			}
-
+			ChooseJump();
 			return;
 		}
 		// else
+
+		// Prevention of stop
+		timer += elapsedTime;
+		if ( inst.detectingLimitSecond <= timer )
+		{
+			ChooseShot();
+			return;
+		}
+		// else
+
 	}
 	bool Skull::DetectTargetAction::ShouldChangeMover( const Skull &inst ) const
 	{
@@ -966,6 +995,16 @@ namespace Boss
 			appearRecoverHPTiming	= std::max( 0.0f, appearRecoverHPTiming	);
 			appearRoarTiming		= std::max( 0.0f, appearRoarTiming		);
 			appearWaitMotionSec		= std::max( 0.0f, appearWaitMotionSec	);
+
+			ImGui::TreePop();
+		}
+
+		if ( ImGui::TreeNode( u8"行動検出関連" ) )
+		{
+			ImGui::DragFloat( u8"初回待機秒数", &detectFirstWaitSec,	0.01f );
+			ImGui::DragFloat( u8"最大待機秒数", &detectWaitSecMax,	0.01f );
+			detectFirstWaitSec	= std::max( 0.0f, detectFirstWaitSec	);
+			detectWaitSecMax	= std::max( 0.0f, detectWaitSecMax		);
 
 			ImGui::TreePop();
 		}

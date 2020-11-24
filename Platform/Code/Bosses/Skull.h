@@ -70,6 +70,7 @@ namespace Boss
 			bool	wasLanding				= false;
 		public:
 			void Init( Skull &instance ) override;
+			void Uninit( Skull &instance ) override;
 			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
 			void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain ) override;
 			bool NowAppearing( const Skull &instance ) const override;
@@ -90,8 +91,10 @@ namespace Boss
 				Jump
 			};
 			Destination nextState = Destination::None;
+			float timer = 0.0f;
 		public:
 			void Init( Skull &instance ) override;
+			void Uninit( Skull &instance ) override;
 			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
@@ -179,9 +182,10 @@ namespace Boss
 	private:
 		Input							previousInput;
 		std::array<Behavior, 2>			previousBehaviors{ Behavior::None }; // Contains: [0:One previous], [1:Two previous]
-		Donya::Vector3					aimingPos;		// Used for store the target pos of some timing
+		Donya::Vector3					aimingPos; // Used for store the target pos of some timing
 		MotionManager					motionManager;
-		std::unique_ptr<MoverBase>		pMover  = nullptr;
+		std::unique_ptr<MoverBase>		pMover = nullptr;
+		float							detectingLimitSecond = 0.0f; // It will changed by only the appearing state and the detecting state
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -250,6 +254,9 @@ namespace Boss
 		float				appearRecoverHPTiming	= 1.0f;	// Second
 		float				appearRoarTiming		= 1.0f;	// Second
 		float				appearWaitMotionSec		= 1.0f;
+
+		float				detectFirstWaitSec		= 1.0f;	// Use when the first detect state(the first timing is when transition from the appearing state)
+		float				detectWaitSecMax		= 10.0f;// It prevents looks like the behavior is stopping
 
 		float				shotBeginLagSecond		= 1.0f;
 		float				shotFireIntervalSecond	= 1.0f;
@@ -386,6 +393,14 @@ namespace Boss
 			}
 			if ( 11 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( detectFirstWaitSec	),
+					CEREAL_NVP( detectWaitSecMax	)
+				);
+			}
+			if ( 12 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -398,4 +413,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 10 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 11 )
