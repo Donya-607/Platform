@@ -1880,6 +1880,7 @@ void SceneTitle::BossUpdate( float elapsedTime, const Donya::Vector3 &targetPos 
 	else
 	{
 		input.wsTargetPos	= targetPos;
+		input.dontMove		= true;
 	}
 
 	pBoss->Update( elapsedTime, input );

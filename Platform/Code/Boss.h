@@ -62,6 +62,7 @@ namespace Boss
 		Donya::Vector2 controllerInputDirection;
 		bool pressJump = false;
 		bool pressShot = false;
+		bool dontMove  = false;
 	};
 
 	struct InitializeParam

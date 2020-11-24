@@ -252,6 +252,9 @@ namespace Boss
 	}
 	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
+		if ( input.dontMove ) { return; }
+		// else
+
 		inst.Fall( elapsedTime );
 		inst.LookingToTarget( input.wsTargetPos );
 		inst.UpdateInvincibleExistence();
