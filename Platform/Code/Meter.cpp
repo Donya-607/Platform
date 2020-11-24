@@ -206,20 +206,26 @@ namespace Meter
 		shakeRadian	= 0.0f;
 		shake		= Donya::Vector2::Zero();
 
-		const auto  &range			= data.shakeDamageInfluenceRange;
-		const float  rangeLength	= range.y - range.x;
-		if ( IsZero( rangeLength ) )
+		const auto &range = data.shakeDamageInfluenceRange;
+		if ( IsZero( range.y ) )
 		{
 			_ASSERT_EXPR( 0, L"Error: Division by zero!" );
 			shakeAmpl = data.shakeBaseAmpl;
+			return;
 		}
-		else
-		{
-			float damageFactor = Donya::Clamp( damage, range.x, range.y );
-			damageFactor /= rangeLength;
+		// else
 
-			shakeAmpl = data.shakeBaseAmpl + ( data.shakeDamageAmpl * damageFactor );
-		}
+		/*
+		0		= damage <=	range.x
+		0 ~ 1	=			range.x < damage <	range.y
+		1		=								range.y <= damage
+		*/
+
+		float factor = fabsf( damage ) - range.x;		// "damage <= range.x" will be zero
+		factor /= range.y;								// Scaling into "0 ~ 1"
+		factor = Donya::Clamp( factor, 0.0f, 1.0f );	// Saturate
+
+		shakeAmpl = data.shakeBaseAmpl + ( data.shakeDamageAmpl * factor );
 	}
 	void Drawer::ShakeUpdate( float elapsedTime )
 	{
@@ -242,11 +248,11 @@ namespace Meter
 		}
 		// else
 
-		const float rotAmount = 1.0f / data.shakeCycleSec;
-		shakeRadian += rotAmount;
+		const float rotAmount = PI / data.shakeCycleSec;
+		shakeRadian += rotAmount * elapsedTime;
 
+		const float ampl = cosf( shakeRadian ) * shakeAmpl;
 		const float attenuateFactor = shakeTimer / data.shakeSecond;
-		const float ampl = sinf( shakeRadian ) * shakeAmpl;
 
 		shake.x = ampl * attenuateFactor;
 	}
