@@ -75,6 +75,10 @@ namespace Meter
 		current			= start;
 		destination		= dest;
 		maxAmount		= max;
+		shakeTimer		= 0.0f;
+		shakeRadian		= 0.0f;
+		shakeAmpl		= 0.0f;
+		shake			= Donya::Vector2::Zero();
 
 		sprite.AssignSpriteID( meterSpriteID );
 		sprite.origin	= { 0.0f, 0.0f };
@@ -82,15 +86,17 @@ namespace Meter
 	}
 	void Drawer::Update( float elapsedTime )
 	{
+		ShakeUpdate( elapsedTime );
+
 		const float diff = destination - current;
 		if ( Donya::SignBit( diff ) == 0 ) { return; }
 		// else
-
 
 		// Reducing is immediately
 		if ( diff < 0 )
 		{
 			current = destination;
+			ShakeInit( diff );
 			return;
 		}
 		// else
@@ -103,18 +109,27 @@ namespace Meter
 			current = destination;
 		}
 
+		// Make to do not magnify the volume by multiple playing in same time
+		Donya::Sound::Stop( Music::RecoverHP );
 		Donya::Sound::Play( Music::RecoverHP );
 	}
 	void Drawer::Draw( float drawDepth ) const
 	{
+		const auto normalPos = sprite.pos;
+		sprite.pos += shake;
+
 		DrawGauge( drawDepth );
 		DrawAmount( drawDepth );
+		
+		sprite.pos = normalPos;
 	}
 	void Drawer::DrawIcon( Icon kind, float drawDepth ) const
 	{
 		const auto registeredPos	= sprite.pos;
 		const auto registeredColor	= sprite.color;
 		const auto &data = Parameter::GetMeter();
+
+		sprite.pos += shake;
 		
 		// Frame
 		sprite.pos		+= data.iconFramePosOffset;
@@ -137,6 +152,8 @@ namespace Meter
 	{
 		const auto registeredPos = sprite.pos;
 		const auto &data = Parameter::GetMeter();
+
+		sprite.pos += shake;
 		
 		// Frame
 		sprite.pos		+= data.remainFramePosOffset;
@@ -180,6 +197,58 @@ namespace Meter
 	{
 		const float diff = destination - current;
 		return ( Donya::SignBit( diff ) == 1 ) ? true : false;
+	}
+	void Drawer::ShakeInit( float damage )
+	{
+		const auto &data = Parameter::GetMeter();
+		
+		shakeTimer	= data.shakeSecond;
+		shakeRadian	= 0.0f;
+		shake		= Donya::Vector2::Zero();
+
+		const auto  &range			= data.shakeDamageInfluenceRange;
+		const float  rangeLength	= range.y - range.x;
+		if ( IsZero( rangeLength ) )
+		{
+			_ASSERT_EXPR( 0, L"Error: Division by zero!" );
+			shakeAmpl = data.shakeBaseAmpl;
+		}
+		else
+		{
+			float damageFactor = Donya::Clamp( damage, range.x, range.y );
+			damageFactor /= rangeLength;
+
+			shakeAmpl = data.shakeBaseAmpl + ( data.shakeDamageAmpl * damageFactor );
+		}
+	}
+	void Drawer::ShakeUpdate( float elapsedTime )
+	{
+		shakeTimer -= elapsedTime;
+		if ( shakeTimer <= 0.0f )
+		{
+			shakeTimer = 0.0f;
+			shake = Donya::Vector2::Zero();
+			return;
+		}
+		// else
+
+		const auto &data = Parameter::GetMeter();
+		if ( IsZero( data.shakeCycleSec ) || IsZero( data.shakeSecond ) )
+		{
+			_ASSERT_EXPR( 0, L"Error: Division by zero!" );
+			shakeTimer = 0.0f; // To be end
+			shake = Donya::Vector2::Zero();
+			return;
+		}
+		// else
+
+		const float rotAmount = 1.0f / data.shakeCycleSec;
+		shakeRadian += rotAmount;
+
+		const float attenuateFactor = shakeTimer / data.shakeSecond;
+		const float ampl = sinf( shakeRadian ) * shakeAmpl;
+
+		shake.x = ampl * attenuateFactor;
 	}
 	void Drawer::DrawGauge( float drawDepth ) const
 	{
@@ -239,6 +308,23 @@ namespace Meter
 
 		ImGui::DragFloat( u8"‚P•bŠÔ‚Ì‰ñ•œ—Ê", &recoveryAmount );
 		recoveryAmount = std::max( 0.01f, recoveryAmount );
+
+		if ( ImGui::TreeNode( u8"ƒVƒFƒCƒNŠÖ˜A" ) )
+		{
+			ImGui::DragFloat( u8"‘S‘Ì•b”",				&shakeSecond,		0.01f );
+			ImGui::DragFloat( u8"‚PŽüŠú‚Ì•b”",			&shakeCycleSec,		0.01f );
+			ImGui::DragFloat( u8"Šî–{‘•—Ê",			&shakeBaseAmpl,		0.01f );
+			ImGui::DragFloat( u8"—Ê•â³‚Ì‘•—Ê",			&shakeDamageAmpl,	0.01f );
+			ImGui::DragFloat2( u8"—Ê•â³‚Ì‰ºŒÀEãŒÀ",	&shakeDamageInfluenceRange.x );
+			shakeSecond		= std::max( 0.01f, shakeSecond		);
+			shakeCycleSec	= std::max( 0.01f, shakeCycleSec	);
+			shakeBaseAmpl	= std::max( 0.0f,  shakeBaseAmpl	);
+			shakeDamageAmpl	= std::max( 0.0f,  shakeDamageAmpl	);
+			shakeDamageInfluenceRange.x = std::max( 1.0f,  shakeDamageInfluenceRange.x );
+			shakeDamageInfluenceRange.y = std::max( 0.1f + shakeDamageInfluenceRange.x, shakeDamageInfluenceRange.y );
+
+			ImGui::TreePop();
+		}
 	}
 #endif // USE_IMGUI
 }

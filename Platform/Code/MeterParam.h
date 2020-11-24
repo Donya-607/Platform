@@ -32,7 +32,13 @@ namespace Meter
 		Donya::Vector2 remainNumberPosOffset{  0.0f,  0.0f }; // From "remainFramePosOffset"
 		Donya::Vector2 remainNumberScale	{  1.0f,  1.0f };
 
-		float recoveryAmount = 30.0f; // Per second
+		float recoveryAmount	= 30.0f; // Per second
+
+		float shakeSecond		= 1.0f;
+		float shakeCycleSec		= 1.0f;
+		float shakeBaseAmpl		= 1.0f;
+		float shakeDamageAmpl	= 1.0f;
+		Donya::Vector2 shakeDamageInfluenceRange{ 1.0f, 10.0f }; // X:Min, Y:Max
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -70,6 +76,17 @@ namespace Meter
 			}
 			if ( 3 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( shakeSecond					),
+					CEREAL_NVP( shakeCycleSec				),
+					CEREAL_NVP( shakeBaseAmpl				),
+					CEREAL_NVP( shakeDamageAmpl				),
+					CEREAL_NVP( shakeDamageInfluenceRange	)
+				);
+			}
+			if ( 4 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -79,4 +96,4 @@ namespace Meter
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Meter::MeterParam, 2 )
+CEREAL_CLASS_VERSION( Meter::MeterParam, 3 )
