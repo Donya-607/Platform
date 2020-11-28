@@ -74,6 +74,22 @@ namespace Door
 	{
 		parameter.ShowImGuiNode( nodeCaption );
 	}
+	void Parameter::ShowImGuiNode()
+	{
+		ImGui::Helper::ShowAABBNode( u8"障害判定",		&hitBox				);
+		ImGui::Helper::ShowAABBNode( u8"通過判定範囲",	&triggerAreaBase	);
+		// Make to tell as disable
+		hitBox.pos			= Donya::Vector3::Zero();
+		triggerAreaBase.pos	= Donya::Vector3::Zero();
+
+		ImGui::DragFloat( u8"通過判定の拡大量", &triggerAreaAddSize, 0.01f );
+		triggerAreaAddSize = std::max( 0.01f, triggerAreaAddSize );
+
+		ImGui::DragFloat( u8"開・モーション速度", &animeSpeedOpen,	0.01f );
+		ImGui::DragFloat( u8"閉・モーション速度", &animeSpeedClose,	0.01f );
+		animeSpeedOpen	= std::max( 0.01f, animeSpeedOpen	);
+		animeSpeedClose	= std::max( 0.01f, animeSpeedClose	);
+	}
 #endif // USE_IMGUI
 
 	void Instance::Init()
@@ -88,7 +104,10 @@ namespace Door
 		if ( !nowPlaying ) { return; }
 		// else
 
-		model.UpdateMotion( elapsedTime, scast<int>( nowMotion ) );
+		const auto &data = FetchParameter();
+		const float &motionSpeed = ( nowMotion == Motion::Open ) ? data.animeSpeedOpen : data.animeSpeedClose;
+
+		model.UpdateMotion( elapsedTime * motionSpeed, scast<int>( nowMotion ) );
 		if ( model.animator.WasEnded() )
 		{
 			nowPlaying = false;
@@ -177,6 +196,10 @@ namespace Door
 	{
 		return nowOpen;
 	}
+	bool Instance::NowPlayingAnimation() const
+	{
+		return nowPlaying;
+	}
 	void Instance::Open()
 	{
 		nowOpen = true;
@@ -198,6 +221,9 @@ namespace Door
 		body.pos		= wsBasePos;
 		triggerArea		= data.triggerAreaBase;
 		triggerArea.pos	= wsBasePos;
+		// Magnify to coming side
+		triggerArea.size.x		+= data.triggerAreaAddSize;
+		triggerArea.offset.x	+= data.triggerAreaAddSize * 0.5f;
 
 		auto Abs = []( const Donya::Vector3 &v )
 		{

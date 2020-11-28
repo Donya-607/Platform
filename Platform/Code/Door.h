@@ -70,6 +70,7 @@ namespace Door
 		void AssignParameter( const Donya::Vector3 &wsBaseFootPos );
 	public:
 		bool NowOpen() const;
+		bool NowPlayingAnimation() const;
 		void Open();
 		void Close();
 	private:
