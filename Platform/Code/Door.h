@@ -74,7 +74,7 @@ namespace Door
 		void Open();
 		void Close();
 	private:
-		void AssignRotatedBodies( Definition::Direction enablePassDirection, const Donya::Vector3 &wsBaseFootPos );
+		void AssignRotatedBodies( Definition::Direction enablePassDirection, Donya::Vector3 wsBaseFootPos );
 		void StartMotion( Motion motionKind );
 		Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:

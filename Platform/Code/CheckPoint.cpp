@@ -126,6 +126,8 @@ namespace CheckPoint
 	#if USE_IMGUI
 	void Container::RemakeByCSV( const CSVLoader &loadedData )
 	{
+		areas.clear();
+
 		auto AppendIfPoint = [&]( int id, size_t r, size_t c )
 		{
 			if ( id != StageFormat::CheckPoint ) { return; }

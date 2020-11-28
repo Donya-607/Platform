@@ -65,7 +65,11 @@ namespace Definition
 			}
 			else
 			{
-				states[i] = ImGui::RadioButton( captions[i], *p == directions[i] );
+				if ( ImGui::RadioButton( captions[i], states[i] ) )
+				{
+					states.fill( false ); // True state is only once
+					states[i] = true;
+				}
 			}
 
 			if ( i + 1 < directionCount )

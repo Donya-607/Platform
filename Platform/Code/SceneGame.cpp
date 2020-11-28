@@ -3299,7 +3299,7 @@ void SceneGame::UseImGui( float elapsedTime )
 		{
 			static bool applyBoss	= false;
 			static bool applyClear	= false;
-			static bool applyDoor	= false;
+			static bool applyDoor	= true;
 			static bool applyEnemy	= false;
 			static bool applyItem	= false;
 			static bool applyMap	= true;

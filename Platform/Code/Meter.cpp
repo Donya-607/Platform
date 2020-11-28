@@ -109,9 +109,13 @@ namespace Meter
 			current = destination;
 		}
 
-		// Make to do not magnify the volume by multiple playing in same time
-		Donya::Sound::Stop( Music::RecoverHP );
-		Donya::Sound::Play( Music::RecoverHP );
+		// Do not play the SE if the game pausing
+		if ( !IsZero( elapsedTime ) )
+		{
+			// Make to do not magnify the volume by multiple playing in same time
+			Donya::Sound::Stop( Music::RecoverHP );
+			Donya::Sound::Play( Music::RecoverHP );
+		}
 	}
 	void Drawer::Draw( float drawDepth ) const
 	{

@@ -252,7 +252,8 @@ namespace Boss
 	}
 	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Input &input )
 	{
-		if ( input.dontMove ) { return; }
+		if ( input.dontMove			) { return; }
+		if ( IsZero( elapsedTime )	) { return; } // If the game pausing
 		// else
 
 		inst.Fall( elapsedTime );

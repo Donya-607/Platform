@@ -98,9 +98,15 @@ namespace Door
 		nowPlaying	= false;
 		model.Initialize( GetModelPtrOrNullptr() );
 		model.animator.DisableLoop();
+		model.AssignMotion( scast<int>( Motion::Open ) );
 	}
 	void Instance::Update( float elapsedTime )
 	{
+	#if USE_IMGUI
+		// Assign the changes as immediately
+		AssignRotatedBodies( passDirection, body.pos );
+	#endif // USE_IMGUI
+
 		if ( !nowPlaying ) { return; }
 		// else
 
@@ -139,7 +145,7 @@ namespace Door
 #if DEBUG_MODE
 	void Instance::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) const
 	{
-		if ( !Common::IsShowCollision() ) { return; }
+		if ( !Common::IsShowCollision() || !pRenderer ) { return; }
 		// else
 		
 	#if DEBUG_MODE
@@ -209,14 +215,19 @@ namespace Door
 	{
 		StartMotion( Motion::Close );
 	}
-	void Instance::AssignRotatedBodies( Definition::Direction enablePassDir, const Donya::Vector3 &wsBasePos )
+	void Instance::AssignRotatedBodies( Definition::Direction enablePassDir, Donya::Vector3 wsBasePos )
 	{
-		constexpr Donya::Quaternion rotRoll90degCW{ 0.0f, 0.0f, 0.7071f, 0.7071f };
-		constexpr Donya::Quaternion rotYaw180degCW{ 0.0f, 1.0f, 0.0000f, 0.0000f };
-		
+		// The quaternion is made by half radian, so 90deg is cos(45deg).
+		constexpr float cos90deg = 0.70710678118655f;
+		constexpr float sin90deg = cos90deg;
+		constexpr Donya::Quaternion rotPitch270deg{ -sin90deg, +0.00000f, +0.00000f, cos90deg };
+		constexpr Donya::Quaternion rotYaw180deg  { +0.00000f, +1.00000f, +0.00000f, 0.00000f };
+		constexpr Donya::Quaternion rotRoll90deg  { +0.00000f, +0.00000f, -sin90deg, cos90deg };
+
 		// Assign the default(Right direction) body data
 		const auto &data = FetchParameter();
 		passDirection	= enablePassDir;
+		orientation		= Donya::Quaternion::Identity();
 		body			= data.hitBox;
 		body.pos		= wsBasePos;
 		triggerArea		= data.triggerAreaBase;
@@ -243,6 +254,8 @@ namespace Door
 
 			body.size			= Abs( body.size		);
 			triggerArea.size	= Abs( triggerArea.size	);
+
+			orientation.RotateBy( rotation );
 		};
 
 		using Dir = Definition::Direction;
@@ -251,20 +264,21 @@ namespace Door
 
 		if ( passDirection == Dir::Left || passDirection == Dir::Up )
 		{
+			RotateBodies( rotYaw180deg );
+
 			if ( passDirection == Dir::Up )
 			{
-				RotateBodies( rotRoll90degCW );
+				RotateBodies( rotRoll90deg );
 			}
-
-			RotateBodies( rotYaw180degCW );
 		}
 		else
 		if ( passDirection == Dir::Down )
 		{
-			RotateBodies( rotRoll90degCW );
+			RotateBodies( rotRoll90deg );
 		}
 		else
-		// Also come here when the "passDirection" has multiple direction
+		// Come here the Right and other(the Nil or a multiple direction)
+		// for guarantee the direction has unit direction
 		{
 			// Enable only uni-direction
 			passDirection = Dir::Right;
@@ -274,6 +288,7 @@ namespace Door
 	{
 		nowMotion	= motionKind;
 		nowPlaying	= true;
+		model.animator.ResetTimer();
 		model.AssignMotion( scast<int>( nowMotion ) );
 	}
 	Donya::Vector4x4 Instance::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
@@ -319,6 +334,10 @@ namespace Door
 		ImGui::Checkbox( u8"モーション再生中か",	&nowPlaying	);
 		ImGui::Checkbox( u8"開いているか",		&nowOpen	);
 
+		if ( ImGui::Button( u8"開ける" ) ) { Open(); }
+		ImGui::SameLine();
+		if ( ImGui::Button( u8"閉める" ) ) { Close(); }
+
 
 		ImGui::Text( u8"「中心座標」が自機の足元となります" );
 		ImGui::Helper::ShowAABBNode( u8"障害判定",		&body			);
@@ -359,7 +378,7 @@ namespace Door
 
 		for ( const auto &it : doors )
 		{
-			it.Draw( pRenderer );
+			it.DrawHitBox( pRenderer, VP );
 		}
 	}
 #endif // DEBUG_MODE
@@ -367,7 +386,7 @@ namespace Door
 	{
 		for ( auto &it : doors )
 		{
-			if ( !it.NowOpen() ) { continue; }
+			if ( it.NowOpen() ) { continue; }
 			// else
 
 			if ( Donya::Collision::IsHit( it.GetTriggerArea(), other ) )
@@ -424,6 +443,8 @@ namespace Door
 	#if USE_IMGUI
 	void Container::RemakeByCSV( const CSVLoader &loadedData )
 	{
+		doors.clear();
+
 		auto AppendIfPoint = [&]( int id, size_t r, size_t c )
 		{
 			if ( id != StageFormat::Door ) { return; }
