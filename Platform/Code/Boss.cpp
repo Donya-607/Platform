@@ -380,8 +380,11 @@ namespace Boss
 	}
 	std::vector<Donya::Collision::Box3F> Base::FetchSolidsByBody( const Map &terrain, const Donya::Collision::Box3F &hitBox, float elapsedTime, const Donya::Vector3 &currentVelocity )
 	{
-		const  auto movement	= currentVelocity * elapsedTime;
-		const  auto aroundTiles	= terrain.GetPlaceTiles( hitBox, movement );
+		const auto movement		= currentVelocity * elapsedTime;
+		const auto aroundTiles	= terrain.GetPlaceTiles( hitBox, movement );
+			  auto aroundSolids = Map::ToAABBSolids( aroundTiles, terrain, hitBox );
+		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
+
 		return Map::ToAABBSolids( aroundTiles, terrain, hitBox );
 	}
 	int  Base::MoveOnlyX( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids )

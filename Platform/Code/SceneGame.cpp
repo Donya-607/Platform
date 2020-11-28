@@ -599,9 +599,17 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	const float deltaTimeForAnime = ( scroll.active ) ? 0.0f : elapsedTime;
 
 
-	if ( pSky ) { pSky->Update( elapsedTime ); }
-
-	if ( pMap ) { pMap->Update( deltaTimeForMove ); }
+	if ( pSky	) { pSky->Update( elapsedTime );		}
+	if ( pMap	) { pMap->Update( deltaTimeForMove );	}
+	if ( pDoors	)
+	{
+		pDoors->Update( elapsedTime );
+		if ( pMap )
+		{
+			pMap->ClearExtraSolids();
+			pMap->RegisterExtraSolids( pDoors->GetDoorBodies() );
+		}
+	}
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 
@@ -659,7 +667,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
 	BossUpdate( deltaTimeForMove, playerPos );
 	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
-	if ( pDoors ) { pDoors->Update( elapsedTime ); }
 
 
 

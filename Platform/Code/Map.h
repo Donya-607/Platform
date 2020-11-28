@@ -105,9 +105,9 @@ public:
 	static std::vector<Donya::Collision::Box3F> ToAABBKillAreas( const std::vector<std::shared_ptr<const Tile>> &constTilePtrs, const Map &terrain, const Donya::Collision::Box3F &unused = {}, bool removeEmpties = true );
 private: // shared_ptr<> make be able to copy
 	using ElementType = std::shared_ptr<Tile>;
-	std::vector<std::vector<ElementType>> tilePtrs; // [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
-private:
-	std::unique_ptr<ModelHelper::StaticSet> pModel = nullptr;
+	std::vector<std::vector<ElementType>>	tilePtrs;	// [Row][Column], [Y][X]. "nullptr" means that placing coordinate is space(empty).
+	std::vector<Donya::Collision::Box3F>	extraSolids;// It used for a registering of external solids
+	std::unique_ptr<ModelHelper::StaticSet>	pModel = nullptr;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -146,6 +146,10 @@ public:
 	/// [Option] "wsSearchersVelocity" can be extend the search area.
 	/// </summary>
 	std::vector<std::shared_ptr<const Tile>> GetPlaceTiles( const Donya::Collision::Box3F &wsSearchArea, const Donya::Vector3 &wsSearchersVelocity = { 0.0f, 0.0f, 0.0f } ) const;
+public:
+	void ClearExtraSolids();
+	void RegisterExtraSolids( const std::vector<Donya::Collision::Box3F> &externalSolids );
+	const std::vector<Donya::Collision::Box3F> &GetExtraSolids() const;
 private:
 	/// <summary>
 	/// It calls Method() with an argument of "std::shared_ptr&lt;Tile&gt;(ElementType) &amp;".

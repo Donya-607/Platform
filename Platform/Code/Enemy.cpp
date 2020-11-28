@@ -266,7 +266,9 @@ namespace Enemy
 		const auto myBody		= GetHitBox();
 		const auto movement		= velocity * elapsedTime;
 		const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
-		const auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
+			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
+		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
+
 		Actor::MoveX( movement.x, aroundSolids );
 		Actor::MoveZ( movement.z, aroundSolids );
 

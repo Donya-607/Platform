@@ -481,6 +481,18 @@ std::vector<std::shared_ptr<const Tile>> Map::GetPlaceTiles( const Donya::Collis
 
 	return std::move( results );
 }
+void Map::ClearExtraSolids()
+{
+	extraSolids.clear();
+}
+void Map::RegisterExtraSolids( const std::vector<Donya::Collision::Box3F> &others )
+{
+	Donya::AppendVector( &extraSolids, others );
+}
+const std::vector<Donya::Collision::Box3F> &Map::GetExtraSolids() const
+{
+	return extraSolids;
+}
 bool Map::LoadMap( int stageNumber, bool fromBinary )
 {
 	const std::string filePath	= ( fromBinary )

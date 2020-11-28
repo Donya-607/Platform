@@ -63,7 +63,8 @@ namespace Bullet
 
 		const auto movement		= acceleratedVelocity * elapsedTime;
 		const auto aroundTiles	= terrain.GetPlaceTiles( mover.body, movement );
-		const auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, mover.body );
+			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, mover.body );
+		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
 
 		bool wasCollided  = false;
 		int  collideIndex = -1;

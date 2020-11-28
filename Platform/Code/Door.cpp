@@ -404,7 +404,7 @@ namespace Door
 
 		for ( const auto &it : doors )
 		{
-			if ( !it.NowOpen() ) { continue; }
+			if ( it.NowOpen() ) { continue; }
 			// else
 
 			bodies.emplace_back( it.GetBody() );

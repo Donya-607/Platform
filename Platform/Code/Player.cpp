@@ -2802,8 +2802,10 @@ Donya::Collision::Box3F Player::GetLadderGrabArea() const
 }
 std::vector<Donya::Collision::Box3F> Player::FetchAroundSolids( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
 {
-	const auto aroundTiles = terrain.GetPlaceTiles( body, movement );
-	auto aroundSolids = Map::ToAABBSolids( aroundTiles, terrain, body );
+	const auto aroundTiles	= terrain.GetPlaceTiles( body, movement );
+		  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, body );
+	Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
+
 	if ( invincibleTimer.NowWorking() )
 	{
 		const auto aroundKillAreas = Map::ToAABBKillAreas( aroundTiles, terrain, body );
