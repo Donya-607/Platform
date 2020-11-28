@@ -613,6 +613,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 
+	DoorUpdate();
+
 
 	const int oldRoomID = currentRoomID;
 	if ( scroll.active )
@@ -752,17 +754,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	CameraUpdate( elapsedTime );
 
 	UpdatePlayerIniter();
-#if DEBUG_MODE
-	if ( pDoors && pPlayer )
-	{
-		const auto pl = pPlayer->GetHitBox();
-		auto pDoor = pDoors->FetchDetectedDoorOrNullptr( pl );
-		if ( pDoor )
-		{
-			pDoor->Open();
-		}
-	}
-#endif // DEBUG_MODE
 
 	// Kill the player if fall out from current room
 	if ( pPlayer && !pPlayer->NowMiss() )
@@ -1451,6 +1442,7 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 	pDoors->SaveBin( stageNo );
 	pDoors->SaveJson( stageNo );
 #endif // DEBUG_MODE
+	pThroughingDoor = nullptr;
 
 	pClearEvent = std::make_unique<ClearEvent>();
 	pClearEvent->Init( stageNo );
@@ -1606,6 +1598,31 @@ void SceneGame::StageStateUpdate( float elapsedTime )
 {
 	if ( status != State::Stage ) { return; }
 	// else
+
+#if DEBUG_MODE
+	if ( !pThroughingDoor && pDoors && pPlayer )
+	{
+		const auto pl = pPlayer->GetHitBox();
+		pThroughingDoor = pDoors->FetchDetectedDoorOrNullptr( pl );
+		if ( pThroughingDoor )
+		{
+			pThroughingDoor->Open();
+
+			const auto throughDir	= pThroughingDoor->GetThroughDirection();
+			const auto throughVec	= Donya::Vector3{ Definition::ToUnitVector( throughDir ), 0.0f };
+
+			// Save the destination to far as same as the distance between current player position and the door position
+			const auto doorBody = pThroughingDoor->GetBody();
+			// The difference direction is same as throughing direction
+			const auto diff		= doorBody.pos - pPlayer->GetPosition();
+			const auto projDiff	= Donya::Vector3::Projection( diff, throughVec );
+			const auto projSize = Donya::Vector3::Projection( doorBody.size, throughVec );
+
+			const auto toBackVec	= projDiff + projSize;
+			doorPassedPlayerPos		= doorBody.pos + toBackVec;
+		}
+	}
+#endif // DEBUG_MODE
 
 	if ( isThereBoss && pBossContainer )
 	{
@@ -1894,6 +1911,11 @@ void SceneGame::CameraUpdate( float elapsedTime )
 		if ( data.scrollTakeSecond <= scroll.elapsedSecond )
 		{
 			scroll.active = false;
+
+			if ( pThroughingDoor )
+			{
+				pThroughingDoor->Close();
+			}
 		}
 	}
 
@@ -2154,7 +2176,18 @@ Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
 	}
 	else
 	{
-		input = currentInput;
+		if ( pThroughingDoor )
+		{
+			input.headToDestination	= true;
+			input.wsDestination		=
+				( pThroughingDoor->NowOpenMotion() && pThroughingDoor->NowPlayingAnimation() )
+				? pPlayer->GetPosition() // Stay until fully open
+				: doorPassedPlayerPos;
+		}
+		else
+		{
+			input = currentInput;
+		}
 	}
 
 	return input;
@@ -2172,6 +2205,17 @@ void SceneGame::UpdatePlayerIniter()
 	playerIniter.AssignParameter( pArea->GetWorldInitialPos(), pArea->ShouldLookingRight() );
 
 	pArea->Deactivate();
+}
+
+void SceneGame::DoorUpdate()
+{
+	if ( !pThroughingDoor ) { return; }
+	// else
+
+	if ( !pThroughingDoor->NowOpen() && !pThroughingDoor->NowPlayingAnimation() )
+	{
+		pThroughingDoor = nullptr;
+	}
 }
 
 void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
@@ -2972,7 +3016,8 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	UseScreenSpaceImGui();
 
-	static Donya::Vector3 beforeBossRoomPosition{ 84.0f, -8.0f, 0.0f };
+	// static Donya::Vector3 beforeBossRoomPosition{ 84.0f, -8.0f, 0.0f };
+	static Donya::Vector3 beforeBossRoomPosition{ 62.0f, -6.0f, 0.0f };
 	auto SetPlayerToBeforeBossRoom = [&]()
 	{
 		const Map emptyMap{}; // Used for empty argument. Fali safe.
@@ -3148,6 +3193,9 @@ void SceneGame::UseImGui( float elapsedTime )
 			// else
 
 			pDoors->RemakeByCSV( loadedData );
+
+			// The door is there in a vector, so this pointer may be dangling pointer.
+			pThroughingDoor = nullptr;
 
 			if ( thenSave )
 			{

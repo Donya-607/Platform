@@ -93,14 +93,16 @@ private:
 	std::unique_ptr<Boss::Container>	pBossContainer;
 	std::unique_ptr<Player>				pPlayer;
 
-	int		stageNumber					= 0;
-	float	stageTimer					= 0.0f;	// Elapsed second from start a stage
-	float	elapsedSecondsAfterMiss		= 0.0f;
-	float	clearTimer					= 0.0f;	// Elapsed second from clear a stage
-	bool	isThereClearEvent			= false;
-	bool	isThereBoss					= false;
-	bool	wantLeave					= false;// It is valid when the status == State::Clear
-	Donya::Vector3 prevPlayerPos;				// It is used to judge the timing that the player arrives to desired position
+	int				stageNumber					= 0;
+	float			stageTimer					= 0.0f;	// Elapsed second from start a stage
+	float			elapsedSecondsAfterMiss		= 0.0f;
+	float			clearTimer					= 0.0f;	// Elapsed second from clear a stage
+	bool			isThereClearEvent			= false;
+	bool			isThereBoss					= false;
+	bool			wantLeave					= false;// It is valid when the status == State::Clear
+	Donya::Vector3	prevPlayerPos;						// It is used to judge the timing that the player arrives to desired position
+	Door::Instance	*pThroughingDoor			= nullptr;
+	Donya::Vector3	doorPassedPlayerPos;				// Destination of passing a door
 
 	Thread	thObjects;
 	Thread	thRenderers;
@@ -175,6 +177,8 @@ private:
 	Player::Input  MakePlayerInput( float elapsedTime );
 	
 	void	UpdatePlayerIniter();
+
+	void	DoorUpdate();
 
 	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 

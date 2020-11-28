@@ -64,12 +64,17 @@ namespace Door
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) const;
 	#endif // DEBUG_MODE
 	public:
+		/// <summary>
+		/// It returns unit direction
+		/// </summary>
+		Definition::Direction GetThroughDirection()		const;
 		const Donya::Collision::Box3F &GetBody()		const;
 		const Donya::Collision::Box3F &GetTriggerArea()	const;
 	public:
 		void AssignParameter( const Donya::Vector3 &wsBaseFootPos );
 	public:
 		bool NowOpen() const;
+		bool NowOpenMotion() const;
 		bool NowPlayingAnimation() const;
 		void Open();
 		void Close();
@@ -82,6 +87,8 @@ namespace Door
 		void ShowImGuiNode( const std::string &nodeCaption );
 	#endif // USE_IMGUI
 	};
+
+
 
 	class Container
 	{

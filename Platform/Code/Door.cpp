@@ -186,6 +186,10 @@ namespace Door
 	#endif // DEBUG_MODE
 	}
 #endif // DEBUG_MODE
+	Definition::Direction Instance::GetThroughDirection() const
+	{
+		return passDirection;
+	}
 	const Donya::Collision::Box3F &Instance::GetBody() const
 	{
 		return body;
@@ -201,6 +205,10 @@ namespace Door
 	bool Instance::NowOpen() const
 	{
 		return nowOpen;
+	}
+	bool Instance::NowOpenMotion() const
+	{
+		return nowMotion == Motion::Open;
 	}
 	bool Instance::NowPlayingAnimation() const
 	{

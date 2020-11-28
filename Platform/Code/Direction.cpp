@@ -2,6 +2,18 @@
 
 namespace Definition
 {
+	namespace
+	{
+		constexpr int directionCount = 4;
+		constexpr std::array<Direction, directionCount> directions
+		{
+			Direction::Up,
+			Direction::Down,
+			Direction::Left,
+			Direction::Right,
+		};
+	}
+
 	std::string GetContainName( const Direction &dir )
 	{
 		if ( dir == Direction::Nil ) { return "[Nil]"; }
@@ -15,6 +27,28 @@ namespace Definition
 		return str;
 	}
 
+	Donya::Vector2 ToUnitVector( const Direction &dir )
+	{
+		constexpr std::array<Donya::Vector2, directionCount> vectors
+		{
+			Donya::Vector2::Up(),
+			-Donya::Vector2::Up(),
+			-Donya::Vector2::Right(),
+			Donya::Vector2::Right(),
+		};
+
+		Donya::Vector2 v;
+		for ( int i = 0; i < directionCount; ++i )
+		{
+			if ( Contain( dir, directions[i] ) )
+			{
+				v += vectors[i];
+			}
+		}
+
+		return v;
+	}
+
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption, Direction *p, bool allowMultiDir, bool useTreeNode )
 	{
@@ -23,15 +57,6 @@ namespace Definition
 
 		if ( !useTreeNode ) { ImGui::Text( nodeCaption.c_str() ); }
 
-		constexpr int directionCount = 4;
-		constexpr std::array<Direction, directionCount> directions
-		{
-			Direction::Up,
-			Direction::Down,
-			Direction::Left,
-			Direction::Right,
-		};
-		
 		/*
 		bool enableUp		= Contain( *p, Direction::Up	);
 		bool enableDown		= Contain( *p, Direction::Down	);

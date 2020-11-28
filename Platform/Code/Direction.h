@@ -8,7 +8,7 @@
 namespace Definition
 {
 	/// <summary>
-	/// You can use bitwise operation.
+	/// You can use bitwise operation
 	/// </summary>
 	enum class Direction
 	{
@@ -20,9 +20,14 @@ namespace Definition
 	};
 
 	/// <summary>
-	/// GetContainName( Up | Down ) returns "[Up][Down]".
+	/// GetContainName( Up | Down ) returns "[Up][Down]"
 	/// </summary>
 	std::string GetContainName( const Direction &value );
+
+	/// <summary>
+	/// The oppositing dimension will be zero
+	/// </summary>
+	Donya::Vector2 ToUnitVector( const Direction &direction );
 
 #if USE_IMGUI
 	void ShowImGuiNode( const std::string &nodeCaption, Direction *p, bool allowMultipleDirection = true, bool useTreeNode = true );
@@ -31,7 +36,7 @@ namespace Definition
 DEFINE_ENUM_FLAG_OPERATORS( Definition::Direction )
 namespace Definition
 {
-	// These functions using a bitwise operation, so I define that in here after defined the operators.
+	// These functions using a bitwise operation, so I define that in here after defined the operators
 
 	/// <summary>
 	/// lhs + rhs
