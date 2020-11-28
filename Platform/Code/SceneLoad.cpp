@@ -24,6 +24,7 @@
 #include "Boss.h"
 #include "Bullet.h"
 #include "Common.h"
+#include "Door.h"
 #include "Enemy.h"
 #include "Effect/EffectAdmin.h"
 #include "Fader.h"
@@ -143,12 +144,13 @@ void SceneLoad::Init()
 
 		bool succeeded = true;
 
-		if ( !Boss	::LoadResource()		) { succeeded = false; }
-		if ( !Bullet::LoadResource()		) { succeeded = false; }
-		if ( !Enemy	::LoadResource()		) { succeeded = false; }
-		if ( !Item	::LoadResource()		) { succeeded = false; }
-		if ( !Meter	::LoadResource()		) { succeeded = false; }
-		if ( !Player::LoadResource()		) { succeeded = false; }
+		if ( !Boss	::LoadResource()	) { succeeded = false; }
+		if ( !Bullet::LoadResource()	) { succeeded = false; }
+		if ( !Door	::LoadResource()	) { succeeded = false; }
+		if ( !Enemy	::LoadResource()	) { succeeded = false; }
+		if ( !Item	::LoadResource()	) { succeeded = false; }
+		if ( !Meter	::LoadResource()	) { succeeded = false; }
+		if ( !Player::LoadResource()	) { succeeded = false; }
 		
 		_ASSERT_EXPR( succeeded, L"Failed: Models load is failed." );
 

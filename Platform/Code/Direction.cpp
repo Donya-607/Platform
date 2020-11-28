@@ -16,10 +16,12 @@ namespace Definition
 	}
 
 #if USE_IMGUI
-	void ShowImGuiNode( const std::string &nodeCaption, Direction *p, bool useTreeNode )
+	void ShowImGuiNode( const std::string &nodeCaption, Direction *p, bool allowMultiDir, bool useTreeNode )
 	{
 		if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
+
+		if ( !useTreeNode ) { ImGui::Text( nodeCaption.c_str() ); }
 
 		constexpr int directionCount = 4;
 		constexpr std::array<Direction, directionCount> directions
@@ -57,7 +59,15 @@ namespace Definition
 		};
 		for ( int i = 0; i < directionCount; ++i )
 		{
-			ImGui::Checkbox( captions[i], &states[i] );
+			if ( allowMultiDir )
+			{
+				ImGui::Checkbox( captions[i], &states[i] );
+			}
+			else
+			{
+				states[i] = ImGui::RadioButton( captions[i], *p == directions[i] );
+			}
+
 			if ( i + 1 < directionCount )
 			{
 				ImGui::SameLine();

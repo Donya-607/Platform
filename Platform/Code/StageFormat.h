@@ -28,7 +28,9 @@ namespace StageFormat
 		BossLast		= BossStart + 7,		// [BossStart <= N <= BossLast] is boss identifier
 
 		ItemStart		= BossLast + 1,			// [ItemStart <= N <= ItemLast] is item identifier
-		ItemLast		= ItemStart + 7,		// [ItemStart <= N <= ItemLast] is item identifier
+		ItemLast		= ItemStart + 6,		// [ItemStart <= N <= ItemLast] is item identifier
+
+		Door			= ItemLast + 1,
 
 		IdentifierCount
 	};

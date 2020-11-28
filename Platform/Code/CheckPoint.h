@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#undef max
+#undef min
 #include "cereal/types/vector.hpp"
 
 #include "Donya/Collision.h"
@@ -54,12 +56,6 @@ namespace CheckPoint
 	public:
 		void ShowImGuiNode( const std::string &nodeCaption );
 	#endif // USE_IMGUI
-	};
-
-	struct Result
-	{
-		bool			passed = false;
-		Donya::Vector3	wsInitialPos; // It is valid when the "passed" is true
 	};
 
 	class Container

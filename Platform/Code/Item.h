@@ -7,6 +7,7 @@
 #include "Donya/Vector.h"
 
 #include "Map.h"
+#include "ModelHelper.h"
 #include "ObjectBase.h"
 
 namespace Item

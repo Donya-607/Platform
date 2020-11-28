@@ -199,6 +199,7 @@
     <ClCompile Include="Code\Donya\UseImGui.cpp" />
     <ClCompile Include="Code\Donya\Vector.cpp" />
     <ClCompile Include="Code\Donya\WindowsUtil.cpp" />
+    <ClCompile Include="Code\Door.cpp" />
     <ClCompile Include="Code\Effect\Effect.cpp" />
     <ClCompile Include="Code\Effect\EffectAdmin.cpp" />
     <ClCompile Include="Code\Effect\EffectUtil.cpp" />
@@ -301,6 +302,8 @@
     <ClInclude Include="Code\Donya\UseImGui.h" />
     <ClInclude Include="Code\Donya\Vector.h" />
     <ClInclude Include="Code\Donya\WindowsUtil.h" />
+    <ClInclude Include="Code\Door.h" />
+    <ClInclude Include="Code\DoorParam.h" />
     <ClInclude Include="Code\Effect\Effect.h" />
     <ClInclude Include="Code\Effect\EffectAdmin.h" />
     <ClInclude Include="Code\Effect\EffectKind.h" />
