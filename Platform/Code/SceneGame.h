@@ -18,6 +18,7 @@
 #include "Bloom.h"
 #include "CheckPoint.h"
 #include "ClearEvent.h"
+#include "Door.h"
 #include "Effect/Effect.h"
 #include "Map.h"
 #include "Music.h"
@@ -87,6 +88,7 @@ private:
 	std::unique_ptr<Map>				pMap;
 	std::unique_ptr<Sky>				pSky;
 	std::unique_ptr<House>				pHouse;
+	std::unique_ptr<Door::Container>	pDoors;
 	std::unique_ptr<ClearEvent>			pClearEvent;
 	std::unique_ptr<Boss::Container>	pBossContainer;
 	std::unique_ptr<Player>				pPlayer;

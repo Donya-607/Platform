@@ -223,7 +223,7 @@ namespace Door
 		triggerArea.pos	= wsBasePos;
 		// Magnify to coming side
 		triggerArea.size.x		+= data.triggerAreaAddSize;
-		triggerArea.offset.x	+= data.triggerAreaAddSize * 0.5f;
+		triggerArea.offset.x	-= data.triggerAreaAddSize * 0.5f;
 
 		auto Abs = []( const Donya::Vector3 &v )
 		{
@@ -294,10 +294,6 @@ namespace Door
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
 
-		ImGui::Text( u8"「中心座標」が自機の足元となります" );
-		ImGui::Helper::ShowAABBNode( u8"障害判定",		&body			);
-		ImGui::Helper::ShowAABBNode( u8"通過判定範囲",	&triggerArea	);
-
 		const auto oldDirection = passDirection;
 		Definition::ShowImGuiNode( u8"通過可能方向",		&passDirection,	/* allowMultipleDirection = */ false );
 		if ( passDirection != oldDirection )
@@ -307,12 +303,54 @@ namespace Door
 
 		ImGui::Helper::ShowFrontNode( u8"現在の前方向",	&orientation	);
 
+		auto GetMotionName = []( Motion kind )->const char *
+		{
+			switch ( kind )
+			{
+			case Motion::Open:  return u8"Open";
+			case Motion::Close: return u8"Close";
+			default: break;
+			}
+
+			_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
+			return u8"ERROR";
+		};
+		ImGui::Text( u8"現在のモーション：%s", GetMotionName( nowMotion ) );
+		ImGui::Checkbox( u8"モーション再生中か",	&nowPlaying	);
+		ImGui::Checkbox( u8"開いているか",		&nowOpen	);
+
+
+		ImGui::Text( u8"「中心座標」が自機の足元となります" );
+		ImGui::Helper::ShowAABBNode( u8"障害判定",		&body			);
+		ImGui::Helper::ShowAABBNode( u8"通過判定範囲",	&triggerArea	);
+
 		ImGui::TreePop();
 	}
 #endif // USE_IMGUI
 
 
 
+	void Container::Init( int stageNo )
+	{
+		LoadParameter( stageNo );
+	}
+	void Container::Update( float elapsedTime )
+	{
+		for ( auto &it : doors )
+		{
+			it.Update( elapsedTime );
+		}
+	}
+	void Container::Draw( RenderingHelper *pRenderer ) const
+	{
+		if ( !pRenderer ) { return; }
+		// else
+
+		for ( const auto &it : doors )
+		{
+			it.Draw( pRenderer );
+		}
+	}
 #if DEBUG_MODE
 	void Container::DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) const
 	{
@@ -357,6 +395,8 @@ namespace Door
 	}
 	void Container::LoadParameter( int stageNo )
 	{
+		doors.clear();
+
 	#if DEBUG_MODE
 		LoadJson( stageNo );
 		// If a user was changed only a json file, the user wanna apply the changes to binary file also.
@@ -365,6 +405,11 @@ namespace Door
 	#else
 		LoadBin( stageNo );
 	#endif // DEBUG_MODE
+
+		for ( auto &it : doors )
+		{
+			it.Init();
+		}
 	}
 	void Container::LoadBin( int stageNo )
 	{
@@ -461,6 +506,17 @@ namespace Door
 		}
 
 		ImGui::TreePop();
+	}
+	size_t Container::GetDoorCount() const
+	{
+		return doors.size();
+	}
+	Instance *Container::GetInstanceOrNullptr( size_t index )
+	{
+		if ( GetDoorCount() <= index ) { return nullptr; }
+		// else
+
+		return &doors[index];
 	}
 	#endif // USE_IMGUI
 

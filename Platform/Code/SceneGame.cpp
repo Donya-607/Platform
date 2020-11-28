@@ -659,6 +659,8 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
 	BossUpdate( deltaTimeForMove, playerPos );
 	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
+	if ( pDoors ) { pDoors->Update( elapsedTime ); }
+
 
 
 	// PhysicUpdates
@@ -743,6 +745,17 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	CameraUpdate( elapsedTime );
 
 	UpdatePlayerIniter();
+#if DEBUG_MODE
+	if ( pDoors && pPlayer )
+	{
+		const auto pl = pPlayer->GetHitBox();
+		auto pDoor = pDoors->FetchDetectedDoorOrNullptr( pl );
+		if ( pDoor )
+		{
+			pDoor->Open();
+		}
+	}
+#endif // DEBUG_MODE
 
 	// Kill the player if fall out from current room
 	if ( pPlayer && !pPlayer->NowMiss() )
@@ -787,13 +800,14 @@ namespace
 	enum class DrawTarget
 	{
 		Map		= 1 << 0,
-		Bullet	= 1 << 1,
-		Player	= 1 << 2,
-		Boss	= 1 << 3,
-		Enemy	= 1 << 4,
-		Item	= 1 << 5,
+		Door	= 1 << 1,
+		Bullet	= 1 << 2,
+		Player	= 1 << 3,
+		Boss	= 1 << 4,
+		Enemy	= 1 << 5,
+		Item	= 1 << 6,
 
-		All		= Map | Bullet | Player | Boss | Enemy | Item
+		All		= Map | Door | Bullet | Player | Boss | Enemy | Item
 	};
 	DEFINE_ENUM_FLAG_OPERATORS( DrawTarget )
 }
@@ -854,11 +868,12 @@ void SceneGame::Draw( float elapsedTime )
 		? pRenderer->ActivateShaderShadowSkinning()
 		: pRenderer->ActivateShaderNormalSkinning();
 
-		if ( Drawable( Kind::Player	) && pPlayer		) { pPlayer->Draw( pRenderer.get() ); }
-		if ( Drawable( Kind::Boss	) && pBossContainer	) { pBossContainer->Draw( pRenderer.get() ); }
-		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );	}
-		if ( Drawable( Kind::Item	) ) { Item::Admin::Get().Draw( pRenderer.get() );	}
-		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() );}
+		if ( Drawable( Kind::Player	) && pPlayer		) { pPlayer->Draw( pRenderer.get() );			}
+		if ( Drawable( Kind::Boss	) && pBossContainer	) { pBossContainer->Draw( pRenderer.get() );	}
+		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );					}
+		if ( Drawable( Kind::Door	) && pDoors			) { pDoors->Draw( pRenderer.get() );			}
+		if ( Drawable( Kind::Item	) ) { Item::Admin::Get().Draw( pRenderer.get() );					}
+		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() );					}
 
 		( castShadow )
 		? pRenderer->DeactivateShaderShadowSkinning()
@@ -1070,6 +1085,7 @@ void SceneGame::Draw( float elapsedTime )
 		Enemy ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		Item  ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
 		checkPoint.DrawHitBoxes( pRenderer.get(), VP );
+		if ( pDoors			) { pDoors->DrawHitBoxes( pRenderer.get(), VP );				}
 		if ( pHouse			) { pHouse->DrawHitBoxes( pRenderer.get(), VP );				}
 	}
 #endif // DEBUG_MODE
@@ -1421,6 +1437,13 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 	// Initialize a non-dependent objects
 
 	checkPoint.LoadParameter( stageNumber );
+
+	pDoors = std::make_unique<Door::Container>();
+	pDoors->Init( stageNo );
+#if DEBUG_MODE
+	pDoors->SaveBin( stageNo );
+	pDoors->SaveJson( stageNo );
+#endif // DEBUG_MODE
 
 	pClearEvent = std::make_unique<ClearEvent>();
 	pClearEvent->Init( stageNo );
@@ -2879,6 +2902,7 @@ namespace
 	static GuiWindow adjustWindow	{ { 194.0f, 510.0f }, { 364.0f, 300.0f } };
 	static GuiWindow debugTeller	{ {  96.0f, -32.0f }, { 128.0f,  16.0f } };
 	static GuiWindow playerWindow	{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
+	static GuiWindow doorWindow		{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static GuiWindow enemyWindow	{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static GuiWindow bossWindow		{ {   0.0f,   0.0f }, { 360.0f, 180.0f } };
 	static bool enableFloatWindow = true;
@@ -3111,6 +3135,19 @@ void SceneGame::UseImGui( float elapsedTime )
 				pClearEvent->SaveEvents( stageNumber, /* fromBinary = */ false );
 			}
 		};
+		auto ApplyToDoor	= [&]( const CSVLoader &loadedData )
+		{
+			if ( !pDoors ) { return; }
+			// else
+
+			pDoors->RemakeByCSV( loadedData );
+
+			if ( thenSave )
+			{
+				pDoors->SaveBin ( stageNumber );
+				pDoors->SaveJson( stageNumber );
+			}
+		};
 		auto ApplyToEnemy	= [&]( const CSVLoader &loadedData )
 		{
 			const Donya::Vector3 playerPos = GetPlayerPosition();
@@ -3230,6 +3267,7 @@ void SceneGame::UseImGui( float elapsedTime )
 				};
 
 				ProcessOf( bufferMap,	ApplyToMap		);
+				ProcessOf( bufferMap,	ApplyToDoor		);
 				ProcessOf( bufferRoom,	ApplyToRoom		);
 				ProcessOf( bufferClear,	ApplyToClear	);
 				ProcessOf( bufferMap,	ApplyToPlayer	);
@@ -3261,6 +3299,7 @@ void SceneGame::UseImGui( float elapsedTime )
 		{
 			static bool applyBoss	= false;
 			static bool applyClear	= false;
+			static bool applyDoor	= false;
 			static bool applyEnemy	= false;
 			static bool applyItem	= false;
 			static bool applyMap	= true;
@@ -3274,7 +3313,8 @@ void SceneGame::UseImGui( float elapsedTime )
 			ImGui::Checkbox( u8"アイテムに適用",			&applyItem		);
 			ImGui::Checkbox( u8"マップに適用",			&applyMap		); ImGui::SameLine();
 			ImGui::Checkbox( u8"自機に適用",				&applyPlayer	); ImGui::SameLine();
-			ImGui::Checkbox( u8"中間ポイントに適用",		&applyCheckPt	);
+			ImGui::Checkbox( u8"中間ポイントに適用",		&applyCheckPt	); ImGui::SameLine();
+			ImGui::Checkbox( u8"ドアに適用",				&applyDoor		);
 			ImGui::Checkbox( u8"ルームに適用",			&applyRoom		);
 		
 			if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
@@ -3287,6 +3327,7 @@ void SceneGame::UseImGui( float elapsedTime )
 
 					if ( applyBoss		) { ApplyToBoss		( loader ); }
 					if ( applyClear		) { ApplyToClear	( loader ); }
+					if ( applyDoor		) { ApplyToDoor		( loader ); }
 					if ( applyEnemy		) { ApplyToEnemy	( loader ); }
 					if ( applyItem		) { ApplyToItem		( loader ); }
 					if ( applyMap		) { ApplyToMap		( loader );	}
@@ -3342,6 +3383,8 @@ void SceneGame::UseImGui( float elapsedTime )
 		if ( pMap    ) { pMap->ShowImGuiNode( u8"マップの現在", stageNumber ); }
 		if ( pHouse  ) { pHouse->ShowImGuiNode( u8"部屋の現在", stageNumber ); }
 		checkPoint.ShowImGuiNode( u8"中間ポイントの現在", stageNumber );
+		if ( pDoors  ) { pDoors->ShowImGuiNode( u8"ドアの現在", stageNumber ); }
+		Door::UpdateParameter( u8"ドアのパラメータ" );
 		ImGui::Text( "" );
 
 		if ( pPlayer ) { pPlayer->ShowImGuiNode( u8"自機の現在" ); }
@@ -3534,6 +3577,46 @@ void SceneGame::UseScreenSpaceImGui()
 			Player::UpdateParameter( u8"パラメータ" );
 
 			ImGui::End();
+		}
+	}
+
+	if ( pDoors )
+	{
+		auto Show = [&]( const Donya::Vector2 &ssPos, size_t doorIndex, auto ShowInstanceNodeMethod )
+		{
+			doorWindow.pos = ssPos;
+			doorWindow.SetNextWindow();
+
+			const std::string caption = u8"ドア" + Donya::MakeArraySuffix( doorIndex );
+
+			if ( ImGui::BeginIfAllowed( caption.c_str() ) )
+			{
+				ShowInstanceNodeMethod();
+				Door::UpdateParameter( u8"ドアのパラメータ" );
+
+				ImGui::End();
+			}
+		};
+
+		const size_t doorCount	= pDoors->GetDoorCount();
+
+		Donya::Vector2 ssPos;
+		Door::Instance *ptr = nullptr;
+		for ( size_t i = 0; i < doorCount; ++i )
+		{
+			ptr = pDoors->GetInstanceOrNullptr( i );
+			if ( !ptr ) { continue; }
+			// else
+
+			ssPos = WorldToScreen( ptr->GetBody().pos ).XY();
+			Show
+			(
+				ssPos, i,
+				[&]()
+				{
+					ptr->ShowImGuiNode( u8"ドア" + Donya::MakeArraySuffix( i ) );
+				}
+			);
 		}
 	}
 

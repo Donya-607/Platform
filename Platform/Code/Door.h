@@ -101,6 +101,9 @@ namespace Door
 		}
 		static constexpr const char *ID = "Doors";
 	public:
+		void Init( int stageNo );
+		void Update( float elapsedTime );
+		void Draw( RenderingHelper *pRenderer ) const;
 	#if DEBUG_MODE
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) const;
 	#endif // DEBUG_MODE
@@ -119,6 +122,9 @@ namespace Door
 		void SaveJson( int stageNo );
 	public:
 		void ShowImGuiNode( const std::string &nodeCaption, int stageNo, bool allowShowIONode = true );
+	public:
+		size_t GetDoorCount() const;
+		Instance *GetInstanceOrNullptr( size_t doorIndex );
 	#endif // USE_IMGUI
 	};
 }
