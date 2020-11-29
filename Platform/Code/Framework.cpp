@@ -85,10 +85,10 @@ void Framework::Draw( float elapsedTime )
 void Framework::DebugShowInformation()
 {
 	constexpr Donya::Vector2 windowSize{ 360.0f, 540.0f };
-	const     Donya::Vector2 windowPosLT
+	constexpr Donya::Vector2 windowPosLT
 	{
 		Common::ScreenWidthF()  - windowSize.x,
-		Common::ScreenHeightF() - windowSize.y,
+		48.0f
 	};
 	ImGui::SetNextWindowPos ( Donya::ToImVec( windowPosLT ), ImGuiCond_Once );
 	ImGui::SetNextWindowSize( Donya::ToImVec( windowSize  ), ImGuiCond_Once );

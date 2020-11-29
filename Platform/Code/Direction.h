@@ -4,6 +4,7 @@
 #include <Windows.h>		// Use DEFINE_ENUM_FLAG_OPERATORS
 
 #include "Donya/UseImGui.h"	// Use USE_IMGUI macro
+#include "Donya/Vector.h"
 
 namespace Definition
 {

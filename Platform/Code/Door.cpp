@@ -110,7 +110,7 @@ namespace Door
 		if ( !nowPlaying ) { return; }
 		// else
 
-		const auto &data = FetchParameter();
+		const auto  &data = FetchParameter();
 		const float &motionSpeed = ( nowMotion == Motion::Open ) ? data.animeSpeedOpen : data.animeSpeedClose;
 
 		model.UpdateMotion( elapsedTime * motionSpeed, scast<int>( nowMotion ) );

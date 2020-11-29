@@ -1,5 +1,7 @@
 #include "Direction.h"
 
+#include <array>
+
 namespace Definition
 {
 	namespace

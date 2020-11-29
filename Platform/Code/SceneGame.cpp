@@ -1599,7 +1599,8 @@ void SceneGame::StageStateUpdate( float elapsedTime )
 	if ( status != State::Stage ) { return; }
 	// else
 
-#if DEBUG_MODE
+	// If touch to a door when the player do not pass-through-ing a door.
+	// It process is not have the relation to an appearance of boss, so it is ok if the next room has a boss.
 	if ( !pThroughingDoor && pDoors && pPlayer )
 	{
 		const auto pl = pPlayer->GetHitBox();
@@ -1622,7 +1623,6 @@ void SceneGame::StageStateUpdate( float elapsedTime )
 			doorPassedPlayerPos		= doorBody.pos + toBackVec;
 		}
 	}
-#endif // DEBUG_MODE
 
 	if ( isThereBoss && pBossContainer )
 	{
@@ -2178,11 +2178,14 @@ Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
 	{
 		if ( pThroughingDoor )
 		{
+			auto destination = doorPassedPlayerPos;
+			destination.y = pPlayer->GetPosition().y;
+
 			input.headToDestination	= true;
 			input.wsDestination		=
 				( pThroughingDoor->NowOpenMotion() && pThroughingDoor->NowPlayingAnimation() )
 				? pPlayer->GetPosition() // Stay until fully open
-				: doorPassedPlayerPos;
+				: destination;
 		}
 		else
 		{
