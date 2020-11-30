@@ -2137,6 +2137,7 @@ Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
 
 		input.headToDestination	= true;
 		input.wsDestination		= destination;
+		input.useShots			= currentInput.useShots; // Allow the charging
 	}
 	else
 	if ( status == State::Clear )
@@ -2186,6 +2187,7 @@ Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
 				( pThroughingDoor->NowOpenMotion() && pThroughingDoor->NowPlayingAnimation() )
 				? pPlayer->GetPosition() // Stay until fully open
 				: destination;
+			input.useShots = currentInput.useShots; // Allow the charging
 		}
 		else
 		{

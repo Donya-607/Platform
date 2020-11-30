@@ -1006,11 +1006,13 @@ void Player::ShotManager::Init()
 
 	StopLoopSFXIfPlaying();
 }
-void Player::ShotManager::Update( const Player &inst, float elapsedTime, const InputManager &input )
+void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 {
 	// Make do not release/charge when pausing
 	if ( IsZero( elapsedTime ) ) { return; }
 	// else
+
+	const auto &input = inst.inputManager;
 
 	prevChargeSecond = currChargeSecond;
 	nowTrigger = false;
@@ -2453,7 +2455,7 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 
 	hurtBox.UpdateIgnoreList( elapsedTime );
 
-	shotManager.Update( *this, elapsedTime, inputManager );
+	shotManager.Update( *this, elapsedTime );
 
 	if ( !pMover )
 	{
@@ -2865,11 +2867,12 @@ void Player::MoveVertical  ( float elapsedTime )
 }
 bool Player::NowShotable( float elapsedTime ) const
 {
-	if ( IsZero( elapsedTime )				) { return false; } // If game time is pausing
-	if ( !pMover							) { return false; }
-	if ( pMover->NowKnockBacking( *this )	) { return false; }
-	if ( pMover->NowAppearing	( *this )	) { return false; }
-	if ( pMover->NowWinning		( *this )	) { return false; }
+	if ( IsZero( elapsedTime )						) { return false; } // If game time is pausing
+	if ( !pMover									) { return false; }
+	if ( pMover->NowKnockBacking( *this )			) { return false; }
+	if ( pMover->NowAppearing	( *this )			) { return false; }
+	if ( pMover->NowWinning		( *this )			) { return false; }
+	if ( inputManager.Current().headToDestination	) { return false; } // It will be true when such as performance. Charge is allowed, but Shot is not allowed.
 	// else
 
 	const bool generatable = ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );

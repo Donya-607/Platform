@@ -239,7 +239,7 @@ private:
 		~ShotManager();
 	public:
 		void Init();
-		void Update( const Player &instance, float elapsedTime, const InputManager &input );
+		void Update( const Player &instance, float elapsedTime );
 	public:
 		void ChargeFully();
 	public:
