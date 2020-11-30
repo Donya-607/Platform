@@ -97,9 +97,10 @@ namespace Bullet
 	{
 		Base::Update( elapsedTime, wsScreenHitBox );
 
-		currentDegree += Parameter::GetSkullShield().rotateDegree * elapsedTime;
-
 		const auto &data = Parameter::GetSkullShield();
+
+		currentDegree += data.rotateDegree * elapsedTime;
+
 		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
 	}
 	void SkullShield::Draw( RenderingHelper *pRenderer ) const

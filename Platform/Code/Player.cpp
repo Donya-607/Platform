@@ -2228,7 +2228,7 @@ void Player::ShieldGun::Update( Player &inst, float elapsedTime )
 	// else
 
 	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
-	if ( !pInstance )
+	if ( !pInstance || pInstance->WasProtected() )
 	{
 		// The handle has been invalided
 		ReleaseShieldHandle( inst );
