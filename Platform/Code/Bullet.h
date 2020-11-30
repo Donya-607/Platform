@@ -133,6 +133,7 @@ namespace Bullet
 		bool							removeIfOutScreen	= true;
 		bool							wantRemove			= false;
 		mutable bool					wasCollided			= false;
+		mutable int						collidedCallingCount= 0; // It counts the count of the called CollidedToObject() until next update. It used for consider to play a collide SE.
 		
 		// It means: "(was protected) from XXX side".
 		enum class ProtectedInfo

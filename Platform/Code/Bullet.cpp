@@ -279,6 +279,7 @@ namespace Bullet
 
 		body.UpdateIgnoreList( elapsedTime );
 		hitSphere.UpdateIgnoreList( elapsedTime );
+		collidedCallingCount = 0;
 
 		secondToRemove -= elapsedTime;
 		if ( secondToRemove <= 0.0f )
@@ -398,6 +399,14 @@ namespace Bullet
 	}
 	void Base::CollidedToObject( bool otherIsBroken ) const
 	{
+		// Play a SE and an effect only first time. Because it may called multiple times in the same frame
+		collidedCallingCount++;
+		if ( collidedCallingCount == 1 )
+		{
+			GenerateCollidedEffect();
+			PlayCollidedSE();
+		}
+
 		const bool isSolid = Definition::Damage::Contain( Definition::Damage::Type::ForcePierce, damage.type );
 		if ( isSolid ) { return; }
 		// else
@@ -407,7 +416,6 @@ namespace Bullet
 		// else
 
 		wasCollided = true;
-		// Donya::Sound::Play( Music::Bullet_Hit );
 	}
 	void Base::ProtectedBy( const Donya::Collision::Box3F &otherBody ) const
 	{
@@ -496,13 +504,11 @@ namespace Bullet
 	}
 	void Base::CollidedProcess()
 	{
-		wasCollided		= false;
-		wantRemove		= true;
-		body.exist		= false;
-		hitSphere.exist	= false;
-
-		GenerateCollidedEffect();
-		PlayCollidedSE();
+		collidedCallingCount	= 0;
+		wasCollided				= false;
+		wantRemove				= true;
+		body.exist				= false;
+		hitSphere.exist			= false;
 	}
 	void Base::ProtectedProcess()
 	{
