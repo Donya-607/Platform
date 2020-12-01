@@ -1,11 +1,13 @@
 #include "Door.h"
 
+#include "Donya/Sound.h"
 #include "Donya/Useful.h"
 
 #include "Common.h"
 #include "DoorParam.h"
 #include "FilePath.h"
 #include "Map.h"
+#include "Music.h"
 #include "Parameter.h"
 #include "StageFormat.h"
 
@@ -218,10 +220,12 @@ namespace Door
 	{
 		nowOpen = true;
 		StartMotion( Motion::Open );
+		Donya::Sound::Play( Music::Door_OpenClose );
 	}
 	void Instance::Close()
 	{
 		StartMotion( Motion::Close );
+		Donya::Sound::Play( Music::Door_OpenClose );
 	}
 	void Instance::AssignRotatedBodies( Definition::Direction enablePassDir, Donya::Vector3 wsBasePos )
 	{

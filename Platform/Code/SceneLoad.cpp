@@ -227,15 +227,20 @@ void SceneLoad::Init()
 
 			Bundle{ ID::Bullet_HitBuster,			"./Data/Sounds/SE/Bullet/Hit_Buster.wav",			false	},
 			Bundle{ ID::Bullet_HitShield,			"./Data/Sounds/SE/Bullet/Hit_Shield.wav",			false	},
+			Bundle{ ID::Bullet_HitSuperBall,		"./Data/Sounds/SE/Bullet/Hit_SuperBall.ogg",		false	},
 			Bundle{ ID::Bullet_Protected,			"./Data/Sounds/SE/Bullet/Protected.wav",			false	},
 			Bundle{ ID::Bullet_ShotBuster,			"./Data/Sounds/SE/Bullet/Shot_Buster.wav",			false	},
 			Bundle{ ID::Bullet_ShotShield_Expand,	"./Data/Sounds/SE/Bullet/Shot_Shield_Expand.wav",	false	},
 			Bundle{ ID::Bullet_ShotShield_Throw,	"./Data/Sounds/SE/Bullet/Shot_Shield_Throw.wav",	false	},
 			Bundle{ ID::Bullet_ShotSkullBuster,		"./Data/Sounds/SE/Bullet/Shot_Skull_Buster.wav",	false	},
 			
+			Bundle{ ID::CatchItem,					"./Data/Sounds/SE/Effect/CatchItem.ogg",			false	},
+			
 			Bundle{ ID::Charge_Complete,			"./Data/Sounds/SE/Effect/Charge_Complete.wav",		false	},
 			Bundle{ ID::Charge_Loop,				"./Data/Sounds/SE/Effect/Charge_Loop.ogg",			true	},
 			Bundle{ ID::Charge_Start,				"./Data/Sounds/SE/Effect/Charge_Start.wav",			false	},
+			
+			Bundle{ ID::Door_OpenClose,				"./Data/Sounds/SE/Map/Door_OpenClose.ogg",			false	},
 			
 			Bundle{ ID::Performance_AppearBoss,		"./Data/Sounds/SE/Performance/AppearBoss.ogg",		false	},
 			Bundle{ ID::Performance_ClearStage,		"./Data/Sounds/SE/Performance/ClearStage.ogg",		false	},

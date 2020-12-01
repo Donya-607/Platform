@@ -14,16 +14,21 @@ namespace Music
 
 		Bullet_HitBuster,
 		Bullet_HitShield,
+		Bullet_HitSuperBall,
 		Bullet_Protected,
 		Bullet_ShotBuster,
 		Bullet_ShotShield_Expand,
 		Bullet_ShotShield_Throw,
 		Bullet_ShotSkullBuster,
 
+		CatchItem,
+
 		Charge_Complete,
 		Charge_Loop,
 		Charge_Start,
-		
+
+		Door_OpenClose,
+
 		Performance_AppearBoss,
 		Performance_ClearStage,
 

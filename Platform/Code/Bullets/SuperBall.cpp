@@ -90,6 +90,7 @@ namespace Bullet
 			accelCount = std::min( data.accelerateCount, accelCount );
 
 			UpdateOrientation( velocity.Unit() );
+			PlayCollidedSE();
 		}
 
 		body.pos		= mover.body.pos;
@@ -109,8 +110,7 @@ namespace Bullet
 	}
 	void SuperBall::PlayCollidedSE() const
 	{
-		// TODO: Change to a designated SE
-		Donya::Sound::Play( Music::Bullet_HitBuster );
+		Donya::Sound::Play( Music::Bullet_HitSuperBall );
 	}
 	Definition::Damage SuperBall::GetDamageParameter() const
 	{

@@ -3,11 +3,13 @@
 #include <numeric>			// Use std::accumulate
 
 #include "Donya/Random.h"
+#include "Donya/Sound.h"
 
 #include "Common.h"			// Use IsShowCollision()
 #include "FilePath.h"
 #include "ItemParam.h"
 #include "ModelHelper.h"
+#include "Music.h"
 #include "Parameter.h"
 
 namespace Item
@@ -419,6 +421,7 @@ namespace Item
 	void Item::WasCaught() const
 	{
 		wantRemove = true;
+		Donya::Sound::Play( Music::CatchItem );
 	}
 	bool Item::OnOutSideScreen( const Donya::Collision::Box3F &wsScreen )
 	{
