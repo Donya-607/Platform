@@ -22,6 +22,7 @@
 #include "ObjectBase.h"
 #include "Parameter.h"
 #include "Renderer.h"
+#include "Weapon.h"
 
 
 class PlayerInitializer
@@ -143,13 +144,6 @@ public:
 		Strong,		// 3 damage, Pierce.
 
 		LevelCount	// Invalid
-	};
-	enum class GunKind
-	{
-		Buster,
-		Shield,
-
-		GunCount,
 	};
 private:
 	class InputManager
@@ -461,7 +455,7 @@ private:
 	class GunBase
 	{
 	private:
-		GunKind kind = GunKind::Buster;
+		Definition::WeaponKind kind = Definition::WeaponKind::Buster;
 	public:
 		virtual ~GunBase() = default;
 	public:
@@ -473,7 +467,7 @@ private:
 		virtual bool AllowFireByRelease( ShotLevel nowChargeLevel ) const = 0;
 		virtual void Fire( Player &instance, const InputManager &input ) = 0;
 	public:
-		virtual GunKind GetKind() const = 0;
+		virtual Definition::WeaponKind GetKind() const = 0;
 		virtual Donya::Vector3 GetThemeColor() const;
 	#if USE_IMGUI
 		virtual std::string GetGunName() const = 0;
@@ -486,8 +480,8 @@ private:
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
 		void Fire( Player &instance, const InputManager &input ) override;
 	public:
-		GunKind GetKind() const override
-		{ return GunKind::Buster; }
+		Definition::WeaponKind GetKind() const override
+		{ return Definition::WeaponKind::Buster; }
 	#if USE_IMGUI
 		std::string GetGunName() const override
 		{
@@ -508,8 +502,8 @@ private:
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
 		void Fire( Player &instance, const InputManager &input ) override;
 	public:
-		GunKind GetKind() const override
-		{ return GunKind::Shield; }
+		Definition::WeaponKind GetKind() const override
+		{ return Definition::WeaponKind::SkullShield; }
 	#if USE_IMGUI
 		std::string GetGunName() const override
 		{
@@ -616,7 +610,7 @@ private:
 		pGun = std::make_unique<Gun>();
 		pGun->Init( *this );
 	}
-	void AssignGunByKind( GunKind kind );
+	void AssignGunByKind( Definition::WeaponKind kind );
 private:
 	void AssignCurrentBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
 	Donya::Collision::Box3F GetNormalBody ( bool ofHurtBox ) const;

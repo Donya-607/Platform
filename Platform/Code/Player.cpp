@@ -85,18 +85,6 @@ namespace
 		return pModel;
 	}
 
-	constexpr const char *GetGunName( Player::GunKind kind )
-	{
-		switch ( kind )
-		{
-		case Player::GunKind::Buster:	return "BusterGun";
-		case Player::GunKind::Shield:	return "ShieldGun";
-		default: break;
-		}
-
-		return "ERROR";
-	}
-
 	constexpr Donya::Vector3 defaultThemeColor
 	{ // These values are from GUI
 		0.5882353186607361f,
@@ -486,7 +474,7 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::TreePop();
 	}
 
-	constexpr size_t themeCount = scast<size_t>( Player::GunKind::GunCount );
+	constexpr size_t themeCount = scast<size_t>( Definition::WeaponKind::WeaponCount );
 	if ( themeColors.size() != themeCount )
 	{
 		themeColors.resize( themeCount, Donya::Vector3{ 1.0f, 1.0f, 1.0f } );
@@ -497,7 +485,7 @@ void PlayerParam::ShowImGuiNode()
 		{
 			ImGui::ColorEdit3
 			(
-				GetGunName( scast<Player::GunKind>( i ) ),
+				Definition::GetWeaponName( scast<Definition::WeaponKind>( i ) ),
 				&themeColors[i].x
 			);
 		}
@@ -2151,7 +2139,7 @@ Donya::Vector3 Player::GunBase::GetThemeColor() const
 {
 	const auto &source = Parameter().Get().themeColors;
 	const size_t sourceCount = source.size();
-	if ( sourceCount != scast<size_t>( GunKind::GunCount ) ) { return defaultThemeColor; }
+	if ( sourceCount != scast<size_t>( Definition::WeaponKind::WeaponCount ) ) { return defaultThemeColor; }
 	// else
 
 	const size_t index = scast<size_t>( GetKind() );
@@ -2751,16 +2739,18 @@ void Player::ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain )
 
 	pReceivedDamage.reset();
 }
-void Player::AssignGunByKind( GunKind kind )
+void Player::AssignGunByKind( Definition::WeaponKind kind )
 {
-	_ASSERT_EXPR( 2 == scast<int>( GunKind::GunCount ), L"Please add the new kind's case to switch statement!" );
+	using WP = Definition::WeaponKind;
+
+	_ASSERT_EXPR( 2 == scast<int>( WP::WeaponCount ), L"Please add the new kind's case to switch statement!" );
 
 	switch ( kind )
 	{
-	case GunKind::Buster:
+	case WP::Buster:
 		AssignGun<BusterGun>();
 		return;
-	case GunKind::Shield:
+	case WP::SkullShield:
 		AssignGun<ShieldGun>();
 		return;
 	default: _ASSERT_EXPR( 0, L"Unexpected Kind of Gun!" );
@@ -3029,14 +3019,14 @@ void Player::ShiftGunIfNeeded( float elapsedTime )
 	if ( IsZero( elapsedTime ) ) { return; }
 	// else
 
-	constexpr int kindCount = scast<int>( GunKind::GunCount );
+	constexpr int kindCount = scast<int>( Definition::WeaponKind::WeaponCount );
 
 	int index = scast<int>( pGun->GetKind() );
 	index += shiftSign;
 	if ( index <  0			) { index = kindCount - 1; }
 	if ( index >= kindCount	) { index = 0; }
 
-	AssignGunByKind( scast<GunKind>( index ) );
+	AssignGunByKind( scast<Definition::WeaponKind>( index ) );
 	Donya::Sound::Play( Music::Player_ShiftGun );
 }
 Donya::Vector4x4 Player::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
