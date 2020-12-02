@@ -57,4 +57,47 @@ namespace Definition
 
 		kindBits &= ~kindAsBit;
 	}
+#if USE_IMGUI
+	void WeaponAvailableStatus::ShowImGuiNode( const char *nodeCaption )
+	{
+		if ( !ImGui::TreeNode( nodeCaption ) ) { return; }
+		// else
+
+		using WP = WeaponKind;
+		constexpr int count = static_cast<int>( WP::WeaponCount );
+
+		std::string str;
+		for ( int i = 0; i < count; ++i )
+		{
+			const WP wp = scast<WP>( i );
+			if ( IsAvailable( wp ) )
+			{
+				str += "[";
+				str += GetWeaponName( wp );
+				str += "]";
+			}
+		}
+		ImGui::Text( u8"åªç›ÅF%s", str.c_str() );
+
+		for ( int i = 0; i < count; ++i )
+		{
+			const WP wp = scast<WP>( i );
+
+			bool enabled = IsAvailable( wp );
+			ImGui::Checkbox( GetWeaponName( wp ), &enabled );
+
+			( enabled )
+			? Activate( wp )
+			: Deactivate( wp );
+
+			// Show two checkboxes per line
+			if ( ( i % 2 ) == 0 && i < count - 1 )
+			{
+				ImGui::SameLine();
+			}
+		}
+
+		ImGui::TreePop();
+	}
+#endif // USE_IMGUI
 }

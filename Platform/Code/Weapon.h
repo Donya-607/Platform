@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Donya/UseImGui.h"
+
 namespace Definition
 {
 	/// <summary>
@@ -80,5 +82,9 @@ namespace Definition
 		void Reset();
 		void Activate( WeaponKind activateKind );
 		void Deactivate( WeaponKind deactivateKind );
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const char *nodeCaption );
+	#endif // USE_IMGUI
 	};
 }

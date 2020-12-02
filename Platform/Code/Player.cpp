@@ -3078,6 +3078,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text			( u8"現在のモーション：%s",			KIND_NAMES[scast<int>( motionManager.CurrentKind() )] );
 	ImGui::Text			( u8"現在の銃口：%s",					pGun->GetGunName().c_str() );
 	ImGui::Text			( u8"現在の重力：%5.3f", nowGravity );
+	availableWeapon.ShowImGuiNode( u8"現在使用可能な武器" );
 
 	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );
