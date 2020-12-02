@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Donya/Serializer.h"
 #include "Donya/UseImGui.h"
 
 namespace Definition
@@ -76,6 +77,17 @@ namespace Definition
 		}
 	private:
 		unsigned int kindBits = 0; // It contains the WeaponKind data by bitwise operation. But the Buster(0) is absolutely has.
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize( Archive &archive, std::uint32_t version )
+		{
+			archive( kindBits );
+			if ( 1 <= version )
+			{
+				// archive();
+			}
+		}
 	public:
 		bool IsAvailable( WeaponKind kind );
 	public:
@@ -88,3 +100,4 @@ namespace Definition
 	#endif // USE_IMGUI
 	};
 }
+CEREAL_CLASS_VERSION( Definition::WeaponAvailableStatus, 0 )

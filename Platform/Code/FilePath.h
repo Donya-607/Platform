@@ -6,13 +6,15 @@ enum class FontAttribute
 {
 	Main
 };
-std::string MakeFontPathBinary( FontAttribute fontAttribute );
-std::wstring MakeFontPathFnt( FontAttribute fontAttribute );
-std::string MakeParameterPathBinary( std::string parameterName );
-std::string MakeParameterPathJson( std::string parameterName );
-std::string MakeModelPath( std::string modelName );
-std::string MakeStageParamPathBinary( std::string objectName, int stageNumber );
-std::string MakeStageParamPathJson( std::string objectName, int stageNumber );
+std::string MakeFontPathBinary		( FontAttribute fontAttribute );
+std::wstring MakeFontPathFnt		( FontAttribute fontAttribute );
+std::string MakeParameterPathBinary	( const std::string &parameterName );
+std::string MakeParameterPathJson	( const std::string &parameterName );
+std::string MakeModelPath			( const std::string &modelName );
+std::string MakeSaveDataPathBin		( const std::string &fileName );
+std::string MakeSaveDataPathJson	( const std::string &fileName );
+std::string MakeStageParamPathBinary( const std::string &objectName, int stageNumber );
+std::string MakeStageParamPathJson	( const std::string &objectName, int stageNumber );
 
 /// <summary>
 /// Returns false if the directory was not created.

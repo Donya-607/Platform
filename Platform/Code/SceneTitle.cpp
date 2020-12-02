@@ -1,7 +1,8 @@
 #include "SceneTitle.h"
 
-#include <vector>
+#include <string>
 #include <unordered_map>			// Use for imgui
+#include <vector>
 
 #include "Donya/Blend.h"
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
@@ -35,6 +36,7 @@
 #include "Parameter.h"
 #include "PlayerParam.h"			// Use for reset the remaining
 #include "PointLightStorage.h"
+#include "SaveData.h"
 #include "StageNumber.h"
 
 #undef max
@@ -418,38 +420,6 @@ namespace
 
 					ImGui::Helper::ShowBezier2DNode( u8"ベジェ曲線の制御点", pCtrlPoints, rangeMinMax.x, rangeMinMax.y );
 
-					/*
-					ImGui::Helper::ResizeByButton( pCtrlPoints, appendScale );
-					if ( pCtrlPoints->size() < 2 )
-					{
-						pCtrlPoints->resize( 2 );
-					}
-
-					const int pointCount = pCtrlPoints->size();
-					std::string caption;
-					for ( int i = 0; i < pointCount; ++i )
-					{
-						caption = Donya::MakeArraySuffix( i );
-						ImGui::SliderFloat2( caption.c_str(), &pCtrlPoints->at( i ).x, rangeMinMax.x, rangeMinMax.y );
-					}
-
-					ImGui::Text( "" ); // Line feed
-
-					static std::unordered_map<std::string, float> checkers;
-					auto found =  checkers.find( nodeCaption );
-					if ( found == checkers.end() )
-					{
-						checkers.insert( std::make_pair( nodeCaption, 0.0f ) );
-						found = checkers.find( nodeCaption );
-					}
-
-					auto &timer = found->second;
-					ImGui::SliderFloat( u8"確認用タイマ", &timer, 0.0f, 1.0f );
-
-					Donya::Vector2 result = Math::CalcBezierCurve( *pCtrlPoints, timer );
-					ImGui::SliderFloat2( u8"ベジェ曲線適用結果", &result.x, rangeMinMax.x, rangeMinMax.y );
-					*/
-
 					ImGui::TreePop();
 				};
 
@@ -514,6 +484,12 @@ CEREAL_CLASS_VERSION( Member::Camera,		1  )
 
 void SceneTitle::Init()
 {
+	// A not saved changes will be removed
+	SaveData::Admin::Get().Load();
+	// Make a save data file if that does not exist,
+	// also updates the file version if it loads an old version.
+	SaveData::Admin::Get().Save();
+
 	sceneParam.LoadParameter();
 	const auto &data = FetchParameter();
 

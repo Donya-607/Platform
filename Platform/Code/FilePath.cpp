@@ -14,11 +14,12 @@ namespace
 	static constexpr const char		*DIR_FONTS		=  "./Data/Images/Fonts/";
 	static constexpr const wchar_t	*DIR_FONTS_W	= L"./Data/Images/Fonts/";
 	static constexpr const wchar_t	*DIR_IMAGES		= L"./Data/Images/";
-	static constexpr const char		*DIR_MODELS		= "./Data/Models/";
-	static constexpr const char		*DIR_PARAMETERS	= "./Data/Parameters/";
-	static constexpr const char		*EXT_BINARY		= ".bin";
+	static constexpr const char		*DIR_MODELS		=  "./Data/Models/";
+	static constexpr const char		*DIR_PARAMETERS	=  "./Data/Parameters/";
+	static constexpr const char		*DIR_SAVEDATA	=  "./SaveData/";
+	static constexpr const char		*EXT_BINARY		=  ".bin";
 	static constexpr const wchar_t	*EXT_FONT		= L".fnt";
-	static constexpr const char		*EXT_JSON		= ".json";
+	static constexpr const char		*EXT_JSON		=  ".json";
 }
 
 namespace
@@ -47,24 +48,32 @@ std::wstring MakeFontPathFnt( FontAttribute attr )
 {
 	return DIR_FONTS_W + GetFontNameW( attr ) + EXT_FONT;
 }
-std::string MakeParameterPathBinary( std::string id )
+std::string MakeParameterPathBinary( const std::string &id )
 {
 	return DIR_PARAMETERS + id + EXT_BINARY;
 }
-std::string MakeParameterPathJson( std::string id )
+std::string MakeParameterPathJson( const std::string &id )
 {
 	return DIR_PARAMETERS + id + EXT_JSON;
 }
-std::string MakeModelPath( std::string id )
+std::string MakeModelPath( const std::string &id )
 {
 	return DIR_MODELS + id + EXT_BINARY;
 }
-std::string MakeStageParamPathBinary( std::string id, int stageNo )
+std::string MakeSaveDataPathBin( const std::string &id )
+{
+	return DIR_SAVEDATA + id + EXT_BINARY;
+}
+std::string MakeSaveDataPathJson( const std::string &id )
+{
+	return DIR_SAVEDATA + id + EXT_JSON;
+}
+std::string MakeStageParamPathBinary( const std::string &id, int stageNo )
 {
 	const std::string folder = "Stage" + Donya::MakeArraySuffix( stageNo ) + "/";
 	return MakeParameterPathBinary( folder + id );
 }
-std::string MakeStageParamPathJson( std::string id, int stageNo )
+std::string MakeStageParamPathJson( const std::string &id, int stageNo )
 {
 	const std::string folder = "Stage" + Donya::MakeArraySuffix( stageNo ) + "/";
 	return MakeParameterPathJson( folder + id );

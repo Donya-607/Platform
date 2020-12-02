@@ -103,6 +103,8 @@ private:
 	Donya::Vector3	prevPlayerPos;						// It is used to judge the timing that the player arrives to desired position
 	Door::Instance	*pThroughingDoor			= nullptr;
 	Donya::Vector3	doorPassedPlayerPos;				// Destination of passing a door
+	
+	Definition::WeaponKind	willUnlockWeapon	= Definition::WeaponKind::Buster; // "::Buster" means a none(that is always available)
 
 	Thread	thObjects;
 	Thread	thRenderers;
@@ -155,7 +157,7 @@ private:
 	void	AppearBossStateInit();
 	void	AppearBossStateUpdate( float elapsedTime );
 	
-	void	VSBossStateInit();
+	void	VSBossStateInit( Definition::WeaponKind bossWeapon );
 	void	VSBossStateUpdate( float elapsedTime );
 
 	void	ClearStateInit();

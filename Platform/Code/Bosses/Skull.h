@@ -207,13 +207,14 @@ namespace Boss
 		void Draw( RenderingHelper *pRenderer ) const override;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
 	public:
-		bool				NowAppearing()			const override;
-		bool				NowRecoverHPTiming()	const override;
-		float				GetGravity()			const override;
-		float				GetInvincibleSecond()	const override;
-		float				GetInvincibleInterval()	const override;
-		Kind				GetKind()				const override;
-		Definition::Damage	GetTouchDamage()		const override;
+		bool					NowAppearing()			const override;
+		bool					NowRecoverHPTiming()	const override;
+		float					GetGravity()			const override;
+		float					GetInvincibleSecond()	const override;
+		float					GetInvincibleInterval()	const override;
+		Kind					GetKind()				const override;
+		Definition::Damage		GetTouchDamage()		const override;
+		Definition::WeaponKind	GetUsingWeapon()		const override;
 	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;

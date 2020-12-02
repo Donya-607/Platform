@@ -899,6 +899,10 @@ namespace Boss
 	{
 		return Parameter::GetSkull().touchDamage;
 	}
+	Definition::WeaponKind Skull::GetUsingWeapon() const
+	{
+		return Definition::WeaponKind::SkullShield;
+	}
 	int  Skull::GetInitialHP() const
 	{
 		return Parameter::GetSkull().hp;

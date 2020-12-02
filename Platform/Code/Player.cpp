@@ -21,6 +21,7 @@
 #include "Music.h"
 #include "Parameter.h"
 #include "PlayerParam.h"
+#include "SaveData.h"
 #include "StageFormat.h"
 
 namespace
@@ -2403,7 +2404,11 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	? AssignMover<Appear>()
 	: AssignMover<Normal>();
 
+	
 	availableWeapon.Reset();
+	const auto &saveData = SaveData::Admin::Get().NowData();
+	ApplyAvailableWeapon( saveData.availableWeapons );
+
 	AssignGun<BusterGun>();
 }
 void Player::Uninit()

@@ -40,6 +40,7 @@
 #include "Parameter.h"
 #include "PlayerParam.h"
 #include "PointLightStorage.h"
+#include "SaveData.h"
 #include "StageNumber.h"
 
 #if DEBUG_MODE
@@ -630,8 +631,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		{
 			pSky->AdvanceHourTo( pCurrentRoom->GetHour(), data.scrollTakeSecond );
 		}
-
-		const bool oldIsThereBoss = isThereBoss;
 
 		isThereClearEvent	= ( pClearEvent		&& pClearEvent->IsThereIn( currentRoomID ) );
 		isThereBoss			= ( pBossContainer	&& pBossContainer->IsThereIn( currentRoomID ) );
@@ -1456,6 +1455,8 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 	isThereBoss = pBossContainer->IsThereIn( currentRoomID );
 	pSkullMeter.reset(); // If there a boss, it will be initialized at BossUpdate()
 
+	willUnlockWeapon = Definition::WeaponKind::Buster; // Reset
+
 	Bullet::Admin::Get().ClearInstances();
 
 	auto &itemAdmin = Item::Admin::Get();
@@ -1632,7 +1633,8 @@ void SceneGame::StageStateUpdate( float elapsedTime )
 
 void SceneGame::AppearBossStateInit()
 {
-	status = State::AppearBoss;
+	status				= State::AppearBoss;
+	willUnlockWeapon	= Definition::WeaponKind::Buster; // Init
 	FadeOutBGM();
 }
 void SceneGame::AppearBossStateUpdate( float elapsedTime )
@@ -1648,7 +1650,7 @@ void SceneGame::AppearBossStateUpdate( float elapsedTime )
 		// So if the pBossContainer is not exist, the game will stop.
 
 		_ASSERT_EXPR( 0, L"Error: The boss admin is invalid!" );
-		VSBossStateInit();
+		VSBossStateInit( Definition::WeaponKind::Buster );
 		return;
 	}
 	// else
@@ -1690,14 +1692,15 @@ void SceneGame::AppearBossStateUpdate( float elapsedTime )
 
 		if ( !pBoss->NowAppearing() )
 		{
-			VSBossStateInit();
+			VSBossStateInit( pBoss->GetUsingWeapon() );
 		}
 	}
 }
 
-void SceneGame::VSBossStateInit()
+void SceneGame::VSBossStateInit( Definition::WeaponKind bossWeapon )
 {
-	status = State::VSBoss;
+	status				= State::VSBoss;
+	willUnlockWeapon	= bossWeapon;
 	PlayBGM( Music::BGM_Boss );
 }
 void SceneGame::VSBossStateUpdate( float elapsedTime )
@@ -1713,7 +1716,16 @@ void SceneGame::VSBossStateUpdate( float elapsedTime )
 		// So if the pBossContainer is not exist, the game will stop.
 
 		_ASSERT_EXPR( 0, L"Error: The boss admin is invalid!" );
-		VSBossStateInit();
+		if ( isThereClearEvent )
+		{
+			ClearStateInit();
+		}
+		else
+		{
+			status = State::Stage;
+			FadeOutBGM();
+		}
+
 		return;
 	}
 	// else
@@ -1721,6 +1733,15 @@ void SceneGame::VSBossStateUpdate( float elapsedTime )
 	if ( !pBossContainer->IsAliveIn( currentRoomID ) )
 	{
 		isThereBoss = false;
+
+		if ( pPlayer )
+		{
+			pPlayer->ApplyAvailableWeapon( willUnlockWeapon );
+		}
+		auto &saveData = SaveData::Admin::Get();
+		saveData.Write( willUnlockWeapon );
+		saveData.Save();
+		willUnlockWeapon = Definition::WeaponKind::Buster; // Reset
 
 		if ( isThereClearEvent )
 		{
@@ -2047,7 +2068,6 @@ void SceneGame::PlayerInit( const PlayerInitializer &initializer, const Map &ter
 
 	pPlayer = std::make_unique<Player>();
 	pPlayer->Init( initializer, terrain );
-
 
 	const auto  &meterData	= FetchParameter().playerMeter;
 	const float maxHP		= scast<float>( Player::Parameter().Get().maxHP );
@@ -3039,6 +3059,10 @@ void SceneGame::UseImGui( float elapsedTime )
 		{
 			pSky->AdvanceHourTo( pCurrentRoom->GetHour(), 0.0f ); // Immediately
 		}
+
+		isThereClearEvent	= ( pClearEvent		&& pClearEvent->IsThereIn( currentRoomID ) );
+		isThereBoss			= ( pBossContainer	&& pBossContainer->IsThereIn( currentRoomID ) );
+		status				= State::Stage;
 
 		AssignCameraPos();
 		scroll.active			= false;
