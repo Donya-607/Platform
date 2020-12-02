@@ -24,7 +24,7 @@ namespace Definition
 		return "ERROR";
 	}
 
-	class AvailableStatus
+	class WeaponAvailableStatus
 	{
 	private:
 		/// <summary>
@@ -77,6 +77,7 @@ namespace Definition
 	public:
 		bool IsAvailable( WeaponKind kind );
 	public:
+		void Reset();
 		void Activate( WeaponKind activateKind );
 		void Deactivate( WeaponKind deactivateKind );
 	};

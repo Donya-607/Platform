@@ -2403,6 +2403,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	? AssignMover<Appear>()
 	: AssignMover<Normal>();
 
+	availableWeapon.Reset();
 	AssignGun<BusterGun>();
 }
 void Player::Uninit()
@@ -2580,6 +2581,14 @@ void Player::RecoverHP( int recovery )
 void Player::ChargeFully()
 {
 	shotManager.ChargeFully();
+}
+void Player::ApplyAvailableWeapon( const Definition::WeaponAvailableStatus &newStatus )
+{
+	availableWeapon = newStatus;
+}
+void Player::ApplyAvailableWeapon( const Definition::WeaponKind &kind )
+{
+	availableWeapon.Activate( kind );
 }
 bool Player::NowMiss() const
 {
@@ -3011,23 +3020,36 @@ void Player::ShiftGunIfNeeded( float elapsedTime )
 	if ( !pGun ) { return; }
 	// else
 
-	const int shiftSign = inputManager.ShiftGun();
-	if ( !shiftSign ) { return; }
-	// else
-
 	// Make can not shift by button when pausing
 	if ( IsZero( elapsedTime ) ) { return; }
 	// else
 
-	constexpr int kindCount = scast<int>( Definition::WeaponKind::WeaponCount );
+	const int shiftSign = inputManager.ShiftGun();
+	if ( !shiftSign ) { return; }
+	// else
+
+	using WP = Definition::WeaponKind;
+	constexpr int kindCount = scast<int>( WP::WeaponCount );
 
 	int index = scast<int>( pGun->GetKind() );
-	index += shiftSign;
-	if ( index <  0			) { index = kindCount - 1; }
-	if ( index >= kindCount	) { index = 0; }
+	const int oldIndex = index;
 
-	AssignGunByKind( scast<Definition::WeaponKind>( index ) );
-	Donya::Sound::Play( Music::Player_ShiftGun );
+	// Shift the kind to desired sign until available kind.
+	// The loop is safe because the wrap-around process will makes also the zero(WeaponKind::Buster), and the zero is certainly available.
+	do
+	{
+		index += shiftSign;
+		// Loop the index
+		while ( index <  0			) { index += kindCount; }
+		while ( index >= kindCount	) { index -= kindCount; }
+	}
+	while ( !availableWeapon.IsAvailable( scast<WP>( index ) ) );
+
+	if ( index != oldIndex )
+	{
+		AssignGunByKind( scast<WP>( index ) );
+		Donya::Sound::Play( Music::Player_ShiftGun );
+	}
 }
 Donya::Vector4x4 Player::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 {

@@ -4,7 +4,7 @@
 
 namespace Definition
 {
-	bool AvailableStatus::IsAvailable( WeaponKind kind )
+	bool WeaponAvailableStatus::IsAvailable( WeaponKind kind )
 	{
 		if ( kind == WeaponKind::Buster ) { return true; }
 		// else
@@ -20,7 +20,12 @@ namespace Definition
 
 		return ( kindBits & kindAsBit ) != 0;
 	}
-	void AvailableStatus::Activate( WeaponKind kind )
+	void WeaponAvailableStatus::Reset()
+	{
+		constexpr unsigned int busterOnlyBit = KindToBit( WeaponKind::Buster );
+		kindBits = busterOnlyBit;
+	}
+	void WeaponAvailableStatus::Activate( WeaponKind kind )
 	{
 		if ( kind == WeaponKind::Buster ) { return; }
 		// else
@@ -36,7 +41,7 @@ namespace Definition
 
 		kindBits |= kindAsBit;
 	}
-	void AvailableStatus::Deactivate( WeaponKind kind )
+	void WeaponAvailableStatus::Deactivate( WeaponKind kind )
 	{
 		if ( kind == WeaponKind::Buster ) { return; }
 		// else

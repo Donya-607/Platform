@@ -520,25 +520,26 @@ private:
 // Gun
 #pragma endregion
 private:
-	using					 Actor::body;		// VS a terrain
-	Donya::Collision::Box3F			hurtBox;	// VS an attack
-	using					 Actor::orientation;
-	Donya::Vector3					velocity;	// Z element is almost unused.
-	InputManager					inputManager;
-	MotionManager					motionManager;
-	ShotManager						shotManager;
-	Flusher							invincibleTimer;
-	std::unique_ptr<MoverBase>		pMover					= nullptr;
-	std::unique_ptr<GunBase>		pGun					= nullptr;
-	std::shared_ptr<Bullet::Base>	pBullet					= nullptr;
-	std::weak_ptr<const Tile>		pTargetLadder{};				// It only used for initialization of Player::GrabLadder as reference
-	float							nowGravity				= 0.0f;
-	int								currentHP				= 1;
-	float							lookingSign				= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
-	bool							onGround				= false;
+	using						 Actor::body;						// VS a terrain
+	Donya::Collision::Box3F				hurtBox;					// VS an attack
+	using						 Actor::orientation;
+	Donya::Vector3						velocity;					// Z element is almost unused.
+	InputManager						inputManager;
+	MotionManager						motionManager;
+	ShotManager							shotManager;
+	Flusher								invincibleTimer;
+	std::unique_ptr<MoverBase>			pMover				= nullptr;
+	std::unique_ptr<GunBase>			pGun				= nullptr;
+	std::shared_ptr<Bullet::Base>		pBullet				= nullptr;
+	std::weak_ptr<const Tile>			pTargetLadder{};			// It only used for initialization of Player::GrabLadder as reference
+	Definition::WeaponAvailableStatus	availableWeapon;
+	float								nowGravity			= 0.0f;
+	int									currentHP			= 1;
+	float								lookingSign			= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
+	bool								onGround			= false;
 	// TODO: These status variables can be combine by replace to MotionKind value
-	bool							prevSlidingStatus		= false;
-	bool							prevBracingStatus		= false;
+	bool								prevSlidingStatus	= false;
+	bool								prevBracingStatus	= false;
 
 	struct DamageDesc
 	{
@@ -558,6 +559,14 @@ public:
 public:
 	void RecoverHP( int recovery );
 	void ChargeFully();
+	/// <summary>
+	/// It overwrites to the current status
+	/// </summary>
+	void ApplyAvailableWeapon( const Definition::WeaponAvailableStatus &newStatus );
+	/// <summary>
+	/// It adds to the current status
+	/// </summary>
+	void ApplyAvailableWeapon( const Definition::WeaponKind &unlockKind );
 public:
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;
