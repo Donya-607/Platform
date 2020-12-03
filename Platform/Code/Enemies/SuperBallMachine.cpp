@@ -36,7 +36,8 @@ namespace Enemy
 		{
 			switch ( kind )
 			{
-			case SuperBallMachine::MotionKind::Ready:	return u8"Ready";
+			case SuperBallMachine::MotionKind::Prepare:	return u8"Prepare";
+			case SuperBallMachine::MotionKind::Soon:	return u8"Soon";
 			case SuperBallMachine::MotionKind::Fire:	return u8"Fire";
 			default: break;
 			}
@@ -49,10 +50,10 @@ namespace Enemy
 	{
 		Base::Init( parameter, wsTargetPos, wsScreenHitBox );
 
-		currentMotion = MotionKind::Ready;
+		currentMotion = MotionKind::Prepare;
 		intervalTimer = Parameter::GetSuperBallMachine().initialTimerSecond;
 
-		ChangeMotion( MotionKind::Ready );
+		ChangeMotion( MotionKind::Prepare );
 	}
 	void SuperBallMachine::Uninit()
 	{
@@ -76,12 +77,16 @@ namespace Enemy
 
 		if ( currentMotion == MotionKind::Fire && model.animator.WasEnded() )
 		{
-			ChangeMotion( MotionKind::Ready );
+			ChangeMotion( MotionKind::Prepare );
 		}
 
 		if ( currentMotion != MotionKind::Fire )
 		{
 			intervalTimer += elapsedTime;
+			if ( data.prepareSecond <= intervalTimer && currentMotion == MotionKind::Prepare )
+			{
+				ChangeMotion( MotionKind::Soon );
+			}
 		}
 
 		ShotIfNeeded( elapsedTime, wsTargetPos );
@@ -116,13 +121,6 @@ namespace Enemy
 	}
 	void SuperBallMachine::ChangeMotion( MotionKind nextKind )
 	{
-		if ( nextKind != MotionKind::Ready && nextKind != MotionKind::Fire )
-		{
-			_ASSERT_EXPR( 0, L"Error: Unexpected motion kind!" );
-			return;
-		}
-		// else
-
 		currentMotion = nextKind;
 
 		model.animator.ResetTimer();
@@ -223,6 +221,7 @@ namespace Enemy
 
 		ImGui::DragFloat3( u8"õ“G”ÍˆÍi”¼Œaj",				&capturingArea.x,		0.01f	);
 		ImGui::DragFloat ( u8"¶¬Žž‚ÌŒo‰ß•b”",				&initialTimerSecond,	0.01f	);
+		ImGui::DragFloat ( u8"€”õƒ‚[ƒVƒ‡ƒ“•b”",			&prepareSecond,			0.01f	);
 		ImGui::DragFloat ( u8"”­ŽËŠÔŠui•bj",				&fireIntervalSecond,	0.01f	);
 		ImGui::DragFloat ( u8"”­ŽËŠp“xiDegreeE‰EŒü‚«Žžj",	&fireDegree,			0.1f	);
 		ImGui::DragFloat ( u8"d—Í",							&gravity,				0.01f	);
@@ -230,6 +229,7 @@ namespace Enemy
 		capturingArea.x		= std::max( 0.01f, capturingArea.x		);
 		capturingArea.y		= std::max( 0.01f, capturingArea.y		);
 		capturingArea.z		= std::max( 0.01f, capturingArea.z		);
+		prepareSecond		= std::max( 0.01f, prepareSecond		);
 		fireIntervalSecond	= std::max( 0.01f, fireIntervalSecond	);
 	}
 #endif // USE_IMGUI
