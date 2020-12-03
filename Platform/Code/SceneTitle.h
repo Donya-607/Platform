@@ -46,10 +46,11 @@ public:
 
 	enum class Choice
 	{
-		Start = 0,
-		Option,
+		Start	= 0,	// It uses when a save data is not exist
+		NewGame	= 0,
+		LoadGame,
 		
-		ItemCount, // Do not select anything
+		ItemCount,		// Do not select anything
 	};
 private:
 	struct Shader
@@ -94,6 +95,7 @@ private:
 	float		afterDecidedTimer	= 0.0f;
 	Choice		chooseItem			= Choice::Start;
 	bool		wasDecided			= false;
+	bool		saveDataIsExist		= false;
 	bool		returnToAttract		= false; // It is valid when the performanceStatus == PerformanceState::NotPerforming
 
 	UIObject	sprTitleLogo;
@@ -119,6 +121,8 @@ private:
 	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
 	bool	CreateShaders();
 	bool	AreRenderersReady() const;
+
+	void	LoadSaveData();
 
 	void	UpdateInput();
 	void	UpdateChooseItem();

@@ -74,13 +74,14 @@ namespace
 	{
 		switch ( item )
 		{
-		case SceneTitle::Choice::Start:		return "START";
-		case SceneTitle::Choice::Option:	return "OPTION";
+		// case SceneTitle::Choice::NewGame: // [[fallthrough]]
+		case SceneTitle::Choice::Start:		return "START|NewGame";
+		case SceneTitle::Choice::LoadGame:	return "OPTION";
 		default: break;
 		}
 
 		// Fail safe
-		return GetChoiceItemName( SceneTitle::Choice::Option );
+		return GetChoiceItemName( SceneTitle::Choice::Start );
 	}
 
 	struct Member
@@ -484,11 +485,7 @@ CEREAL_CLASS_VERSION( Member::Camera,		1  )
 
 void SceneTitle::Init()
 {
-	// A not saved changes will be removed
-	SaveData::Admin::Get().Load();
-	// Make a save data file if that does not exist,
-	// also updates the file version if it loads an old version.
-	SaveData::Admin::Get().Save();
+	LoadSaveData();
 
 	sceneParam.LoadParameter();
 	const auto &data = FetchParameter();
@@ -579,6 +576,8 @@ void SceneTitle::Init()
 	effectAdmin.SetLightColorAmbient( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
 	effectAdmin.SetLightColorDiffuse( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
 	effectAdmin.SetLightDirection	( data.directionalLight.direction.XYZ() );
+
+	chooseItem = ( saveDataIsExist ) ? Choice::LoadGame : Choice::Start;
 
 	Donya::Sound::Play( Music::BGM_Title );
 }
@@ -1019,8 +1018,10 @@ void SceneTitle::Draw( float elapsedTime )
 
 				pFontRenderer->DrawExt( itemName, pos, pivot, scale, color );
 			};
-			auto Draw		= [&]( const wchar_t *itemName, Choice item, bool selected )
+			auto Draw		= [&]( const wchar_t *itemName, Choice item )
 			{
+				const bool selected = ( chooseItem == item );
+
 				const Donya::Vector2 &scale =
 					( selected )
 					? selectScale
@@ -1034,14 +1035,47 @@ void SceneTitle::Draw( float elapsedTime )
 				DrawImpl( itemName, item, scale, color );
 			};
 
+			auto GetCaption = [&]( Choice item )
+			{
+				if ( saveDataIsExist )
+				{
+					switch ( item )
+					{
+					case Choice::NewGame:	return L"‚m‚d‚v ‚f‚`‚l‚d";
+					case Choice::LoadGame:	return L"‚k‚n‚`‚c ‚f‚`‚l‚d";
+					default: break;
+					}
+				}
+				else
+				{
+					switch ( item )
+					{
+					case Choice::Start:		return L"‚r‚s‚`‚q‚s";
+					default: break;
+					}
+				}
+
+				_ASSERT_EXPR( 0, L"Error: Unexpected condition!" );
+				return L"‚d‚q‚q‚n‚q";
+			};
+
 			Donya::Sprite::SetDrawDepth( 0.0f );
-			Draw( L"‚r‚s‚`‚q‚s",		Choice::Start,	( chooseItem == Choice::Start  ) );
-			// Draw( L"‚n‚o‚s‚h‚n‚m",	Choice::Option,	( chooseItem == Choice::Option ) );
+			if ( saveDataIsExist )
+			{
+				Draw( GetCaption( Choice::NewGame	),	Choice::NewGame		);
+				Draw( GetCaption( Choice::LoadGame	),	Choice::LoadGame	);
+			}
+			else
+			{
+				Draw( GetCaption( Choice::Start		),	Choice::Start		);
+			}
 			Donya::Sprite::Flush();
 
-			Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
-			if ( chooseItem == Choice::Start )
+			// Choose effect
+			if ( !IsZero( afterDecidedTimer ) )
 			{
+				Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
+
 				const float &fadeSec = data.pressedItemAddFadeSecond;
 				const float currFadeTime =
 					( IsZero( fadeSec ) )
@@ -1053,11 +1087,12 @@ void SceneTitle::Draw( float elapsedTime )
 
 				const float additionAlpha = Donya::Clamp( 1.0f - easeFactor, 0.0f, 1.0f );
 				const Donya::Vector4 additionColor = Donya::Vector4{ selectColor.XYZ(), additionAlpha };
-				DrawImpl( L"‚r‚s‚`‚q‚s", Choice::Start, additionScale, additionColor );
-			}
 
-			Donya::Sprite::Flush();
-			Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+				DrawImpl( GetCaption( chooseItem ), chooseItem, additionScale, additionColor );
+				
+				Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+				Donya::Sprite::Flush();
+			}
 
 			Donya::Surface::ResetRenderTarget();
 		}
@@ -1292,6 +1327,18 @@ bool SceneTitle::AreRenderersReady() const
 	return true;
 }
 
+void SceneTitle::LoadSaveData()
+{
+	// A not saved changes will be removed
+	saveDataIsExist = SaveData::Admin::Get().Load();
+
+#if AND_UPDATE_TO_RECENT_VERSION
+	// Make a save data file if that does not exist,
+	// also updates the file version if it loads an old version.
+	SaveData::Admin::Get().Save();
+#endif // AND_UPDATE_TO_RECENT_VERSION
+}
+
 void SceneTitle::UpdateInput()
 {
 	controller.Update();
@@ -1323,37 +1370,55 @@ void SceneTitle::UpdateChooseItem()
 	const bool trgDown		= Tilted( curr.moveVelocity.y, -1 ) && !Tilted( prev.moveVelocity.y, -1 );
 	const bool trgDecide	= Input::HasTrue( curr.useShots ) && !Input::HasTrue( prev.useShots );
 
-#if 1 // CAN_NOT_SELECT_OPTION
-	const bool willChoice = ( trgLeft || trgRight || trgUp || trgDown || trgDecide );
-	if ( willChoice && chooseItem != Choice::Start )
+	if ( saveDataIsExist )
 	{
-		chooseItem = Choice::Start;
-	}
-#else
-	// TODO: Play choice SE
+		// If do not selected
+		if ( chooseItem == Choice::ItemCount )
+		{
+			if ( trgUp		) { chooseItem = Choice::NewGame;  }
+			else
+			if ( trgDown	) { chooseItem = Choice::LoadGame; }
+			else
+			if ( trgLeft || trgRight || trgDecide )
+			{
+				chooseItem = Choice::LoadGame;
+			}
 
-	// If do not selected
-	if ( chooseItem == Choice::ItemCount )
+			return;
+		}
+		// else
+
+		if ( trgUp		) { chooseItem = Choice::NewGame;  }
+		else
+		if ( trgDown	) { chooseItem = Choice::LoadGame; }
+	}
+	else // The user can choose only the Start, so it processes only if the user not choosing the Start.
+	if ( chooseItem != Choice::Start )
 	{
-		if ( trgUp		) { chooseItem = Choice::Start;  }
-		else
-		if ( trgDown	) { chooseItem = Choice::Option; }
-		else
-		if ( trgLeft || trgRight ) { chooseItem = Choice::Start; }
-
-		return;
+		const bool willChoice = ( trgLeft || trgRight || trgUp || trgDown || trgDecide );
+		if ( willChoice )
+		{
+			chooseItem = Choice::Start;
+		}
 	}
-	// else
 
-	if ( trgUp		) { chooseItem = Choice::Start;  }
-	else
-	if ( trgDown	) { chooseItem = Choice::Option; }
-#endif // CAN_NOT_SELECT_OPTION
-
-	const bool chooseSelectableItem = ( chooseItem == Choice::Start ) ? true : false;
-	if ( trgDecide && chooseSelectableItem )
+	const bool choosable = chooseItem != Choice::ItemCount;
+	if ( trgDecide && choosable )
 	{
 		wasDecided = trgDecide;
+
+		if ( !saveDataIsExist || chooseItem == Choice::NewGame )
+		{
+			auto &saveAdmin = SaveData::Admin::Get();
+
+			// Create a new empty save file
+			saveAdmin.Clear();
+			saveAdmin.Save();
+			// Apply to local
+			// but do not change the "saveDataIsExist" because the decided process uses it
+			saveAdmin.Load();
+		}
+
 		Donya::Sound::Play( Music::UI_Decide );
 	}
 }

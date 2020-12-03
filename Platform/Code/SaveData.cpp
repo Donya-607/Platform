@@ -4,26 +4,33 @@
 
 namespace SaveData
 {
-	void Admin::Save( unsigned int fileNo )
+	bool Admin::Save( unsigned int fileNo )
 	{
-		SaveBin( fileNo );
+		bool fileIsExist = SaveBin( fileNo );
 	#if DEBUG_MODE
-		SaveJson( fileNo );
+		     fileIsExist = SaveJson( fileNo );
 	#endif // DEBUG_MODE
+		return fileIsExist;
 	}
-	void Admin::Load( unsigned int fileNo )
+	bool Admin::Load( unsigned int fileNo )
 	{
 	#if DEBUG_MODE
-		LoadJson( fileNo );
+		const bool fileIsExist = LoadJson( fileNo );
 	#else
-		LoadBin( fileNo );
+		const bool fileIsExist = LoadBin( fileNo );
 	#endif // DEBUG_MODE
 
 		nowData.fileNumber = fileNo;
+
+		return fileIsExist;
 	}
 	const File &Admin::NowData() const
 	{
 		return nowData;
+	}
+	void Admin::Clear()
+	{
+		nowData.availableWeapons.Reset();
 	}
 	void Admin::Write( Definition::WeaponKind add )
 	{
@@ -43,11 +50,11 @@ namespace SaveData
 				: MakeSaveDataPathJson( fileName );
 
 			MakeDirectoryIfNotExists( path );
-			MakeFileIfNotExists( path, useBinary );
+			
 			return path;
 		}
 	}
-	void Admin::SaveBin( unsigned int fileNo )
+	bool Admin::SaveBin( unsigned int fileNo )
 	{
 		constexpr bool fromBinary = true;
 
@@ -55,9 +62,9 @@ namespace SaveData
 		const std::string filePath = MakeFilePathImpl( fileName, fromBinary );
 
 		Donya::Serializer tmp;
-		tmp.SaveBinary( nowData, filePath.c_str(), fileName.c_str() );
+		return tmp.SaveBinary( nowData, filePath.c_str(), fileName.c_str() );
 	}
-	void Admin::SaveJson( unsigned int fileNo )
+	bool Admin::SaveJson( unsigned int fileNo )
 	{
 		constexpr bool fromBinary = false;
 
@@ -65,9 +72,9 @@ namespace SaveData
 		const std::string filePath = MakeFilePathImpl( fileName, fromBinary );
 
 		Donya::Serializer tmp;
-		tmp.SaveJSON( nowData, filePath.c_str(), fileName.c_str() );
+		return tmp.SaveJSON( nowData, filePath.c_str(), fileName.c_str() );
 	}
-	void Admin::LoadBin( unsigned int fileNo )
+	bool Admin::LoadBin( unsigned int fileNo )
 	{
 		constexpr bool fromBinary = true;
 
@@ -75,9 +82,9 @@ namespace SaveData
 		const std::string filePath = MakeFilePathImpl( fileName, fromBinary );
 
 		Donya::Serializer tmp;
-		tmp.LoadBinary( nowData, filePath.c_str(), fileName.c_str() );
+		return tmp.LoadBinary( nowData, filePath.c_str(), fileName.c_str() );
 	}
-	void Admin::LoadJson( unsigned int fileNo )
+	bool Admin::LoadJson( unsigned int fileNo )
 	{
 		constexpr bool fromBinary = false;
 
@@ -85,6 +92,6 @@ namespace SaveData
 		const std::string filePath = MakeFilePathImpl( fileName, fromBinary );
 
 		Donya::Serializer tmp;
-		tmp.LoadJSON( nowData, filePath.c_str(), fileName.c_str() );
+		return tmp.LoadJSON( nowData, filePath.c_str(), fileName.c_str() );
 	}
 }
