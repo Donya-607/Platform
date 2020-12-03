@@ -1,5 +1,7 @@
 #include "SaveData.h"
 
+#include "Donya/Useful.h"
+
 #include "FilePath.h"
 
 namespace SaveData
