@@ -664,6 +664,14 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	elapsedSecond += elapsedTime;
 	if ( wasDecided ) { afterDecidedTimer += elapsedTime; }
 
+	// Reload save file regularly for apply a direct changes
+	// TODO: To be parameter the magic-number "1.0f"
+	if ( !wasDecided && 1.0f <= elapsedSecond )
+	{
+		elapsedSecond = 0.0f;
+		LoadSaveData();
+	}
+
 	UpdatePerformance( elapsedTime );
 
 	const float deltaTimeForMove = elapsedTime;
@@ -1329,6 +1337,8 @@ bool SceneTitle::AreRenderersReady() const
 
 void SceneTitle::LoadSaveData()
 {
+	const bool oldExistence = saveDataIsExist;
+
 	// A not saved changes will be removed
 	saveDataIsExist = SaveData::Admin::Get().Load();
 
@@ -1337,6 +1347,11 @@ void SceneTitle::LoadSaveData()
 	// also updates the file version if it loads an old version.
 	SaveData::Admin::Get().Save();
 #endif // AND_UPDATE_TO_RECENT_VERSION
+
+	if ( saveDataIsExist != oldExistence )
+	{
+		chooseItem = ( saveDataIsExist ) ? Choice::LoadGame : Choice::Start;
+	}
 }
 
 void SceneTitle::UpdateInput()
