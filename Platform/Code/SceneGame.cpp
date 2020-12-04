@@ -516,21 +516,22 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		{
 			Donya::Sound::Play( Music::DEBUG_Strong );
 
-			if ( Donya::Keyboard::Press( VK_SHIFT ) )
+			const bool ctrled  = Donya::Keyboard::Press( VK_CONTROL	);
+			const bool shifted = Donya::Keyboard::Press( VK_SHIFT	);
+
+			Scene::Type next = Scene::Type::Title;
+			if ( shifted && ctrled )
+			{ next = Scene::Type::Over; }
+			else if ( ctrled )
+			{ next = Scene::Type::Result; }
+			else if ( shifted )
 			{
-				if ( Donya::Keyboard::Press( VK_CONTROL ) )
-				{
-					StartFade( Scene::Type::Over );
-				}
-				else
-				{
-					StartFade( Scene::Type::Result );
-				}
+				next = Scene::Type::Game;
+				// Completely reset
+				playerIniter.LoadParameter( stageNumber );
 			}
-			else
-			{
-				StartFade( Scene::Type::Title );
-			}
+
+			StartFade( next );
 		}
 		if ( Donya::Keyboard::Trigger( VK_F5 ) )
 		{
