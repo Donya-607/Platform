@@ -11,7 +11,12 @@
 
 namespace Donya
 {
+#if ( defined( DEBUG ) || defined( _DEBUG ) ) // Except the FORCE_DEBUG macro
 	static bool isAllowShowingImGui = true;
+#else
+	static bool isAllowShowingImGui = false;
+#endif // FORCE_DEBUG
+
 	void SetShowStateOfImGui( bool isAllow )
 	{
 		isAllowShowingImGui = isAllow;

@@ -534,7 +534,7 @@ namespace Donya
 	{
 		FMOD_RESULT fr = FMOD_OK;
 
-	#if DEBUG_MODE
+	#if DEBUG_MODE && !FORCE_DEBUG
 		fr = FMOD::Debug_Initialize( FMOD_DEBUG_LEVEL_WARNING );
 		if ( FMODFailed( fr ) )
 		{

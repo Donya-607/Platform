@@ -7,7 +7,8 @@
 template<typename OutType, typename InType>
 inline constexpr OutType scast( InType x ) { return static_cast<OutType>( x ); }
 
-#define DEBUG_MODE	( defined( DEBUG ) || defined( _DEBUG ) )
+#define FORCE_DEBUG	( true )
+#define DEBUG_MODE	( FORCE_DEBUG || ( defined( DEBUG ) || defined( _DEBUG ) ) )
 
 #define DELETE_COPY_AND_ASSIGN( Typename ) \
 	Typename( const Typename & ) = delete; \

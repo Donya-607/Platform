@@ -408,7 +408,7 @@ Scene::Result SceneLoad::ReturnResult()
 	{
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
-	#if DEBUG_MODE
+	#if ( defined( DEBUG ) || defined( _DEBUG ) ) // Except the FORCE_DEBUG macro
 		change.sceneType = Scene::Type::Game;
 		// change.sceneType = Scene::Type::Title;
 		// change.sceneType = Scene::Type::Result;
