@@ -16,6 +16,16 @@
 namespace Input
 {
 	template<typename T>
+	constexpr unsigned int CountTrue( const std::array<T, Player::Input::variationCount> &arr )
+	{
+		unsigned int count = 0;
+		for ( const auto &it : arr )
+		{
+			if ( it ) { count++; }
+		}
+		return count;
+	}
+	template<typename T>
 	constexpr bool HasTrue( const std::array<T, Player::Input::variationCount> &arr )
 	{
 		for ( const auto &it : arr )
