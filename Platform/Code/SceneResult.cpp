@@ -1203,7 +1203,7 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 		}
 	}
 
-#if DEBUG_MODE
+#if ( defined( DEBUG ) || defined( _DEBUG ) ) // Except the FORCE_DEBUG macro
 	input.useShots = Input::MakeCurrentInput( controller, {} ).useShots;
 #endif // DEBUG_MODE
 

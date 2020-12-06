@@ -24,7 +24,9 @@ bool Framework::Init()
 
 	pSceneMng = std::make_unique<SceneMng>();
 
-#if ( defined( DEBUG ) || defined( _DEBUG ) ) // Except the FORCE_DEBUG macro
+#if FORCE_DEBUG
+	pSceneMng->Init( Scene::Type::Logo );
+#elif DEBUG_MODE
 	pSceneMng->Init( Scene::Type::Load );
 	// pSceneMng->Init( Scene::Type::Logo );
 #else
