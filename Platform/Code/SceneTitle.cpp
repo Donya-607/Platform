@@ -191,6 +191,8 @@ namespace
 
 		float			leaveBossDelaySec = 1.0f;
 		Donya::Vector3	leaveBossOffset{}; // World space
+
+		Donya::Vector2 deadZone{ 0.3f, 0.3f }; // The stick input is valid if the value greater than this
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -279,6 +281,10 @@ namespace
 				archive( CEREAL_NVP( voxelize ) );
 			}
 			if ( 12 <= version )
+			{
+				archive( CEREAL_NVP( deadZone ) );
+			}
+			if ( 13 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -434,6 +440,13 @@ namespace
 
 				ImGui::TreePop();
 			}
+
+			if ( ImGui::TreeNode( u8"その他" ) )
+			{
+				ImGui::SliderFloat2( u8"スティックのデッドゾーン", &deadZone.x, 0.0f, 1.0f );
+
+				ImGui::TreePop();
+			}
 		}
 	#endif // USE_IMGUI
 	};
@@ -479,7 +492,7 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( Member,				11 )
+CEREAL_CLASS_VERSION( Member,				12 )
 CEREAL_CLASS_VERSION( Member::ShadowMap,	0  )
 CEREAL_CLASS_VERSION( Member::Camera,		1  )
 
@@ -1358,13 +1371,8 @@ void SceneTitle::UpdateInput()
 {
 	controller.Update();
 
-	static const Donya::Vector2 deadZone
-	{
-		Donya::XInput::GetDeadZoneLeftStick(),
-		Donya::XInput::GetDeadZoneLeftStick()
-	};
 	previousInput = currentInput;
-	currentInput  = Input::MakeCurrentInput( controller, deadZone );
+	currentInput  = Input::MakeCurrentInput( controller, FetchParameter().deadZone );
 }
 
 void SceneTitle::UpdateChooseItem()
