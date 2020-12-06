@@ -2404,7 +2404,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	? AssignMover<Appear>()
 	: AssignMover<Normal>();
 
-	
+
 	availableWeapon.Reset();
 	const auto &saveData = SaveData::Admin::Get().NowData();
 	ApplyAvailableWeapon( saveData.availableWeapons );

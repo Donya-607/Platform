@@ -39,7 +39,6 @@ private:
 	State										status = State::Performance;
 
 	Donya::XInput								controller{ Donya::Gamepad::PAD_1 };
-	Player::Input								currentInput;
 	Donya::Collision::Box3F						currentScreen;	// It used for a bullet's lifespan
 	int											currentRoomID	= 0;
 	PlayerInitializer							playerIniter;
@@ -57,6 +56,7 @@ private:
 
 	std::vector<std::unique_ptr<Enemy::Base>>	enemies;
 
+	bool	willSkip		= false;
 	float	currentTimer	= 0.0f;
 	float	previousTimer	= 0.0f;
 	float	extinctTime		= -1.0f;	// A negative value means not extincted
@@ -89,6 +89,8 @@ private:
 
 	Donya::Vector4x4 MakeScreenTransform() const;
 	Donya::Collision::Box3F CalcCurrentScreenPlane() const;
+
+	bool	WantToSkip() const;
 
 	void	CameraInit();
 	void	AssignCameraPos();

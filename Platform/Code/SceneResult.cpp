@@ -31,6 +31,7 @@
 #include "Music.h"
 #include "Parameter.h"
 #include "PointLightStorage.h"
+#include "SaveData.h"
 #include "StageNumber.h"
 
 #if DEBUG_MODE
@@ -134,7 +135,10 @@ namespace
 		ShiftInput drawingShiftBack;
 		ShiftInput drawingShiftAdvance;
 
-		float firstShiftGunSecond = 1.0f;
+		float firstShiftGunSecond			= 1.0f;
+
+		float beSkippableSecond				= 1.0f; // The user can be skip this result scene
+		float acceptSkipSecond				= 1.0f; // The skip request is accept, but can not skip until "beSkippableSecond".
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -180,6 +184,14 @@ namespace
 				archive( CEREAL_NVP( firstShiftGunSecond ) );
 			}
 			if ( 5 <= version )
+			{
+				archive
+				(
+					CEREAL_NVP( beSkippableSecond	),
+					CEREAL_NVP( acceptSkipSecond	)
+				);
+			}
+			if ( 6 <= version )
 			{
 				// archive( CEREAL_NVP( x ) );
 			}
@@ -249,12 +261,16 @@ namespace
 			}
 			if ( ImGui::TreeNode( u8"タイミング関連" ) )
 			{
-				ImGui::DragFloat( u8"武器を切り替えるまでの待機秒数",	&firstShiftGunSecond,		0.01f );
-				ImGui::DragFloat( u8"演出を終えるまでの秒数",			&finishPerformanceSecond,	0.01f );
-				ImGui::DragFloat( u8"演出後フェードのまでの秒数",		&waitSecUntilFade,			0.01f );
+				ImGui::DragFloat( u8"武器を切り替えるまでの待機秒数",		&firstShiftGunSecond,		0.01f );
+				ImGui::DragFloat( u8"演出を終えるまでの秒数",				&finishPerformanceSecond,	0.01f );
+				ImGui::DragFloat( u8"演出後フェードのまでの秒数",			&waitSecUntilFade,			0.01f );
+				ImGui::DragFloat( u8"演出スキップが可能になるまでの秒数",	&beSkippableSecond,			0.01f );
+				ImGui::DragFloat( u8"演出スキップ入力の受付開始秒数",		&acceptSkipSecond,			0.01f );
 				firstShiftGunSecond		= std::max( 0.0f, firstShiftGunSecond		);
 				finishPerformanceSecond	= std::max( 0.0f, finishPerformanceSecond	);
 				waitSecUntilFade		= std::max( 0.0f, waitSecUntilFade			);
+				beSkippableSecond		= std::max( 0.0f, beSkippableSecond			);
+				acceptSkipSecond		= std::max( 0.0f, acceptSkipSecond			);
 
 				if ( ImGui::TreeNode( u8"ショット入力たち" ) )
 				{
@@ -338,11 +354,13 @@ namespace
 	}
 #endif // DEBUG_MODE
 }
-CEREAL_CLASS_VERSION( SceneParam,				4 )
+CEREAL_CLASS_VERSION( SceneParam,				5 )
 CEREAL_CLASS_VERSION( SceneParam::ShiftInput,	0 )
 
 void SceneResult::Init()
 {
+	SaveData::Admin::Get().Load();
+
 	Donya::Sound::Play( Music::BGM_Result );
 #if DEBUG_MODE
 	// Donya::Sound::AppendFadePoint( Music::BGM_Result, 0.0f, 0.0f, true );
@@ -374,6 +392,7 @@ void SceneResult::Init()
 	result = pInputExplainer->Init();
 	assert( result );
 
+	willSkip		= false;
 	currentTimer	= 0.0f;
 	previousTimer	= 0.0f;
 	extinctTime		= -1.0f;
@@ -459,6 +478,8 @@ Scene::Result SceneResult::Update( float elapsedTime )
 #endif // USE_IMGUI
 
 	const auto &data = FetchParameter();
+
+	// State advacing
 	if ( status == State::Performance )
 	{
 		if ( NowTiming( data.finishPerformanceSecond, currentTimer, previousTimer ) )
@@ -475,23 +496,20 @@ Scene::Result SceneResult::Update( float elapsedTime )
 		}
 	}
 
+	// Skip this scene
 	if ( !Fader::Get().IsExist() )
 	{
-		bool shouldSkip = false;
-		if ( controller.IsConnected() )
+		if ( data.acceptSkipSecond <= currentTimer && !willSkip )
 		{
-			shouldSkip = controller.Trigger( Donya::Gamepad::Button::A );
-		}
-		else
-		{
-			// shouldSkip = Donya::Keyboard::Trigger( 'Z' );
+			willSkip = WantToSkip();
 		}
 
-		if ( shouldSkip )
+		if ( data.beSkippableSecond <= currentTimer && willSkip )
 		{
 			StartFade();
 		}
 	}
+
 
 	if ( pMap ) { pMap->Update( elapsedTime ); }
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
@@ -958,6 +976,50 @@ Donya::Collision::Box3F SceneResult::CalcCurrentScreenPlane() const
 	nowScreen.size.y = halfHeight;
 	nowScreen.size.z = FLT_MAX;
 	return nowScreen;
+}
+
+bool SceneResult::WantToSkip() const
+{
+	if ( controller.IsConnected() )
+	{
+		using Btn = Donya::Gamepad::Button;
+		if ( controller.Press( Btn::START  ) ) { return true; }
+		if ( controller.Press( Btn::SELECT ) ) { return true; }
+	}
+	else
+	{
+		// More than two buttons are pressed
+		{
+			constexpr unsigned int considerCount = 2;
+			unsigned int pressedCount = 0;
+
+			const auto input = Input::MakeCurrentInput( controller, Donya::Vector2::Zero() );
+
+			pressedCount += Input::CountTrue( input.useJumps );
+			if ( considerCount <= pressedCount ) { return true; }
+
+			pressedCount += Input::CountTrue( input.useShots );
+			if ( considerCount <= pressedCount ) { return true; }
+
+			pressedCount += Input::CountTrue( input.useDashes );
+			if ( considerCount <= pressedCount ) { return true; }
+
+			pressedCount += Input::CountTrue( input.shiftGuns );
+			if ( considerCount <= pressedCount ) { return true; }
+		}
+
+		// Or the direction keys are pressed as conflicting
+		{
+			const int L = ( Donya::Keyboard::Press( VK_LEFT	) ) ? 1 : 0;
+			const int R = ( Donya::Keyboard::Press( VK_RIGHT) ) ? 1 : 0;
+			const int U = ( Donya::Keyboard::Press( VK_UP	) ) ? 1 : 0;
+			const int D = ( Donya::Keyboard::Press( VK_DOWN	) ) ? 1 : 0;
+			if ( L && R ) { return true; }
+			if ( U && D ) { return true; }
+		}
+	}
+
+	return false;
 }
 
 void SceneResult::CameraInit()
