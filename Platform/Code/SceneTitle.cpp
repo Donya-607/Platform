@@ -2387,6 +2387,10 @@ void SceneTitle::UseImGui()
 		ImGui::Text( "" );
 
 		Effect::Admin::Get().ShowImGuiNode( u8"エフェクトのパラメータ" );
+		ImGui::Text( "" );
+
+		SaveData::Admin::Get().ShowImGuiNode( u8"セーブデータの現在" );
+		ImGui::Text( "" );
 
 		ImGui::TreePop();
 	}

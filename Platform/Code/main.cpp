@@ -20,7 +20,7 @@ namespace
 
 INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _In_ LPWSTR cmdLine, _In_ INT cmdShow )
 {
-#if DEBUG_MODE
+#if ( defined( DEBUG ) || defined( _DEBUG ) ) // Except the FORCE_DEBUG macro
 	// reference:https://docs.microsoft.com/ja-jp/visualstudio/debugger/crt-debug-heap-details?view=vs-2015
 	_CrtSetDbgFlag
 	(
@@ -66,7 +66,7 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 	}
 	// else
 
-#if DEBUG_MODE
+#if ( defined( DEBUG ) || defined( _DEBUG ) ) // Except the FORCE_DEBUG macro
 	constexpr UINT syncInterval = dontWaitToSync;
 	// constexpr UINT syncInterval = waitToSync;
 #else

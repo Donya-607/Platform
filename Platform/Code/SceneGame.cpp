@@ -2249,26 +2249,13 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 	if ( !pBossContainer ) { return; }
 	// else
 
-	auto Contains = []( const auto &targets, const auto &key )
-	{
-		for ( const auto &it : targets )
-		{
-			if ( it == key )
-			{
-				return true;
-			}
-		}
-
-		return false;
-	};
-
 	Boss::Input input{};
 	input.wsTargetPos					= wsTargetPos;
 	if ( status == State::VSBoss )
 	{
 		input.controllerInputDirection	= currentInput.moveVelocity;
-		input.pressJump					= Contains( currentInput.useJumps, true );
-		input.pressShot					= Contains( currentInput.useShots, true );
+		input.pressJump					= Input::HasTrue( currentInput.useJumps );
+		input.pressShot					= Input::HasTrue( currentInput.useShots );
 	}
 
 	pBossContainer->Update( elapsedTime, input );
@@ -3124,13 +3111,37 @@ void SceneGame::UseImGui( float elapsedTime )
 	{
 		SetPlayerToBeforeBossRoom();
 	}
+	if ( Donya::Keyboard::Trigger( VK_F7 ) )
+	{
+		auto &admin = SaveData::Admin::Get();
+
+		SaveData::File tmp = admin.NowData();
+		if ( Donya::Keyboard::Press( VK_CONTROL ) )
+		{
+			tmp.availableWeapons.Reset();
+		}
+		else
+		{
+			tmp.availableWeapons.Activate( Definition::WeaponKind::SkullShield );
+		}
+		admin.Write( tmp );
+
+		admin.Save();
+
+		if ( pPlayer )
+		{
+			pPlayer->ApplyAvailableWeapon( tmp.availableWeapons );
+		}
+	}
 
 	ImGui::SetNextWindowBgAlpha( bgAlpha );
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 
-	ImGui::Checkbox( u8"[ALT+L]	光源の可視化",	&drawLightSources	);
-	ImGui::Checkbox( u8"[F4]	光視点にする",	&projectLightCamera	);
+	ImGui::Checkbox( u8"[ALT+L]	光源の可視化",		&drawLightSources	);
+	ImGui::Checkbox( u8"[F4]	光視点にする",		&projectLightCamera	);
+	ImGui::Text( u8"[F7]		全武器解放＆セーブ"	);
+	ImGui::Text( u8"[CTRL+F7]	全武器制限＆セーブ"	);
 	Effect::Admin::Get().SetProjectionMatrix
 	(
 		( projectLightCamera )
@@ -3497,6 +3508,9 @@ void SceneGame::UseImGui( float elapsedTime )
 		ImGui::Text( "" );
 
 		Effect::Admin::Get().ShowImGuiNode( u8"エフェクトのパラメータ" );
+		ImGui::Text( "" );
+
+		SaveData::Admin::Get().ShowImGuiNode( u8"セーブデータの現在" );
 		ImGui::Text( "" );
 
 		if ( ImGui::Button( u8"ロード演出を再終了" ) )

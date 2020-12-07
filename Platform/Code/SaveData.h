@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Donya/Serializer.h"
-#include "Donya/Template.h"
+#include "Donya/Template.h"		// Use Singleton<> template
+#include "Donya/UseImGui.h"		// Use USE_IMGUI macro
 
 #include "Weapon.h"
 
@@ -22,6 +23,10 @@ namespace SaveData
 				// archive();
 			}
 		}
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const char *nodeCaption );
+	#endif // USE_IMGUI
 	};
 
 	class Admin : public Donya::Singleton<Admin>
@@ -45,11 +50,17 @@ namespace SaveData
 		const File &NowData() const;
 		void Clear();
 		void Write( Definition::WeaponKind addAvailableWeapon );
+		void Write( const Definition::WeaponAvailableStatus &overwriteStatus );
+		void Write( const File &overwriteFile );
 	private:
 		bool SaveBin( unsigned int fileNumber = 0 );
 		bool SaveJson( unsigned int fileNumber = 0 );
 		bool LoadBin( unsigned int fileNumber = 0 );
 		bool LoadJson( unsigned int fileNumber = 0 );
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const char *nodeCaption );
+	#endif // USE_IMGUI
 	};
 }
 CEREAL_CLASS_VERSION( SaveData::File, 0 )
