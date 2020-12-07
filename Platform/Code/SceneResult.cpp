@@ -1977,6 +1977,9 @@ void SceneResult::UseImGui()
 
 		Effect::Admin::Get().ShowImGuiNode( u8"エフェクトのパラメータ" );
 		ImGui::Text( "" );
+
+		SaveData::Admin::Get().ShowImGuiNode( u8"セーブデータの現在" );
+		ImGui::Text( "" );
 		
 		if ( pInputExplainer && ImGui::Button( u8"インプットをアピール" ) )
 		{
