@@ -35,12 +35,14 @@ namespace Enemy
 
 	struct SuperBallMachineParam;
 	struct TogeheroParam;
+	struct SkeletonJoeParam;
 	namespace Parameter
 	{
 		void Load();
 
 		const SuperBallMachineParam	&GetSuperBallMachine();
 		const TogeheroParam			&GetTogehero();
+		const SkeletonJoeParam		&GetSkeletonJoe();
 
 	#if USE_IMGUI
 		void Update( const std::string &nodeCaption );
@@ -49,9 +51,11 @@ namespace Enemy
 		{
 			void LoadSuperBallMachine();
 			void LoadTogehero();
+			void LoadSkeletonJoe();
 		#if USE_IMGUI
 			void UpdateSuperBallMachine( const std::string &nodeCaption );
 			void UpdateTogehero( const std::string &nodeCaption );
+			void UpdateSkeletonJoe( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}
 	}

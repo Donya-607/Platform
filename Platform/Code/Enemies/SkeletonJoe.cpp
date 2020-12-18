@@ -68,17 +68,22 @@ namespace Enemy
 		const auto &data = Parameter::GetSkeletonJoe();
 		const size_t stateIndex = std::min( scast<size_t>( status ), motionCount );
 
-		timer += elapsedTime;
-		if ( data.stateSeconds[stateIndex] <= timer )
+		if ( !data.stateSeconds.empty() )
 		{
-			ToNextState( wsTargetPos );
+			timer += elapsedTime;
+			if ( data.stateSeconds[stateIndex] <= timer )
+			{
+				ToNextState( wsTargetPos );
+			}
 		}
 
 		velocity.y -= data.gravity * elapsedTime;
 
-		UpdateOrientation( ( wsTargetPos - GetPosition() ).Unit() );
+		constexpr Donya::Vector3 right = Donya::Vector3::Right();
+		const Donya::Vector3 toTarget = wsTargetPos - GetPosition();
+		UpdateOrientation( ( toTarget.x < 0.0f ) ? -right : right );
 
-		const float motionAcceleration = data.animePlaySpeeds[stateIndex];
+		const float motionAcceleration = ( data.animePlaySpeeds.size() <= stateIndex ) ? 1.0f : data.animePlaySpeeds[stateIndex];
 		UpdateMotionIfCan( elapsedTime * motionAcceleration, stateIndex );
 	}
 	Kind SkeletonJoe::GetKind() const { return Kind::SkeletonJoe; }
@@ -142,9 +147,9 @@ namespace Enemy
 		{
 		case MotionKind::Idle:
 			next = MotionKind::Fire;
+			Shot( wsTargetPos );
 			break;
 		case MotionKind::Fire:
-			Shot( wsTargetPos );
 			next = MotionKind::Idle;
 			break;
 		case MotionKind::Break:
@@ -176,22 +181,23 @@ namespace Enemy
 		// else
 
 		const float gt = gravity * t;
-		const float rt = 1.0f / t;
 
-		// v = sqrt( pow( 1/t, 2 ) + pow( gt/2, 2 ) )
+		// v = sqrt( pow( l/t, 2 ) + pow( gt/2, 2 ) )
+		const float lt = distance / t;
 		const float hGT = gt * 0.5f; // Half g*t
-		const float speed = sqrtf( (rt*rt) + (hGT*hGT) );
+		const float speed = sqrtf( (lt*lt) + (hGT*hGT) );
 
-		// theta = atan( pow( gt,2 ) / 2t )
-		const float theta = atanf( (gt*gt) / (t*t) );
+		// theta = atan( pow( gt,2 ) / 2l )
+		const float theta = atanf( (gt*gt) / (2.0f*distance) );
 
 		Bullet::FireDesc desc = data.fireDesc;
 		desc.position	=  orientation.RotateVector( desc.position ); // Rotate the local space offset
 		desc.position	+= GetPosition(); // Convert to world space
 		desc.owner		=  hurtBox.id;
-		desc.direction.x = cosf( theta );
-		desc.direction.y = sinf( theta );
-		desc.direction.z = 0.0f;
+		desc.initialSpeed	= speed;
+		desc.direction.x	= cosf( theta );
+		desc.direction.y	= sinf( theta );
+		desc.direction.z	= 0.0f;
 
 		Bullet::Admin::Get().RequestFire( desc );
 		ChangeMotion( MotionKind::Fire );

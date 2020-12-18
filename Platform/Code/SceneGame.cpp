@@ -51,6 +51,10 @@
 namespace
 {
 #if DEBUG_MODE
+	constexpr bool  wantSilence  = true;
+	constexpr float silentSecond = 0.5f;
+	constexpr float silentVolume = 0.3f;
+
 	constexpr bool IOFromBinary = false;
 #else
 	constexpr bool IOFromBinary = true;
@@ -1290,6 +1294,13 @@ void SceneGame::PlayBGM( Music::ID kind )
 	Donya::Sound::Stop( currentPlayingBGM, /* isEnableForAll = */ true );
 	currentPlayingBGM = kind;
 	Donya::Sound::Play( currentPlayingBGM );
+
+#if DEBUG_MODE
+	if ( wantSilence )
+	{
+		Donya::Sound::AppendFadePoint( currentPlayingBGM, silentSecond, silentVolume, /* isEnableForAll = */ true );
+	}
+#endif // DEBUG_MODE
 }
 void SceneGame::FadeOutBGM() const
 {

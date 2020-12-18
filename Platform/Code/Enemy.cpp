@@ -8,6 +8,7 @@
 
 #include "Common.h"
 #include "Effect/EffectAdmin.h"
+#include "Enemies/SkeletonJoe.h"
 #include "Enemies/SuperBallMachine.h"
 #include "Enemies/Togehero.h"
 #include "FilePath.h"
@@ -28,6 +29,7 @@ namespace Enemy
 		{
 			"SuperBallMachine",
 			"Togehero",
+			"SkeletonJoe",
 		};
 
 		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
@@ -103,6 +105,7 @@ namespace Enemy
 		{
 			Impl::LoadTogehero();
 			Impl::LoadSuperBallMachine();
+			Impl::LoadSkeletonJoe();
 		}
 
 	#if USE_IMGUI
@@ -113,6 +116,7 @@ namespace Enemy
 
 			Impl::UpdateTogehero		( u8"Togehero" );
 			Impl::UpdateSuperBallMachine( u8"SuperBallMachine" );
+			Impl::UpdateSkeletonJoe		( u8"SkeletonJoe" );
 
 			ImGui::TreePop();
 		}
@@ -587,7 +591,7 @@ namespace Enemy
 		{
 		case Kind::SuperBallMachine:instance = std::make_shared<Enemy::SuperBallMachine>();	break;
 		case Kind::Togehero:		instance = std::make_shared<Enemy::Togehero>();			break;
-		// case Kind::SkeletonJoe:		instance = std::make_shared<Enemy::>();	break;
+		case Kind::SkeletonJoe:		instance = std::make_shared<Enemy::SkeletonJoe>();		break;
 		// case Kind::ShieldAttacker:	instance = std::make_shared<Enemy::>();	break;
 		// case Kind::Battonton:		instance = std::make_shared<Enemy::>();	break;
 		// case Kind::SkullMet:		instance = std::make_shared<Enemy::>();	break;

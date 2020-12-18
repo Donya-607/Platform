@@ -8,6 +8,7 @@
 #include "Bullets/Buster.h"
 #include "Bullets/SkullBullet.h"
 #include "Bullets/SuperBall.h"
+#include "Bullets/Bone.h"
 #include "Common.h"				// Use IsShowCollision()
 #include "Effect/EffectAdmin.h"
 #include "Effect/EffectKind.h"
@@ -28,6 +29,7 @@ namespace Bullet
 			"SkullBuster",
 			"SkullShield",
 			"SuperBall",
+			"Bone",
 		};
 
 		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
@@ -106,6 +108,7 @@ namespace Bullet
 			Impl::LoadSkullBuster();
 			Impl::LoadSkullShield();
 			Impl::LoadSuperBall();
+			Impl::LoadBone();
 		}
 
 	#if USE_IMGUI
@@ -119,6 +122,7 @@ namespace Bullet
 			Impl::UpdateSkullBuster	( u8"SkullBuster" );
 			Impl::UpdateSkullShield	( u8"SkullShield" );
 			Impl::UpdateSuperBall	( u8"SuperBall" );
+			Impl::UpdateBone		( u8"Bone" );
 
 			ImGui::TreePop();
 		}
@@ -159,6 +163,7 @@ namespace Bullet
 		case Kind::SkullBuster:	return "SkullBuster";
 		case Kind::SkullShield:	return "SkullShield";
 		case Kind::SuperBall:	return "SuperBall";
+		case Kind::Bone:		return "Bone";
 		default: break;
 		}
 
@@ -747,6 +752,7 @@ namespace Bullet
 			case Kind::SkullBuster:	tmp = std::make_shared<SkullBuster>();	break;
 			case Kind::SkullShield:	tmp = std::make_shared<SkullShield>();	break;
 			case Kind::SuperBall:	tmp = std::make_shared<SuperBall>();	break;
+			case Kind::Bone:		tmp = std::make_shared<Bone>();			break;
 			default: _ASSERT_EXPR( 0, L"Error: Unexpected bullet kind!" );	return;
 			}
 
