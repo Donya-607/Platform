@@ -24,7 +24,7 @@ namespace Enemy
 	{
 		SuperBallMachine,
 		Togehero,
-		// SkeletonJoe,
+		SkeletonJoe,
 		// ShieldAttacker,
 		// Battonton,
 		// SkullMet,

@@ -53,7 +53,7 @@ namespace Enemy
 		currentMotion = MotionKind::Prepare;
 		intervalTimer = Parameter::GetSuperBallMachine().initialTimerSecond;
 
-		ChangeMotion( MotionKind::Prepare );
+		ChangeMotion( currentMotion );
 	}
 	void SuperBallMachine::Uninit()
 	{

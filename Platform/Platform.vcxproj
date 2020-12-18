@@ -156,6 +156,7 @@
     <ClCompile Include="Code\Boss.cpp" />
     <ClCompile Include="Code\Bosses\Skull.cpp" />
     <ClCompile Include="Code\Bullet.cpp" />
+    <ClCompile Include="Code\Bullets\Bone.cpp" />
     <ClCompile Include="Code\Bullets\Buster.cpp" />
     <ClCompile Include="Code\Bullets\SkullBullet.cpp" />
     <ClCompile Include="Code\Bullets\SuperBall.cpp" />
@@ -203,6 +204,7 @@
     <ClCompile Include="Code\Effect\Effect.cpp" />
     <ClCompile Include="Code\Effect\EffectAdmin.cpp" />
     <ClCompile Include="Code\Effect\EffectUtil.cpp" />
+    <ClCompile Include="Code\Enemies\SkeletonJoe.cpp" />
     <ClCompile Include="Code\Enemies\SuperBallMachine.cpp" />
     <ClCompile Include="Code\Enemy.cpp" />
     <ClCompile Include="Code\Fader.cpp" />
@@ -251,6 +253,7 @@
     <ClInclude Include="Code\Bosses\Skull.h" />
     <ClInclude Include="Code\Bullet.h" />
     <ClInclude Include="Code\BulletParam.h" />
+    <ClInclude Include="Code\Bullets\Bone.h" />
     <ClInclude Include="Code\Bullets\Buster.h" />
     <ClInclude Include="Code\Bullets\SkullBullet.h" />
     <ClInclude Include="Code\Bullets\SuperBall.h" />
@@ -311,6 +314,7 @@
     <ClInclude Include="Code\Effect\EffectKind.h" />
     <ClInclude Include="Code\Effect\EffectParam.h" />
     <ClInclude Include="Code\Effect\EffectUtil.h" />
+    <ClInclude Include="Code\Enemies\SkeletonJoe.h" />
     <ClInclude Include="Code\Enemies\SuperBallMachine.h" />
     <ClInclude Include="Code\Enemy.h" />
     <ClInclude Include="Code\Fader.h" />
