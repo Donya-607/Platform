@@ -11,7 +11,6 @@ namespace Bullet
 	class Bone final : public Base
 	{
 	public:
-		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
 		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:

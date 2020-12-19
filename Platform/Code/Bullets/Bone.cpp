@@ -34,10 +34,6 @@ namespace Bullet
 	}
 
 
-	void Bone::Init( const FireDesc &parameter )
-	{
-		Base::Init( parameter );
-	}
 	void Bone::Uninit() {} // No op
 	void Bone::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
@@ -46,6 +42,10 @@ namespace Bullet
 		const auto &data = Parameter::GetBone();
 
 		velocity.y -= data.gravity * elapsedTime;
+		if ( !velocity.IsZero() )
+		{
+			UpdateOrientation( velocity.Unit() );
+		}
 
 		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
 	}
@@ -67,10 +67,15 @@ namespace Bullet
 	}
 	void Bone::AssignBodyParameter( const Donya::Vector3 &wsPos )
 	{
-		const auto &data = Parameter::GetBone().basic;
-		body.pos	= wsPos;
-		body.offset	= orientation.RotateVector( data.hitBoxOffset );
-		body.size	= data.hitBoxSize;
+		const auto &data	= Parameter::GetBone().basic;
+		hitSphere.pos		= wsPos;
+		hitSphere.offset	= orientation.RotateVector( data.hitBoxOffset );
+		hitSphere.radius	= data.hitBoxSize.x;
+
+		// Only enable sphere hit box
+		hitSphere.exist	= true;
+		body.size		= 0.0f;
+		body.exist		= false;
 	}
 #if USE_IMGUI
 	void BoneParam::ShowImGuiNode()

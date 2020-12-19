@@ -39,6 +39,8 @@ namespace Enemy
 		Kind GetKind() const override;
 		Definition::Damage GetTouchDamage() const override;
 	private:
+		void ApplyReceivedDamageIfHas() override;
+	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
 	private:
@@ -47,6 +49,11 @@ namespace Enemy
 		void ChangeState( MotionKind nextKind );
 		void ToNextState( const Donya::Vector3 &wsTargetPos );
 		void Shot( const Donya::Vector3 &wsTargetPos );
+	private:
+		void IdleInit();
+		void FireInit( const Donya::Vector3 &wsTargetPos );
+		void BreakInit();
+		void ReAssembleInit();
 	public:
 	#if USE_IMGUI
 		/// <summary>

@@ -91,6 +91,23 @@ namespace Enemy
 	{
 		return Parameter::GetSkeletonJoe().basic.touchDamage;
 	}
+	void SkeletonJoe::ApplyReceivedDamageIfHas()
+	{
+		if ( !pReceivedDamage ) { return; }
+		// else
+
+		const int damage = pReceivedDamage->amount;
+		if ( hp <= damage )
+		{
+			Base::ApplyReceivedDamageIfHas();
+			return;
+		}
+		// else
+
+		BreakInit();
+
+		pReceivedDamage.reset();
+	}
 	int  SkeletonJoe::GetInitialHP() const
 	{
 		return Parameter::GetSkeletonJoe().basic.hp;
@@ -122,11 +139,11 @@ namespace Enemy
 	{
 		status = nextKind;
 
-		model.animator.ResetTimer();
-
 		( nextKind == MotionKind::Idle )
 		? model.animator.EnableLoop()
 		: model.animator.DisableLoop();
+
+		model.animator.ResetTimer();
 
 		model.AssignMotion( scast<int>( nextKind ) );
 	}
@@ -147,17 +164,24 @@ namespace Enemy
 		{
 		case MotionKind::Idle:
 			next = MotionKind::Fire;
-			Shot( wsTargetPos );
+			FireInit( wsTargetPos );
 			break;
+
 		case MotionKind::Fire:
 			next = MotionKind::Idle;
+			IdleInit();
 			break;
+
 		case MotionKind::Break:
 			next = MotionKind::ReAssemble;
+			ReAssembleInit();
 			break;
+
 		case MotionKind::ReAssemble:
 			next = MotionKind::Idle;
+			IdleInit();
 			break;
+
 		default: return;
 		}
 
@@ -169,9 +193,6 @@ namespace Enemy
 
 		const auto &data = Parameter::GetSkeletonJoe();
 
-		const float distance = ( wsTargetPos - GetPosition() ).Length();
-		const float &gravity = Bullet::Parameter::GetBone().gravity;
-
 		const float t = data.impactSecond;
 		if ( IsZero( t ) )
 		{
@@ -180,22 +201,24 @@ namespace Enemy
 		}
 		// else
 
-		const float gt = gravity * t;
+		const float diff = wsTargetPos.x - GetPosition().x;
+		const float horizDist = fabsf( diff );
+		const float &g = Bullet::Parameter::GetBone().gravity;
+		const float gt = g*t;
 
-		// v = sqrt( pow( l/t, 2 ) + pow( gt/2, 2 ) )
-		const float lt = distance / t;
-		const float hGT = gt * 0.5f; // Half g*t
-		const float speed = sqrtf( (lt*lt) + (hGT*hGT) );
+		// v = sqrt( (l/t)^2 + (gt/2)^2 )
+		const float lt = horizDist / t;
+		const float speed = sqrtf( (lt*lt) + (gt*gt*0.25f) );
 
-		// theta = atan( pow( gt,2 ) / 2l )
-		const float theta = atanf( (gt*gt) / (2.0f*distance) );
+		// theta = atan( ( g*(t^2) ) / 2l )
+		const float theta = atanf( ( gt*t ) / (2.0f*horizDist) );
 
 		Bullet::FireDesc desc = data.fireDesc;
 		desc.position	=  orientation.RotateVector( desc.position ); // Rotate the local space offset
 		desc.position	+= GetPosition(); // Convert to world space
 		desc.owner		=  hurtBox.id;
 		desc.initialSpeed	= speed;
-		desc.direction.x	= cosf( theta );
+		desc.direction.x	= cosf( theta ) * Donya::SignBitF( diff );
 		desc.direction.y	= sinf( theta );
 		desc.direction.z	= 0.0f;
 
@@ -204,6 +227,29 @@ namespace Enemy
 
 		// TODO: Make shot SE
 		// Donya::Sound::Play( Music::SkeletonJoe_Shot );
+	}
+	void SkeletonJoe::IdleInit()
+	{
+		body.exist		= true;
+		hurtBox.exist	= true;
+		timer			= 0.0f;
+	}
+	void SkeletonJoe::FireInit( const Donya::Vector3 &wsTargetPos )
+	{
+		timer = 0.0f;
+		Shot( wsTargetPos );
+	}
+	void SkeletonJoe::BreakInit()
+	{
+		body.exist		= false;
+		hurtBox.exist	= false;
+		timer			= 0.0f;
+		hp				= GetInitialHP();
+		ChangeState( MotionKind::Break );
+	}
+	void SkeletonJoe::ReAssembleInit()
+	{
+		timer = 0.0f;
 	}
 #if USE_IMGUI
 	bool SkeletonJoe::ShowImGuiNode( const std::string &nodeCaption )

@@ -53,7 +53,7 @@ namespace
 #if DEBUG_MODE
 	constexpr bool  wantSilence  = true;
 	constexpr float silentSecond = 0.5f;
-	constexpr float silentVolume = 0.3f;
+	constexpr float silentVolume = 0.2f;
 
 	constexpr bool IOFromBinary = false;
 #else
