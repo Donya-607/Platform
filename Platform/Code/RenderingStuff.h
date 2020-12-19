@@ -40,6 +40,10 @@ public:
 	bool Initialize();
 	void AssignBloomParameter( const BloomApplier::Parameter &parameter );
 	void ClearBuffers();
+	RenderingStuff *Ptr()
+	{
+		return ptr.get();
+	}
 private:
 	bool CreateShaders();
 	bool CreateSurfaces();

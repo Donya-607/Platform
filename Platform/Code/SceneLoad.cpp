@@ -33,6 +33,7 @@
 #include "Input.h"
 #include "Meter.h"
 #include "Music.h"
+#include "RenderingStuff.h"
 #include "Parameter.h"
 #include "Player.h"
 
@@ -300,6 +301,8 @@ void SceneLoad::Init()
 	thModels.pThread	= std::make_unique<std::thread>( LoadingModels,		&thModels.result  );
 	thSounds.pThread	= std::make_unique<std::thread>( LoadingSounds,		&thSounds.result  );
 	thSprites.pThread	= std::make_unique<std::thread>( LoadingSprites,	&thSprites.result );
+
+	assert(RenderingStuffInstance::Get().Initialize());
 }
 void SceneLoad::Uninit()
 {
