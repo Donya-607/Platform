@@ -27,6 +27,7 @@
 #include "Performances/LoadPart.h"
 #include "Player.h"
 #include "Renderer.h"
+#include "RenderingStuff.h"
 #include "Room.h"
 #include "Scene.h"
 #include "Sky.h"

@@ -225,6 +225,7 @@
     <ClCompile Include="Code\Player.cpp" />
     <ClCompile Include="Code\PointLightStorage.cpp" />
     <ClCompile Include="Code\Renderer.cpp" />
+    <ClCompile Include="Code\RenderingStuff.cpp" />
     <ClCompile Include="Code\Room.cpp" />
     <ClCompile Include="Code\SaveData.cpp" />
     <ClCompile Include="Code\SceneGame.cpp" />
@@ -343,6 +344,7 @@
     <ClInclude Include="Code\PlayerParam.h" />
     <ClInclude Include="Code\PointLightStorage.h" />
     <ClInclude Include="Code\Renderer.h" />
+    <ClInclude Include="Code\RenderingStuff.h" />
     <ClInclude Include="Code\Room.h" />
     <ClInclude Include="Code\SaveData.h" />
     <ClInclude Include="Code\Scene.h" />
