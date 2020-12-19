@@ -22,7 +22,7 @@ public:
 	/// <summary>
 	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
 	/// </summary>
-	static int MoveAxis( Actor2D *pTarget, int moveDimension, float movement, const std::vector<Donya::Collision::Box2> &solids );
+	static int MoveAxis( Actor2D *pTarget, int moveDimension, float movement, const std::vector<Donya::Collision::Box2> &solids, bool considerBodyExistence = true );
 public:
 	Donya::Vector2			posRemainder;
 	Donya::Collision::Box2	body;
@@ -52,11 +52,11 @@ public:
 	/// <summary>
 	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
 	/// </summary>
-	int MoveX( float movement, const std::vector<Donya::Collision::Box2> &solids );
+	int MoveX( float movement, const std::vector<Donya::Collision::Box2> &solids, bool considerBodyExistence = true );
 	/// <summary>
 	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
 	/// </summary>
-	int MoveY( float movement, const std::vector<Donya::Collision::Box2> &solids );
+	int MoveY( float movement, const std::vector<Donya::Collision::Box2> &solids, bool considerBodyExistence = true );
 public:
 	virtual bool IsRiding( const Donya::Collision::Box2 &onto ) const;
 	/// <summary>
@@ -85,7 +85,7 @@ public:
 	/// <summary>
 	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
 	/// </summary>
-	static int MoveAxis( Actor *pTarget, int moveDimension, float movement, const std::vector<Donya::Collision::Box3F> &solids );
+	static int MoveAxis( Actor *pTarget, int moveDimension, float movement, const std::vector<Donya::Collision::Box3F> &solids, bool considerBodyExistence = true );
 public:
 	Donya::Collision::Box3F	body;
 	Donya::Quaternion orientation;
@@ -115,15 +115,15 @@ public:
 	/// <summary>
 	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
 	/// </summary>
-	int MoveX( float movement, const std::vector<Donya::Collision::Box3F> &solids );
+	int MoveX( float movement, const std::vector<Donya::Collision::Box3F> &solids, bool considerBodyExistence = true );
 	/// <summary>
 	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
 	/// </summary>
-	int MoveY( float movement, const std::vector<Donya::Collision::Box3F> &solids );
+	int MoveY( float movement, const std::vector<Donya::Collision::Box3F> &solids, bool considerBodyExistence = true );
 	/// <summary>
 	/// Returns the index of solid if the target collided to a solid of the solids, or -1 if the target didn't collide to any solids.
 	/// </summary>
-	int MoveZ( float movement, const std::vector<Donya::Collision::Box3F> &solids );
+	int MoveZ( float movement, const std::vector<Donya::Collision::Box3F> &solids, bool considerBodyExistence = true );
 public:
 	virtual bool IsRiding( const Donya::Collision::Box3F &onto, float checkLength = 0.001f ) const;
 	/// <summary>
@@ -176,11 +176,11 @@ public:
 	/// <summary>
 	/// My move can be guaranteed to get there. The "relativeActors" will be pushed(or carried) if colliding. The "solids" will be used for the actors move.
 	/// </summary>
-	void Move( const Donya::Int2	&movement, const std::vector<Actor2D *> &affectedActorPtrs, const std::vector<Donya::Collision::Box2> &solids );
+	void Move( const Donya::Int2	&movement, const std::vector<Actor2D *> &affectedActorPtrs, const std::vector<Donya::Collision::Box2> &solids, bool considerBodyExistence = true );
 	/// <summary>
 	/// My move can be guaranteed to get there. The "relativeActors" will be pushed(or carried) if colliding. The "solids" will be used for the actors move.
 	/// </summary>
-	void Move( const Donya::Vector2	&movement, const std::vector<Actor2D *> &affectedActorPtrs, const std::vector<Donya::Collision::Box2> &solids );
+	void Move( const Donya::Vector2	&movement, const std::vector<Actor2D *> &affectedActorPtrs, const std::vector<Donya::Collision::Box2> &solids, bool considerBodyExistence = true );
 public:
 	Donya::Int2				GetPosition()		const;
 	Donya::Vector2			GetPositionFloat()	const;
@@ -227,7 +227,7 @@ public:
 	/// <summary>
 	/// My move can be guaranteed to get there. The "relativeActors" will be pushed(or carried) if colliding. The "solids" will be used for the actors move.
 	/// </summary>
-	void Move( const Donya::Vector3	&movement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box3F> &solids );
+	void Move( const Donya::Vector3	&movement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box3F> &solids, bool considerBodyExistence = true );
 public:
 	virtual Donya::Vector3			GetPosition()	const;
 	virtual Donya::Collision::Box3F	GetHitBox()		const;

@@ -35,6 +35,7 @@ namespace Enemy
 	public:
 		void Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
+		void PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence = true ) override;
 	public:
 		Kind GetKind() const override;
 		Definition::Damage GetTouchDamage() const override;

@@ -142,7 +142,7 @@ namespace Enemy
 		virtual void Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		virtual void Uninit();
 		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
-		virtual void PhysicUpdate( float elapsedTime, const Map &terrain );
+		virtual void PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence = true );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:

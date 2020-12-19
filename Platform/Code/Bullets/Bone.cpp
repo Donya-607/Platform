@@ -74,6 +74,7 @@ namespace Bullet
 
 		// Only enable sphere hit box
 		hitSphere.exist	= true;
+		body.pos		= wsPos;
 		body.size		= 0.0f;
 		body.exist		= false;
 	}

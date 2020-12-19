@@ -262,7 +262,7 @@ namespace Enemy
 
 		ApplyReceivedDamageIfHas();
 	}
-	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )
+	void Base::PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence )
 	{
 		if ( NowWaiting() ) { return; }
 		// else
@@ -273,10 +273,10 @@ namespace Enemy
 			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
 		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
 
-		Actor::MoveX( movement.x, aroundSolids );
-		Actor::MoveZ( movement.z, aroundSolids );
+		Actor::MoveX( movement.x, aroundSolids, considerBodyExistence );
+		Actor::MoveZ( movement.z, aroundSolids, considerBodyExistence );
 
-		const int collideIndex = Actor::MoveY( movement.y, aroundSolids );
+		const int collideIndex = Actor::MoveY( movement.y, aroundSolids, considerBodyExistence );
 		if ( collideIndex != -1 ) // If collided to any
 		{
 			// Consider as landing

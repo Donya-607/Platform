@@ -66,7 +66,7 @@ namespace Enemy
 	#endif // USE_IMGUI
 
 		const auto &data = Parameter::GetSkeletonJoe();
-		const size_t stateIndex = std::min( scast<size_t>( status ), motionCount );
+		size_t stateIndex = std::min( scast<size_t>( status ), motionCount );
 
 		if ( !data.stateSeconds.empty() )
 		{
@@ -74,17 +74,26 @@ namespace Enemy
 			if ( data.stateSeconds[stateIndex] <= timer )
 			{
 				ToNextState( wsTargetPos );
+				stateIndex = std::min( scast<size_t>( status ), motionCount );
 			}
 		}
 
 		velocity.y -= data.gravity * elapsedTime;
 
-		constexpr Donya::Vector3 right = Donya::Vector3::Right();
-		const Donya::Vector3 toTarget = wsTargetPos - GetPosition();
-		UpdateOrientation( ( toTarget.x < 0.0f ) ? -right : right );
+		if ( status == MotionKind::Idle )
+		{
+			constexpr Donya::Vector3 right = Donya::Vector3::Right();
+			const Donya::Vector3 toTarget = wsTargetPos - GetPosition();
+			UpdateOrientation( ( toTarget.x < 0.0f ) ? -right : right );
+		}
 
 		const float motionAcceleration = ( data.animePlaySpeeds.size() <= stateIndex ) ? 1.0f : data.animePlaySpeeds[stateIndex];
 		UpdateMotionIfCan( elapsedTime * motionAcceleration, stateIndex );
+	}
+	void SkeletonJoe::PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence )
+	{
+		// My body's existence will be changed by status, so I must be collide to terrain explicitly.
+		Base::PhysicUpdate( elapsedTime, terrain, /* considerBodyExistence = */ false );
 	}
 	Kind SkeletonJoe::GetKind() const { return Kind::SkeletonJoe; }
 	Definition::Damage SkeletonJoe::GetTouchDamage() const

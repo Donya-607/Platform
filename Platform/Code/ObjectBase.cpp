@@ -23,12 +23,12 @@ So I do not rotate the offset.
 namespace
 {
 	template<typename Collision>
-	int FindCollidingIndex( const Collision &input, const std::vector<Collision> &solids )
+	int FindCollidingIndex( const Collision &input, const std::vector<Collision> &solids, bool considerBodyExistence = true )
 	{
 		const int count = scast<int>( solids.size() );
 		for ( int i = 0; i < count; ++i )
 		{
-			if ( Donya::Collision::IsHit( input, solids[i] ) )
+			if ( Donya::Collision::IsHit( input, solids[i], considerBodyExistence ) )
 			{
 				return i;
 			}
@@ -92,7 +92,7 @@ namespace
 }
 
 
-int Actor2D::MoveAxis( Actor2D *p, int axis, float sourceMovement, const std::vector<Donya::Collision::Box2> &solids )
+int Actor2D::MoveAxis( Actor2D *p, int axis, float sourceMovement, const std::vector<Donya::Collision::Box2> &solids, bool considerBodyExistence )
 {
 	if ( !p ) { return -1; }
 	// else
@@ -114,7 +114,7 @@ int Actor2D::MoveAxis( Actor2D *p, int axis, float sourceMovement, const std::ve
 		// Verify some solid is there at destination first.
 		movedBody = p->GetHitBox();
 		movedBody.pos[axis] += moveSign;
-		const int collideIndex = FindCollidingIndex( movedBody, solids );
+		const int collideIndex = FindCollidingIndex( movedBody, solids, considerBodyExistence );
 
 		// I will stop before move if some solid is there.
 		if ( collideIndex != -1 ) { return collideIndex; }
@@ -126,13 +126,13 @@ int Actor2D::MoveAxis( Actor2D *p, int axis, float sourceMovement, const std::ve
 
 	return -1;
 }
-int Actor2D::MoveX( float movement, const std::vector<Donya::Collision::Box2> &solids )
+int Actor2D::MoveX( float movement, const std::vector<Donya::Collision::Box2> &solids, bool considerBodyExistence )
 {
-	return MoveAxis( this, Dimension::X, movement, solids );
+	return MoveAxis( this, Dimension::X, movement, solids, considerBodyExistence );
 }
-int Actor2D::MoveY( float movement, const std::vector<Donya::Collision::Box2> &solids )
+int Actor2D::MoveY( float movement, const std::vector<Donya::Collision::Box2> &solids, bool considerBodyExistence )
 {
-	return MoveAxis( this, Dimension::Y, movement, solids );
+	return MoveAxis( this, Dimension::Y, movement, solids, considerBodyExistence );
 }
 bool Actor2D::IsRiding( const Donya::Collision::Box2 &onto ) const
 {
@@ -165,7 +165,7 @@ bool Actor2D::DrawHitBox( const Donya::Vector4 &color ) const
 }
 
 
-int Actor::MoveAxis( Actor *p, int axis, float movement, const std::vector<Donya::Collision::Box3F> &solids )
+int Actor::MoveAxis( Actor *p, int axis, float movement, const std::vector<Donya::Collision::Box3F> &solids, bool considerBodyExistence )
 {
 	if ( !p ) { return -1; }
 	if ( IsZero( movement ) ) { return -1; }
@@ -199,7 +199,7 @@ int Actor::MoveAxis( Actor *p, int axis, float movement, const std::vector<Donya
 	int lastCollideIndex = -1;
 	while ( ++loopCount <= MAX_LOOP_COUNT )
 	{
-		const int currentIndex = FindCollidingIndex( wsMovedBody, solids );
+		const int currentIndex = FindCollidingIndex( wsMovedBody, solids, considerBodyExistence );
 		if ( currentIndex < 0 ) { break; } // Does not detected a collision.
 		// else
 
@@ -219,17 +219,17 @@ int Actor::MoveAxis( Actor *p, int axis, float movement, const std::vector<Donya
 
 	return lastCollideIndex;
 }
-int Actor::MoveX( float movement, const std::vector<Donya::Collision::Box3F> &solids )
+int Actor::MoveX( float movement, const std::vector<Donya::Collision::Box3F> &solids, bool considerBodyExistence )
 {
-	return MoveAxis( this, Dimension::X, movement, solids );
+	return MoveAxis( this, Dimension::X, movement, solids, considerBodyExistence );
 }
-int Actor::MoveY( float movement, const std::vector<Donya::Collision::Box3F> &solids )
+int Actor::MoveY( float movement, const std::vector<Donya::Collision::Box3F> &solids, bool considerBodyExistence )
 {
-	return MoveAxis( this, Dimension::Y, movement, solids );
+	return MoveAxis( this, Dimension::Y, movement, solids, considerBodyExistence );
 }
-int Actor::MoveZ( float movement, const std::vector<Donya::Collision::Box3F> &solids )
+int Actor::MoveZ( float movement, const std::vector<Donya::Collision::Box3F> &solids, bool considerBodyExistence )
 {
-	return MoveAxis( this, Dimension::Z, movement, solids );
+	return MoveAxis( this, Dimension::Z, movement, solids, considerBodyExistence );
 }
 bool Actor::IsRiding( const Donya::Collision::Box3F &onto, float checkLength ) const
 {
@@ -252,12 +252,12 @@ void Actor::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP, 
 }
 
 
-void Solid2D::Move( const Donya::Int2		&sourceMovement, const std::vector<Actor2D *> &affectedActor2DPtrs, const std::vector<Donya::Collision::Box2> &solids )
+void Solid2D::Move( const Donya::Int2		&sourceMovement, const std::vector<Actor2D *> &affectedActor2DPtrs, const std::vector<Donya::Collision::Box2> &solids, bool considerBodyExistence )
 {
 	// Call float version.
-	Move( sourceMovement.Float(), affectedActor2DPtrs, solids );
+	Move( sourceMovement.Float(), affectedActor2DPtrs, solids, considerBodyExistence );
 }
-void Solid2D::Move( const Donya::Vector2	&sourceMovement, const std::vector<Actor2D *> &affectedActor2DPtrs, const std::vector<Donya::Collision::Box2> &solids )
+void Solid2D::Move( const Donya::Vector2	&sourceMovement, const std::vector<Actor2D *> &affectedActor2DPtrs, const std::vector<Donya::Collision::Box2> &solids, bool considerBodyExistence )
 {
 	// Store riding actors. This process must do before the move(if do it after the move, we may be out of riding range).
 	std::vector<Actor2D *> ridingActor2DPtrs{};
@@ -311,14 +311,14 @@ void Solid2D::Move( const Donya::Vector2	&sourceMovement, const std::vector<Acto
 			{
 				switch ( axis )
 				{
-				case Dimension::X: return actor.MoveX( movement, solids );
-				case Dimension::Y: return actor.MoveY( movement, solids );
+				case Dimension::X: return actor.MoveX( movement, solids, considerBodyExistence );
+				case Dimension::Y: return actor.MoveY( movement, solids, considerBodyExistence );
 				default: return -1;
 				}
 			};
 
 			actorBody = it->GetHitBox();
-			if ( Donya::Collision::IsHit( actorBody, movedBody ) )
+			if ( Donya::Collision::IsHit( actorBody, movedBody, considerBodyExistence ) )
 			{
 				// Push the actor
 
@@ -372,7 +372,7 @@ bool Solid2D::DrawHitBox( const Donya::Vector4 &color ) const
 	return DrawHitBoxImpl( drawBoxF, color );
 }
 
-void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box3F> &solids )
+void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor *> &affectedActorPtrs, const std::vector<Donya::Collision::Box3F> &solids, bool considerBodyExistence )
 {
 	// Store riding actors. This process must do before the move(if do it after the move, we may be out of riding range).
 	std::vector<Actor *> ridingActorPtrs{};
@@ -426,15 +426,15 @@ void Solid::Move( const Donya::Vector3 &sourceMovement, const std::vector<Actor 
 			{
 				switch ( axis )
 				{
-				case Dimension::X: return actor.MoveX( movement, solids );
-				case Dimension::Y: return actor.MoveY( movement, solids );
-				case Dimension::Z: return actor.MoveZ( movement, solids );
+				case Dimension::X: return actor.MoveX( movement, solids, considerBodyExistence );
+				case Dimension::Y: return actor.MoveY( movement, solids, considerBodyExistence );
+				case Dimension::Z: return actor.MoveZ( movement, solids, considerBodyExistence );
 				default: return -1;
 				}
 			};
 
 			actorBody = it->GetHitBox();
-			if ( Donya::Collision::IsHit( actorBody, movedBody ) )
+			if ( Donya::Collision::IsHit( actorBody, movedBody, considerBodyExistence ) )
 			{
 				// Push the actor
 
