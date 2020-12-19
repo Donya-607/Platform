@@ -32,7 +32,7 @@
             }
         },
         "moveSpeed": 1.0,
-        "rotateSpeed": 1.0,
+        "rotateSpeed": 6.0,
         "animePlaySpeed": 1.0
     }
 }
