@@ -1,0 +1,69 @@
+{
+    "SkeletonJoe": {
+        "cereal_class_version": 0,
+        "basic": {
+            "cereal_class_version": 0,
+            "hp": 3,
+            "touchDamage": {
+                "cereal_class_version": 0,
+                "amount": 4,
+                "type": 0
+            },
+            "hitBoxOffset": {
+                "cereal_class_version": 0,
+                "x": 0.0,
+                "y": 0.699999988079071,
+                "z": 0.0
+            },
+            "hurtBoxOffset": {
+                "x": 0.0,
+                "y": 0.949999988079071,
+                "z": 0.0
+            },
+            "hitBoxSize": {
+                "x": 0.8799999952316284,
+                "y": 0.699999988079071,
+                "z": 0.49000000953674319
+            },
+            "hurtBoxSize": {
+                "x": 0.8899999856948853,
+                "y": 0.949999988079071,
+                "z": 0.5
+            }
+        },
+        "fireDesc": {
+            "cereal_class_version": 2,
+            "initialSpeed": 0.0,
+            "direction": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "position": {
+                "x": 0.0,
+                "y": 1.0,
+                "z": -0.10000000149011612
+            },
+            "kind": 4,
+            "pAdditionalDamage": {
+                "ptr_wrapper": {
+                    "id": 0
+                }
+            }
+        },
+        "gravity": 60.0,
+        "impactSecond": 0.699999988079071,
+        "stateSeconds": [
+            1.25,
+            0.6000000238418579,
+            1.5,
+            1.100000023841858
+        ],
+        "animePlaySpeeds": [
+            1.0,
+            1.0,
+            1.2000000476837159,
+            1.2000000476837159
+        ]
+    }
+}

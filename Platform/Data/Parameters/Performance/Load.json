@@ -1,0 +1,125 @@
+{
+    "Load": {
+        "cereal_class_version": 1,
+        "partIcon": {
+            "cereal_class_version": 0,
+            "config": {
+                "cereal_class_version": 0,
+                "degree": 0.0,
+                "alpha": 1.0,
+                "pos": {
+                    "cereal_class_version": 0,
+                    "x": -128.0,
+                    "y": 0.0
+                },
+                "origin": {
+                    "x": 0.5,
+                    "y": 0.5
+                },
+                "texPos": {
+                    "x": 0.0,
+                    "y": 0.0
+                },
+                "texSize": {
+                    "x": 0.0,
+                    "y": 0.0
+                },
+                "scale": {
+                    "x": 0.5,
+                    "y": 0.5
+                },
+                "color": {
+                    "cereal_class_version": 0,
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "cycleSecond": 0.8999999761581421,
+            "bounceOffsets": [
+                {
+                    "x": 0.0,
+                    "y": 0.0
+                },
+                {
+                    "x": 0.0,
+                    "y": 16.0
+                },
+                {
+                    "x": 0.0,
+                    "y": 16.0
+                },
+                {
+                    "x": 0.0,
+                    "y": 0.0
+                },
+                {
+                    "x": 0.0,
+                    "y": -48.0
+                },
+                {
+                    "x": 0.0,
+                    "y": -80.0
+                }
+            ],
+            "bounceStretches": [
+                {
+                    "x": 1.0,
+                    "y": 1.0
+                },
+                {
+                    "x": 2.25,
+                    "y": 0.0
+                },
+                {
+                    "x": 0.800000011920929,
+                    "y": 3.0
+                },
+                {
+                    "x": 1.0,
+                    "y": 1.0
+                }
+            ]
+        },
+        "partString": {
+            "cereal_class_version": 0,
+            "config": {
+                "degree": 0.0,
+                "alpha": 1.0,
+                "pos": {
+                    "x": -48.0,
+                    "y": 0.0
+                },
+                "origin": {
+                    "x": 0.5,
+                    "y": 0.5
+                },
+                "texPos": {
+                    "x": 0.0,
+                    "y": 0.0
+                },
+                "texSize": {
+                    "x": 0.0,
+                    "y": 0.0
+                },
+                "scale": {
+                    "x": 2.0,
+                    "y": 2.0
+                },
+                "color": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "staySecond": 0.4000000059604645,
+            "partPopSecond": 0.05000000074505806,
+            "popInflRange": 0.019999999552965165,
+            "popOffset": {
+                "x": 0.0,
+                "y": -16.0
+            }
+        },
+        "fadeSecond": 0.30000001192092898
+    }
+}

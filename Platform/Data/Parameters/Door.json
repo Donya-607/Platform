@@ -1,0 +1,46 @@
+{
+    "Door": {
+        "cereal_class_version": 0,
+        "hitBox": {
+            "cereal_class_version": 0,
+            "pos": {
+                "cereal_class_version": 0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "offset": {
+                "x": 0.5,
+                "y": 1.6799999475479127,
+                "z": 0.0
+            },
+            "size": {
+                "x": 1.0,
+                "y": 1.6799999475479127,
+                "z": 0.5
+            },
+            "exist": true
+        },
+        "triggerAreaBase": {
+            "pos": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "offset": {
+                "x": 0.30000001192092898,
+                "y": 1.6799999475479127,
+                "z": 0.0
+            },
+            "size": {
+                "x": 0.8999999761581421,
+                "y": 1.6799999475479127,
+                "z": 0.49000000953674319
+            },
+            "exist": true
+        },
+        "triggerAreaAddSize": 0.10000000149011612,
+        "animeSpeedOpen": 2.200000047683716,
+        "animeSpeedClose": 2.5
+    }
+}

@@ -1,0 +1,115 @@
+{
+    "Skull": {
+        "cereal_class_version": 11,
+        "hp": 28,
+        "touchDamage": {
+            "cereal_class_version": 0,
+            "amount": 2,
+            "type": 0
+        },
+        "hitBoxOffset": {
+            "cereal_class_version": 0,
+            "x": 0.0,
+            "y": 0.7599999904632568,
+            "z": 0.0
+        },
+        "hurtBoxOffset": {
+            "x": 0.0,
+            "y": 0.8500000238418579,
+            "z": 0.0
+        },
+        "hitBoxSize": {
+            "x": 0.5,
+            "y": 0.75,
+            "z": 0.5
+        },
+        "hurtBoxSize": {
+            "x": 0.6000000238418579,
+            "y": 0.8999999761581421,
+            "z": 0.6000000238418579
+        },
+        "gravity": 40.0,
+        "runSpeed": 8.0,
+        "jumpDegree": 60.0,
+        "jumpDestLengths": [
+            2.0,
+            4.0,
+            6.0,
+            8.0
+        ],
+        "jumpVerticalHeight": 5.0,
+        "shotBeginLagSecond": 0.3499999940395355,
+        "shotFireIntervalSecond": 0.3499999940395355,
+        "shotEndLagSecond": 0.30000001192092898,
+        "shotFireCount": 3,
+        "shotDesc": {
+            "cereal_class_version": 2,
+            "initialSpeed": 12.0,
+            "direction": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "position": {
+                "x": 0.0,
+                "y": -0.10000000149011612,
+                "z": 1.2000000476837159
+            },
+            "kind": 1,
+            "pAdditionalDamage": {
+                "ptr_wrapper": {
+                    "id": 0
+                }
+            }
+        },
+        "shieldProtectSeconds": [
+            {
+                "cereal_class_version": 0,
+                "bias": 10,
+                "second": 1.600000023841858
+            },
+            {
+                "bias": 4,
+                "second": 0.800000011920929
+            },
+            {
+                "bias": 3,
+                "second": 3.200000047683716
+            }
+        ],
+        "shieldBeginLagSecond": 0.44999998807907107,
+        "shieldEndLagSecond": 0.30000001192092898,
+        "runDestTakeDist": 0.699999988079071,
+        "runEndLagSecond": 0.5,
+        "shotDegreeIncrement": 12.0,
+        "animePlaySpeeds": [
+            1.0,
+            1.7999999523162842,
+            1.0,
+            2.0,
+            1.0,
+            1.0,
+            1.2000000476837159,
+            2.0,
+            1.0,
+            2.0
+        ],
+        "shieldPosOffset": {
+            "x": 0.0,
+            "y": 0.10000000149011612,
+            "z": 0.0
+        },
+        "shotDegreeLimit": {
+            "cereal_class_version": 0,
+            "x": 0.0,
+            "y": 90.0
+        },
+        "invincibleSecond": 0.4000000059604645,
+        "invincibleFlushInterval": 0.10000000149011612,
+        "appearRecoverHPTiming": 1.4500000476837159,
+        "appearRoarTiming": 0.6100000143051148,
+        "appearWaitMotionSec": 2.5,
+        "detectFirstWaitSec": 0.5,
+        "detectWaitSecMax": 3.0
+    }
+}

@@ -1,0 +1,213 @@
+{
+    "SceneTitle": {
+        "cereal_class_version": 12,
+        "directionalLight": {
+            "cereal_class_version": 0,
+            "light": {
+                "cereal_class_version": 1,
+                "diffuseColor": {
+                    "cereal_class_version": 0,
+                    "x": 0.6018608212471008,
+                    "y": 0.5542483925819397,
+                    "z": 0.6666666865348816,
+                    "w": 1.0
+                },
+                "specularColor": {
+                    "x": 1.0,
+                    "y": 0.9999899864196777,
+                    "z": 0.9999899864196777,
+                    "w": 2.0
+                },
+                "ambientColor": {
+                    "x": 0.7529411911964417,
+                    "y": 0.7529411911964417,
+                    "z": 0.7529411911964417,
+                    "w": 1.0
+                }
+            },
+            "direction": {
+                "x": 0.0,
+                "y": -0.7071067690849304,
+                "z": 0.7071067690849304,
+                "w": 0.0
+            }
+        },
+        "scrollTakeSecond": 1.2999999523162842,
+        "shadowMap": {
+            "cereal_class_version": 0,
+            "color": {
+                "cereal_class_version": 0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "bias": 0.0020000000949949028,
+            "offsetDistance": 16.0,
+            "projectDirection": {
+                "x": 0.5830932855606079,
+                "y": -0.7813218235969544,
+                "z": 0.22257238626480103
+            },
+            "projectDistance": {
+                "x": 41.0,
+                "y": 24.0,
+                "z": 50.0
+            },
+            "nearDistance": -3.0
+        },
+        "bloomParam": {
+            "cereal_class_version": 0,
+            "luminanceThreshold": 0.8999999761581421,
+            "blurDeviation": 2.5,
+            "blurSampleCount": 8
+        },
+        "itemPositions": [
+            {
+                "cereal_class_version": 0,
+                "x": 800.0,
+                "y": 512.0
+            },
+            {
+                "x": 800.0,
+                "y": 600.0
+            }
+        ],
+        "chooseItemMagni": 1.5,
+        "cameras": [
+            {
+                "cereal_class_version": 1,
+                "coordIsRelative": false,
+                "pos": {
+                    "x": 36.0,
+                    "y": -9.520000457763672,
+                    "z": -2.9000000953674318
+                },
+                "focus": {
+                    "x": 39.13999938964844,
+                    "y": -9.430000305175782,
+                    "z": 2.950000047683716
+                },
+                "fovDegree": 60.0,
+                "lerpSecFromOther": 0.5,
+                "easeKind": 7,
+                "easeType": 1
+            },
+            {
+                "coordIsRelative": false,
+                "pos": {
+                    "x": 36.0,
+                    "y": -8.100000381469727,
+                    "z": -20.0
+                },
+                "focus": {
+                    "x": 36.0,
+                    "y": -10.0,
+                    "z": 0.0
+                },
+                "fovDegree": 30.0,
+                "lerpSecFromOther": 0.800000011920929,
+                "easeKind": 9,
+                "easeType": 1
+            },
+            {
+                "coordIsRelative": false,
+                "pos": {
+                    "x": 32.5,
+                    "y": -7.0,
+                    "z": -18.0
+                },
+                "focus": {
+                    "x": 32.0,
+                    "y": -7.0,
+                    "z": 0.0
+                },
+                "fovDegree": 45.0,
+                "lerpSecFromOther": 0.6000000238418579,
+                "easeKind": 9,
+                "easeType": 1
+            }
+        ],
+        "bossIniter": {
+            "cereal_class_version": 0,
+            "wsPos": {
+                "x": 23.5,
+                "y": -9.0,
+                "z": 0.0
+            },
+            "lookingRight": true
+        },
+        "leaveDelaySec": 1.2999999523162842,
+        "fadeDelaySec": 1.2000000476837159,
+        "fadeBGMSec": 0.7070000171661377,
+        "resetCameraWaitSec": 1.0,
+        "logoScale": 1.0,
+        "logoPos": {
+            "x": 800.0,
+            "y": 256.0
+        },
+        "pressedItemScalingDelaySecond": 1.0,
+        "pressedItemScalingTakeSecond": 0.30000001192092898,
+        "pressedItemScalingPoints": [
+            {
+                "x": 1.0,
+                "y": 1.0
+            },
+            {
+                "x": 3.0,
+                "y": 0.0
+            },
+            {
+                "x": -0.30000001192092898,
+                "y": 0.0
+            },
+            {
+                "x": 0.0,
+                "y": 5.0
+            }
+        ],
+        "pressedLogoScalingDelaySecond": 1.0,
+        "pressedLogoScalingTakeSecond": 0.30000001192092898,
+        "pressedLogoScalingPoints": [
+            {
+                "x": 1.0,
+                "y": 1.0
+            },
+            {
+                "x": 3.0,
+                "y": 0.0
+            },
+            {
+                "x": -1.0,
+                "y": 0.0
+            },
+            {
+                "x": 0.0,
+                "y": 5.0
+            },
+            {
+                "x": 0.0,
+                "y": 5.0
+            }
+        ],
+        "pressedItemAddDestScale": 2.0,
+        "pressedItemAddFadeSecond": 0.800000011920929,
+        "pressedItemAddFadeEaseKind": 1,
+        "pressedItemAddFadeEaseType": 1,
+        "leaveBossDelaySec": 0.550000011920929,
+        "leaveBossOffset": {
+            "x": -666.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "voxelize": {
+            "cereal_class_version": 0,
+            "voxelSize": 0.10000000149011612,
+            "edgeSize": 0.125,
+            "edgeDarkness": 0.10000000149011612
+        },
+        "deadZone": {
+            "x": 0.6000000238418579,
+            "y": 0.699999988079071
+        }
+    }
+}

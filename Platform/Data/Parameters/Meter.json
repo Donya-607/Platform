@@ -1,0 +1,79 @@
+{
+    "Meter": {
+        "cereal_class_version": 3,
+        "gaugeTexOrigin": {
+            "cereal_class_version": 0,
+            "x": 0.0,
+            "y": 0.0
+        },
+        "gaugeTexSize": {
+            "x": 44.0,
+            "y": 124.0
+        },
+        "amountPosOffset": {
+            "x": 6.0,
+            "y": 6.0
+        },
+        "amountTexOrigin": {
+            "x": 44.0,
+            "y": 0.0
+        },
+        "amountTexSize": {
+            "x": 32.0,
+            "y": 112.0
+        },
+        "iconFramePosOffset": {
+            "x": -9.0,
+            "y": 124.0
+        },
+        "iconFrameTexOrigin": {
+            "x": 0.0,
+            "y": 124.0
+        },
+        "iconFrameTexSize": {
+            "x": 60.0,
+            "y": 60.0
+        },
+        "iconPicturePosOffset": {
+            "x": 6.0,
+            "y": 6.0
+        },
+        "iconPictureTexOrigin": {
+            "x": 0.0,
+            "y": 184.0
+        },
+        "iconPictureTexSize": {
+            "x": 48.0,
+            "y": 48.0
+        },
+        "remainFramePosOffset": {
+            "x": 45.0,
+            "y": 124.0
+        },
+        "remainFrameTexOrigin": {
+            "x": 60.0,
+            "y": 124.0
+        },
+        "remainFrameTexSize": {
+            "x": 42.0,
+            "y": 60.0
+        },
+        "remainNumberPosOffset": {
+            "x": 12.0,
+            "y": 12.0
+        },
+        "remainNumberScale": {
+            "x": 1.5,
+            "y": 1.5
+        },
+        "recoveryAmount": 28.0,
+        "shakeSecond": 0.5,
+        "shakeCycleSec": 0.05000000074505806,
+        "shakeBaseAmpl": 16.0,
+        "shakeDamageAmpl": 48.0,
+        "shakeDamageInfluenceRange": {
+            "x": 3.0,
+            "y": 5.0
+        }
+    }
+}

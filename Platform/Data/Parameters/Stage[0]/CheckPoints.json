@@ -1,0 +1,31 @@
+{
+    "CheckPoints": {
+        "cereal_class_version": 0,
+        "areas": [
+            {
+                "cereal_class_version": 0,
+                "area": {
+                    "cereal_class_version": 0,
+                    "pos": {
+                        "cereal_class_version": 0,
+                        "x": 84.0,
+                        "y": -8.0,
+                        "z": 0.0
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 2.0,
+                        "z": 1.0
+                    },
+                    "size": {
+                        "x": 10.0,
+                        "y": 6.0,
+                        "z": 2.0
+                    },
+                    "exist": true
+                },
+                "lookingRight": true
+            }
+        ]
+    }
+}

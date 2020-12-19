@@ -1,0 +1,2092 @@
+{
+    "Map": {
+        "cereal_class_version": 0,
+        "tilePtrs": [
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483649,
+                        "data": {
+                            "cereal_class_version": 0,
+                            "value0": {
+                                "cereal_class_version": 1,
+                                "body": {
+                                    "cereal_class_version": 0,
+                                    "pos": {
+                                        "cereal_class_version": 0,
+                                        "x": 0.5,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "cereal_class_version": 0,
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483650,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 1.5,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483651,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 2.5,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483652,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 3.5,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483653,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 4.5,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483654,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 5.5,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483655,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 10.5,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483656,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 11.5,
+                                        "y": -2.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483657,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 0.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483658,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 1.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483659,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 2.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483660,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 3.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483661,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 4.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483662,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 5.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483663,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 6.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483664,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 7.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483665,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 8.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483666,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 9.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483667,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 10.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483668,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 11.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483669,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 12.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483670,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 13.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483671,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 14.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483672,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 15.5,
+                                        "y": -7.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483673,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 0.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483674,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 1.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483675,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 2.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483676,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 3.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483677,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 4.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483678,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 5.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483679,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 6.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483680,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 7.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483681,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 8.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483682,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 9.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483683,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 10.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483684,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 11.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483685,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 12.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483686,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 13.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483687,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 14.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                },
+                {
+                    "polymorphic_id": 1073741824,
+                    "ptr_wrapper": {
+                        "id": 2147483688,
+                        "data": {
+                            "value0": {
+                                "body": {
+                                    "pos": {
+                                        "x": 15.5,
+                                        "y": -8.5,
+                                        "z": 0.0
+                                    },
+                                    "offset": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "size": {
+                                        "x": 0.5,
+                                        "y": 0.5,
+                                        "z": 0.5
+                                    },
+                                    "exist": true
+                                },
+                                "orientation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "w": 1.0
+                                }
+                            },
+                            "tileID": 4
+                        }
+                    }
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ],
+            [
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                },
+                {
+                    "polymorphic_id": 0
+                }
+            ]
+        ]
+    }
+}

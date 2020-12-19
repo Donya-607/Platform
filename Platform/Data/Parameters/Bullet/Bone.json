@@ -1,0 +1,26 @@
+{
+    "Bone": {
+        "cereal_class_version": 0,
+        "basic": {
+            "cereal_class_version": 1,
+            "hitBoxOffset": {
+                "cereal_class_version": 0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hitBoxSize": {
+                "x": 0.2800000011920929,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "damage": {
+                "cereal_class_version": 0,
+                "amount": 2,
+                "type": 0
+            },
+            "animePlaySpeed": 0.800000011920929
+        },
+        "gravity": 23.0
+    }
+}

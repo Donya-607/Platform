@@ -1,0 +1,25 @@
+{
+    "SkullBuster": {
+        "cereal_class_version": 1,
+        "basic": {
+            "cereal_class_version": 1,
+            "hitBoxOffset": {
+                "cereal_class_version": 0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hitBoxSize": {
+                "x": 0.3499999940395355,
+                "y": 0.25,
+                "z": 0.25
+            },
+            "damage": {
+                "cereal_class_version": 0,
+                "amount": 4,
+                "type": 1
+            },
+            "animePlaySpeed": 1.0
+        }
+    }
+}

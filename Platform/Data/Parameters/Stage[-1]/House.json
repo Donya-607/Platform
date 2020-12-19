@@ -1,0 +1,37 @@
+{
+    "House": {
+        "cereal_class_version": 0,
+        "rooms": [
+            {
+                "key": 8,
+                "value": {
+                    "cereal_class_version": 1,
+                    "id": 8,
+                    "connectingRoomID": -1,
+                    "transition": 0,
+                    "area": {
+                        "cereal_class_version": 0,
+                        "pos": {
+                            "cereal_class_version": 0,
+                            "x": 32.0,
+                            "y": -9.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 13.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 12.0
+                }
+            }
+        ]
+    }
+}
