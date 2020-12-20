@@ -59,7 +59,7 @@ namespace Bullet
 	}
 	void Bone::PlayCollidedSE() const
 	{
-		// Donya::Sound::Play( Music::Bullet_HitBone ); TODO
+		Donya::Sound::Play( Music::Bullet_HitBone );
 	}
 	Definition::Damage Bone::GetDamageParameter() const
 	{

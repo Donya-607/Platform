@@ -189,6 +189,7 @@ namespace Enemy
 		case MotionKind::ReAssemble:
 			next = MotionKind::Idle;
 			IdleInit();
+			Donya::Sound::Play( Music::SkeletonJoe_ReAssemble_End );
 			break;
 
 		default: return;
@@ -234,8 +235,7 @@ namespace Enemy
 		Bullet::Admin::Get().RequestFire( desc );
 		ChangeMotion( MotionKind::Fire );
 
-		// TODO: Make shot SE
-		// Donya::Sound::Play( Music::SkeletonJoe_Shot );
+		Donya::Sound::Play( Music::Bullet_ShotBone );
 	}
 	void SkeletonJoe::IdleInit()
 	{
@@ -255,10 +255,13 @@ namespace Enemy
 		timer			= 0.0f;
 		hp				= GetInitialHP();
 		ChangeState( MotionKind::Break );
+
+		Donya::Sound::Play( Music::SkeletonJoe_Break );
 	}
 	void SkeletonJoe::ReAssembleInit()
 	{
 		timer = 0.0f;
+		Donya::Sound::Play( Music::SkeletonJoe_ReAssemble_Begin );
 	}
 #if USE_IMGUI
 	bool SkeletonJoe::ShowImGuiNode( const std::string &nodeCaption )
