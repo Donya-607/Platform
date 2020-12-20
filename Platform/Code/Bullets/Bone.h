@@ -2,6 +2,7 @@
 
 #include "../Bullet.h"
 #include "../BulletParam.h"
+#include "../Donya/Serializer.h"
 
 namespace Bullet
 {

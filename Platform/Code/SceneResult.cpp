@@ -1,7 +1,6 @@
 #include "SceneResult.h"
 
 #include <algorithm>				// Use std::find
-#include <vector>
 
 #undef max
 #undef min
@@ -39,7 +38,7 @@
 #if DEBUG_MODE
 #include "CSVLoader.h"
 #pragma comment( lib, "comdlg32.lib" ) // Used for common-dialog
-#endif // DEBUG_MODE
+#endif // DEBUG_MOD
 
 namespace
 {

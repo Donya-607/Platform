@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#undef max
+#undef min
 #include <cereal/types/memory.hpp>
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>

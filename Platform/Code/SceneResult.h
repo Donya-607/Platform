@@ -99,4 +99,3 @@ private:
 	void	UseImGui();
 #endif // USE_IMGUI
 };
-#pragma once

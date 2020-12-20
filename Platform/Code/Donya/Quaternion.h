@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint> // Use std::uint32_t.
+
+#undef max
+#undef min
 #include <cereal/cereal.hpp>
 
 #include "Vector.h"
