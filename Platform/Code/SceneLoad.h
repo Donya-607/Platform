@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -13,10 +14,19 @@
 class SceneLoad : public Scene
 {
 private:
-	Thread thEffects;
-	Thread thModels;
-	Thread thSounds;
-	Thread thSprites;
+	enum ThreadKind
+	{
+		Effect = 0,
+		Models,
+		Sounds,
+		Sprites,
+
+		Renderer,
+
+		ThreadCount
+	};
+private:
+	std::array<Thread, ThreadKind::ThreadCount> threads;
 
 	Performer::LoadPart loadPerformer;
 
