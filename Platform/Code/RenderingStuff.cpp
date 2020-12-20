@@ -103,3 +103,44 @@ bool RenderingStuffInstance::CreateSurfaces()
 
 	return succeeded;
 }
+
+#if USE_IMGUI
+void RenderingStuffInstance::ShowSurfacesToImGui( const char *nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption ) ) { return; }
+	// else
+
+	if ( !ptr )
+	{
+		ImGui::TextDisabled( u8"サーフェスを初期化できていません！" );
+		return;
+	}
+	// else
+
+	static Donya::Vector2 drawSize{ 320.0f, 180.0f };
+	ImGui::DragFloat2( u8"描画サイズ", &drawSize.x, 10.0f );
+	drawSize.x = std::max( 10.0f, drawSize.x );
+	drawSize.y = std::max( 10.0f, drawSize.y );
+
+	if ( ImGui::TreeNode( u8"シャドウマップ" ) )
+	{
+		ptr->shadowMap.DrawDepthStencilToImGui( drawSize );
+		ImGui::TreePop();
+	}
+	if ( ImGui::TreeNode( u8"スクリーン" ) )
+	{
+		ptr->screenSurface.DrawRenderTargetToImGui( drawSize );
+		ImGui::TreePop();
+	}
+	if ( ImGui::TreeNode( u8"ブルーム" ) )
+	{
+		ImGui::Text( u8"輝度抽出：" );
+		ptr->bloomer.DrawHighLuminanceToImGui( drawSize );
+		ImGui::Text( u8"縮小バッファたち：" );
+		ptr->bloomer.DrawBlurBuffersToImGui( drawSize );
+		ImGui::TreePop();
+	}
+
+	ImGui::TreePop();
+}
+#endif // USE_IMGUI

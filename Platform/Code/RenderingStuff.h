@@ -6,6 +6,7 @@
 #include "Donya/Shader.h"
 #include "Donya/Surface.h"
 #include "Donya/Template.h"
+#include "Donya/UseImGui.h"
 
 #include "Bloom.h"
 #include "Renderer.h"
@@ -47,4 +48,8 @@ public:
 private:
 	bool CreateShaders();
 	bool CreateSurfaces();
+public:
+#if USE_IMGUI
+	void ShowSurfacesToImGui( const char *nodeCaption );
+#endif // USE_IMGUI
 };

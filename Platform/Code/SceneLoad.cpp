@@ -302,7 +302,7 @@ void SceneLoad::Init()
 	thSounds.pThread	= std::make_unique<std::thread>( LoadingSounds,		&thSounds.result  );
 	thSprites.pThread	= std::make_unique<std::thread>( LoadingSprites,	&thSprites.result );
 
-	assert(RenderingStuffInstance::Get().Initialize());
+	RenderingStuffInstance::Get().Initialize();
 }
 void SceneLoad::Uninit()
 {

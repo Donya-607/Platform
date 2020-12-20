@@ -22,6 +22,7 @@
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
 
+#include "Bloom.h"
 #include "Bosses/Skull.h"			// Use SkullParam
 #include "Bullet.h"
 #include "Common.h"
@@ -974,19 +975,14 @@ void SceneGame::Draw( float elapsedTime )
 
 	// Generate the buffers of bloom
 	{
-		// constexpr Donya::Vector4 black{ 0.0f, 0.0f, 0.0f, 1.0f };
-		// pBloomer->ClearBuffers( black );
-
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
 		Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
 
 		const float oldDepth = Donya::Sprite::GetDrawDepth();
 		Donya::Sprite::SetDrawDepth( 0.0f );
-
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0 );
 		p->bloomer.WriteLuminance( p->screenSurface );
 		Donya::Sampler::ResetPS( 0 );
-
 		Donya::Sprite::SetDrawDepth( oldDepth );
 
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
@@ -3423,36 +3419,7 @@ void SceneGame::UseImGui( float elapsedTime )
 		ImGui::TreePop();
 	}
 
-	if ( ImGui::TreeNode( u8"サーフェス描画" ) )
-	{
-		static Donya::Vector2 drawSize{ 320.0f, 180.0f };
-		ImGui::DragFloat2( u8"描画サイズ", &drawSize.x, 10.0f );
-		drawSize.x = std::max( 10.0f, drawSize.x );
-		drawSize.y = std::max( 10.0f, drawSize.y );
-
-		RenderingStuff *p = RenderingStuffInstance::Get().Ptr();
-
-		if ( ImGui::TreeNode( u8"シャドウマップ" ) )
-		{
-			p->shadowMap.DrawDepthStencilToImGui( drawSize );
-			ImGui::TreePop();
-		}
-		if ( ImGui::TreeNode( u8"スクリーン" ) )
-		{
-			p->screenSurface.DrawRenderTargetToImGui( drawSize );
-			ImGui::TreePop();
-		}
-		if ( ImGui::TreeNode( u8"ブルーム" ) )
-		{
-			ImGui::Text( u8"輝度抽出：" );
-			p->bloomer.DrawHighLuminanceToImGui( drawSize );
-			ImGui::Text( u8"縮小バッファたち：" );
-			p->bloomer.DrawBlurBuffersToImGui( drawSize );
-			ImGui::TreePop();
-		}
-
-		ImGui::TreePop();
-	}
+	RenderingStuffInstance::Get().ShowSurfacesToImGui( u8"サーフェス描画" );
 
 	if ( ImGui::TreeNode( u8"ルーム選択" ) )
 	{

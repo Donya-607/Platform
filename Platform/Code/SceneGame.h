@@ -10,12 +10,9 @@
 #include "Donya/Collision.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
 #include "Donya/GamepadXInput.h"
-#include "Donya/Shader.h"
-#include "Donya/Surface.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
 #include "Boss.h"
-#include "Bloom.h"
 #include "CheckPoint.h"
 #include "ClearEvent.h"
 #include "Door.h"
@@ -26,8 +23,6 @@
 #include "PauseProcessor.h"
 #include "Performances/LoadPart.h"
 #include "Player.h"
-#include "Renderer.h"
-#include "RenderingStuff.h"
 #include "Room.h"
 #include "Scene.h"
 #include "Sky.h"
