@@ -460,47 +460,11 @@ void SceneGame::Init()
 		pResult->WriteResult( succeeded );
 		CoUninitialize();
 	};
-	auto InitRenderers	= [coInitValue]( SceneGame *pScene, Thread::Result *pResult )
-	{
-		RenderingStuffInstance::Get().AssignBloomParameter( FetchParameter().bloomParam );
-		pResult->WriteResult( true );
-		return;
-
-		if ( !pScene || !pResult ) { assert( !"HUMAN ERROR" ); return; }
-		// else
-
-		HRESULT hr = CoInitializeEx( NULL, coInitValue );
-		if ( FAILED( hr ) )
-		{
-			pResult->WriteResult( /* wasSucceeded = */ false );
-			return;
-		}
-		// else
-
-		bool succeeded	= true;
-		bool result		= true;
-
-		constexpr Donya::Int2 wholeScreenSize
-		{
-			Common::ScreenWidth(),
-			Common::ScreenHeight(),
-		};
-
-		result = pScene->CreateRenderers( wholeScreenSize );
-		if ( !result ) { succeeded = false; }
-
-		result = pScene->CreateSurfaces( wholeScreenSize );
-		if ( !result ) { succeeded = false; }
-
-		result = pScene->CreateShaders();
-		if ( !result ) { succeeded = false; }
-
-		pResult->WriteResult( succeeded );
-		CoUninitialize();
-	};
-
-	thObjects.pThread	= std::make_unique<std::thread>( InitObjects,	this, &thObjects.result );
-	thRenderers.pThread	= std::make_unique<std::thread>( InitRenderers,	this, &thRenderers.result );
+	thObjects.pThread	= std::make_unique<std::thread>( InitObjects, this, &thObjects.result );
+	
+	auto &renderer = RenderingStuffInstance::Get();
+	renderer.AssignBloomParameter( FetchParameter().bloomParam );
+	renderer.ClearBuffers();
 }
 void SceneGame::Uninit()
 {
@@ -566,7 +530,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	// Apply for be able to see an adjustment immediately
 	if ( status != State::FirstInitialize )
 	{
-		if ( pBloomer ) { pBloomer->AssignParameter( FetchParameter().bloomParam ); }
+		RenderingStuffInstance::Get().AssignBloomParameter( FetchParameter().bloomParam );
 
 		const auto &data = FetchParameter();
 		if ( pPlayerMeter ) { pPlayerMeter->SetDrawOption( data.playerMeter.hpDrawPos, data.playerMeter.hpDrawColor, data.playerMeter.hpDrawScale ); }
@@ -829,7 +793,6 @@ void SceneGame::Draw( float elapsedTime )
 	}
 	// else
 
-	//if ( !AreRenderersReady() ) { return; }
 	RenderingStuff *p = RenderingStuffInstance::Get().Ptr();
 	if ( !p ) { return; }
 	// else
@@ -877,12 +840,12 @@ void SceneGame::Draw( float elapsedTime )
 		? p->renderer.ActivateShaderShadowSkinning()
 		: p->renderer.ActivateShaderNormalSkinning();
 
-		if ( Drawable( Kind::Player	) && pPlayer		) { pPlayer->Draw( &p->renderer );			}
-		if ( Drawable( Kind::Boss	) && pBossContainer	) { pBossContainer->Draw( &p->renderer );	}
-		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( &p->renderer );					}
-		if ( Drawable( Kind::Door	) && pDoors			) { pDoors->Draw( &p->renderer );			}
-		if ( Drawable( Kind::Item	) ) { Item::Admin::Get().Draw( &p->renderer );					}
-		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( &p->renderer );					}
+		if ( Drawable( Kind::Player	) && pPlayer		)	{ pPlayer->				Draw( &p->renderer ); }
+		if ( Drawable( Kind::Boss	) && pBossContainer	)	{ pBossContainer->		Draw( &p->renderer ); }
+		if ( Drawable( Kind::Enemy	) )						{ Enemy::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Kind::Door	) && pDoors			)	{ pDoors->				Draw( &p->renderer ); }
+		if ( Drawable( Kind::Item	) )						{ Item::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Kind::Bullet	) )						{ Bullet::Admin::Get().	Draw( &p->renderer ); }
 
 		( castShadow )
 		? p->renderer.DeactivateShaderShadowSkinning()
@@ -1086,16 +1049,16 @@ void SceneGame::Draw( float elapsedTime )
 	// Object's hit/hurt boxes
 	if ( Common::IsShowCollision() )
 	{
-		if ( pPlayer		) { pPlayer->DrawHitBox( pRenderer.get(), VP );					}
-		if ( pBossContainer	) { pBossContainer->DrawHitBoxes( pRenderer.get(), VP );		}
-		if ( pClearEvent	) { pClearEvent->DrawHitBoxes( pRenderer.get(), VP );			}
-		if ( pMap			) { pMap->DrawHitBoxes( currentScreen, pRenderer.get(), VP );	}
-		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		Enemy ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		Item  ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		checkPoint.DrawHitBoxes( pRenderer.get(), VP );
-		if ( pDoors			) { pDoors->DrawHitBoxes( pRenderer.get(), VP );				}
-		if ( pHouse			) { pHouse->DrawHitBoxes( pRenderer.get(), VP );				}
+		if ( pPlayer		) { pPlayer->		DrawHitBox	( &p->renderer, VP ); }
+		if ( pBossContainer	) { pBossContainer->DrawHitBoxes( &p->renderer, VP ); }
+		if ( pClearEvent	) { pClearEvent->	DrawHitBoxes( &p->renderer, VP ); }
+		if ( pMap			) { pMap->			DrawHitBoxes( currentScreen, &p->renderer, VP ); }
+		Bullet::Admin::Get().DrawHitBoxes( &p->renderer, VP );
+		Enemy ::Admin::Get().DrawHitBoxes( &p->renderer, VP );
+		Item  ::Admin::Get().DrawHitBoxes( &p->renderer, VP );
+		checkPoint.DrawHitBoxes( &p->renderer, VP );
+		if ( pDoors			) { pDoors->		DrawHitBoxes( &p->renderer, VP ); }
+		if ( pHouse			) { pHouse->		DrawHitBoxes( &p->renderer, VP ); }
 	}
 #endif // DEBUG_MODE
 
@@ -1223,77 +1186,6 @@ void SceneGame::Draw( float elapsedTime )
 	}
 
 	loadPerformer.DrawIfActive( 0.0f );
-}
-
-bool SceneGame::CreateRenderers( const Donya::Int2 &wholeScreenSize )
-{
-	bool succeeded = true;
-
-	pRenderer = std::make_unique<RenderingHelper>();
-	if ( !pRenderer->Init() ) { succeeded = false; }
-
-	pDisplayer = std::make_unique<Donya::Displayer>();
-	if ( !pDisplayer->Init() ) { succeeded = false; }
-
-	pBloomer = std::make_unique<BloomApplier>();
-	if ( !pBloomer->Init( wholeScreenSize ) ) { succeeded = false; }
-	pBloomer->AssignParameter( FetchParameter().bloomParam );
-
-	return succeeded;
-}
-bool SceneGame::CreateSurfaces( const Donya::Int2 &wholeScreenSize )
-{
-	bool succeeded	= true;
-	bool result		= true;
-
-	pScreenSurface = std::make_unique<Donya::Surface>();
-	result = pScreenSurface->Init
-	(
-		wholeScreenSize.x,
-		wholeScreenSize.y,
-		DXGI_FORMAT_R16G16B16A16_FLOAT
-	);
-	if ( !result ) { succeeded = false; }
-
-	pShadowMap = std::make_unique<Donya::Surface>();
-	result = pShadowMap->Init
-	(
-		wholeScreenSize.x,
-		wholeScreenSize.y,
-		DXGI_FORMAT_R32_FLOAT, true,
-		DXGI_FORMAT_R32_TYPELESS, true
-	);
-	if ( !result ) { succeeded = false; }
-
-	return succeeded;
-}
-bool SceneGame::CreateShaders()
-{
-	constexpr const char *VSPath = "./Data/Shaders/DisplayQuadVS.cso";
-	constexpr const char *PSPath = "./Data/Shaders/DisplayQuadPS.cso";
-	constexpr auto IEDescs = Donya::Displayer::Vertex::GenerateInputElements();
-
-	// The vertex shader requires IE-descs as std::vector<>
-	const std::vector<D3D11_INPUT_ELEMENT_DESC> IEDescsV{ IEDescs.begin(), IEDescs.end() };
-
-	bool succeeded = true;
-
-	pQuadShader = std::make_unique<Shader>();
-	if ( !pQuadShader->VS.CreateByCSO( VSPath, IEDescsV	) ) { succeeded = false; }
-	if ( !pQuadShader->PS.CreateByCSO( PSPath			) ) { succeeded = false; }
-
-	return succeeded;
-}
-bool SceneGame::AreRenderersReady() const
-{
-	if ( !pRenderer			) { return false; }
-	if ( !pDisplayer		) { return false; }
-	if ( !pBloomer			) { return false; }
-	if ( !pScreenSurface	) { return false; }
-	if ( !pShadowMap		) { return false; }
-	if ( !pQuadShader		) { return false; }
-	// else
-	return true;
 }
 
 void SceneGame::PlayBGM( Music::ID kind )
@@ -1596,12 +1488,10 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 	if ( status != State::FirstInitialize ) { return; }
 	// else
 
-	if ( !thObjects.result.Finished()	) { return; }
-	if ( !thRenderers.result.Finished()	) { return; }
+	if ( !thObjects.result.Finished() ) { return; }
 	// else
 
 	thObjects.JoinThenRelease();
-	thRenderers.JoinThenRelease();
 
 #if USE_IMGUI
 	if ( dontFinishLoadState ) { return; }
@@ -2881,18 +2771,13 @@ void SceneGame::ClearBackGround() const
 	// else
 
 	RenderingStuffInstance::Get().ClearBuffers();
-	return;
 
-	if ( pShadowMap		) { pShadowMap->Clear( Donya::Color::Code::BLACK );			}
-	if ( pScreenSurface	) { pScreenSurface->Clear( Donya::Vector4{ gray, 1.0f } );	}
 #if DEBUG_MODE
 	if ( nowDebugMode )
 	{
 		constexpr Donya::Vector3 teal = Donya::Color::MakeColor( Donya::Color::Code::CYAN );
 		constexpr FLOAT DEBUG_COLOR[4]{ teal.x, teal.y, teal.z, 1.0f };
 		Donya::ClearViews( DEBUG_COLOR );
-
-		if ( pScreenSurface ) { pScreenSurface->Clear( Donya::Vector4{ teal, 1.0f } ); }
 	}
 #endif // DEBUG_MODE
 }
@@ -3022,16 +2907,10 @@ void SceneGame::UseImGui( float elapsedTime )
 			ImGui::Checkbox( u8"ロード画面のまま止める", &dontFinishLoadState );
 
 			bool prgrObj = thObjects.result.Finished();
-			bool prgrRnd = thRenderers.result.Finished();
 			bool doneObj = thObjects.result.Succeeded();
-			bool doneRnd = thRenderers.result.Succeeded();
-			ImGui::Checkbox( u8"終了・OBJ", &prgrObj );
+			ImGui::Checkbox( u8"終了したか", &prgrObj );
 			ImGui::SameLine();
-			ImGui::Checkbox( u8"成功・OBJ", &doneObj );
-			
-			ImGui::Checkbox( u8"終了・RNDR", &prgrRnd );
-			ImGui::SameLine();
-			ImGui::Checkbox( u8"成功・RNDR", &doneRnd );
+			ImGui::Checkbox( u8"成功したか", &doneObj );
 
 			Performer::LoadPart::ShowImGuiNode( u8"ロード演出の設定" );
 

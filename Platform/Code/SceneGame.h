@@ -52,11 +52,6 @@ public:
 		Donya::Vector3	cameraFocusStart;
 		Donya::Vector3	cameraFocusDest;
 	};
-	struct Shader
-	{
-		Donya::VertexShader VS;
-		Donya::PixelShader  PS;
-	};
 private:
 	Donya::ICamera						iCamera;
 	Scroll								scroll;
@@ -74,13 +69,6 @@ private:
 	State								status				= State::FirstInitialize;
 
 	Performer::LoadPart					loadPerformer;
-
-	std::unique_ptr<RenderingHelper>	pRenderer;
-	std::unique_ptr<Donya::Displayer>	pDisplayer;
-	std::unique_ptr<BloomApplier>		pBloomer;
-	std::unique_ptr<Donya::Surface>		pScreenSurface;
-	std::unique_ptr<Donya::Surface>		pShadowMap;
-	std::unique_ptr<Shader>				pQuadShader;
 	std::unique_ptr<PauseProcessor>		pPauser;
 
 	std::unique_ptr<Meter::Drawer>		pPlayerMeter;
@@ -107,8 +95,7 @@ private:
 	
 	Definition::WeaponKind	willUnlockWeapon	= Definition::WeaponKind::Buster; // "::Buster" means a none(that is always available)
 
-	Thread	thObjects;
-	Thread	thRenderers;
+	Thread thObjects;
 	
 #if DEBUG_MODE
 	bool	nowDebugMode				= false;
@@ -129,11 +116,6 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
-	bool	CreateRenderers( const Donya::Int2 &wholeScreenSize );
-	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
-	bool	CreateShaders();
-	bool	AreRenderersReady() const;
-
 	void	PlayBGM( Music::ID kind );
 	void	FadeOutBGM() const;
 
