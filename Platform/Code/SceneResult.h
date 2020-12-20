@@ -8,16 +8,13 @@
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
 #include "Donya/Displayer.h"
 #include "Donya/GamepadXInput.h"
-#include "Donya/Shader.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
-#include "Bloom.h"
 #include "Enemy.h"
 #include "Input.h"
 #include "Map.h"
 #include "Meter.h"
 #include "Player.h"
-#include "Renderer.h"
 #include "Scene.h"
 
 class SceneResult : public Scene
@@ -27,11 +24,6 @@ public:
 	{
 		Performance,
 		Wait
-	};
-	struct Shader
-	{
-		Donya::VertexShader VS;
-		Donya::PixelShader  PS;
 	};
 private:
 	Donya::ICamera								iCamera;
@@ -43,12 +35,6 @@ private:
 	int											currentRoomID	= 0;
 	PlayerInitializer							playerIniter;
 
-	std::unique_ptr<RenderingHelper>			pRenderer;
-	std::unique_ptr<Donya::Displayer>			pDisplayer;
-	std::unique_ptr<BloomApplier>				pBloomer;
-	std::unique_ptr<Donya::Surface>				pScreenSurface;
-	std::unique_ptr<Donya::Surface>				pShadowMap;
-	std::unique_ptr<Shader>						pQuadShader;
 	std::unique_ptr<Input::Explainer>			pInputExplainer;
 	std::unique_ptr<Map>						pMap;
 	std::unique_ptr<Player>						pPlayer;
@@ -80,11 +66,6 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
-	bool	CreateRenderers( const Donya::Int2 &wholeScreenSize );
-	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
-	bool	CreateShaders();
-	bool	AreRenderersReady() const;
-
 	Donya::Vector3 CalcCenterPoint( const Map &terrain ) const;
 
 	Donya::Vector4x4 MakeScreenTransform() const;

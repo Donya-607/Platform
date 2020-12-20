@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "Donya/Color.h"
 #include "Donya/Vector.h"
 
 #include "Common.h"
@@ -48,9 +49,11 @@ void RenderingStuffInstance::ClearBuffers()
 	if ( !ptr ) { return; }
 	// else
 
-	constexpr Donya::Vector4 clearColor{ 0.0f, 0.0f, 0.0f, 1.0f };
+	constexpr Donya::Vector3 gray = Donya::Color::MakeColor( Donya::Color::Code::GRAY );
+	constexpr Donya::Vector4 withBGColor{ gray, 1.0f };
+	constexpr Donya::Vector4 clearColor	{ 0.0f, 0.0f, 0.0f, 1.0f };
 	ptr->bloomer		.ClearBuffers( clearColor );
-	ptr->screenSurface	.Clear( clearColor );
+	ptr->screenSurface	.Clear( withBGColor );
 	ptr->shadowMap		.Clear( clearColor );
 }
 
