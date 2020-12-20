@@ -189,56 +189,62 @@ void SceneLoad::Init()
 		{
 			// ID, FilePath, isEnableLoop
 
-			Bundle{ ID::BGM_Title,					"./Data/Sounds/BGM/Title.ogg",						true	},
-			Bundle{ ID::BGM_Game,					"./Data/Sounds/BGM/Game.ogg",						true	},
-			Bundle{ ID::BGM_Boss,					"./Data/Sounds/BGM/BossBattle.ogg",					true	},
-			Bundle{ ID::BGM_Over,					"./Data/Sounds/BGM/GameOver.ogg",					false	},
-			Bundle{ ID::BGM_Result,					"./Data/Sounds/BGM/Result.ogg",						true	},
+			Bundle{ ID::BGM_Title,						"./Data/Sounds/BGM/Title.ogg",							true	},
+			Bundle{ ID::BGM_Game,						"./Data/Sounds/BGM/Game.ogg",							true	},
+			Bundle{ ID::BGM_Boss,						"./Data/Sounds/BGM/BossBattle.ogg",						true	},
+			Bundle{ ID::BGM_Over,						"./Data/Sounds/BGM/GameOver.ogg",						false	},
+			Bundle{ ID::BGM_Result,						"./Data/Sounds/BGM/Result.ogg",							true	},
 
-			Bundle{ ID::Bullet_HitBuster,			"./Data/Sounds/SE/Bullet/Hit_Buster.wav",			false	},
-			Bundle{ ID::Bullet_HitShield,			"./Data/Sounds/SE/Bullet/Hit_Shield.wav",			false	},
-			Bundle{ ID::Bullet_HitSuperBall,		"./Data/Sounds/SE/Bullet/Hit_SuperBall.ogg",		false	},
-			Bundle{ ID::Bullet_Protected,			"./Data/Sounds/SE/Bullet/Protected.wav",			false	},
-			Bundle{ ID::Bullet_ShotBuster,			"./Data/Sounds/SE/Bullet/Shot_Buster.wav",			false	},
-			Bundle{ ID::Bullet_ShotShield_Expand,	"./Data/Sounds/SE/Bullet/Shot_Shield_Expand.wav",	false	},
-			Bundle{ ID::Bullet_ShotShield_Throw,	"./Data/Sounds/SE/Bullet/Shot_Shield_Throw.wav",	false	},
-			Bundle{ ID::Bullet_ShotSkullBuster,		"./Data/Sounds/SE/Bullet/Shot_Skull_Buster.wav",	false	},
+			Bundle{ ID::Bullet_HitBone,					"./Data/Sounds/SE/Bullet/Hit_Bone.ogg",					false	},
+			Bundle{ ID::Bullet_HitBuster,				"./Data/Sounds/SE/Bullet/Hit_Buster.wav",				false	},
+			Bundle{ ID::Bullet_HitShield,				"./Data/Sounds/SE/Bullet/Hit_Shield.wav",				false	},
+			Bundle{ ID::Bullet_HitSuperBall,			"./Data/Sounds/SE/Bullet/Hit_SuperBall.ogg",			false	},
+			Bundle{ ID::Bullet_Protected,				"./Data/Sounds/SE/Bullet/Protected.wav",				false	},
+			Bundle{ ID::Bullet_ShotBone,				"./Data/Sounds/SE/Bullet/Shot_Bone.ogg",				false	},
+			Bundle{ ID::Bullet_ShotBuster,				"./Data/Sounds/SE/Bullet/Shot_Buster.wav",				false	},
+			Bundle{ ID::Bullet_ShotShield_Expand,		"./Data/Sounds/SE/Bullet/Shot_Shield_Expand.wav",		false	},
+			Bundle{ ID::Bullet_ShotShield_Throw,		"./Data/Sounds/SE/Bullet/Shot_Shield_Throw.wav",		false	},
+			Bundle{ ID::Bullet_ShotSkullBuster,			"./Data/Sounds/SE/Bullet/Shot_Skull_Buster.wav",		false	},
 
-			Bundle{ ID::CatchItem,					"./Data/Sounds/SE/Effect/CatchItem.ogg",			false	},
+			Bundle{ ID::CatchItem,						"./Data/Sounds/SE/Effect/CatchItem.ogg",				false	},
 
-			Bundle{ ID::Charge_Complete,			"./Data/Sounds/SE/Effect/Charge_Complete.wav",		false	},
-			Bundle{ ID::Charge_Loop,				"./Data/Sounds/SE/Effect/Charge_Loop.ogg",			true	},
-			Bundle{ ID::Charge_Start,				"./Data/Sounds/SE/Effect/Charge_Start.wav",			false	},
+			Bundle{ ID::Charge_Complete,				"./Data/Sounds/SE/Effect/Charge_Complete.wav",			false	},
+			Bundle{ ID::Charge_Loop,					"./Data/Sounds/SE/Effect/Charge_Loop.ogg",				true	},
+			Bundle{ ID::Charge_Start,					"./Data/Sounds/SE/Effect/Charge_Start.wav",				false	},
 
-			Bundle{ ID::Door_OpenClose,				"./Data/Sounds/SE/Map/Door_OpenClose.ogg",			false	},
+			Bundle{ ID::Door_OpenClose,					"./Data/Sounds/SE/Map/Door_OpenClose.ogg",				false	},
 
-			Bundle{ ID::Performance_AppearBoss,		"./Data/Sounds/SE/Performance/AppearBoss.ogg",		false	},
-			Bundle{ ID::Performance_ClearStage,		"./Data/Sounds/SE/Performance/ClearStage.ogg",		false	},
+			Bundle{ ID::Performance_AppearBoss,			"./Data/Sounds/SE/Performance/AppearBoss.ogg",			false	},
+			Bundle{ ID::Performance_ClearStage,			"./Data/Sounds/SE/Performance/ClearStage.ogg",			false	},
 
-			Bundle{ ID::Player_1UP,					"./Data/Sounds/SE/Player/ExtraLife.wav",			false	},
-			Bundle{ ID::Player_Appear,				"./Data/Sounds/SE/Player/Appear.ogg",				false	},
-			Bundle{ ID::Player_Damage,				"./Data/Sounds/SE/Player/Damage.wav",				false	},
-			Bundle{ ID::Player_Dash,				"./Data/Sounds/SE/Player/Dash.wav",					false	},
-			Bundle{ ID::Player_Jump,				"./Data/Sounds/SE/Player/Jump.wav",					false	},
-			Bundle{ ID::Player_Landing,				"./Data/Sounds/SE/Player/Landing.wav",				false	},
-			Bundle{ ID::Player_Leave,				"./Data/Sounds/SE/Player/Leave.ogg",				false	},
-			Bundle{ ID::Player_Miss,				"./Data/Sounds/SE/Player/Miss.wav",					false	},
-			Bundle{ ID::Player_ShiftGun,			"./Data/Sounds/SE/Player/ShiftGun.ogg",				false	},
+			Bundle{ ID::Player_1UP,						"./Data/Sounds/SE/Player/ExtraLife.wav",				false	},
+			Bundle{ ID::Player_Appear,					"./Data/Sounds/SE/Player/Appear.ogg",					false	},
+			Bundle{ ID::Player_Damage,					"./Data/Sounds/SE/Player/Damage.wav",					false	},
+			Bundle{ ID::Player_Dash,					"./Data/Sounds/SE/Player/Dash.wav",						false	},
+			Bundle{ ID::Player_Jump,					"./Data/Sounds/SE/Player/Jump.wav",						false	},
+			Bundle{ ID::Player_Landing,					"./Data/Sounds/SE/Player/Landing.wav",					false	},
+			Bundle{ ID::Player_Leave,					"./Data/Sounds/SE/Player/Leave.ogg",					false	},
+			Bundle{ ID::Player_Miss,					"./Data/Sounds/SE/Player/Miss.wav",						false	},
+			Bundle{ ID::Player_ShiftGun,				"./Data/Sounds/SE/Player/ShiftGun.ogg",					false	},
 
-			Bundle{ ID::RecoverHP,					"./Data/Sounds/SE/Effect/RecoverHP.wav",			false	},
+			Bundle{ ID::RecoverHP,						"./Data/Sounds/SE/Effect/RecoverHP.wav",				false	},
 
-			Bundle{ ID::Skull_Landing,				"./Data/Sounds/SE/Boss/Skull_Landing.wav",			false	},
-			Bundle{ ID::Skull_Jump,					"./Data/Sounds/SE/Boss/Skull_Jump.wav",				false	},
-			Bundle{ ID::Skull_Roar,					"./Data/Sounds/SE/Boss/Skull_Roar.wav",				false	},
+			Bundle{ ID::SkeletonJoe_Break,				"./Data/Sounds/SE/Enemy/SklJoe_Break.ogg",				false	},
+			Bundle{ ID::SkeletonJoe_ReAssemble_Begin,	"./Data/Sounds/SE/Enemy/SklJoe_ReAssemble_Begin.ogg",	false	},
+			Bundle{ ID::SkeletonJoe_ReAssemble_End,		"./Data/Sounds/SE/Enemy/SklJoe_ReAssemble_End.ogg",		false	},
 
-			Bundle{ ID::SuperBallMachine_Shot,		"./Data/Sounds/SE/Enemy/SBM_Shot.wav",				false	},
+			Bundle{ ID::Skull_Landing,					"./Data/Sounds/SE/Boss/Skull_Landing.wav",				false	},
+			Bundle{ ID::Skull_Jump,						"./Data/Sounds/SE/Boss/Skull_Jump.wav",					false	},
+			Bundle{ ID::Skull_Roar,						"./Data/Sounds/SE/Boss/Skull_Roar.wav",					false	},
 
-			Bundle{ ID::UI_Choose,					"./Data/Sounds/SE/UI/Choose.ogg",					false	},
-			Bundle{ ID::UI_Decide,					"./Data/Sounds/SE/UI/Decide.ogg",					false	},
+			Bundle{ ID::SuperBallMachine_Shot,			"./Data/Sounds/SE/Enemy/SBM_Shot.wav",					false	},
+
+			Bundle{ ID::UI_Choose,						"./Data/Sounds/SE/UI/Choose.ogg",						false	},
+			Bundle{ ID::UI_Decide,						"./Data/Sounds/SE/UI/Decide.ogg",						false	},
 
 			#if DEBUG_MODE
-			Bundle{ ID::DEBUG_Strong,				"./Data/Sounds/SE/UI/Decide.ogg",					false	},
-			Bundle{ ID::DEBUG_Weak,					"./Data/Sounds/SE/UI/Choose.ogg",					false	},
+			Bundle{ ID::DEBUG_Strong,					"./Data/Sounds/SE/UI/Decide.ogg",						false	},
+			Bundle{ ID::DEBUG_Weak,						"./Data/Sounds/SE/UI/Choose.ogg",						false	},
 			#endif // DEBUG_MODE
 		};
 

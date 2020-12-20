@@ -12,10 +12,12 @@ namespace Music
 		BGM_Over,
 		BGM_Result,
 
+		Bullet_HitBone,
 		Bullet_HitBuster,
 		Bullet_HitShield,
 		Bullet_HitSuperBall,
 		Bullet_Protected,
+		Bullet_ShotBone,
 		Bullet_ShotBuster,
 		Bullet_ShotShield_Expand,
 		Bullet_ShotShield_Throw,
@@ -43,6 +45,10 @@ namespace Music
 		Player_ShiftGun,
 		
 		RecoverHP,
+
+		SkeletonJoe_Break,
+		SkeletonJoe_ReAssemble_Begin,
+		SkeletonJoe_ReAssemble_End,
 
 		Skull_Landing,
 		Skull_Jump,
