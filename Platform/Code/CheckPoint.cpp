@@ -26,6 +26,12 @@ namespace CheckPoint
 	{
 		area.pos		= wsFootPos;
 		lookingRight	= lookRight;
+
+		// Prevent to forgot
+		if ( area.size.IsZero() )
+		{
+			area.size = Tile::unitWholeSize * 0.5f;
+		}
 	}
 	void Instance::Activate()
 	{
