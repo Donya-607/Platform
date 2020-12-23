@@ -1967,6 +1967,9 @@ void Player::Miss::Init( Player &inst )
 	inst.currentHP		= 0;
 	inst.onGround		= false;
 
+	// Release some bullet instance
+	if ( inst.pGun ) { inst.pGun->Uninit( inst ); }
+
 	Donya::Sound::Play( Music::Player_Miss );
 }
 void Player::Miss::Update( Player &inst, float elapsedTime, const Map &terrain )
@@ -3022,7 +3025,8 @@ void Player::Landing()
 }
 void Player::ShiftGunIfNeeded( float elapsedTime )
 {
-	if ( !pGun ) { return; }
+	if ( !pGun		) { return; }
+	if ( NowMiss()	) { return; }
 	// else
 
 	// Make can not shift by button when pausing
