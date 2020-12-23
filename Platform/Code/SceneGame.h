@@ -84,7 +84,7 @@ private:
 	bool			isThereClearEvent			= false;
 	bool			isThereBoss					= false;
 	bool			wantLeave					= false;// It is valid when the status == State::Clear
-	Donya::Vector3	prevPlayerPos;						// It is used to judge the timing that the player arrives to desired position
+	Donya::Vector3	prevPlayerPos;						// It is also used to judge the timing that the player arrives to desired position
 	Door::Instance	*pThroughingDoor			= nullptr;
 	Donya::Vector3	doorPassedPlayerPos;				// Destination of passing a door
 	
@@ -147,11 +147,15 @@ private:
 	void	AssignCameraPos();
 	void	CameraUpdate( float elapsedTime );
 
+	void	UpdateCurrentRoomID();
+
 	Donya::Vector4x4 CalcLightViewMatrix() const;
+
 
 	void	ReadyPlayer();
 	void	PlayerInit( const PlayerInitializer &initializer, const Map &terrain );
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );
+	void	PlayerPhysicUpdate( float elapsedTime, const Map &terrain );
 	Donya::Vector3 GetPlayerPosition() const;
 	Donya::Vector3 MakeBossRoomInitialPosOf( int roomId ) const;
 	Player::Input  MakePlayerInput( float elapsedTime );

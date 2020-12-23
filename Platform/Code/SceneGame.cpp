@@ -646,84 +646,16 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 
 
-	// PhysicUpdates
-	{
-		using Dir = Definition::Direction;
-
-		const auto currentRoomArea	= ( pCurrentRoom )
-									? pHouse->CalcRoomArea( currentRoomID )
-									: currentScreen; // Fail safe
-		const auto transitionable	= ( pCurrentRoom )
-									? pCurrentRoom->GetTransitionableDirection()
-									: Dir::Nil;
-
-		if ( pPlayer )
-		{
-			prevPlayerPos = pPlayer->GetPosition();
-
-			const float leftBorder	= Contain( transitionable, Dir::Left )
-									? -FLT_MAX
-									: currentRoomArea.Min().x;
-			const float rightBorder	= Contain( transitionable, Dir::Right )
-									? FLT_MAX
-									: currentRoomArea.Max().x;
-			pPlayer->PhysicUpdate( deltaTimeForMove, mapRef, leftBorder, rightBorder );
-			
-			const int movedRoomID = CalcCurrentRoomID();
-			if ( movedRoomID != currentRoomID )
-			{
-				// RoomID will update in next frame of the game.
-				// But if the scroll is not allowed, stay in the current room.
-
-				// If allow the scroll to a connecting room, the scroll waiting will occur as strange.
-				if ( pCurrentRoom && !pCurrentRoom->IsConnectTo( movedRoomID ) )
-				{
-					bool scrollToUp		= false;
-					bool scrollToDown	= false;
-					{
-						const auto movedRoomArea = pHouse->CalcRoomArea( movedRoomID );
-						if ( currentRoomArea.pos.y < movedRoomArea.pos.y )
-						{
-							scrollToUp		= true;
-						}
-						if ( currentRoomArea.pos.y > movedRoomArea.pos.y )
-						{
-							scrollToDown	= true;
-						}
-					}
-
-					if ( scrollToUp )
-					{
-						if ( pPlayer->NowGrabbingLadder() && Contain( transitionable, Dir::Up ) )
-						{
-							PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-						}
-					}
-					else
-					if ( scrollToDown )
-					{
-						if ( Contain( transitionable, Dir::Down ) )
-						{
-							PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-						}
-					}
-					else
-					{
-						PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-					}
-				}
-			}
-		}
-
-		Bullet::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
-		Enemy::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
-		Item::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
-
-		if ( pBossContainer ) { pBossContainer->PhysicUpdate( deltaTimeForMove, mapRef ); }
-	}
+	PlayerPhysicUpdate( deltaTimeForMove, mapRef );
+	Bullet::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
+	Enemy::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
+	Item::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
+	if ( pBossContainer ) { pBossContainer->PhysicUpdate( deltaTimeForMove, mapRef ); }
+	
+	UpdateCurrentRoomID();
 
 
-	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
+	// AssignCameraPos() (will called in CameraUpdate()) depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate( elapsedTime );
 
@@ -1930,6 +1862,83 @@ void SceneGame::CameraUpdate( float elapsedTime )
 #endif // !DEBUG_MODE
 }
 
+void SceneGame::UpdateCurrentRoomID()
+{
+	if ( !pPlayer ) { return; }
+	// else
+
+	const int nextRoomID = CalcCurrentRoomID();
+	if ( nextRoomID == currentRoomID ) { return; }
+	// else
+
+
+	const Room *pCurrentRoom	= pHouse->FindRoomOrNullptr( currentRoomID	);
+	const Room *pNextRoom		= pHouse->FindRoomOrNullptr( nextRoomID		);
+	if ( !pCurrentRoom || !pNextRoom ) { return; }
+	// else
+
+
+	// If allow the scroll to a connecting room, the scroll waiting will occur as strange.
+	if ( pCurrentRoom->IsConnectTo( nextRoomID ) )
+	{
+		currentRoomID = nextRoomID;
+		return;
+	}
+	// else
+
+
+	// Here condition is "There in other room" however "I don't know can I transiton from old room to now room".
+	// So check the transition-able then scroll if transiton-able.
+
+	using Dir = Definition::Direction;
+
+	const Donya::Vector3 delta = pPlayer->GetPosition() - prevPlayerPos;
+	const Donya::Int2 deltaSign
+	{
+		Donya::SignBit( delta.x ),
+		Donya::SignBit( delta.y ),
+	};
+
+	const Dir validDir = pCurrentRoom->GetTransitionableDirection();
+	const bool ableToX = Contain( validDir, Dir::Right | Dir::Left );
+	const bool ableToY = Contain( validDir, Dir::Up    | Dir::Down );
+
+	// Verify the consistency between the move direction and transition-able direction
+	if ( ableToX )
+	{
+		const bool canBoth = Contain( validDir, Dir::Right ) && Contain( validDir, Dir::Left );
+		if ( !canBoth )
+		{
+			if ( deltaSign.x == +1 && !Contain( validDir, Dir::Right	) ) { return; }
+			if ( deltaSign.x == -1 && !Contain( validDir, Dir::Left		) ) { return; }
+		}
+	}
+	if ( ableToY )
+	{
+		const bool canBoth = Contain( validDir, Dir::Up ) && Contain( validDir, Dir::Down );
+		if ( !canBoth )
+		{
+			if ( deltaSign.y == +1 && !Contain( validDir, Dir::Up	) ) { return; }
+			if ( deltaSign.y == -1 && !Contain( validDir, Dir::Down	) ) { return; }
+		}
+	}
+
+	// Consistency is valid
+
+	// Up direction is only able to when grabbing a ladder
+	if ( deltaSign.y == 1 )
+	{
+		if ( !pPlayer->NowGrabbingLadder() )
+		{
+			return;
+		}
+		// else
+	}
+
+	PrepareScrollIfNotActive( currentRoomID, nextRoomID );
+	currentRoomID = nextRoomID;
+}
+
 Donya::Vector4x4 SceneGame::CalcLightViewMatrix() const
 {
 	return lightCamera.CalcViewMatrix();
@@ -2025,6 +2034,87 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 		pPlayerMeter->SetDestination( scast<float>( pPlayer->GetCurrentHP() ) );
 		pPlayerMeter->SetDrawOption( meterData.hpDrawPos, pPlayer->GetThemeColor(), meterData.hpDrawScale );
 	}
+}
+void SceneGame::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
+{
+	if ( !pPlayer ) { return; }
+	// else
+
+	using Dir = Definition::Direction;
+
+	const Room *pCurrentRoom	= pHouse->FindRoomOrNullptr( currentRoomID );
+	const auto currentRoomArea	= ( pCurrentRoom )
+								? pHouse->CalcRoomArea( currentRoomID )
+								: currentScreen;	// Fail safe
+	const auto transitionable	= ( pCurrentRoom )
+								? pCurrentRoom->GetTransitionableDirection()
+								: Dir::Nil;			// Fail safe
+	const float leftBorder	= Contain( transitionable, Dir::Left )
+							? -FLT_MAX
+							: currentRoomArea.Min().x;
+	const float rightBorder	= Contain( transitionable, Dir::Right )
+							? FLT_MAX
+							: currentRoomArea.Max().x;
+
+	prevPlayerPos = pPlayer->GetPosition();
+	pPlayer->PhysicUpdate( elapsedTime, terrain, leftBorder, rightBorder );
+	
+	/*
+	const int movedRoomID = CalcCurrentRoomID();
+	if ( movedRoomID == currentRoomID ) { return; }
+	// else
+
+	
+	// SCROLL PROCESS
+
+	// RoomID will update in next frame of the game.
+	// But if the scroll is not allowed, stay in the current room.
+
+
+	if ( !pCurrentRoom ) { return; }
+	// else
+
+	// If allow the scroll to a connecting room, the scroll waiting will occur as strange.
+	if ( pCurrentRoom->IsConnectTo( movedRoomID ) ) { return; }
+	// else
+
+	if ( pCurrentRoom && !pCurrentRoom->IsConnectTo( movedRoomID ) )
+	{
+		bool scrollToUp		= false;
+		bool scrollToDown	= false;
+		{
+			const auto movedRoomArea = pHouse->CalcRoomArea( movedRoomID );
+			if ( currentRoomArea.pos.y < movedRoomArea.pos.y )
+			{
+				scrollToUp		= true;
+			}
+			if ( currentRoomArea.pos.y > movedRoomArea.pos.y )
+			{
+				scrollToDown	= true;
+			}
+		}
+
+		if ( scrollToUp )
+		{
+			if ( pPlayer->NowGrabbingLadder() && Contain( transitionable, Dir::Up ) )
+			{
+				PrepareScrollIfNotActive( currentRoomID, movedRoomID );
+			}
+		}
+		else
+		if ( scrollToDown )
+		{
+			if ( Contain( transitionable, Dir::Down ) )
+			{
+				PrepareScrollIfNotActive( currentRoomID, movedRoomID );
+			}
+		}
+		else
+		{
+			PrepareScrollIfNotActive( currentRoomID, movedRoomID );
+		}
+	}
+	*/
 }
 Donya::Vector3 SceneGame::GetPlayerPosition() const
 {
