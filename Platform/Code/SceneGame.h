@@ -84,7 +84,7 @@ private:
 	bool			isThereClearEvent			= false;
 	bool			isThereBoss					= false;
 	bool			wantLeave					= false;// It is valid when the status == State::Clear
-	Donya::Vector3	prevPlayerPos;						// It is also used to judge the timing that the player arrives to desired position
+	Donya::Vector3	prevPlayerPos;						// It is used to judge the timing that the player arrives to desired position
 	Door::Instance	*pThroughingDoor			= nullptr;
 	Donya::Vector3	doorPassedPlayerPos;				// Destination of passing a door
 	

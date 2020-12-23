@@ -1891,44 +1891,57 @@ void SceneGame::UpdateCurrentRoomID()
 	// So check the transition-able then scroll if transiton-able.
 
 	using Dir = Definition::Direction;
-
-	const Donya::Vector3 delta = pPlayer->GetPosition() - prevPlayerPos;
+	
+	const auto currentRoomArea	= pCurrentRoom->GetArea();
+	const auto nextRoomArea		= pNextRoom->GetArea();
+	const Donya::Vector3 delta	= nextRoomArea.pos - currentRoomArea.pos;
 	const Donya::Int2 deltaSign
 	{
 		Donya::SignBit( delta.x ),
 		Donya::SignBit( delta.y ),
 	};
+	Dir adjoinDir = Dir::Nil;
+	if ( deltaSign.x == +1 ) { adjoinDir |= Dir::Right;	}
+	if ( deltaSign.x == -1 ) { adjoinDir |= Dir::Left;	}
+	if ( deltaSign.y == +1 ) { adjoinDir |= Dir::Up;	}
+	if ( deltaSign.y == -1 ) { adjoinDir |= Dir::Down;	}
 
-	const Dir validDir = pCurrentRoom->GetTransitionableDirection();
-	const bool ableToX = Contain( validDir, Dir::Right | Dir::Left );
-	const bool ableToY = Contain( validDir, Dir::Up    | Dir::Down );
-
-	// Verify the consistency between the move direction and transition-able direction
-	if ( ableToX )
+	const Dir ableDir = pCurrentRoom->GetTransitionableDirection();
+	
+	// Verify the consistency between the adjoin direction and transition-able direction
+	bool hasConsistency = false;
+	constexpr Dir directions[]{ Dir::Right, Dir::Left, Dir::Up, Dir::Down };
+	for ( const auto &dir : directions )
 	{
-		const bool canBoth = Contain( validDir, Dir::Right ) && Contain( validDir, Dir::Left );
-		if ( !canBoth )
+		if ( Contain( ableDir, dir ) )
 		{
-			if ( deltaSign.x == +1 && !Contain( validDir, Dir::Right	) ) { return; }
-			if ( deltaSign.x == -1 && !Contain( validDir, Dir::Left		) ) { return; }
+			if ( Contain( adjoinDir, dir ) )
+			{
+				hasConsistency = true;
+			}
 		}
 	}
-	if ( ableToY )
-	{
-		const bool canBoth = Contain( validDir, Dir::Up ) && Contain( validDir, Dir::Down );
-		if ( !canBoth )
-		{
-			if ( deltaSign.y == +1 && !Contain( validDir, Dir::Up	) ) { return; }
-			if ( deltaSign.y == -1 && !Contain( validDir, Dir::Down	) ) { return; }
-		}
-	}
-
-	// Consistency is valid
+	if ( !hasConsistency ) { return; }
+	// else
 
 	// Up direction is only able to when grabbing a ladder
-	if ( deltaSign.y == 1 )
+	if ( Contain( adjoinDir, Dir::Up ) )
 	{
-		if ( !pPlayer->NowGrabbingLadder() )
+		// But allow if may transition to horizontally
+		// If it is nothing, we can not transition to horizontally without a ladder from a room that has transition-able of [Up] and [Right] or [Left].
+		bool mayHorizontal = false;
+		if ( Contain( adjoinDir, Dir::Right | Dir::Left ) )
+		{
+			// Judge to "may transition" if "There the player in outside of old room"
+			const auto  playerBody = pPlayer->GetHitBox();
+			const float left  = playerBody.Min().x;
+			const float right = playerBody.Max().x;
+
+			if ( right < currentRoomArea.Min().x ) { mayHorizontal = true; }
+			if ( left  > currentRoomArea.Max().x ) { mayHorizontal = true; }
+		}
+
+		if ( !mayHorizontal && !pPlayer->NowGrabbingLadder() )
 		{
 			return;
 		}
@@ -2051,70 +2064,13 @@ void SceneGame::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
 								: Dir::Nil;			// Fail safe
 	const float leftBorder	= Contain( transitionable, Dir::Left )
 							? -FLT_MAX
-							: currentRoomArea.Min().x;
+							: std::min( currentRoomArea.Min().x, currentScreen.Min().x );
 	const float rightBorder	= Contain( transitionable, Dir::Right )
 							? FLT_MAX
-							: currentRoomArea.Max().x;
+							: std::max( currentRoomArea.Max().x, currentScreen.Max().x );
 
 	prevPlayerPos = pPlayer->GetPosition();
 	pPlayer->PhysicUpdate( elapsedTime, terrain, leftBorder, rightBorder );
-	
-	/*
-	const int movedRoomID = CalcCurrentRoomID();
-	if ( movedRoomID == currentRoomID ) { return; }
-	// else
-
-	
-	// SCROLL PROCESS
-
-	// RoomID will update in next frame of the game.
-	// But if the scroll is not allowed, stay in the current room.
-
-
-	if ( !pCurrentRoom ) { return; }
-	// else
-
-	// If allow the scroll to a connecting room, the scroll waiting will occur as strange.
-	if ( pCurrentRoom->IsConnectTo( movedRoomID ) ) { return; }
-	// else
-
-	if ( pCurrentRoom && !pCurrentRoom->IsConnectTo( movedRoomID ) )
-	{
-		bool scrollToUp		= false;
-		bool scrollToDown	= false;
-		{
-			const auto movedRoomArea = pHouse->CalcRoomArea( movedRoomID );
-			if ( currentRoomArea.pos.y < movedRoomArea.pos.y )
-			{
-				scrollToUp		= true;
-			}
-			if ( currentRoomArea.pos.y > movedRoomArea.pos.y )
-			{
-				scrollToDown	= true;
-			}
-		}
-
-		if ( scrollToUp )
-		{
-			if ( pPlayer->NowGrabbingLadder() && Contain( transitionable, Dir::Up ) )
-			{
-				PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-			}
-		}
-		else
-		if ( scrollToDown )
-		{
-			if ( Contain( transitionable, Dir::Down ) )
-			{
-				PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-			}
-		}
-		else
-		{
-			PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-		}
-	}
-	*/
 }
 Donya::Vector3 SceneGame::GetPlayerPosition() const
 {
@@ -3015,8 +2971,7 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	UseScreenSpaceImGui();
 
-	// static Donya::Vector3 beforeBossRoomPosition{ 84.0f, -8.0f, 0.0f };
-	static Donya::Vector3 beforeBossRoomPosition{ 62.0f, -6.0f, 0.0f };
+	static Donya::Vector3 beforeBossRoomPosition{ 78.0f, -15.0f, 0.0f };
 	auto SetPlayerToBeforeBossRoom = [&]()
 	{
 		const Map emptyMap{}; // Used for empty argument. Fali safe.
