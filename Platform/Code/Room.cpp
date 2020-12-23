@@ -38,7 +38,20 @@ void Room::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) 
 }
 bool Room::IsConnectTo( int verifyRoomID ) const
 {
-	return ( verifyRoomID == connectingRoomID ) ? true : false;
+	const auto found = std::find( connectingRoomIDs.begin(), connectingRoomIDs.end(), verifyRoomID );
+	return ( found != connectingRoomIDs.end() );
+}
+bool Room::IsConnectToAny() const
+{
+	if ( connectingRoomIDs.empty() ) { return false; }
+	// else
+	
+	for ( const auto &it : connectingRoomIDs )
+	{
+		if ( it != invalidID ) { return false; }
+	}
+
+	return true;
 }
 int  Room::GetID() const
 {
@@ -58,47 +71,53 @@ const Donya::Collision::Box3F &Room::GetArea() const
 }
 Donya::Collision::Box3F Room::CalcRoomArea( const std::unordered_map<int, Room> &house, std::vector<int> &ignoreIDs ) const
 {
-	if ( connectingRoomID == invalidID ) { return area; }
-	if ( connectingRoomID == this->id  ) { return area; }
+	if ( connectingRoomIDs.empty() ) { return area; }
 	// else
 
-	const auto found = house.find( connectingRoomID );
-	if ( found == house.end() ) { return area; }
+	const size_t connectCount = connectingRoomIDs.size();
+	if ( connectCount == 1 && connectingRoomIDs.front() == this->id ) { return area; }
 	// else
 
-	const auto &other = found->second;
-
-	// Flags that prevent circular reference
-	const auto containMyID		= std::find( ignoreIDs.begin(), ignoreIDs.end(), this->id );
-	const bool ignoreMe			= ( containMyID != ignoreIDs.end() );
-	const bool connectToOther	= ( other.connectingRoomID != invalidID ) && ( other.connectingRoomID != this->id );
-
+	Donya::Vector3 max = area.Max();
+	Donya::Vector3 min = area.Min();
+	Donya::Vector3 otherMax;
+	Donya::Vector3 otherMin;
 	Donya::Collision::Box3F otherArea;
-	if ( connectToOther && !ignoreMe )
+	for ( const auto &id : connectingRoomIDs )
 	{
-		// Prevent an other->connecting->connecting->...->me
-		ignoreIDs.emplace_back( this->id );
+		const auto found = house.find( id );
+		if ( found == house.end() ) { continue; }
+		// else
 
-		otherArea = other.CalcRoomArea( house, ignoreIDs );
+		const auto &other = found->second;
+
+		// Flags that prevent circular reference
+		const auto containMyID		= std::find( ignoreIDs.begin(), ignoreIDs.end(), this->id );
+		const bool ignoreMe			= ( containMyID != ignoreIDs.end() );
+		const bool connectToOther	= other.IsConnectToAny() && !other.IsConnectTo( this->id );
+
+		if ( connectToOther && !ignoreMe )
+		{
+			// Prevent other->connecting->connecting->...->me
+			ignoreIDs.emplace_back( this->id );
+
+			otherArea = other.CalcRoomArea( house, ignoreIDs );
+		}
+		else
+		{
+			otherArea = other.area;
+		}
+
+		otherMax = otherArea.Max();
+		max.x = std::max( max.x, otherMax.x );
+		max.y = std::max( max.y, otherMax.y );
+		max.z = std::max( max.z, otherMax.z );
+		otherMin = otherArea.Min();
+		min.x = std::min( min.x, otherMin.x );
+		min.y = std::min( min.y, otherMin.y );
+		min.z = std::min( min.z, otherMin.z );
 	}
-	else
-	{
-		otherArea = other.area;
-	}
 
-	const auto myMin = area.Min();
-	const auto myMax = area.Max();
-	const auto otherMin = otherArea.Min();
-	const auto otherMax = otherArea.Max();
-
-	Donya::Vector3 min;
-	min.x = std::min( myMin.x, otherMin.x );
-	min.y = std::min( myMin.y, otherMin.y );
-	min.z = std::min( myMin.z, otherMin.z );
-	Donya::Vector3 max;
-	max.x = std::max( myMax.x, otherMax.x );
-	max.y = std::max( myMax.y, otherMax.y );
-	max.z = std::max( myMax.z, otherMax.z );
 	return MakeArea( min, max );
 }
 Donya::Collision::Box3F Room::CalcRoomArea( const std::unordered_map<int, Room> &house ) const
@@ -127,10 +146,32 @@ void Room::ShowImGuiNode( const std::string &nodeCaption )
 	// else
 
 	ImGui::Text( u8"ID:%d", id );
-	ImGui::InputInt( u8"ê⁄ë±êÊÇÃID", &connectingRoomID );
+
+	// connectingRoomIDs
+	{
+		const std::string baseCaption = u8"ê⁄ë±êÊÇÃID";
+		int loopCount = 0;
+		std::string caption;
+		for ( auto &it : connectingRoomIDs )
+		{
+			caption = baseCaption + Donya::MakeArraySuffix( loopCount );
+			ImGui::InputInt( caption.c_str(), &connectingRoomIDs[loopCount] );
+			loopCount++;
+		}
+
+		int showing = invalidID;
+		caption = baseCaption + Donya::MakeArraySuffix( loopCount );
+		ImGui::InputInt( caption.c_str(), &showing );
+		if ( showing != invalidID )
+		{
+			connectingRoomIDs.emplace_back( showing );
+		}
+	}
+
 	ImGui::SliderFloat( u8"ê›íËéûçè(h)", &hour, 0.0f, 24.0f );
 	hour = Donya::Clamp( hour, 0.0f, 24.0f );
-	Definition::ShowImGuiNode( u8"ëJà⁄â¬î\ï˚å¸ÇÃê›íË", &transition );
+
+	Definition::ShowImGuiNode( u8"ëJà⁄â¬î\ï˚å¸ÇÃê›íË", &transition, /* allowMultipleDirection = */ true, /* useTreeNode = */ false );
 	ImGui::Helper::ShowAABBNode( u8"îÕàÕê›íË", &area );
 
 	ImGui::TreePop();

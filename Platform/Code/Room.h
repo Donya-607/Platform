@@ -1,10 +1,12 @@
 #pragma once
 
 #include <unordered_map>
+#include <vector>
 
 #undef max
 #undef min
 #include <cereal\types\unordered_map.hpp>
+#include <cereal\types\vector.hpp>
 
 #include "Donya/Collision.h"
 #include "Donya/Serializer.h"
@@ -21,11 +23,11 @@ class Room
 public:
 	static constexpr int invalidID = -1;
 private:
-	int		id					= 0;
-	int		connectingRoomID	= invalidID;	// -1 is invalid
-	float	hour				= 12.0f;
-	Definition::Direction		transition = Definition::Direction::Nil; // Direction that be able to transition
-	Donya::Collision::Box3F		area;			// Z component is infinite
+	int		id				= 0;
+	float	hour			= 12.0f;
+	Definition::Direction	transition = Definition::Direction::Nil; // Direction that be able to transition
+	Donya::Collision::Box3F	area;			// Z component is infinite
+	std::vector<int>		connectingRoomIDs;
 private:
 	friend class cereal::access;
 	template<class Archive>
@@ -33,16 +35,19 @@ private:
 	{
 		archive
 		(
-			CEREAL_NVP( id					),
-			CEREAL_NVP( connectingRoomID	),
-			CEREAL_NVP( transition			),
-			CEREAL_NVP( area				)
+			CEREAL_NVP( id			),
+			CEREAL_NVP( transition	),
+			CEREAL_NVP( area		)
 		);
 		if ( 1 <= version )
 		{
 			archive( CEREAL_NVP( hour ) );
 		}
 		if ( 2 <= version )
+		{
+			archive( CEREAL_NVP( connectingRoomIDs ) );
+		}
+		if ( 3 <= version )
 		{
 			// archive( CEREAL_NVP( x ) );
 		}
@@ -53,6 +58,7 @@ public:
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
 	bool  IsConnectTo( int verifyRoomID ) const;
+	bool  IsConnectToAny() const;
 	int   GetID() const;
 	float GetHour() const;
 	Definition::Direction GetTransitionableDirection() const;
@@ -72,7 +78,7 @@ public:
 	void ShowImGuiNode( const std::string &nodeCaption );
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( Room, 1 )
+CEREAL_CLASS_VERSION( Room, 2 )
 
 
 /// <summary>
