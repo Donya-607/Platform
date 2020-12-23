@@ -3,18 +3,18 @@
         "cereal_class_version": 0,
         "rooms": [
             {
-                "key": 10,
+                "key": 12,
                 "value": {
                     "cereal_class_version": 1,
-                    "id": 10,
+                    "id": 12,
                     "connectingRoomID": -1,
-                    "transition": 10,
+                    "transition": 2,
                     "area": {
                         "cereal_class_version": 0,
                         "pos": {
                             "cereal_class_version": 0,
-                            "x": 62.0,
-                            "y": -6.0,
+                            "x": 78.0,
+                            "y": -14.0,
                             "z": 0.0
                         },
                         "offset": {
@@ -29,7 +29,34 @@
                         },
                         "exist": true
                     },
-                    "hour": 16.700000762939454
+                    "hour": 12.0
+                }
+            },
+            {
+                "key": 10,
+                "value": {
+                    "id": 10,
+                    "connectingRoomID": -1,
+                    "transition": 11,
+                    "area": {
+                        "pos": {
+                            "x": 78.0,
+                            "y": -26.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 12.0
                 }
             },
             {
@@ -37,38 +64,11 @@
                 "value": {
                     "id": 11,
                     "connectingRoomID": -1,
-                    "transition": 8,
-                    "area": {
-                        "pos": {
-                            "x": 84.0,
-                            "y": -6.0,
-                            "z": 0.0
-                        },
-                        "offset": {
-                            "x": 0.0,
-                            "y": 0.0,
-                            "z": 0.0
-                        },
-                        "size": {
-                            "x": 11.0,
-                            "y": 6.0,
-                            "z": 3.4028234663852887e38
-                        },
-                        "exist": true
-                    },
-                    "hour": 16.799999237060548
-                }
-            },
-            {
-                "key": 12,
-                "value": {
-                    "id": 12,
-                    "connectingRoomID": -1,
                     "transition": 0,
                     "area": {
                         "pos": {
-                            "x": 106.0,
-                            "y": -6.0,
+                            "x": 100.0,
+                            "y": -26.0,
                             "z": 0.0
                         },
                         "offset": {
@@ -83,34 +83,7 @@
                         },
                         "exist": true
                     },
-                    "hour": 17.0
-                }
-            },
-            {
-                "key": 8,
-                "value": {
-                    "id": 8,
-                    "connectingRoomID": -1,
-                    "transition": 8,
-                    "area": {
-                        "pos": {
-                            "x": 25.5,
-                            "y": -18.0,
-                            "z": 0.0
-                        },
-                        "offset": {
-                            "x": 0.0,
-                            "y": 0.0,
-                            "z": 0.0
-                        },
-                        "size": {
-                            "x": 25.5,
-                            "y": 6.0,
-                            "z": 3.4028234663852887e38
-                        },
-                        "exist": true
-                    },
-                    "hour": 15.380000114440918
+                    "hour": 12.0
                 }
             },
             {
@@ -118,11 +91,11 @@
                 "value": {
                     "id": 9,
                     "connectingRoomID": -1,
-                    "transition": 1,
+                    "transition": 3,
                     "area": {
                         "pos": {
-                            "x": 62.0,
-                            "y": -18.0,
+                            "x": 78.0,
+                            "y": -38.0,
                             "z": 0.0
                         },
                         "offset": {
@@ -137,7 +110,34 @@
                         },
                         "exist": true
                     },
-                    "hour": 16.0
+                    "hour": 12.0
+                }
+            },
+            {
+                "key": 8,
+                "value": {
+                    "id": 8,
+                    "connectingRoomID": -1,
+                    "transition": 1,
+                    "area": {
+                        "pos": {
+                            "x": 52.5,
+                            "y": -50.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 36.5,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 12.0
                 }
             }
         ]

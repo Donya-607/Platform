@@ -29,8 +29,6 @@ namespace Enemy
 		SkeletonJoe,
 		// ShieldAttacker,
 		// Battonton,
-		// SkullMet,
-		// Imorm,
 		
 		KindCount
 	};
@@ -221,6 +219,8 @@ namespace Enemy
 		void RemoveEnemiesIfNeeded();
 	#if USE_IMGUI
 		void AppendEnemy( Kind appendKind, const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
+	private:
+		void AdjustPosToLeftBottom( Donya::Vector3 *footPos, const Kind &kind ) const;
 	public:
 		void RemakeByCSV( const CSVLoader &loadedData, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		void SaveEnemies( int stageNumber, bool fromBinary );

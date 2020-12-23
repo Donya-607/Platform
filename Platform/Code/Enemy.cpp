@@ -594,8 +594,6 @@ namespace Enemy
 		case Kind::SkeletonJoe:		instance = std::make_shared<Enemy::SkeletonJoe>();		break;
 		// case Kind::ShieldAttacker:	instance = std::make_shared<Enemy::>();	break;
 		// case Kind::Battonton:		instance = std::make_shared<Enemy::>();	break;
-		// case Kind::SkullMet:		instance = std::make_shared<Enemy::>();	break;
-		// case Kind::Imorm:			instance = std::make_shared<Enemy::>();	break;
 		default: break;
 		}
 
@@ -608,6 +606,68 @@ namespace Enemy
 
 		instance->Init( parameter, wsTargetPos, wsScreen );
 		enemyPtrs.emplace_back( std::move( instance ) );
+	}
+	void Admin::AdjustPosToLeftBottom( Donya::Vector3 *footPos, const Kind &kind ) const
+	{
+		/*
+		It adjustment is for hitbox.
+		The horizontal hitbox must there to center because that may rotate.
+		So adjust the position here.
+		However the vertical hitbox is not rotate, so here is not adjust.
+		*/
+
+		/*
+		[0:Empty, 1:Enemy chip, X:Enemy body]
+
+		If a map chip passed as:
+			0,0,0,0,0,
+			0,0,1,0,0,
+
+		It method to be:
+		(body size is [1,2])
+			0,0,X,0,0,
+			0,0,1,0,0,
+		(body size is [2,2])
+			0,0,X,X,0,
+			0,0,1,X,0,
+		(body size is [3,2])
+			0,0,X,X,X,
+			0,0,1,X,X,
+		*/
+
+		const size_t intKind = scast<size_t>( kind );
+		if ( kindCount <= intKind )
+		{
+			_ASSERT_EXPR( 0, L"Error: Unexpected Kind!" );
+			return;
+		}
+		// else
+
+		_ASSERT_EXPR( kindCount == 3, L"WARN: Append new kind to it!" );
+		constexpr std::array<int, kindCount> bodyWidths
+		{
+			2, // SuperBallMachine
+			1, // Togehero
+			2, // SkeletonJoe
+		};
+
+		int targetWidth = bodyWidths[intKind];
+		if ( targetWidth <= 1 ) { return; }
+		// else
+
+		// enemy's body width -> shift count
+		targetWidth--;
+
+		// The "footPos" is already shifted by the half tile size by the argument of Map::ToWorldPos().
+		// So first shift is half size.
+		footPos->x += Tile::unitWholeSize * 0.5f;
+		targetWidth--;
+		if ( targetWidth <= 0 ) { return; }
+		// else
+
+		// More shifts if the body width is greater than 2
+		const float shiftAmount = Tile::unitWholeSize * scast<float>( targetWidth );
+		footPos->x += shiftAmount;
 	}
 	void Admin::RemakeByCSV( const CSVLoader &loadedData, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
@@ -642,10 +702,11 @@ namespace Enemy
 			// else
 
 			InitializeParam tmp;
-			tmp.lookDirection	= InitializeParam::LookDirection::ToTarget;
+			tmp.lookDirection	= InitializeParam::LookDirection::ToTarget; // Default
 			tmp.wsPos			= Map::ToWorldPos( row, column, /* alignToCenterOfTile = */ true );
-			tmp.wsPos.y			-= Tile::unitWholeSize * 0.5f;
+			tmp.wsPos.y			-= Tile::unitWholeSize * 0.5f; // Foot pos
 			const Kind kind = scast<Kind>( id - StageFormat::EnemyStart );
+			AdjustPosToLeftBottom( &tmp.wsPos, kind );
 			AppendEnemy( kind, tmp, wsTargetPos, wsScreen );
 		};
 
