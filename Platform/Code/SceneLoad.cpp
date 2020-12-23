@@ -36,6 +36,7 @@
 #include "RenderingStuff.h"
 #include "Parameter.h"
 #include "Player.h"
+#include "SaveData.h"
 
 #define LOAD_EFFECT_BY_ANOTHER_THREAD ( false )
 
@@ -91,6 +92,7 @@ void SceneLoad::Init()
 
 	sceneParam.LoadParameter();
 	Performer::LoadPart::LoadParameter();
+	SaveData::Admin::Get().Load();
 	Input::LoadParameter();
 
 	loadPerformer.Init();

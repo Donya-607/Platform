@@ -8,8 +8,29 @@
                     "cereal_class_version": 0,
                     "pos": {
                         "cereal_class_version": 0,
-                        "x": 71.5,
+                        "x": 76.5,
                         "y": -16.0,
+                        "z": 0.0
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "size": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "exist": true
+                },
+                "lookingRight": true
+            },
+            {
+                "area": {
+                    "pos": {
+                        "x": 204.5,
+                        "y": -28.0,
                         "z": 0.0
                     },
                     "offset": {

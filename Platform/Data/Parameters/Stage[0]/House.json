@@ -7,13 +7,67 @@
                 "value": {
                     "cereal_class_version": 1,
                     "id": 12,
-                    "connectingRoomID": -1,
+                    "connectingRoomID": 13,
                     "transition": 2,
                     "area": {
                         "cereal_class_version": 0,
                         "pos": {
                             "cereal_class_version": 0,
-                            "x": 78.0,
+                            "x": 83.0,
+                            "y": -14.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 12.0
+                }
+            },
+            {
+                "key": 13,
+                "value": {
+                    "id": 13,
+                    "connectingRoomID": 14,
+                    "transition": 0,
+                    "area": {
+                        "pos": {
+                            "x": 109.5,
+                            "y": -14.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 15.5,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 12.0
+                }
+            },
+            {
+                "key": 14,
+                "value": {
+                    "id": 14,
+                    "connectingRoomID": 13,
+                    "transition": 2,
+                    "area": {
+                        "pos": {
+                            "x": 136.0,
                             "y": -14.0,
                             "z": 0.0
                         },
@@ -40,7 +94,7 @@
                     "transition": 11,
                     "area": {
                         "pos": {
-                            "x": 78.0,
+                            "x": 83.0,
                             "y": -26.0,
                             "z": 0.0
                         },
@@ -64,10 +118,91 @@
                 "value": {
                     "id": 11,
                     "connectingRoomID": -1,
+                    "transition": 4,
+                    "area": {
+                        "pos": {
+                            "x": 105.0,
+                            "y": -26.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 12.0
+                }
+            },
+            {
+                "key": 15,
+                "value": {
+                    "id": 15,
+                    "connectingRoomID": -1,
+                    "transition": 8,
+                    "area": {
+                        "pos": {
+                            "x": 158.0,
+                            "y": -26.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 33.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 12.0
+                }
+            },
+            {
+                "key": 16,
+                "value": {
+                    "id": 16,
+                    "connectingRoomID": -1,
+                    "transition": 8,
+                    "area": {
+                        "pos": {
+                            "x": 202.0,
+                            "y": -26.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 12.0
+                }
+            },
+            {
+                "key": 17,
+                "value": {
+                    "id": 17,
+                    "connectingRoomID": -1,
                     "transition": 0,
                     "area": {
                         "pos": {
-                            "x": 100.0,
+                            "x": 224.0,
                             "y": -26.0,
                             "z": 0.0
                         },
@@ -94,7 +229,7 @@
                     "transition": 3,
                     "area": {
                         "pos": {
-                            "x": 78.0,
+                            "x": 83.0,
                             "y": -38.0,
                             "z": 0.0
                         },
@@ -121,7 +256,7 @@
                     "transition": 1,
                     "area": {
                         "pos": {
-                            "x": 52.5,
+                            "x": 55.0,
                             "y": -50.0,
                             "z": 0.0
                         },
@@ -131,7 +266,7 @@
                             "z": 0.0
                         },
                         "size": {
-                            "x": 36.5,
+                            "x": 39.0,
                             "y": 6.0,
                             "z": 3.4028234663852887e38
                         },
