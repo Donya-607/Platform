@@ -56,6 +56,9 @@ namespace Bullet
 			UpdateVerticalVelocity();
 		}
 
+		const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( data.rotateSpeed * elapsedTime ) );
+		orientation.RotateBy( rotation );
+
 		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
 	}
 	void TogeheroBody::UpdateVerticalVelocity( bool halfWay )
@@ -74,7 +77,7 @@ namespace Bullet
 
 		const float oldSign = Donya::SignBitF( velocity.y );
 		velocity.y = distance / interval;
-		velocity.y *= -oldSign;
+		velocity.y *= ( IsZero( oldSign ) ) ? 1.0f : -oldSign;
 	}
 	bool TogeheroBody::Destructible() const
 	{
@@ -92,18 +95,16 @@ namespace Bullet
 	}
 	void TogeheroBody::ProtectedBy( const Donya::Collision::Box3F &protectObjectBody ) const
 	{
-		// Always behaves as defeted
-		TogeheroBody::CollidedToObject( /* otherIsBroken = */ false );
+		ProtectedByImpl( 0.0f, 0.0f );
 	}
 	void TogeheroBody::ProtectedBy( const Donya::Collision::Sphere3F &protectObjectBody ) const
 	{
-		// Always behaves as defeted
-		TogeheroBody::CollidedToObject( /* otherIsBroken = */ false );
+		ProtectedByImpl( 0.0f, 0.0f );
 	}
 	void TogeheroBody::ProtectedByImpl( float distLeft, float distRight ) const
 	{
 		// Always behaves as defeted
-		TogeheroBody::CollidedToObject( /* otherIsBroken = */ false );
+		CollidedToObject( /* otherIsBroken = */ false );
 	}
 	Kind TogeheroBody::GetKind() const
 	{
@@ -148,8 +149,9 @@ namespace Bullet
 	void TogeheroBodyParam::ShowImGuiNode()
 	{
 		basic.ShowImGuiNode( u8"汎用設定" );
-		ImGui::DragFloat( u8"ジグザグ軌道の距離",		&zigzagDistance, 0.01f );
-		ImGui::DragFloat( u8"片道にかける（秒数）",	&zigzagInterval, 0.01f );
+		ImGui::DragFloat( u8"回転速度[degree/s]",	&rotateSpeed,		1.0f  );
+		ImGui::DragFloat( u8"ジグザグ軌道の距離",		&zigzagDistance,	0.01f );
+		ImGui::DragFloat( u8"片道にかける（秒数）",	&zigzagInterval,	0.01f );
 		zigzagDistance = std::max( 0.01f, zigzagDistance );
 		zigzagInterval = std::max( 0.01f, zigzagInterval );
 	}

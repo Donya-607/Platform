@@ -44,7 +44,7 @@ namespace Enemy
 			{
 				if ( modelPtrs[i] ) { continue; }
 				// else
-				if ( strcmp( modelNames[i], ignoreName ) )
+				if ( strcmp( modelNames[i], ignoreName ) == 0 )
 				{
 					// Assign other something for do not make nullptr
 					for ( size_t j = 0; j < kindCount; ++j )

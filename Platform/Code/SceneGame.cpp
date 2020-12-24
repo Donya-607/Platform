@@ -2382,13 +2382,15 @@ void SceneGame::Collision_BulletVSBullet()
 		const bool protectibleB = Protectible( pB );
 		if ( protectibleA ) { pB->ProtectedBy( hitBoxA ); }
 		if ( protectibleB ) { pA->ProtectedBy( hitBoxB ); }
-		if ( protectibleA || protectibleB ) { return; }
-		// else
 
-		const bool destructibleA = pA->Destructible();
-		const bool destructibleB = pB->Destructible();
-		pA->CollidedToObject( destructibleB );
-		pB->CollidedToObject( destructibleA );
+		// Currently, there is not the hard(e.g. destructible and a lot of HP) bullet.
+		// So tells "pierced" to the collided bullet(s) for easily process, in the collision between bullet and bullet.
+		constexpr bool toPierce = true;
+		
+		// Do not call the protected bullet's method.
+		// But should call the not protected one's method for play the hit SE.
+		if ( !protectibleA ) { pB->CollidedToObject( toPierce ); }
+		if ( !protectibleB ) { pA->CollidedToObject( toPierce ); }
 	};
 	
 	const auto playerID = ExtractPlayerID( pPlayer );
@@ -2397,6 +2399,7 @@ void SceneGame::Collision_BulletVSBullet()
 	{
 		pA = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pA ) { continue; }
+		// else
 
 		// Disallow collision between a protected bullet.
 		// Because if allowed hitting to multiple objects in the same timing,
@@ -2414,9 +2417,8 @@ void SceneGame::Collision_BulletVSBullet()
 		for ( size_t j = i + 1; j < bulletCount; ++j )
 		{
 			pB = bulletAdmin.GetInstanceOrNullptr( j );
-			if ( !pB ) { continue; }
-			// else
-			if ( pB->WasProtected() ) { continue; }
+			if ( !pB )					{ continue; }
+			if ( pB->WasProtected() )	{ continue; }
 			// else
 
 			const bool ownerB		= IsPlayerBullet( playerID, pB );
@@ -3346,6 +3348,11 @@ void SceneGame::UseImGui( float elapsedTime )
 			ImGui::Checkbox( u8"中間ポイントに適用",		&applyCheckPt	); ImGui::SameLine();
 			ImGui::Checkbox( u8"ドアに適用",				&applyDoor		);
 			ImGui::Checkbox( u8"ルームに適用",			&applyRoom		);
+			if ( ImGui::Button( u8"マップ関連をオフ" ) )
+			{ applyMap = applyPlayer = applyCheckPt = applyDoor = false; }
+			ImGui::SameLine();
+			if ( ImGui::Button( u8"マップ関連をオン" ) )
+			{ applyMap = applyPlayer = applyCheckPt = applyDoor = true; }
 		
 			if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
 			{

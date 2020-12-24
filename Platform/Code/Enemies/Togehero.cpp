@@ -30,29 +30,34 @@ namespace Enemy
 
 	void Togehero::Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
-		Base::Init( parameter, wsTargetPos, wsScreenHitBox );
+		initializer		= parameter;
+		body.pos		= initializer.wsPos;
+		hurtBox.pos		= initializer.wsPos;
+		body.exist		= false;
+		hurtBox.exist	= false;
+		hurtBox.id		= Donya::Collision::GetUniqueID();
+		hurtBox.ownerID	= Donya::Collision::invalidID;
+		hurtBox.ignoreList.clear();
+		velocity		= 0.0f;
+		hp				= GetInitialHP();
+		wantRemove		= false;
 		
 		prevIncludeSecond = 0.0f;
 		currIncludeSecond = 0.0f;
 
-		// Unused memebrs
-		body.exist		= false;
-		hurtBox.exist	= false;
-		orientation		= Donya::Quaternion::Identity();
+		// Apply the parameter's size only first time.
+		// It make to be able to change the size individually.
+		if ( body.size.IsZero() )
+		{
+			AssignMyBody( initializer.wsPos );
+		}
 	}
 	void Togehero::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
-	#if USE_IMGUI
-		// Apply for be able to see an adjustment immediately
-		{
-			AssignMyBody( body.pos );
-		}
-	#endif // USE_IMGUI
-
 		const auto &data = Parameter::GetTogehero();
 
 		prevIncludeSecond = currIncludeSecond;
-		if ( Donya::Collision::IsHit( body, wsTargetPos ) )
+		if ( Donya::Collision::IsHit( body, wsTargetPos, /* considerExistFlag = */ false ) )
 		{ currIncludeSecond += elapsedTime; }
 		else
 		{ currIncludeSecond = 0.0f; }
@@ -149,6 +154,12 @@ namespace Enemy
 		if ( ImGui::TreeNode( u8"派生部分" ) )
 		{
 			ImGui::DragFloat( u8"生成間隔タイマ", &currIncludeSecond, 0.01f );
+
+			ImGui::Helper::ShowAABBNode( u8"当たり判定の設定", &body );
+			if ( ImGui::Button( u8"当たり判定にパラメータを代入" ) )
+			{
+				AssignMyBody( body.pos );
+			}
 
 			ImGui::TreePop();
 		}

@@ -31,6 +31,7 @@ namespace Bullet
 			"SkullShield",
 			"SuperBall",
 			"Bone",
+			"Togehero",
 		};
 
 		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
@@ -756,6 +757,7 @@ namespace Bullet
 			case Kind::SkullShield:	tmp = std::make_shared<SkullShield>();	break;
 			case Kind::SuperBall:	tmp = std::make_shared<SuperBall>();	break;
 			case Kind::Bone:		tmp = std::make_shared<Bone>();			break;
+			case Kind::TogeheroBody:tmp = std::make_shared<TogeheroBody>();	break;
 			default: _ASSERT_EXPR( 0, L"Error: Unexpected bullet kind!" );	return;
 			}
 

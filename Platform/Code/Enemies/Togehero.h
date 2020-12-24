@@ -20,7 +20,8 @@ namespace Enemy
 		{
 			archive
 			(
-				cereal::base_class<Base>( this )
+				cereal::base_class<Base>( this ),
+				CEREAL_NVP( body )
 			);
 			if ( 1 <= version )
 			{

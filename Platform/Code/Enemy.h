@@ -100,7 +100,7 @@ namespace Enemy
 
 	class Base : public Actor
 	{
-	private: // Seralize values
+	protected: // Seralize value
 		InitializeParam initializer;
 	protected:
 		ModelHelper::SkinningOperator	model;
