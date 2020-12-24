@@ -11,7 +11,10 @@ namespace Bullet
 	/// </summary>
 	class Bone final : public Base
 	{
+	private:
+		float aliveSecond = 0.0f;
 	public:
+		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
 		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
@@ -28,7 +31,8 @@ namespace Bullet
 	{
 	public:
 		BasicParam	basic;
-		float		gravity = 1.0f;
+		float		gravity				= 1.0f;
+		float		alwaysSurviveSecond	= 1.0f; // Prevent to be removed by out from screen
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -42,6 +46,10 @@ namespace Bullet
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( alwaysSurviveSecond ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -51,4 +59,4 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::BoneParam, 0 )
+CEREAL_CLASS_VERSION( Bullet::BoneParam, 1 )

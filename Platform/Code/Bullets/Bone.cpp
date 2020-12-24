@@ -34,12 +34,25 @@ namespace Bullet
 	}
 
 
+	void Bone::Init( const FireDesc &parameter )
+	{
+		Base::Init( parameter );
+		
+		aliveSecond = 0.0f;
+		DisallowRemovingByOutOfScreen();
+	}
 	void Bone::Uninit() {} // No op
 	void Bone::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
 		Base::Update( elapsedTime, wsScreenHitBox );
 
 		const auto &data = Parameter::GetBone();
+
+		aliveSecond += elapsedTime;
+		if ( data.alwaysSurviveSecond <= aliveSecond )
+		{
+			AllowRemovingByOutOfScreen();
+		}
 
 		velocity.y -= data.gravity * elapsedTime;
 		if ( !velocity.IsZero() )
@@ -83,8 +96,10 @@ namespace Bullet
 	{
 		basic.ShowImGuiNode( u8"汎用設定" );
 
-		ImGui::DragFloat( u8"重力", &gravity, 0.01f );
-		gravity = std::max( 0.0f, gravity );
+		ImGui::DragFloat( u8"重力",					&gravity,				0.01f );
+		ImGui::DragFloat( u8"画面外でも生存する秒数",	&alwaysSurviveSecond,	0.01f );
+		gravity				= std::max( 0.0f, gravity				);
+		alwaysSurviveSecond	= std::max( 0.0f, alwaysSurviveSecond	);
 	}
 #endif // USE_IMGUI
 

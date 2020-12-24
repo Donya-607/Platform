@@ -593,12 +593,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 
 	const int oldRoomID = currentRoomID;
-	if ( scroll.active )
-	{
-		// Update the roomID if the game is pausing for the scroll.
-		// That limit prevents the camera moves to not allowed direction.
-		currentRoomID = CalcCurrentRoomID();
-	}
+	UpdateCurrentRoomID();
 	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
 	if ( oldRoomID != currentRoomID )
 	{
@@ -652,8 +647,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Item::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
 	if ( pBossContainer ) { pBossContainer->PhysicUpdate( deltaTimeForMove, mapRef ); }
 	
-	UpdateCurrentRoomID();
-
 
 	// AssignCameraPos() (will called in CameraUpdate()) depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();

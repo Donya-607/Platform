@@ -1,6 +1,44 @@
 {
     "Boss": {
         "cereal_class_version": 0,
-        "bosses": []
+        "bosses": [
+            {
+                "cereal_class_version": 0,
+                "roomID": 17,
+                "kind": 0,
+                "initializer": {
+                    "cereal_class_version": 0,
+                    "wsPos": {
+                        "cereal_class_version": 0,
+                        "x": 229.5,
+                        "y": -27.5,
+                        "z": 0.0
+                    },
+                    "lookingRight": false
+                },
+                "roomArea": {
+                    "cereal_class_version": 0,
+                    "pos": {
+                        "x": 224.0,
+                        "y": -26.0,
+                        "z": 0.0
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "size": {
+                        "x": 11.0,
+                        "y": 6.0,
+                        "z": 3.4028234663852887e38
+                    },
+                    "exist": true
+                },
+                "pBoss": {
+                    "polymorphic_id": 0
+                }
+            }
+        ]
     }
 }

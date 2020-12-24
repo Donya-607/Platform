@@ -1,6 +1,17 @@
 {
     "ClearEvent": {
         "cereal_class_version": 0,
-        "events": []
+        "events": [
+            {
+                "cereal_class_version": 0,
+                "roomID": 17,
+                "wsPos": {
+                    "cereal_class_version": 0,
+                    "x": 223.5,
+                    "y": -25.5,
+                    "z": 0.0
+                }
+            }
+        ]
     }
 }
