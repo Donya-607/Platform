@@ -5,8 +5,14 @@
 
 namespace Enemy
 {
+	/// <summary>
+	/// Generator of Bullet::TogeheroBody
+	/// </summary>
 	class Togehero : public Base
 	{
+	private:
+		float prevIncludeSecond = 0.0f;
+		float currIncludeSecond = 0.0f;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -22,13 +28,19 @@ namespace Enemy
 			}
 		}
 	public:
+		void Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
+		void PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence = true ) override;
+		void Draw( RenderingHelper *pRenderer ) const override;
+		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
 	public:
-		Kind GetKind() const override;
-		Definition::Damage GetTouchDamage() const override;
+		Kind				GetKind()			const override;
+		Definition::Damage	GetTouchDamage()	const override;
 	private:
 		int  GetInitialHP() const override;
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
+	private:
+		void Generate( const Donya::Vector3 &wsTargetPos ) const;
 	public:
 	#if USE_IMGUI
 		/// <summary>
@@ -42,54 +54,26 @@ namespace Enemy
 	{
 	public:
 		BasicParam	basic;
-		float		moveSpeed		= 1.0f;		// [m/s]
-		float		rotateSpeed		= 360.0f;	// [degree/s]
-		float		animePlaySpeed	= 1.0f;
+		float		bodySpeed			= 1.0f;		// [m/s]
+		float		generateInterval	= 1.0f;
+		float		generatePosOffsetH	= 10.0f;	// Second
 	private:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize( Archive &archive, std::uint32_t version )
 		{
-			if ( 2 <= version )
-			{
-				archive
-				(
-					CEREAL_NVP( basic		),
-					CEREAL_NVP( moveSpeed	),
-					CEREAL_NVP( rotateSpeed	)
-				);
-			}
-			if ( 3 <= version )
-			{
-				archive( CEREAL_NVP( animePlaySpeed ) );
-			}
-			if ( 4 <= version )
-			{
-				// archive( CEREAL_NVP( x ) );
-			}
-			return;
-			// else
-
-			/*
 			archive
 			(
-				CEREAL_NVP( hitBoxOffset	),
-				CEREAL_NVP( hurtBoxOffset	),
-				CEREAL_NVP( hitBoxSize		),
-				CEREAL_NVP( hurtBoxSize		),
-				CEREAL_NVP( moveSpeed		),
-				CEREAL_NVP( rotateSpeed		)
+				CEREAL_NVP( basic				),
+				CEREAL_NVP( bodySpeed			),
+				CEREAL_NVP( generateInterval	),
+				CEREAL_NVP( generatePosOffsetH	)
 			);
 
 			if ( 1 <= version )
 			{
-				archive
-				(
-					CEREAL_NVP( hp			),
-					CEREAL_NVP( touchDamage	)
-				);
+				// archive( CEREAL_NVP(  ) );
 			}
-			*/
 		}
 	public:
 	#if USE_IMGUI
@@ -100,4 +84,4 @@ namespace Enemy
 CEREAL_CLASS_VERSION( Enemy::Togehero, 0 )
 CEREAL_REGISTER_TYPE( Enemy::Togehero )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::Togehero )
-CEREAL_CLASS_VERSION( Enemy::TogeheroParam, 3 )
+CEREAL_CLASS_VERSION( Enemy::TogeheroParam, 0 )

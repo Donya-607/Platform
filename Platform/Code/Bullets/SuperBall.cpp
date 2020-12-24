@@ -11,23 +11,23 @@ namespace Bullet
 {
 	namespace Parameter
 	{
-		static ParamOperator<SuperBallParam> skullBusterParam{ "SuperBall", "Bullet/" };
+		static ParamOperator<SuperBallParam> superBallParam{ "SuperBall", "Bullet/" };
 
 		const SuperBallParam &GetSuperBall()
 		{
-			return skullBusterParam.Get();
+			return superBallParam.Get();
 		}
 
 		namespace Impl
 		{
 			void LoadSuperBall()
 			{
-				skullBusterParam.LoadParameter();
+				superBallParam.LoadParameter();
 			}
 		#if USE_IMGUI
 			void UpdateSuperBall( const std::string &nodeCaption )
 			{
-				skullBusterParam.ShowImGuiNode( nodeCaption );
+				superBallParam.ShowImGuiNode( nodeCaption );
 			}
 		#endif // USE_IMGUI
 		}

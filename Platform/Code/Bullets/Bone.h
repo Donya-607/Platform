@@ -7,7 +7,7 @@
 namespace Bullet
 {
 	/// <summary>
-	/// Kind of the skull fires.
+	/// Kind of the SkeletonJoe fires.
 	/// </summary>
 	class Bone final : public Base
 	{

@@ -31,6 +31,7 @@ namespace Enemy
 			"Togehero",
 			"SkeletonJoe",
 		};
+		constexpr const char *ignoreName = "Togehero";
 
 		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
 
@@ -42,6 +43,19 @@ namespace Enemy
 			for ( size_t i = 0; i < kindCount; ++i )
 			{
 				if ( modelPtrs[i] ) { continue; }
+				// else
+				if ( strcmp( modelNames[i], ignoreName ) )
+				{
+					// Assign other something for do not make nullptr
+					for ( size_t j = 0; j < kindCount; ++j )
+					{
+						if ( j != i )
+						{
+							modelPtrs[i] = modelPtrs[j];
+						}
+					}
+					continue;
+				}
 				// else
 
 				filePath = MakeModelPath( folderName + modelNames[i] );
@@ -319,7 +333,8 @@ namespace Enemy
 	}
 	void Base::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 	{
-		if ( NowWaiting() ) { return; }
+		if ( !pRenderer		) { return; }
+		if ( NowWaiting()	) { return; }
 		// else
 		
 	#if DEBUG_MODE

@@ -160,6 +160,7 @@
     <ClCompile Include="Code\Bullets\Buster.cpp" />
     <ClCompile Include="Code\Bullets\SkullBullet.cpp" />
     <ClCompile Include="Code\Bullets\SuperBall.cpp" />
+    <ClCompile Include="Code\Bullets\TogeheroBody.cpp" />
     <ClCompile Include="Code\CheckPoint.cpp" />
     <ClCompile Include="Code\ClearEvent.cpp" />
     <ClCompile Include="Code\Common.cpp" />
@@ -258,6 +259,7 @@
     <ClInclude Include="Code\Bullets\Buster.h" />
     <ClInclude Include="Code\Bullets\SkullBullet.h" />
     <ClInclude Include="Code\Bullets\SuperBall.h" />
+    <ClInclude Include="Code\Bullets\TogeheroBody.h" />
     <ClInclude Include="Code\CheckPoint.h" />
     <ClInclude Include="Code\ClearEvent.h" />
     <ClInclude Include="Code\Common.h" />

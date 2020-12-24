@@ -9,6 +9,7 @@
 #include "Bullets/SkullBullet.h"
 #include "Bullets/SuperBall.h"
 #include "Bullets/Bone.h"
+#include "Bullets/TogeheroBody.h"
 #include "Common.h"				// Use IsShowCollision()
 #include "Effect/EffectAdmin.h"
 #include "Effect/EffectKind.h"
@@ -109,6 +110,7 @@ namespace Bullet
 			Impl::LoadSkullShield();
 			Impl::LoadSuperBall();
 			Impl::LoadBone();
+			Impl::LoadTogeheroBody();
 		}
 
 	#if USE_IMGUI
@@ -123,6 +125,7 @@ namespace Bullet
 			Impl::UpdateSkullShield	( u8"SkullShield" );
 			Impl::UpdateSuperBall	( u8"SuperBall" );
 			Impl::UpdateBone		( u8"Bone" );
+			Impl::UpdateTogeheroBody( u8"TogeheroBody" );
 
 			ImGui::TreePop();
 		}

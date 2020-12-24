@@ -29,6 +29,7 @@ namespace Bullet
 		SkullShield,
 		SuperBall,
 		Bone,
+		TogeheroBody,
 
 		KindCount
 	};
@@ -39,6 +40,7 @@ namespace Bullet
 	struct SkullShieldParam;
 	struct SuperBallParam;
 	struct BoneParam;
+	struct TogeheroBodyParam;
 	namespace Parameter
 	{
 		void Load();
@@ -53,6 +55,7 @@ namespace Bullet
 		const SkullShieldParam	&GetSkullShield();
 		const SuperBallParam	&GetSuperBall();
 		const BoneParam			&GetBone();
+		const TogeheroBodyParam	&GetTogeheroBody();
 
 		namespace Impl
 		{
@@ -62,6 +65,7 @@ namespace Bullet
 			void LoadSkullShield();
 			void LoadSuperBall();
 			void LoadBone();
+			void LoadTogeheroBody();
 		#if USE_IMGUI
 			void UpdateBuster( const std::string &nodeCaption );
 			void UpdateGeneral( const std::string &nodeCaption );
@@ -69,6 +73,7 @@ namespace Bullet
 			void UpdateSkullShield( const std::string &nodeCaption );
 			void UpdateSuperBall( const std::string &nodeCaption );
 			void UpdateBone( const std::string &nodeCaption );
+			void UpdateTogeheroBody( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}
 	}

@@ -6,7 +6,7 @@
 namespace Bullet
 {
 	/// <summary>
-	/// Kind of the skull fires.
+	/// Kind of the SuperBallMachine fires.
 	/// </summary>
 	class SuperBall final : public Base
 	{
