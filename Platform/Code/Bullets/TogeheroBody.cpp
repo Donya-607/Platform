@@ -5,6 +5,7 @@
 
 #include "../Effect/EffectAdmin.h"
 #include "../Effect/EffectKind.h"
+#include "../Item.h"
 #include "../Music.h"
 #include "../Parameter.h"
 
@@ -42,7 +43,10 @@ namespace Bullet
 		zigzagTimer = 0.0f;
 		UpdateVerticalVelocity( /* halfWay = */ true );
 	}
-	void TogeheroBody::Uninit() {} // No op
+	void TogeheroBody::Uninit()
+	{
+		Item::DropItemByLottery( GetPosition() );
+	}
 	void TogeheroBody::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
 		Base::Update( elapsedTime, wsScreenHitBox );

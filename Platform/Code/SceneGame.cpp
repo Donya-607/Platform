@@ -2577,20 +2577,6 @@ void SceneGame::Collision_BulletVSEnemy()
 	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
 	std::shared_ptr<const Enemy::Base>  pOther  = nullptr;
 
-	auto DropItemByLottery = []( const Donya::Vector3 &wsGeneratePos)
-	{
-		const Item::Kind dropKind = Item::LotteryDropKind();
-		// If invalid is chosen
-		if ( dropKind == Item::Kind::KindCount ) { return; }
-		// else
-
-		Item::InitializeParam tmp;
-		tmp.kind		= dropKind;
-		tmp.aliveSecond	= Item::Parameter::GetItem().disappearSecond;
-		tmp.wsPos		= wsGeneratePos;
-		Item::Admin::Get().RequestGeneration( tmp );
-	};
-
 	struct ProccessResult
 	{
 		bool collided	= false;
@@ -2615,7 +2601,7 @@ void SceneGame::Collision_BulletVSEnemy()
 			pOther->GiveDamage( pBullet->GetDamage() );
 			if ( pOther->WillDie() )
 			{
-				DropItemByLottery( pOther->GetPosition() );
+				Item::DropItemByLottery( pOther->GetPosition() );
 			}
 			else
 			{

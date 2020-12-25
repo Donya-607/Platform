@@ -123,6 +123,19 @@ namespace Item
 
 		return scast<Kind>( chosen );
 	}
+	void DropItemByLottery( const Donya::Vector3 &wsGeneratePos )
+	{
+		const Kind dropKind = LotteryDropKind();
+		// If invalid is chosen
+		if ( dropKind == Kind::KindCount ) { return; }
+		// else
+
+		InitializeParam tmp;
+		tmp.kind		= dropKind;
+		tmp.aliveSecond	= Parameter::GetItem().disappearSecond;
+		tmp.wsPos		= wsGeneratePos;
+		Admin::Get().RequestGeneration( tmp );
+	};
 
 	namespace Parameter
 	{

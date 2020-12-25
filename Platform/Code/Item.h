@@ -25,6 +25,10 @@ namespace Item
 	/// Returns an Item Kind(contain KindCount) as randomly.
 	/// </summary>
 	Kind LotteryDropKind();
+	/// <summary>
+	/// Generate an item that was chosen by LotteryDropKind()
+	/// </summary>
+	void DropItemByLottery( const Donya::Vector3 &wsGeneratePos );
 
 	struct ItemParam;
 	namespace Parameter
