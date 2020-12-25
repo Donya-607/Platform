@@ -637,7 +637,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
 	BossUpdate( deltaTimeForMove, playerPos );
-	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
+	Item::Admin::Get().Update( deltaTimeForMove, currentScreen, mapRef );
 
 
 
@@ -1233,6 +1233,7 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 	CurrentRoomID	[PlayerPos, House]			- the current room indicates what the player belongs map
 	House		- it is free
 	PlayerPos	- it is free("pPlayerIniter" will be in charge)
+	Item:			[Map]						- detects an item is there in inside of terrain
 	Map			- it is free
 	*/
 
@@ -1260,6 +1261,13 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 	enemyAdmin.LoadEnemies( stageNo, playerPos, currentScreen, IOFromBinary );
 #if DEBUG_MODE
 	enemyAdmin.SaveEnemies( stageNo, true );
+#endif // DEBUG_MODE
+
+	auto &itemAdmin = Item::Admin::Get();
+	itemAdmin.ClearInstances();
+	itemAdmin.LoadItems( stageNo, *pMap, IOFromBinary );
+#if DEBUG_MODE
+	itemAdmin.SaveItems( stageNo, true );
 #endif // DEBUG_MODE
 
 
@@ -1290,13 +1298,6 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 	willUnlockWeapon = Definition::WeaponKind::Buster; // Reset
 
 	Bullet::Admin::Get().ClearInstances();
-
-	auto &itemAdmin = Item::Admin::Get();
-	itemAdmin.ClearInstances();
-	itemAdmin.LoadItems( stageNo, IOFromBinary );
-#if DEBUG_MODE
-	itemAdmin.SaveItems( stageNo, true );
-#endif // DEBUG_MODE
 }
 void SceneGame::UninitStage()
 {
@@ -3187,8 +3188,10 @@ void SceneGame::UseImGui( float elapsedTime )
 		};
 		auto ApplyToItem	= [&]( const CSVLoader &loadedData )
 		{
+			const Map emptyMap{}; // Used for empty argument. Fali safe.
+			const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 			Item::Admin::Get().ClearInstances();
-			Item::Admin::Get().RemakeByCSV( loadedData );
+			Item::Admin::Get().RemakeByCSV( loadedData, mapRef );
 
 			if ( thenSave )
 			{
@@ -3433,7 +3436,9 @@ void SceneGame::UseImGui( float elapsedTime )
 		Boss::Parameter::Update( u8"ボスのパラメータ" );
 		ImGui::Text( "" );
 
-		Item::Admin::Get().ShowImGuiNode( u8"アイテムの現在", stageNumber );
+		const Map emptyMap{}; // Used for empty argument. Fali safe.
+		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+		Item::Admin::Get().ShowImGuiNode( u8"アイテムの現在", stageNumber, mapRef );
 		Item::Parameter::Update( u8"アイテムのパラメータ" );
 		ImGui::Text( "" );
 

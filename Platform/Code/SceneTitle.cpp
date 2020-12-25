@@ -701,7 +701,7 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
-	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
+	Item::Admin::Get().Update( deltaTimeForMove, currentScreen, mapRef );
 
 	// PhysicUpdates
 	{
@@ -2087,8 +2087,10 @@ void SceneTitle::UseImGui()
 		};
 		auto ApplyToItem	= [&]( const CSVLoader &loadedData )
 		{
+			const Map emptyMap{}; // Used for empty argument. Fali safe.
+			const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 			Item::Admin::Get().ClearInstances();
-			Item::Admin::Get().RemakeByCSV( loadedData );
+			Item::Admin::Get().RemakeByCSV( loadedData, mapRef );
 
 			if ( thenSave )
 			{
@@ -2300,7 +2302,9 @@ void SceneTitle::UseImGui()
 		Enemy::Parameter::Update( u8"敵のパラメータ" );
 		ImGui::Text( "" );
 
-		Item::Admin::Get().ShowImGuiNode( u8"アイテムの現在", stageNo );
+		const Map emptyMap{}; // Used for empty argument. Fali safe.
+		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+		Item::Admin::Get().ShowImGuiNode( u8"アイテムの現在", stageNo, mapRef );
 		Item::Parameter::Update( u8"アイテムのパラメータ" );
 		ImGui::Text( "" );
 

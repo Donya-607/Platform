@@ -300,7 +300,7 @@ namespace Item
 		}
 	}
 
-	void Item::Init( const InitializeParam &parameter )
+	void Item::Init( const InitializeParam &parameter, const Map &terrain )
 	{
 		initializer		= parameter;
 
@@ -312,11 +312,16 @@ namespace Item
 		aliveTimer		= 0.0f;
 		wantRemove		= false;
 
-		const auto *pData = GetGeneralOrNull( GetKind() );
-		velocity.y		= ( pData ) ? pData->dropBoundStrength : 0.0f;
+		// If the generated position is inside of terrain
+		beBuried		= IsHitToAnyOf( FetchAroundSolids( 0.0f, terrain ) );
+		if ( !beBuried )
+		{
+			const auto *pData = GetGeneralOrNull( GetKind() );
+			velocity.y	= ( pData ) ? pData->dropBoundStrength : 0.0f;
+		}
 	}
-	void Item::Uninit() {}
-	void Item::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
+	void Item::Uninit() {} // No op
+	void Item::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen, const Map &terrain )
 	{
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
@@ -327,7 +332,10 @@ namespace Item
 
 		aliveTimer += elapsedTime;
 
-		velocity.y -= GetGravity() * elapsedTime;
+		if ( !beBuried )
+		{
+			velocity.y -= GetGravity() * elapsedTime;
+		}
 
 		UpdateRemoveCondition( wsScreen );
 
@@ -337,11 +345,20 @@ namespace Item
 	}
 	void Item::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
-		const auto myBody		= GetHitBox();
 		const auto movement		= velocity * elapsedTime;
-		const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
-			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
-		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
+		const auto aroundSolids	= FetchAroundSolids( elapsedTime, terrain );
+
+		if ( beBuried )
+		{
+			if ( !IsHitToAnyOf( aroundSolids ) )
+			{
+				beBuried = false;
+			}
+		
+			velocity = 0.0f;
+			return;
+		}
+		// else
 
 		Actor::MoveX( movement.x, aroundSolids );
 		Actor::MoveZ( movement.z, aroundSolids );
@@ -436,6 +453,29 @@ namespace Item
 		wantRemove = true;
 		Donya::Sound::Play( Music::CatchItem );
 	}
+	std::vector<Donya::Collision::Box3F> Item::FetchAroundSolids( float elapsedTime, const Map &terrain ) const
+	{
+		const auto myBody		= GetHitBox();
+		const auto movement		= velocity * elapsedTime;
+		const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
+			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
+		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
+
+		return aroundSolids;
+	}
+	bool Item::IsHitToAnyOf( const std::vector<Donya::Collision::Box3F> &solids ) const
+	{
+		const auto me = GetHitBox();
+		for ( const auto &it : solids )
+		{
+			if ( Donya::Collision::IsHit( me, it ) )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 	bool Item::OnOutSideScreen( const Donya::Collision::Box3F &wsScreen )
 	{
 		return !Donya::Collision::IsHit( catchArea, wsScreen, /* considerExistFlag = */ false );
@@ -519,14 +559,14 @@ namespace Item
 			it.Uninit();
 		}
 	}
-	void Admin::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
+	void Admin::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen, const Map &terrain )
 	{
-		GenerateRequestedItems();
+		GenerateRequestedItems( terrain );
 		generateRequests.clear();
 
 		for ( auto &it : items )
 		{
-			it.Update( elapsedTime, wsScreen );
+			it.Update( elapsedTime, wsScreen, terrain );
 		}
 
 		RemoveItemsIfNeeds();
@@ -570,7 +610,7 @@ namespace Item
 	{
 		generateRequests.emplace_back( initializer );
 	}
-	bool Admin::LoadItems( int stageNumber, bool fromBinary )
+	bool Admin::LoadItems( int stageNumber, const Map &terrain, bool fromBinary )
 	{
 		ClearInstances();
 
@@ -585,7 +625,7 @@ namespace Item
 		// I should call Init()
 		for ( auto &it : items )
 		{
-			it.Init( it.GetInitializer() );
+			it.Init( it.GetInitializer(), terrain );
 		}
 
 		return succeeded;
@@ -604,12 +644,12 @@ namespace Item
 		// else
 		return &items[instanceIndex];
 	}
-	void Admin::GenerateRequestedItems()
+	void Admin::GenerateRequestedItems( const Map &terrain )
 	{
 		for ( const auto &it : generateRequests )
 		{
 			Item tmp{};
-			tmp.Init( it );
+			tmp.Init( it, terrain );
 			items.emplace_back( std::move( tmp ) );
 		}
 	}
@@ -626,7 +666,7 @@ namespace Item
 		items.erase( itr, items.end() );
 	}
 #if USE_IMGUI
-	void Admin::RemakeByCSV( const CSVLoader &loadedData )
+	void Admin::RemakeByCSV( const CSVLoader &loadedData, const Map &terrain )
 	{
 		auto IsItemID	= []( int id )
 		{
@@ -663,7 +703,7 @@ namespace Item
 			init.aliveSecond	= -1.0f; // Specify to living as infinitely
 			init.wsPos			= Map::ToWorldPos( row, column );
 			Item tmp{};
-			tmp.Init( init );
+			tmp.Init( init, terrain );
 			items.emplace_back( std::move( tmp ) );
 		};
 
@@ -693,7 +733,7 @@ namespace Item
 		? tmp.SaveBinary( *this, filePath.c_str(), ID )
 		: tmp.SaveJSON	( *this, filePath.c_str(), ID );
 	}
-	void Admin::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
+	void Admin::ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Map &terrain )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
@@ -719,11 +759,11 @@ namespace Item
 		}
 		else if ( result == Op::LoadBinary )
 		{
-			LoadItems( stageNo, true );
+			LoadItems( stageNo, terrain, true );
 		}
 		else if ( result == Op::LoadJson )
 		{
-			LoadItems( stageNo, false );
+			LoadItems( stageNo, terrain, false );
 		}
 
 		ImGui::TreePop();

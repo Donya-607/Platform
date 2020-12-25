@@ -92,8 +92,9 @@ namespace Item
 		Donya::Collision::Box3F			catchArea;	// VS the player
 		using					 Actor::orientation;
 		Donya::Vector3					velocity;	// Z element is almost unused.
-		float							aliveTimer = 0.0f;
-		mutable bool					wantRemove = false;
+		float							aliveTimer	= 0.0f;
+		bool							beBuried	= false;
+		mutable bool					wantRemove	= false;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -110,9 +111,9 @@ namespace Item
 			}
 		}
 	public:
-		void Init( const InitializeParam &parameter );
+		void Init( const InitializeParam &parameter, const Map &terrain );
 		void Uninit();
-		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox );
+		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox, const Map &terrain );
 		void PhysicUpdate( float elapsedTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
@@ -125,6 +126,8 @@ namespace Item
 	public:
 		void WasCaught() const;
 	private:
+		std::vector<Donya::Collision::Box3F> FetchAroundSolids( float elapsedTime, const Map &terrain ) const;
+		bool IsHitToAnyOf( const std::vector<Donya::Collision::Box3F> &solids ) const;
 		bool OnOutSideScreen( const Donya::Collision::Box3F &wsScreenHitBox );
 		void UpdateRemoveCondition( const Donya::Collision::Box3F &wsScreenHitBox );
 	private:
@@ -166,14 +169,14 @@ namespace Item
 		static constexpr const char *ID = "Item";
 	public:
 		void Uninit();
-		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox );
+		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox, const Map &terrain );
 		void PhysicUpdate( float elapsedTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
 		void ClearInstances();
 		void RequestGeneration( const InitializeParam &initializer );
-		bool LoadItems( int stageNumber, bool fromBinary );
+		bool LoadItems( int stageNumber, const Map &terrain, bool fromBinary );
 	public:
 		size_t GetInstanceCount() const;
 		bool IsOutOfRange( size_t instanceIndex ) const;
@@ -182,14 +185,14 @@ namespace Item
 		/// </summary>
 		const Item *GetInstanceOrNullptr( size_t instanceIndex ) const;
 	private:
-		void GenerateRequestedItems();
+		void GenerateRequestedItems( const Map &terrain );
 		void RemoveItemsIfNeeds();
 	#if USE_IMGUI
 	public:
-		void RemakeByCSV( const CSVLoader &loadedData );
+		void RemakeByCSV( const CSVLoader &loadedData, const Map &terrain );
 		void SaveItems( int stageNumber, bool fromBinary );
 	public:
-		void ShowImGuiNode( const std::string &nodeCaption, int stageNo );
+		void ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Map &terrain );
 		void ShowInstanceNode( size_t instanceIndex );
 	#endif // USE_IMGUI
 	};
