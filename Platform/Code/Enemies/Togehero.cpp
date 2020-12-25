@@ -88,7 +88,7 @@ namespace Enemy
 		// else
 
 	#if DEBUG_MODE
-		constexpr Donya::Vector4 color = Donya::Vector4{ 0.0f, 0.3137f, 0.7529f, 0.6f };
+		constexpr Donya::Vector4 color = Donya::Vector4{ 0.0f, 0.3137f, 0.7529f, 0.4f };
 
 		const Donya::Vector4x4 matW = MakeWorldMatrix
 		(

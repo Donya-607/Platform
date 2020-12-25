@@ -19,10 +19,10 @@
                 "amount": 4,
                 "type": 2
             },
-            "animePlaySpeed": 1.0
+            "animePlaySpeed": -1.2000000476837159
         },
-        "rotateSpeed": -180.0,
-        "zigzagDistance": 1.399999976158142,
-        "zigzagInterval": 0.6000000238418579
+        "rotateSpeed": -192.8571014404297,
+        "zigzagDistance": 2.0,
+        "zigzagInterval": 0.699999988079071
     }
 }

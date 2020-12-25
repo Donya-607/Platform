@@ -11,27 +11,27 @@
             },
             "hitBoxOffset": {
                 "cereal_class_version": 0,
-                "x": 0.0,
+                "x": 7.0,
                 "y": 0.0,
                 "z": 0.0
             },
             "hurtBoxOffset": {
-                "x": 0.0,
+                "x": 7.0,
                 "y": 0.0,
                 "z": 0.0
             },
             "hitBoxSize": {
-                "x": 11.0,
+                "x": 7.5,
                 "y": 6.0,
                 "z": 1.0
             },
             "hurtBoxSize": {
-                "x": 11.0,
+                "x": 7.5,
                 "y": 6.0,
                 "z": 1.0
             }
         },
-        "bodySpeed": 2.5,
+        "bodySpeed": 3.5,
         "generateInterval": 8.0,
         "generatePosOffsetH": 12.0
     }

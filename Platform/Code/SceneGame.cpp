@@ -2141,7 +2141,7 @@ Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
 	}
 	else
 	{
-		if ( pThroughingDoor )
+		if ( NowThroughingDoor() )
 		{
 			auto destination = doorPassedPlayerPos;
 			destination.y = pPlayer->GetPosition().y;
@@ -2185,6 +2185,10 @@ void SceneGame::DoorUpdate()
 	{
 		pThroughingDoor = nullptr;
 	}
+}
+bool SceneGame::NowThroughingDoor() const
+{
+	return pThroughingDoor;
 }
 
 void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
@@ -2657,6 +2661,7 @@ void SceneGame::Collision_BulletVSPlayer()
 {
 	if ( !pPlayer || pPlayer->NowMiss()	) { return; }
 	if ( !IsPlayingStatus( status )		) { return; } // Ignore if cleared
+	if ( NowThroughingDoor()			) { return; } // Ignore when throughing a door, because that case can not control the player.
 	// else
 
 	const auto playerBody = pPlayer->GetHurtBox();
@@ -2721,8 +2726,9 @@ void SceneGame::Collision_BossVSPlayer()
 }
 void SceneGame::Collision_EnemyVSPlayer()
 {
-	if ( !pPlayer					) { return; }
-	if ( !IsPlayingStatus( status )	) { return; } // Ignore if cleared
+	if ( !pPlayer || pPlayer->NowMiss()	) { return; }
+	if ( !IsPlayingStatus( status )		) { return; } // Ignore if cleared
+	if ( NowThroughingDoor()			) { return; } // Ignore when throughing a door, because that case can not control the player.
 	// else
 
 	const auto playerBody	= pPlayer->GetHurtBox();

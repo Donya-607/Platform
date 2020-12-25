@@ -163,6 +163,7 @@ private:
 	void	UpdatePlayerIniter();
 
 	void	DoorUpdate();
+	bool	NowThroughingDoor() const;
 
 	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 
