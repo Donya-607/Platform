@@ -322,7 +322,6 @@ private:
 	private:
 		Destination	nextStatus	= Destination::None;
 		float		timer		= 0.0f;
-		float		slideSign	= 1.0f;
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
@@ -537,6 +536,7 @@ private:
 	int									currentHP			= 1;
 	float								lookingSign			= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
 	bool								onGround			= false;
+	bool								wasJumpedWhileSlide	= false;
 	// TODO: These status variables can be combine by replace to MotionKind value
 	bool								prevSlidingStatus	= false;
 	bool								prevBracingStatus	= false;
@@ -643,6 +643,7 @@ private:
 	void Fall( float elapsedTime );
 	void Landing();
 	void ShiftGunIfNeeded( float elapsedTime );
+	void GenerateSlideEffects() const;
 private:
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 public:

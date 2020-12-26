@@ -332,6 +332,7 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::DragInt  ( u8"最大残機数",				&maxRemainCount					);
 		ImGui::DragInt  ( u8"初期残機数",				&initialRemainCount				);
 		ImGui::DragFloat( u8"移動速度",					&moveSpeed,				0.01f	);
+		ImGui::DragFloat( u8"慣性ジャンプの移動速度",		&inertialMoveSpeed,		0.01f	);
 		ImGui::DragFloat( u8"スライディング速度",			&slideMoveSpeed,		0.01f	);
 		ImGui::DragFloat( u8"スライディング秒数",			&slideMoveSeconds,		0.01f	);
 		ImGui::DragFloat( u8"ジャンプ力",				&jumpStrength,			0.01f	);
@@ -359,6 +360,7 @@ void PlayerParam::ShowImGuiNode()
 		maxRemainCount		= std::max( 1, maxRemainCount		);
 		initialRemainCount	= std::max( 1, initialRemainCount	);
 		MakePositive( &moveSpeed			);
+		MakePositive( &inertialMoveSpeed	);
 		MakePositive( &slideMoveSpeed		);
 		MakePositive( &slideMoveSeconds		);
 		MakePositive( &jumpStrength			);
@@ -1307,6 +1309,8 @@ void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain
 
 	// Deformity of MoveVertical()
 	{
+		const bool useSlide = inst.inputManager.UseDash() && inst.onGround;
+
 		// Make to can not act if game time is pausing
 		if ( nowPausing )
 		{
@@ -1331,11 +1335,18 @@ void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain
 			else
 			{
 				inst.Jump( jumpInputIndex );
+
+				// Enable the inertial-like jump even if was inputted the "jump" and "slide" in same time
+				if ( useSlide )
+				{
+					inst.wasJumpedWhileSlide = true;
+					inst.GenerateSlideEffects();
+				}
 			}
 		}
 		else
 		{
-			if ( inst.inputManager.UseDash() && inst.onGround )
+			if ( useSlide )
 			{
 				gotoSlide = true;
 			}
@@ -1436,19 +1447,15 @@ void Player::Slide::Init( Player &inst )
 	nextStatus	= Destination::None;
 	timer		= 0.0f;
 
-	slideSign	= Donya::SignBitF( inst.orientation.LocalFront().x );
-	if ( IsZero( slideSign ) ) { slideSign = 1.0f; } // Fail safe
+	inst.lookingSign = Donya::SignBitF( inst.orientation.LocalFront().x );
+	if ( IsZero( inst.lookingSign ) ) { inst.lookingSign = 1.0f; } // Fail safe
 
-	inst.velocity.x = Parameter().Get().slideMoveSpeed * slideSign;
+	inst.velocity.x = Parameter().Get().slideMoveSpeed * inst.lookingSign;
 	inst.velocity.y = 0.0f;
 	inst.velocity.z = 0.0f;
-	inst.UpdateOrientation( /* lookingRight = */ ( slideSign < 0.0f ) ? false : true );
+	inst.UpdateOrientation( /* lookingRight = */ ( inst.lookingSign < 0.0f ) ? false : true );
 
-	Effect::Handle handle = Effect::Handle::Generate( Effect::Kind::Player_Slide_Begin, inst.GetPosition() );
-	handle.SetRotation( 0.0f, ToRadian( 90.0f ) * slideSign, 0.0f );
-	Effect::Admin::Get().AddCopy( handle ); // Leave the effect instance's management to admin
-	
-	Donya::Sound::Play( Music::Player_Dash );
+	inst.GenerateSlideEffects();
 }
 void Player::Slide::Uninit( Player &inst )
 {
@@ -1463,7 +1470,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 	const auto &input = inst.inputManager.Current();
 
 	const int  horizontalInputSign	= Donya::SignBit( input.moveVelocity.x );
-	const bool moveToBackward		=  ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( slideSign ) );
+	const bool moveToBackward		=  ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( inst.lookingSign ) );
 	const bool slideIsEnd			=  ( Parameter().Get().slideMoveSeconds <= timer )
 									|| ( moveToBackward )
 									|| ( !inst.onGround )
@@ -1478,8 +1485,8 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 			// I can not finish the sliding now, because I will be buried.
 			if ( moveToBackward )
 			{
-				inst.velocity.x	*= -1.0f;
-				slideSign		*= -1.0f;
+				inst.velocity.x		*= -1.0f;
+				inst.lookingSign	*= -1.0f;
 
 				const auto halfTurn = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( 180.0f ) );
 				inst.orientation.RotateBy( halfTurn );
@@ -1507,110 +1514,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 }
 void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
-#if 0 // Prevent to fall into a tight hole
-	// Horizontal move
-	{
-		const auto movement		= inst.velocity * elapsedTime;
-		const auto aroundTiles	= terrain.GetPlaceTiles( inst.GetHitBox(), movement );
-		const auto aroundSolids	= Map::ToAABB( aroundTiles );
-		const int  collideIndex = inst.Actor::MoveX( movement.x, aroundSolids );
-		inst.Actor::MoveZ( movement.z, aroundSolids );
-
-		// Prevent falling into a hole that size is almost the same as my body.
-		// e.g. If my body size is one tile, the sliding move is not fall into a space that one tile size.
-		// But if I was pushed back by some solid when above process, I should prioritize that resolution.
-		if ( collideIndex != -1 ) // If do not collided to any
-		{
-			// I will fall if the under tile is empty, and the left and right tiles is tile.
-			
-			const auto myBody = inst.GetHitBox(); // It is moved by above process
-			const Donya::Vector3 center = myBody.WorldPosition();
-
-			Donya::Vector3 search = center;
-			search.y -= myBody.size.y;
-
-			const auto underTile = terrain.GetPlaceTileOrNullptr( search );
-
-			if ( !underTile )
-			{
-				const float centerX = search.x;
-
-				search.x = centerX - myBody.size.x;
-				const auto leftIndex  = Map::ToTilePos( search );
-
-				search.x = centerX + myBody.size.x;
-				const auto rightIndex = Map::ToTilePos( search );
-
-				if ( leftIndex == rightIndex )
-				{
-					// Prevent falling by more move
-					float	gapLength		= 0.0f;
-					int		horizontalSign	= Donya::SignBit( movement.x );
-
-					// Calculate the "gapLength"
-					{
-						const auto baseIndex = leftIndex;
-
-						constexpr float halfTileSize = Tile::unitWholeSize * 0.5f;
-						auto CalcRightDiffLength = [&]()
-						{
-							const float rightWall = Map::ToWorldPos( 0, baseIndex.x + 1 ).x - halfTileSize;
-							const float rightBody = centerX + myBody.size.x;
-							return fabsf( rightWall - rightBody );
-						};
-						auto CalcLeftDiffLength  = [&]()
-						{
-							const float leftWall = Map::ToWorldPos( 0, baseIndex.x - 1 ).x + halfTileSize;
-							const float leftBody = centerX - myBody.size.x;
-							return fabsf( leftWall - leftBody );
-						};
-
-						if ( horizontalSign == 1 )
-						{
-							gapLength = CalcLeftDiffLength();
-						}
-						else
-						if ( horizontalSign == -1 )
-						{
-							gapLength = CalcRightDiffLength();
-						}
-						else
-						{
-							const float right = CalcRightDiffLength();
-							const float left  = CalcLeftDiffLength();
-							if ( left < right )
-							{
-								gapLength = left;
-								horizontalSign = -1;
-							}
-							else
-							{
-								gapLength = right;
-								horizontalSign = 1;
-							}
-						}
-					}
-
-					Donya::Vector3 extraMovement
-					{
-						gapLength * scast<float>( horizontalSign ),
-						0.0f,
-						0.0f
-					};
-					const auto exAroundTiles  = terrain.GetPlaceTiles( myBody, extraMovement );
-					const auto exAroundSolids = Map::ToAABB( exAroundTiles );
-					inst.Actor::MoveX( extraMovement.x, exAroundSolids );
-				}
-			}
-		}
-
-		// We must apply world position to hurt box also
-		inst.hurtBox.pos = inst.body.pos;
-	}
-#else
-	// TODO: Prevent to fall into a tight hole
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
-#endif // Prevent to fall into a tight hole
 
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 }
@@ -1648,7 +1552,9 @@ void Player::GrabLadder::Init( Player &inst )
 
 	inst.velocity	= 0.0f;
 	LookToFront( inst );
-	inst.onGround	= false;
+
+	inst.onGround				= false;
+	inst.wasJumpedWhileSlide	= false;
 
 	// Adjust the position into a ladder
 	{
@@ -2368,6 +2274,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	currentHP			= data.maxHP;
 	prevSlidingStatus	= false;
 	onGround			= false;
+	wasJumpedWhileSlide	= false;
 
 	// Validate should I take a ground state
 	{
@@ -2851,8 +2758,8 @@ void Player::MoveHorizontal( float elapsedTime )
 	const auto &data = Parameter().Get();
 
 	const auto &input = inputManager.Current();
-	const float  movement = data.moveSpeed * input.moveVelocity.x;
-	velocity.x = movement;
+	const float  speed = ( wasJumpedWhileSlide ) ? data.inertialMoveSpeed : data.moveSpeed;
+	velocity.x = speed * input.moveVelocity.x;
 
 	if ( !IsZero( velocity.x * elapsedTime ) ) // The "elapsedTime" prevents to rotate when pauses a game time
 	{
@@ -2931,9 +2838,10 @@ void Player::Jump( int inputIndex )
 {
 	const auto &data = Parameter().Get();
 
-	onGround	= false;
-	velocity.y	= data.jumpStrength;
-	nowGravity	= data.gravityRising;
+	onGround			= false;
+	wasJumpedWhileSlide	= prevSlidingStatus;
+	velocity.y			= data.jumpStrength;
+	nowGravity			= data.gravityRising;
 	inputManager.KeepSecondJumpInput()[inputIndex]	= 0.0f;
 	inputManager.WasReleasedJumpInput()[inputIndex]	= false;
 	Donya::Sound::Play( Music::Player_Jump );
@@ -3022,6 +2930,7 @@ void Player::Landing()
 	}
 
 	velocity.y = 0.0f;
+	wasJumpedWhileSlide = false;
 }
 void Player::ShiftGunIfNeeded( float elapsedTime )
 {
@@ -3060,6 +2969,14 @@ void Player::ShiftGunIfNeeded( float elapsedTime )
 		Donya::Sound::Play( Music::Player_ShiftGun );
 	}
 }
+void Player::GenerateSlideEffects() const
+{
+	Effect::Handle handle = Effect::Handle::Generate( Effect::Kind::Player_Slide_Begin, GetPosition() );
+	handle.SetRotation( 0.0f, ToRadian( 90.0f ) * lookingSign, 0.0f );
+	Effect::Admin::Get().AddCopy( handle ); // Leave the effect instance's management to admin
+	
+	Donya::Sound::Play( Music::Player_Dash );
+}
 Donya::Vector4x4 Player::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 {
 	Donya::Vector4x4 W{};
@@ -3089,9 +3006,18 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text			( u8"現在の重力：%5.3f", nowGravity );
 	availableWeapon.ShowImGuiNode( u8"現在使用可能な武器" );
 
+	ImGui::DragFloat3	( u8"ワールド座標",					&body.pos.x,	0.01f );
+	ImGui::DragFloat3	( u8"速度",							&velocity.x,	0.01f );
+
+	Donya::Vector3 front = orientation.LocalFront();
+	ImGui::SliderFloat3	( u8"前方向",						&front.x,		-1.0f, 1.0f );
+	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), front.Unit(), Donya::Quaternion::Freeze::Up );
+	ImGui::SliderFloat	( u8"向いているＸ方向",				&lookingSign,	-1.0f, 1.0f );
+
 	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );
 	ImGui::Checkbox		( u8"地上にいるか",					&onGround );
+	ImGui::Checkbox		( u8"慣性ジャンプ中か",				&wasJumpedWhileSlide );
 
 	bool tmp{};
 	tmp = pMover->NowKnockBacking( *this );
@@ -3113,14 +3039,6 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		AssignMover<WinningPose>();
 	}
-
-	ImGui::DragFloat3	( u8"ワールド座標",					&body.pos.x,	0.01f );
-	ImGui::DragFloat3	( u8"速度",							&velocity.x,	0.01f );
-
-	Donya::Vector3 front = orientation.LocalFront();
-	ImGui::SliderFloat3	( u8"前方向",						&front.x,		-1.0f, 1.0f );
-	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), front.Unit(), Donya::Quaternion::Freeze::Up );
-	ImGui::SliderFloat	( u8"向いているＸ方向",				&lookingSign,	-1.0f, 1.0f );
 
 	ImGui::TreePop();
 }

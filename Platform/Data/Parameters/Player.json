@@ -1,6 +1,6 @@
 {
     "Player": {
-        "cereal_class_version": 15,
+        "cereal_class_version": 16,
         "moveSpeed": 5.0,
         "jumpStrength": 18.5,
         "gravityResistance": 1.0,
@@ -70,8 +70,8 @@
         "knockBackSpeed": 2.0,
         "invincibleSeconds": 1.7000000476837159,
         "flushingInterval": 0.10000000149011612,
-        "slideMoveSpeed": 9.600000381469727,
-        "slideMoveSeconds": 0.41600000858306887,
+        "slideMoveSpeed": 11.32349967956543,
+        "slideMoveSeconds": 0.3400000035762787,
         "slideHitBox": {
             "pos": {
                 "x": 0.0,
@@ -249,6 +249,7 @@
         "gravityRisingAccel": 120.0,
         "gravityFalling": 35.0,
         "gravityFallingAccel": 90.0,
-        "gravityMax": 80.0
+        "gravityMax": 80.0,
+        "inertialMoveSpeed": 5.0
     }
 }

@@ -23,6 +23,7 @@ public:
 	int		maxRemainCount			= 9;
 	int		initialRemainCount		= 2;
 	float	moveSpeed				= 1.0f;
+	float	inertialMoveSpeed		= 1.0f;
 	float	slideMoveSpeed			= 1.0f;
 	float	slideMoveSeconds		= 1.0f;
 	float	ladderMoveSpeed			= 1.0f;
@@ -215,6 +216,10 @@ private:
 		}
 		if ( 16 <= version )
 		{
+			archive( CEREAL_NVP( inertialMoveSpeed ) );
+		}
+		if ( 17 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -223,4 +228,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 15 )
+CEREAL_CLASS_VERSION( PlayerParam, 16 )
