@@ -67,7 +67,7 @@
         },
         "bloomParam": {
             "cereal_class_version": 0,
-            "luminanceThreshold": 1.0,
+            "luminanceThreshold": 1.0199999809265137,
             "blurDeviation": 5.0,
             "blurSampleCount": 8
         },
