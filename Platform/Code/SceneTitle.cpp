@@ -1316,7 +1316,7 @@ void SceneTitle::UpdateChooseItem()
 	const bool trgRight		= Tilted( curr.moveVelocity.x, +1 ) && !Tilted( prev.moveVelocity.x, +1 );
 	const bool trgUp		= Tilted( curr.moveVelocity.y, +1 ) && !Tilted( prev.moveVelocity.y, +1 );
 	const bool trgDown		= Tilted( curr.moveVelocity.y, -1 ) && !Tilted( prev.moveVelocity.y, -1 );
-	const bool trgDecide	= Input::HasTrue( curr.useShots ) && !Input::HasTrue( prev.useShots );
+	const bool trgDecide	= controller.Trigger( Donya::Gamepad::Button::START ) || ( Input::HasTrue( curr.useShots ) && !Input::HasTrue( prev.useShots ) );
 
 	if ( saveDataIsExist )
 	{
