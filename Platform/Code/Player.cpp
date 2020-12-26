@@ -1815,7 +1815,14 @@ void Player::KnockBack::Init( Player &inst )
 
 	const auto &data = Parameter().Get();
 
-	const bool knockedFromRight = ( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight );
+	const bool knockedFromRight =
+	#if 0 // CONSIDER_IMPACT_DIRECTION
+		( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight )
+	#else
+		( inst.lookingSign < 0.0f ) ? false : true
+	#endif // CONSIDER_IMPACT_DIRECTION
+		;
+
 	inst.UpdateOrientation( knockedFromRight );
 
 	if ( !inst.prevSlidingStatus )
