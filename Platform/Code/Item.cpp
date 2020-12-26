@@ -369,22 +369,14 @@ namespace Item
 
 		aliveTimer += elapsedTime;
 
-		if ( !flusher.IsActive() )
-		{
-			const float beginFlushingSecond = initializer.aliveSecond - Parameter::GetItem().flushingSecond;
-			if ( beginFlushingSecond <= aliveTimer )
-			{
-				flusher.Start();
-			}
-		}
+		UpdateRemoveCondition( wsScreen );
+
 		flusher.Update( elapsedTime );
 
 		if ( !beBuried )
 		{
 			velocity.y -= GetGravity() * elapsedTime;
 		}
-
-		UpdateRemoveCondition( wsScreen );
 
 		const auto *pData = GetGeneralOrNull( GetKind() );
 		const float animePlaySpeed = ( pData ) ? pData->animePlaySpeed : 1.0f;
@@ -536,6 +528,15 @@ namespace Item
 		const float &aliveLimit = initializer.aliveSecond;
 		if ( aliveLimit < 0.0f ) { return; } // Minus time specifies don't remove until caught
 		// else
+
+		if ( !flusher.IsActive() )
+		{
+			const float beginFlushingSecond = aliveLimit - Parameter::GetItem().flushingSecond;
+			if ( beginFlushingSecond <= aliveTimer )
+			{
+				flusher.Start();
+			}
+		}
 
 		const bool willDisappear = ( aliveLimit <= aliveTimer );
 		if ( willDisappear || OnOutSideScreen( wsScreen ) )
