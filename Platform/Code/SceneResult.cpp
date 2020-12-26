@@ -1432,13 +1432,16 @@ void SceneResult::Collision_BulletVSBullet()
 		const bool protectibleB = Protectible( pB );
 		if ( protectibleA ) { pB->ProtectedBy( hitBoxA ); }
 		if ( protectibleB ) { pA->ProtectedBy( hitBoxB ); }
-		if ( protectibleA || protectibleB ) { return; }
-		// else
 
-		const bool destructibleA = pA->Destructible();
-		const bool destructibleB = pB->Destructible();
-		pA->CollidedToObject( destructibleB );
-		pB->CollidedToObject( destructibleA );
+		// Currently, there is not the hard(e.g. destructible and a lot of HP) bullet.
+		// So tells "pierced" to the collided bullet(s) for easily process, in the collision between bullet and bullet.
+		constexpr bool toPierce			= true;
+		constexpr bool otherIsBullet	= true;
+		
+		// Do not call the protected bullet's method.
+		// But should call the not protected one's method for play the hit SE.
+		if ( !protectibleA ) { pB->CollidedToObject( toPierce, otherIsBullet ); }
+		if ( !protectibleB ) { pA->CollidedToObject( toPierce, otherIsBullet ); }
 	};
 	
 	const auto playerID = ExtractPlayerID( pPlayer );
@@ -1614,7 +1617,7 @@ void SceneResult::Collision_BulletVSEnemy()
 							: Process( otherSphere	);
 		if ( result.collided )
 		{
-			pBullet->CollidedToObject( result.pierced );
+			pBullet->CollidedToObject( result.pierced, /* otherIsBullet = */ false );
 		}
 
 		collidedEnemyIndices.clear();

@@ -40,12 +40,16 @@ namespace Bullet
 	{
 		Base::Init( parameter );
 
-		zigzagTimer = 0.0f;
+		zigzagTimer			= 0.0f;
+		wantRemoveByOutSide	= false;
 		UpdateVerticalVelocity( /* halfWay = */ true );
 	}
 	void TogeheroBody::Uninit()
 	{
-		Item::DropItemByLottery( GetPosition() );
+		if ( !wantRemoveByOutSide )
+		{
+			Item::DropItemByLottery( GetPosition() );
+		}
 	}
 	void TogeheroBody::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
@@ -91,11 +95,15 @@ namespace Bullet
 	{
 		return false; // Not available
 	}
-	void TogeheroBody::CollidedToObject( bool otherIsBroken ) const
+	void TogeheroBody::CollidedToObject( bool otherIsBroken, bool otherIsBullet ) const
 	{
-		// Always behaves as defeted
-		Base::CollidedToObject( /* otherIsBroken = */ false );
-		wasCollided = true;
+		// Except if the other is the body of target
+		if ( otherIsBullet )
+		{
+			// Always behaves as defeted
+			Base::CollidedToObject( /* otherIsBroken = */ false, otherIsBullet );
+			wasCollided = true;
+		}
 	}
 	void TogeheroBody::ProtectedBy( const Donya::Collision::Box3F &protectObjectBody ) const
 	{
@@ -107,8 +115,13 @@ namespace Bullet
 	}
 	void TogeheroBody::ProtectedByImpl( float distLeft, float distRight ) const
 	{
-		// Always behaves as defeted
-		CollidedToObject( /* otherIsBroken = */ false );
+		// Use the same reaction of otherIsBullet case
+		CollidedToObject( /* otherIsBroken = */ false, /* otherIsBullet = */ true );
+	}
+	void TogeheroBody::ProcessOnOutSide()
+	{
+		Base::ProcessOnOutSide();
+		wantRemoveByOutSide = true;
 	}
 	Kind TogeheroBody::GetKind() const
 	{

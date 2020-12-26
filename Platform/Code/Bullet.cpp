@@ -307,7 +307,7 @@ namespace Bullet
 
 		if ( removeIfOutScreen && OnOutSide( wsScreen ) )
 		{
-			wantRemove = true;
+			ProcessOnOutSide();
 		}
 	}
 	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )
@@ -406,7 +406,7 @@ namespace Bullet
 		const bool outSphere	= ( IsZero( hitSphere.radius )	|| !Donya::Collision::IsHit( hitSphere,	wsScreen, /* considerExistFlag = */ false ) );
 		return outAABB & outSphere; // Which one is true certainly, so I should combine it.
 	}
-	void Base::CollidedToObject( bool otherIsBroken ) const
+	void Base::CollidedToObject( bool otherIsBroken, bool otherIsBullet ) const
 	{
 		// Play a SE and an effect only first time. Because it may called multiple times in the same frame
 		collidedCallingCount++;
@@ -466,6 +466,10 @@ namespace Bullet
 		wasProtected	= ( fromRightSide )
 						? ProtectedInfo::ByRightSide
 						: ProtectedInfo::ByLeftSide;
+	}
+	void Base::ProcessOnOutSide()
+	{
+		wantRemove = true;
 	}
 	Donya::Collision::Sphere3F	Base::GetHitSphere()			const
 	{

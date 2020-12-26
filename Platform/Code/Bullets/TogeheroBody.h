@@ -11,7 +11,8 @@ namespace Bullet
 	class TogeheroBody final : public Base
 	{
 	private:
-		float zigzagTimer = 0.0f;
+		float	zigzagTimer			= 0.0f;
+		bool	wantRemoveByOutSide	= false;
 	public:
 		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
@@ -21,11 +22,12 @@ namespace Bullet
 	public:
 		bool Destructible() const override;
 		bool WasProtected() const override;
-		void CollidedToObject( bool otherIsBroken ) const override;
+		void CollidedToObject( bool otherIsBroken, bool otherIsBullet ) const override;
 		void ProtectedBy( const Donya::Collision::Box3F &protectObjectBody ) const override;
 		void ProtectedBy( const Donya::Collision::Sphere3F &protectObjectBody ) const override;
 	private:
 		void ProtectedByImpl( float distLeft, float distRight ) const override;
+		void ProcessOnOutSide() override;
 	public:
 		Kind GetKind() const override;
 	private:

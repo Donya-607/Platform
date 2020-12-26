@@ -170,11 +170,12 @@ namespace Bullet
 		virtual bool ShouldRemove() const;
 		virtual bool WasProtected() const;
 		virtual bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
-		virtual void CollidedToObject( bool otherIsBroken ) const;
+		virtual void CollidedToObject( bool otherIsBroken, bool otherIsBullet ) const;
 		virtual void ProtectedBy( const Donya::Collision::Box3F		&protectObjectBody ) const;
 		virtual void ProtectedBy( const Donya::Collision::Sphere3F	&protectObjectBody ) const;
 	protected:
 		virtual void ProtectedByImpl( float distLeft, float distRight ) const;
+		virtual void ProcessOnOutSide();
 	public:
 		using						 Solid::GetHitBox;
 		virtual Donya::Collision::Sphere3F	GetHitSphere()				const;

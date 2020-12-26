@@ -2400,8 +2400,8 @@ void SceneGame::Collision_BulletVSBullet()
 		
 		// Do not call the protected bullet's method.
 		// But should call the not protected one's method for play the hit SE.
-		if ( !protectibleA ) { pB->CollidedToObject( toPierce ); }
-		if ( !protectibleB ) { pA->CollidedToObject( toPierce ); }
+		if ( !protectibleA ) { pB->CollidedToObject( toPierce, /* otherIsBullet = */ true ); }
+		if ( !protectibleB ) { pA->CollidedToObject( toPierce, /* otherIsBullet = */ true ); }
 	};
 	
 	const auto playerID = ExtractPlayerID( pPlayer );
@@ -2505,7 +2505,7 @@ void SceneGame::Collision_BulletVSBoss()
 		else
 		{
 			pBoss->GiveDamage( pBullet->GetDamage() );
-			pBullet->CollidedToObject( pBoss->WillDie() );
+			pBullet->CollidedToObject( pBoss->WillDie(), /* otherIsBullet = */ false );
 		}
 	};
 
@@ -2644,7 +2644,7 @@ void SceneGame::Collision_BulletVSEnemy()
 							: Process( otherSphere	);
 		if ( result.collided )
 		{
-			pBullet->CollidedToObject( result.pierced );
+			pBullet->CollidedToObject( result.pierced, /* otherIsBullet = */ false );
 		}
 
 		collidedEnemyIndices.clear();
@@ -2681,11 +2681,12 @@ void SceneGame::Collision_BulletVSPlayer()
 		if ( IsPlayerBullet( playerID, pBullet ) ) { continue; }
 		// else
 
+
 		bulletAABB = pBullet->GetHitBox();
 		if ( IsHit( playerBody, pBullet, bulletAABB ) )
 		{
 			pPlayer->GiveDamage( pBullet->GetDamage(), bulletAABB );
-			pBullet->CollidedToObject( pPlayer->WillDie() );
+			pBullet->CollidedToObject( pPlayer->WillDie(), /* otherIsBullet = */ false );
 			continue;
 		}
 		// else
@@ -2694,7 +2695,7 @@ void SceneGame::Collision_BulletVSPlayer()
 		if ( IsHit( playerBody, pBullet, bulletSphere ) )
 		{
 			pPlayer->GiveDamage( pBullet->GetDamage(), bulletSphere );
-			pBullet->CollidedToObject( pPlayer->WillDie() );
+			pBullet->CollidedToObject( pPlayer->WillDie(), /* otherIsBullet = */ false );
 		}
 	}
 }
