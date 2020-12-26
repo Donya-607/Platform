@@ -28,7 +28,7 @@
                         },
                         "exist": true
                     },
-                    "hour": 12.0,
+                    "hour": 15.5,
                     "connectingRoomIDs": [
                         13
                     ]
@@ -57,7 +57,7 @@
                         },
                         "exist": true
                     },
-                    "hour": 12.0,
+                    "hour": 15.699999809265137,
                     "connectingRoomIDs": [
                         12,
                         14
@@ -87,7 +87,7 @@
                         },
                         "exist": true
                     },
-                    "hour": 12.0,
+                    "hour": 16.0,
                     "connectingRoomIDs": [
                         13
                     ]
@@ -116,7 +116,7 @@
                         },
                         "exist": true
                     },
-                    "hour": 12.0,
+                    "hour": 14.0,
                     "connectingRoomIDs": []
                 }
             },
@@ -143,7 +143,7 @@
                         },
                         "exist": true
                     },
-                    "hour": 12.0,
+                    "hour": 19.0,
                     "connectingRoomIDs": []
                 }
             },
@@ -170,7 +170,7 @@
                         },
                         "exist": true
                     },
-                    "hour": 12.0,
+                    "hour": 16.799999237060548,
                     "connectingRoomIDs": []
                 }
             },
@@ -197,7 +197,7 @@
                         },
                         "exist": true
                     },
-                    "hour": 12.0,
+                    "hour": 16.899999618530275,
                     "connectingRoomIDs": []
                 }
             },
@@ -224,7 +224,7 @@
                         },
                         "exist": true
                     },
-                    "hour": 12.0,
+                    "hour": 17.0,
                     "connectingRoomIDs": []
                 }
             },
@@ -251,7 +251,7 @@
                         },
                         "exist": true
                     },
-                    "hour": 12.0,
+                    "hour": 15.380000114440918,
                     "connectingRoomIDs": []
                 }
             },

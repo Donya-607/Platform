@@ -257,8 +257,12 @@ namespace Item
 		lifeEnergyBig.ShowImGuiNode		( u8"ＨＰ回復・大"	);
 		lifeEnergySmall.ShowImGuiNode	( u8"ＨＰ回復・小"	);
 
-		ImGui::DragFloat( u8"ドロップしたものが消える秒数", &disappearSecond, 0.01f );
-		disappearSecond = std::max( 0.001f, disappearSecond );
+		ImGui::DragFloat( u8"ドロップしたものが消える秒数",	&disappearSecond,	0.01f );
+		ImGui::DragFloat( u8"消える前の点滅・秒数",			&flushingSecond,	0.01f );
+		ImGui::DragFloat( u8"消える前の点滅・間隔",			&flushingInterval,	0.01f );
+		disappearSecond		= std::max( 0.001f, disappearSecond		);
+		flushingSecond		= std::max( 0.001f, flushingSecond		);
+		flushingInterval	= std::max( 0.001f, flushingInterval	);
 
 		constexpr size_t dropCount = kindCount + 1;
 		if ( dropPercents.size() != dropCount ) { dropPercents.resize( dropCount ); }
@@ -280,6 +284,39 @@ namespace Item
 		}
 	}
 #endif // USE_IMGUI
+
+	void Item::Flusher::Start()
+	{
+		timer	= 0.0f;
+		active	= true;
+	}
+	void Item::Flusher::Update( float elapsedTime )
+	{
+		if ( !active ) { return; }
+		// else
+		timer += elapsedTime;
+	}
+	bool Item::Flusher::IsActive() const
+	{
+		return active;
+	}
+	bool Item::Flusher::Drawable() const
+	{
+		if ( !active ) { return true; }
+		// else
+
+		/*
+		--- cycle
+		Undrawable
+		--- cycle * 0.5f
+		Drawable
+		--- 0.0f
+		*/
+
+		const float &cycle = Parameter::GetItem().flushingInterval;
+		const float remain = std::fmodf( timer, cycle );
+		return ( remain < cycle * 0.5f );
+	}
 
 	namespace
 	{
@@ -332,6 +369,16 @@ namespace Item
 
 		aliveTimer += elapsedTime;
 
+		if ( !flusher.IsActive() )
+		{
+			const float beginFlushingSecond = initializer.aliveSecond - Parameter::GetItem().flushingSecond;
+			if ( beginFlushingSecond <= aliveTimer )
+			{
+				flusher.Start();
+			}
+		}
+		flusher.Update( elapsedTime );
+
 		if ( !beBuried )
 		{
 			velocity.y -= GetGravity() * elapsedTime;
@@ -379,9 +426,10 @@ namespace Item
 
 		const Donya::Vector3 &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
 		const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
+		const float alpha = ( flusher.Drawable() ) ? 1.0f : 0.0f;
 
 		Donya::Model::Constants::PerModel::Common modelConstant{};
-		modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+		modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, alpha };
 		modelConstant.worldMatrix	= W;;
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();

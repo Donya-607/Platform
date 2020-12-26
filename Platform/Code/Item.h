@@ -84,6 +84,18 @@ namespace Item
 
 	class Item : public Actor
 	{
+	private:
+		class Flusher
+		{
+		private:
+			float	timer	= 0.0f;
+			bool	active	= false;
+		public:
+			void Start();
+			void Update( float elapsedTime );
+			bool IsActive() const;
+			bool Drawable() const;
+		};
 	private: // Serialize members
 		InitializeParam initializer;
 	private:
@@ -92,6 +104,7 @@ namespace Item
 		Donya::Collision::Box3F			catchArea;	// VS the player
 		using					 Actor::orientation;
 		Donya::Vector3					velocity;	// Z element is almost unused.
+		Flusher							flusher;
 		float							aliveTimer	= 0.0f;
 		bool							beBuried	= false;
 		mutable bool					wantRemove	= false;

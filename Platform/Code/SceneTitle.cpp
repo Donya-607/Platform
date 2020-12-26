@@ -850,10 +850,11 @@ void SceneTitle::Draw( float elapsedTime )
 		const auto zFar			= curr.GetZFar();
 		const auto P			= Donya::Vector4x4::MakePerspectiveFovLH( lerpedFOV, screenSize.x / screenSize.y, zNear, zFar );
 		VP = V * P;
-
-		Effect::Admin::Get().SetViewMatrix( V );
+		
 		Effect::Admin::Get().SetProjectionMatrix( P );
 	}
+
+	Effect::Admin::Get().SetViewMatrix( V );
 
 	const Donya::Vector4   lightPos = Donya::Vector4{ lightCamera.GetPosition(), 1.0f };
 	const Donya::Vector4x4 LV  = CalcLightViewMatrix();

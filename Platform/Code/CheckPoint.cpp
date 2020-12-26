@@ -110,6 +110,7 @@ namespace CheckPoint
 	}
 	void Container::LoadParameter( int stageNo )
 	{
+		areas.clear();
 	#if DEBUG_MODE
 		LoadJson( stageNo );
 		// If a user was changed only a json file, the user wanna apply the changes to binary file also.

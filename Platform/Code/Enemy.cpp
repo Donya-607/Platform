@@ -772,6 +772,12 @@ namespace Enemy
 			ImGui::TreePop();
 		}
 
+		ShowIONode( stageNo, wsTargetPos, wsScreen );
+
+		ImGui::TreePop();
+	}
+	void Admin::ShowIONode( int stageNo, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	{
 		const auto result = ParameterHelper::ShowIONode();
 		using Op = ParameterHelper::IOOperation;
 		if ( result == Op::Save )
@@ -787,8 +793,6 @@ namespace Enemy
 		{
 			LoadEnemies( stageNo, wsTargetPos, wsScreen, false );
 		}
-
-		ImGui::TreePop();
 	}
 	void Admin::ShowInstanceNode( size_t index )
 	{

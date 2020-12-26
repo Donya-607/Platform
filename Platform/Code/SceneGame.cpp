@@ -466,6 +466,11 @@ void SceneGame::Init()
 	auto &renderer = RenderingStuffInstance::Get();
 	renderer.AssignBloomParameter( FetchParameter().bloomParam );
 	renderer.ClearBuffers();
+
+	auto &effectAdmin = Effect::Admin::Get();
+	effectAdmin.SetLightColorAmbient( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
+	effectAdmin.SetLightColorDiffuse( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
+	effectAdmin.SetLightDirection	( FetchParameter().directionalLight.direction.XYZ() );
 }
 void SceneGame::Uninit()
 {
@@ -736,8 +741,9 @@ void SceneGame::Draw( float elapsedTime )
 		{
 			auto &effectAdmin = Effect::Admin::Get();
 			effectAdmin.SetViewMatrix( viewMatrix );
-			effectAdmin.SetLightColorAmbient( directionalLight.light.ambientColor );
-			effectAdmin.SetLightColorDiffuse( directionalLight.light.diffuseColor );
+			// Currently I judge to it is not necessary
+			// effectAdmin.SetLightColorAmbient( directionalLight.light.ambientColor );
+			// effectAdmin.SetLightColorDiffuse( directionalLight.light.diffuseColor );
 			effectAdmin.SetLightDirection	( directionalLight.direction.XYZ() );
 		}
 	};
@@ -3632,6 +3638,9 @@ void SceneGame::UseScreenSpaceImGui()
 
 	// Enemies
 	{
+		auto &enemyAdmin = Enemy::Admin::Get();
+		const auto playerPos = GetPlayerPosition();
+
 		auto Show = [&]( const Donya::Vector2 &ssPos, size_t enemyIndex, auto ShowInstanceNodeMethod )
 		{
 			enemyWindow.pos = ssPos;
@@ -3642,13 +3651,13 @@ void SceneGame::UseScreenSpaceImGui()
 			if ( ImGui::BeginIfAllowed( caption.c_str() ) )
 			{
 				ShowInstanceNodeMethod();
+				enemyAdmin.ShowIONode( stageNumber, playerPos, currentScreen );
 				Enemy::Parameter::Update( u8"ìGÇÃÉpÉâÉÅÅ[É^" );
 
 				ImGui::End();
 			}
 		};
-
-		auto  &enemyAdmin		= Enemy::Admin::Get();
+		
 		const size_t enemyCount	= enemyAdmin.GetInstanceCount();
 
 		Donya::Vector2 ssPos;

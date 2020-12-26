@@ -226,6 +226,7 @@ namespace Enemy
 		void SaveEnemies( int stageNumber, bool fromBinary );
 	public:
 		void ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
+		void ShowIONode( int stageNo, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		void ShowInstanceNode( size_t instanceIndex );
 	#endif // USE_IMGUI
 	};
