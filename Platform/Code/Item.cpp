@@ -472,19 +472,23 @@ namespace Item
 		}
 	#endif // DEBUG_MODE
 	}
-	bool Item::ShouldRemove() const
+	bool					Item::IsDynamic()		const
+	{
+		return ( initializer.aliveSecond < 0.0f ) ? false : true;
+	}
+	bool					Item::ShouldRemove()	const
 	{
 		return wantRemove;
 	}
-	Donya::Collision::Box3F	Item::GetCatchArea() const
+	Donya::Collision::Box3F	Item::GetCatchArea()	const
 	{
 		return catchArea;
 	}
-	Kind					Item::GetKind() const
+	Kind					Item::GetKind()			const
 	{
 		return initializer.kind;
 	}
-	InitializeParam			Item::GetInitializer() const
+	InitializeParam			Item::GetInitializer()	const
 	{
 		return initializer;
 	}
@@ -654,6 +658,27 @@ namespace Item
 			it.Uninit();
 		}
 		items.clear();
+	}
+	void Admin::RemoveDynamicInstances()
+	{
+		// Finalize only item that will be removed
+		for ( auto &it : items )
+		{
+			if ( it.IsDynamic() )
+			{
+				it.Uninit();
+			}
+		}
+
+		auto result = std::remove_if
+		(
+			items.begin(), items.end(),
+			[]( Item &element )
+			{
+				return element.IsDynamic();
+			}
+		);
+		items.erase( result, items.end() );
 	}
 	void Admin::RequestGeneration( const InitializeParam &initializer )
 	{

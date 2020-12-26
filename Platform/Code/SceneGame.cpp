@@ -458,6 +458,17 @@ void SceneGame::Init()
 		constexpr auto stayFirstState = State::FirstInitialize;
 		pScene->InitStage( pScene->currentPlayingBGM, pScene->stageNumber, /* reloadModel = */ true, stayFirstState );
 
+		// The item depends on the map for detect to be buried.
+		// So must initialize after the map's initialize.
+		auto &itemAdmin = Item::Admin::Get();
+		const Map emptyMap{}; // Used for empty argument. Fali safe.
+		const Map &mapRef = ( pScene->pMap ) ? *pScene->pMap : emptyMap;
+		itemAdmin.ClearInstances();
+		itemAdmin.LoadItems( pScene->stageNumber, mapRef, IOFromBinary );
+	#if DEBUG_MODE
+		itemAdmin.SaveItems( pScene->stageNumber, true );
+	#endif // DEBUG_MODE
+
 		pResult->WriteResult( succeeded );
 		CoUninitialize();
 	};
@@ -1239,7 +1250,6 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 	CurrentRoomID	[PlayerPos, House]			- the current room indicates what the player belongs map
 	House		- it is free
 	PlayerPos	- it is free("pPlayerIniter" will be in charge)
-	Item:			[Map]						- detects an item is there in inside of terrain
 	Map			- it is free
 	*/
 
@@ -1267,13 +1277,6 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 	enemyAdmin.LoadEnemies( stageNo, playerPos, currentScreen, IOFromBinary );
 #if DEBUG_MODE
 	enemyAdmin.SaveEnemies( stageNo, true );
-#endif // DEBUG_MODE
-
-	auto &itemAdmin = Item::Admin::Get();
-	itemAdmin.ClearInstances();
-	itemAdmin.LoadItems( stageNo, *pMap, IOFromBinary );
-#if DEBUG_MODE
-	itemAdmin.SaveItems( stageNo, true );
 #endif // DEBUG_MODE
 
 
@@ -1304,6 +1307,9 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 	willUnlockWeapon = Definition::WeaponKind::Buster; // Reset
 
 	Bullet::Admin::Get().ClearInstances();
+
+	// Don't touch the static generated instance
+	Item::Admin::Get().RemoveDynamicInstances();
 }
 void SceneGame::UninitStage()
 {
@@ -1322,7 +1328,9 @@ void SceneGame::UninitStage()
 
 	Bullet::Admin::Get().ClearInstances();
 	Enemy::Admin::Get().ClearInstances();
-	Item::Admin::Get().ClearInstances();
+	
+	// Don't touch the static generated instance
+	Item::Admin::Get().RemoveDynamicInstances();
 }
 
 void SceneGame::AssignCurrentInput()

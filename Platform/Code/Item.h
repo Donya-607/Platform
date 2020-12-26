@@ -131,6 +131,7 @@ namespace Item
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
+		bool					IsDynamic()			const;
 		bool					ShouldRemove()		const;
 		using			 Actor::GetHitBox;
 		Donya::Collision::Box3F	GetCatchArea()		const;
@@ -138,6 +139,7 @@ namespace Item
 		InitializeParam			GetInitializer()	const;
 	public:
 		void WasCaught() const;
+	public:
 	private:
 		std::vector<Donya::Collision::Box3F> FetchAroundSolids( float elapsedTime, const Map &terrain ) const;
 		bool IsHitToAnyOf( const std::vector<Donya::Collision::Box3F> &solids ) const;
@@ -188,6 +190,10 @@ namespace Item
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
 		void ClearInstances();
+		/// <summary>
+		/// The static generated instance(LoadItems() loads) will remains
+		/// </summary>
+		void RemoveDynamicInstances();
 		void RequestGeneration( const InitializeParam &initializer );
 		bool LoadItems( int stageNumber, const Map &terrain, bool fromBinary );
 	public:
