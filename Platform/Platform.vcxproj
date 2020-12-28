@@ -93,6 +93,12 @@
       <AdditionalLibraryDirectories>$(ProjectDir)External\DirectXTK\Inc\;$(ProjectDir)External\Effekseer\lib\;$(ProjectDir)External\FMOD\LowLevel\lib\;$(ProjectDir)External\FMOD\Studio\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d11.lib;dxgi.lib;DirectXTK_d.lib;Effekseerd.lib;EffekseerRendererDX11d.lib;fmodL_vc.lib;fmodstudioL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>$(ProjectDir)Data\Shaders\%(Filename).cso</ObjectFileOutput>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
+      <AssemblerOutputFile>$(ProjectDir)Code\Shader\%(Filename).cod</AssemblerOutputFile>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -129,6 +135,12 @@
       <AdditionalLibraryDirectories>$(ProjectDir)External\DirectXTK\Inc\;$(ProjectDir)External\Effekseer\lib\;$(ProjectDir)External\FMOD\LowLevel\lib\;$(ProjectDir)External\FMOD\Studio\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d11.lib;dxgi.lib;DirectXTK.lib;Effekseer.lib;EffekseerRendererDX11.lib;fmod_vc.lib;fmodstudio_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>$(ProjectDir)Data\Shaders\%(Filename).cso</ObjectFileOutput>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
+      <AssemblerOutputFile>$(ProjectDir)Code\Shader\%(Filename).cod</AssemblerOutputFile>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
