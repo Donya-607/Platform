@@ -243,6 +243,7 @@ private:
 		~ShotManager();
 	public:
 		void Init();
+		void Uninit();
 		void Update( const Player &instance, float elapsedTime );
 	public:
 		void ChargeFully();

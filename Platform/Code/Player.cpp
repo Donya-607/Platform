@@ -1020,7 +1020,7 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 
 Player::ShotManager::~ShotManager()
 {
-	StopLoopSFXIfPlaying( /* forcely = */ true );
+	Uninit();
 }
 void Player::ShotManager::Init()
 {
@@ -1032,6 +1032,10 @@ void Player::ShotManager::Init()
 	fxLoop.Disable();
 
 	StopLoopSFXIfPlaying();
+}
+void Player::ShotManager::Uninit()
+{
+	StopLoopSFXIfPlaying( /* forcely = */ true );
 }
 void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 {
@@ -1936,6 +1940,9 @@ void Player::Miss::Init( Player &inst )
 	// Release some bullet instance
 	if ( inst.pGun ) { inst.pGun->Uninit( inst ); }
 
+	// Stop charging Effect/Sound
+	inst.shotManager.Uninit();
+
 	Donya::Sound::Play( Music::Player_Miss );
 }
 void Player::Miss::Update( Player &inst, float elapsedTime, const Map &terrain )
@@ -2383,6 +2390,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 }
 void Player::Uninit()
 {
+	shotManager.Uninit();
 	if ( pMover ) { pMover->Uninit( *this ); }
 	pTargetLadder.reset();
 }
