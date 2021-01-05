@@ -1026,6 +1026,7 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 		if ( chargeLevel == ShotLevel::Strong )
 		{
 			fxComplete = Effect::Handle::Generate( Effect::Kind::Charge_Complete, inst.GetPosition() );
+			AssignLoopFX( Effect::Kind::Charge_Loop_Charged );
 			Donya::Sound::Play( Music::Charge_Complete );
 		}
 	}
@@ -1052,8 +1053,7 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 		StopLoopSFXIfPlaying();
 	}
 
-	fxComplete.SetPosition( inst.GetPosition() );
-	fxLoop.SetPosition( inst.GetPosition() );
+	SetFXPosition( inst.GetPosition() );
 }
 void Player::ShotManager::ChargeFully()
 {
@@ -1061,6 +1061,11 @@ void Player::ShotManager::ChargeFully()
 
 	const auto &chargeParams = Parameter().Get().chargeParams;
 	currChargeSecond = chargeParams[maxLevelIndex].chargeSecond + 1.0f;
+}
+void Player::ShotManager::SetFXPosition( const Donya::Vector3 &wsPos )
+{
+	fxComplete	.SetPosition( wsPos );
+	fxLoop		.SetPosition( wsPos );
 }
 bool Player::ShotManager::IsShotRequested( const Player &inst ) const
 {
@@ -1162,16 +1167,23 @@ Donya::Vector3 Player::ShotManager::CalcEmissiveColor() const
 
 	return pParam->emissiveColor.Product( colorFactor );
 }
+void Player::ShotManager::AssignLoopFX( Effect::Kind kind )
+{
+	fxLoop.Stop();
+	fxLoop.Disable();
+
+	// Actual position will set at the end of Update()
+	constexpr Donya::Vector3 generatePos = Donya::Vector3::Zero();
+	fxLoop = Effect::Handle::Generate( kind, generatePos );
+}
 void Player::ShotManager::PlayLoopSFXIfStopping()
 {
 	if ( playingChargeSE					) { return; }
 	if ( chargeLevel == ShotLevel::Normal	) { return; }
 	// else
 
-	// Actual position will set at the end of Update()
-	constexpr Donya::Vector3 generatePos = Donya::Vector3::Zero();
+	AssignLoopFX( Effect::Kind::Charge_Loop );
 
-	fxLoop = Effect::Handle::Generate( Effect::Kind::Charge_Loop, generatePos );
 	playingChargeSE = true;
 	Donya::Sound::Play( Music::Charge_Loop );
 }
@@ -1200,7 +1212,11 @@ void Player::Flusher::Start( float flushingSeconds )
 void Player::Flusher::Update( const Player &inst, float elapsedTime )
 {
 	timer += elapsedTime;
-	fxHurt.SetPosition( inst.GetPosition() );
+	SetFXPosition( inst.GetPosition() );
+}
+void Player::Flusher::SetFXPosition( const Donya::Vector3 &wsPos )
+{
+	fxHurt.SetPosition( wsPos );
 }
 bool Player::Flusher::Drawable() const
 {
@@ -2403,6 +2419,10 @@ void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeft
 	// else
 
 	pMover->Move( *this, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
+
+	const Donya::Vector3 movedPos = GetPosition();
+	shotManager		.SetFXPosition( movedPos );
+	invincibleTimer	.SetFXPosition( movedPos );
 }
 void Player::Draw( RenderingHelper *pRenderer ) const
 {
@@ -2980,7 +3000,7 @@ void Player::GenerateSlideEffects() const
 {
 	Effect::Handle handle = Effect::Handle::Generate( Effect::Kind::Player_Slide_Begin, GetPosition() );
 	handle.SetRotation( 0.0f, ToRadian( 90.0f ) * lookingSign, 0.0f );
-	Effect::Admin::Get().AddCopy( handle ); // Leave the effect instance's management to admin
+	Effect::Admin::Get().AddCopy( handle ); // Leave management of the effect instance to admin
 	
 	Donya::Sound::Play( Music::Player_Dash );
 }

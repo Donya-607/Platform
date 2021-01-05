@@ -236,6 +236,7 @@ private:
 		void Update( const Player &instance, float elapsedTime );
 	public:
 		void ChargeFully();
+		void SetFXPosition( const Donya::Vector3 &wsPosition );
 	public:
 		bool			IsShotRequested( const Player &instance ) const;
 		float			ChargeSecond()		const { return currChargeSecond;	}
@@ -245,6 +246,7 @@ private:
 		bool NowTriggered( const InputManager &input ) const;
 		ShotLevel		CalcChargeLevel() const;
 		Donya::Vector3	CalcEmissiveColor() const;
+		void AssignLoopFX( Effect::Kind kind );
 		void PlayLoopSFXIfStopping();
 		void StopLoopSFXIfPlaying( bool forcely = false );
 	};
@@ -259,6 +261,7 @@ private:
 	public:
 		void Start( float flushingSeconds );
 		void Update( const Player &instance, float elapsedTime );
+		void SetFXPosition( const Donya::Vector3 &wsPosition );
 		bool Drawable() const;
 		/// <summary>
 		/// It means now invincible.

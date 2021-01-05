@@ -1,6 +1,6 @@
 {
     "Buster": {
-        "cereal_class_version": 2,
+        "cereal_class_version": 3,
         "params": [
             {
                 "cereal_class_version": 1,
@@ -168,6 +168,7 @@
                     "range": 13.0
                 }
             }
-        ]
+        ],
+        "chargedTracingInterval": 0.02500000037252903
     }
 }
