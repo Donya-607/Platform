@@ -38,8 +38,11 @@ namespace
 		"KnockBack",
 		"GrabLadder",
 		"Shot",
+		"ChargedShot",
 		"LadderShotLeft",
+		"LadderChargedShotLeft",
 		"LadderShotRight",
+		"LadderChargedShotRight",
 		"Brace",
 		"Appear",
 		"Winning",
@@ -395,14 +398,34 @@ void PlayerParam::ShowImGuiNode()
 			ImGui::TreePop();
 		}
 		
-		if ( ImGui::TreeNode( u8"ショットモーション設定" ) )
-		{
-			normalLeftArm .ShowImGuiNode( u8"通常" );
-			ladderLeftArm .ShowImGuiNode( u8"はしご・左向き" );
-			ladderRightArm.ShowImGuiNode( u8"はしご・右向き" );
+		ImGui::TreePop();
+	}
 
-			ImGui::TreePop();
-		}
+	if ( ImGui::TreeNode( u8"部分モーション設定" ) )
+	{
+		auto ShowElement = [&]( const char *partName, Player::MotionKind kind )
+		{
+			const int intKind = scast<int>( kind );
+			auto found =  partMotions.find( intKind );
+			if ( found == partMotions.end() )
+			{
+				auto inserted = partMotions.insert
+				(
+					std::make_pair( intKind, ModelHelper::PartApply{} )
+				);
+				found  = inserted.first;
+			}
+
+			ModelHelper::PartApply &element = found->second;
+			element.ShowImGuiNode( partName );
+		};
+
+		ShowElement( u8"通常",					Player::MotionKind::Shot					);
+		ShowElement( u8"チャージショット",		Player::MotionKind::ChargedShot				);
+		ShowElement( u8"はしご・通常・左",		Player::MotionKind::LadderShotLeft			);
+		ShowElement( u8"はしご・チャージ・左",	Player::MotionKind::LadderChargedShotLeft	);
+		ShowElement( u8"はしご・通常・右",		Player::MotionKind::LadderShotRight			);
+		ShowElement( u8"はしご・チャージ・右",	Player::MotionKind::LadderChargedShotRight	);
 
 		ImGui::TreePop();
 	}
@@ -762,6 +785,7 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 	if ( inst.shotManager.IsShotRequested( inst ) && inst.NowShotable( elapsedTime ) )
 	{
 		shouldPoseShot = true;
+		shotWasCharged = IsFullyCharged( inst.shotManager.ChargeLevel() );
 		shotAnimator.ResetTimer();
 	}
 
@@ -770,29 +794,41 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 
 	const auto &data = Parameter().Get();
 
+	MotionKind applyKind = MotionKind::Shot;
 	if ( inst.pMover && inst.pMover->NowGrabbingLadder( inst ) )
 	{
-		if ( inst.lookingSign < 0.0f )
-		{
-			ApplyPartMotion( inst, elapsedTime, MotionKind::LadderShotLeft, data.ladderLeftArm );
-		}
-		else
-		{
-			ApplyPartMotion( inst, elapsedTime, MotionKind::LadderShotRight, data.ladderRightArm );
-		}
+		applyKind	= ( inst.lookingSign < 0.0f )
+					? MotionKind::LadderShotLeft
+					: MotionKind::LadderShotRight;
 	}
-	else
+
+	if ( shotWasCharged )
 	{
-		ApplyPartMotion( inst, elapsedTime, MotionKind::Shot, data.normalLeftArm );
+		// Charged versions are located next
+		size_t intKind = scast<size_t>( applyKind );
+		intKind++;
+		intKind = std::min( intKind, MOTION_COUNT - 1 );
+		applyKind = scast<MotionKind>( intKind );
 	}
+
+	ApplyPartMotion( inst, elapsedTime, applyKind );
 }
-void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, MotionKind useMotionKind, const ModelHelper::PartApply &partData )
+void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, MotionKind useMotionKind )
 {
 	if ( !model.pResource ) { return; }
 	// else
 
 	const auto &data	= Parameter().Get();
 	const auto &holder	= model.pResource->motionHolder;
+
+	const auto foundItr = data.partMotions.find( scast<int>( useMotionKind ) );
+	if ( foundItr == data.partMotions.end() )
+	{
+		shouldPoseShot = false;
+		return;
+	}
+
+	const ModelHelper::PartApply partData = foundItr->second;
 
 	const size_t motionIndex = holder.FindMotionIndex( partData.motionName );
 	if ( holder.GetMotionCount() <= motionIndex )
@@ -1000,7 +1036,8 @@ void Player::ShotManager::Init()
 void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 {
 	// Make do not release/charge when pausing
-	if ( IsZero( elapsedTime ) ) { return; }
+	if ( IsZero( elapsedTime )	) { return; }
+	if ( inst.NowMiss()			) { return; }
 	// else
 
 	const auto &input = inst.inputManager;

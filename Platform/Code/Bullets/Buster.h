@@ -40,8 +40,6 @@ namespace Bullet
 	private:
 		Definition::Damage GetDamageParameter() const override;
 		void AssignBodyParameter( const Donya::Vector3 &wsPos ) override;
-	private:
-		bool IsFullyCharged() const;
 	public:
 	#if USE_IMGUI
 		void ShowImGuiNode( const std::string &nodeCaption ) override;

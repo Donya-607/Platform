@@ -1,6 +1,6 @@
 {
     "Player": {
-        "cereal_class_version": 16,
+        "cereal_class_version": 18,
         "moveSpeed": 5.0,
         "jumpStrength": 18.5,
         "gravityResistance": 1.0,
@@ -141,47 +141,13 @@
             1.0,
             1.0,
             1.0,
+            0.8999999761581421,
+            1.0,
+            0.8999999761581421,
             1.5,
             1.2000000476837159,
             1.0
         ],
-        "normalLeftArm": {
-            "cereal_class_version": 0,
-            "motionName": "Shot",
-            "applyRootBoneNames": [
-                "Arm_L"
-            ],
-            "rootTranslationBlendPercent": {
-                "x": 1.0,
-                "y": 0.0,
-                "z": 0.5
-            }
-        },
-        "ladderLeftArm": {
-            "motionName": "LadderShot_L",
-            "applyRootBoneNames": [
-                "Arm_L",
-                "Head"
-            ],
-            "rootTranslationBlendPercent": {
-                "x": 1.0,
-                "y": 0.0,
-                "z": 0.5
-            }
-        },
-        "ladderRightArm": {
-            "motionName": "LadderShot_R",
-            "applyRootBoneNames": [
-                "Arm_R",
-                "Attach_Cannon",
-                "Head"
-            ],
-            "rootTranslationBlendPercent": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            }
-        },
         "chargeParams": [
             {
                 "cereal_class_version": 0,
@@ -250,6 +216,99 @@
         "gravityFalling": 35.0,
         "gravityFallingAccel": 90.0,
         "gravityMax": 80.0,
-        "inertialMoveSpeed": 5.0
+        "inertialMoveSpeed": 5.0,
+        "partMotions": [
+            {
+                "key": 7,
+                "value": {
+                    "cereal_class_version": 0,
+                    "motionName": "Shot",
+                    "applyRootBoneNames": [
+                        "Arm_L"
+                    ],
+                    "rootTranslationBlendPercent": {
+                        "x": 1.0,
+                        "y": 0.0,
+                        "z": 0.5
+                    }
+                }
+            },
+            {
+                "key": 8,
+                "value": {
+                    "motionName": "ChargedShot",
+                    "applyRootBoneNames": [
+                        "Arm_L"
+                    ],
+                    "rootTranslationBlendPercent": {
+                        "x": 1.0,
+                        "y": 0.0,
+                        "z": 0.5
+                    }
+                }
+            },
+            {
+                "key": 9,
+                "value": {
+                    "motionName": "LadderShot_L",
+                    "applyRootBoneNames": [
+                        "Arm_L",
+                        "Head"
+                    ],
+                    "rootTranslationBlendPercent": {
+                        "x": 1.0,
+                        "y": 0.0,
+                        "z": 0.5
+                    }
+                }
+            },
+            {
+                "key": 10,
+                "value": {
+                    "motionName": "LadderChargedShot_L",
+                    "applyRootBoneNames": [
+                        "Arm_L",
+                        "Head"
+                    ],
+                    "rootTranslationBlendPercent": {
+                        "x": 1.0,
+                        "y": 0.0,
+                        "z": 0.5
+                    }
+                }
+            },
+            {
+                "key": 11,
+                "value": {
+                    "motionName": "LadderShot_R",
+                    "applyRootBoneNames": [
+                        "Arm_R",
+                        "Attach_Cannon",
+                        "Head"
+                    ],
+                    "rootTranslationBlendPercent": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    }
+                }
+            },
+            {
+                "key": 12,
+                "value": {
+                    "motionName": "LadderChargedShot_R",
+                    "applyRootBoneNames": [
+                        "Arm_R",
+                        "Attach_Cannon",
+                        "Head"
+                    ],
+                    "rootTranslationBlendPercent": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    }
+                }
+            }
+        ]
     }
 }

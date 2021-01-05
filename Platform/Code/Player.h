@@ -129,8 +129,11 @@ public:
 		KnockBack,
 		GrabLadder,
 		Shot,
+		ChargedShot,
 		LadderShotLeft,
+		LadderChargedShotLeft,
 		LadderShotRight,
+		LadderChargedShotRight,
 		Brace,
 		Appear,
 		Winning,
@@ -145,6 +148,12 @@ public:
 
 		LevelCount	// Invalid
 	};
+	static constexpr bool IsFullyCharged( ShotLevel level )
+	{
+		constexpr int border   = scast<int>( ShotLevel::Strong );
+		const     int intLevel = scast<int>( level );
+		return ( border <= intLevel );
+	}
 private:
 	class InputManager
 	{
@@ -196,6 +205,7 @@ private:
 
 		Donya::Model::Pose		shotPose;
 		Donya::Model::Animator	shotAnimator;
+		bool					shotWasCharged = false;
 		bool					shouldPoseShot = false;
 	public:
 		void Init();
@@ -209,7 +219,7 @@ private:
 		MotionKind CurrentKind() const { return currKind; }
 	private:
 		void UpdateShotMotion( Player &instance, float elapsedTime );
-		void ApplyPartMotion( Player &instance, float elapsedTime, MotionKind useMotion, const ModelHelper::PartApply &partData );
+		void ApplyPartMotion( Player &instance, float elapsedTime, MotionKind useMotion );
 		void ExplorePartBone( std::vector<size_t> *pTargetBoneIndices, const std::vector<Donya::Model::Animation::Node> &exploreSkeletal, const std::string &searchBoneRootName );
 	private:
 		int  ToMotionIndex( MotionKind kind ) const;

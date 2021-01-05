@@ -1,10 +1,12 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #undef max
 #undef min
+#include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
 
 #include "Donya/Collision.h"
@@ -55,9 +57,7 @@ public:
 	Bullet::FireDesc				fireParam;
 	std::vector<float>				animePlaySpeeds;// It size() == Player::MotionKind::MotionCount
 
-	ModelHelper::PartApply			normalLeftArm;
-	ModelHelper::PartApply			ladderLeftArm;
-	ModelHelper::PartApply			ladderRightArm;
+	std::unordered_map<int, ModelHelper::PartApply> partMotions; // Key is Player::MotionKind
 
 	struct PerChargeLevel
 	{
@@ -160,15 +160,7 @@ private:
 		{
 			archive( CEREAL_NVP( animePlaySpeeds ) );
 		}
-		if ( 8 <= version )
-		{
-			archive
-			(
-				CEREAL_NVP( normalLeftArm  ),
-				CEREAL_NVP( ladderLeftArm  ),
-				CEREAL_NVP( ladderRightArm )
-			);
-		}
+		//if ( 8 <= version && version < 18 )
 		if ( 9 <= version )
 		{
 			archive( CEREAL_NVP( chargeParams ) );
@@ -218,7 +210,12 @@ private:
 		{
 			archive( CEREAL_NVP( inertialMoveSpeed ) );
 		}
-		if ( 17 <= version )
+		//if ( 17 <= version && version < 18 )
+		if ( 18 <= version )
+		{
+			archive( CEREAL_NVP( partMotions ) );
+		}
+		if ( 19 <= version )
 		{
 			// archive( CEREAL_NVP( x ) );
 		}
@@ -228,4 +225,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 16 )
+CEREAL_CLASS_VERSION( PlayerParam, 18 )

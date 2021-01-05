@@ -123,7 +123,7 @@ namespace Bullet
 			PointLightStorage::Get().RegisterIfThereSpace( lightSource );
 		}
 
-		if ( IsFullyCharged() )
+		if ( Player::IsFullyCharged( chargeLevel ) )
 		{
 			generationTimer += elapsedTime;
 
@@ -144,7 +144,7 @@ namespace Bullet
 	}
 	void Buster::GenerateCollidedEffect() const
 	{
-		const auto kind = ( IsFullyCharged() ) ? Effect::Kind::Hit_ChargedBuster : Effect::Kind::Hit_Buster;
+		const auto kind = ( Player::IsFullyCharged( chargeLevel ) ) ? Effect::Kind::Hit_ChargedBuster : Effect::Kind::Hit_Buster;
 		Effect::Admin::Get().GenerateInstance( kind, GetPosition() );
 	}
 	void Buster::PlayCollidedSE() const
@@ -171,13 +171,6 @@ namespace Bullet
 		body.pos	= wsPos;
 		body.offset	= ( pLevel ) ? orientation.RotateVector( pLevel->basic.hitBoxOffset ) : Donya::Vector3::Zero();
 		body.size	= ( pLevel ) ? pLevel->basic.hitBoxSize : Donya::Vector3::Zero();
-	}
-	bool Buster::IsFullyCharged() const
-	{
-		constexpr int generatableLevel = scast<int>( Player::ShotLevel::Strong );
-		const int intLevel = scast<int>( chargeLevel );
-
-		return ( generatableLevel <= intLevel );
 	}
 #if USE_IMGUI
 	void Buster::ShowImGuiNode( const std::string &nodeCaption )
