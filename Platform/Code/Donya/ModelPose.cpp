@@ -4,6 +4,21 @@ namespace Donya
 {
 	namespace Model
 	{
+		Pose Pose::Interpolate( const Pose &from, const Pose &to, float t )
+		{
+			const size_t boneCount = std::min( from.skeletal.size(), to.skeletal.size() );
+
+			Pose result;
+			result.skeletal.resize( boneCount );
+
+			for ( size_t i = 0; i < boneCount; ++i )
+			{
+				result.skeletal[i] = Animation::Node::Interpolate( from.skeletal[i], to.skeletal[i], t );
+			}
+
+			return std::move( result );
+		}
+
 		const std::vector<Animation::Node> &Pose::GetCurrentPose() const { return skeletal; }
 
 		bool Pose::HasCompatibleWith( const std::vector<Animation::Node> &validation ) const
