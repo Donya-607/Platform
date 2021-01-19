@@ -203,10 +203,9 @@ private:
 		MotionKind currKind = MotionKind::Jump_Fall;
 		ModelHelper::SkinningOperator model;
 
-		Donya::Model::Pose		shotPose;
-		Donya::Model::Animator	shotAnimator;
-		bool					shotWasCharged = false;
-		bool					shouldPoseShot = false;
+		ModelHelper::SkinningOperator shot;
+		bool shotWasCharged = false;
+		bool shouldPoseShot = false;
 	public:
 		void Init();
 		void Update( Player &instance, float elapsedTime, bool stopAnimation = false );

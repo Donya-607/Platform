@@ -710,11 +710,15 @@ void Player::MotionManager::Init()
 {
 	prevKind = currKind = MotionKind::Jump_Fall;
 
-	model.Initialize( GetModelOrNullptr() );
+	auto resource = GetModelOrNullptr();
+	model.Initialize( resource );
+	shot .Initialize( resource );
 	AssignPose( currKind );
 
-	shotAnimator.ResetTimer();
-	shotAnimator.DisableLoop();
+	
+	shot.animator.ResetTimer();
+	shot.animator.DisableLoop();
+	shotWasCharged = false;
 	shouldPoseShot = false;
 }
 void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAnimation )
@@ -739,7 +743,9 @@ void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAn
 		model.animator.Update( elapsedTime * motionAcceleration );
 	}
 	AssignPose( currKind );
+
 	model.AdvanceInterpolation( elapsedTime );
+	shot .AdvanceInterpolation( elapsedTime );
 
 	UpdateShotMotion( inst, elapsedTime );
 }
@@ -774,11 +780,12 @@ bool Player::MotionManager::WasCurrentMotionEnded() const
 void Player::MotionManager::QuitShotMotion()
 {
 	shouldPoseShot = false;
-	shotAnimator.ResetTimer();
+	shot.animator.ResetTimer();
+	shot.interpolation.transPercent = 1.0f;
 }
 void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 {
-	if ( shotAnimator.WasEnded() )
+	if ( shot.animator.WasEnded() )
 	{
 		shouldPoseShot = false;
 	}
@@ -787,7 +794,9 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 	{
 		shouldPoseShot = true;
 		shotWasCharged = IsFullyCharged( inst.shotManager.ChargeLevel() );
-		shotAnimator.ResetTimer();
+		shot.animator.ResetTimer();
+		shot.interpolation.transPercent = 0.0f;
+		shot.interpolation.currMotionIndex = -1; // To be trigger the interpolation
 	}
 
 	if ( !shouldPoseShot ) { return; }
@@ -841,16 +850,14 @@ void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, Mo
 
 	// Update "shotAnimator" and "shotPose" by "motionIndex"
 	{
-		const auto &motion	= holder.GetMotion( motionIndex );
-		shotAnimator.SetRepeatRange( motion );
-
+		const auto   &motion			= holder.GetMotion( motionIndex );
 		const size_t motionKindIndex	= scast<size_t>( useMotionKind );
-		const float  motionAcceleration = ( data.animePlaySpeeds.size() <= motionKindIndex ) ? 1.0f : data.animePlaySpeeds[motionKindIndex];
-		shotAnimator.Update( fabsf( elapsedTime ) * motionAcceleration );
-
-		shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
+		const float  motionAcceleration	= ( data.animePlaySpeeds.size() <= motionKindIndex ) ? 1.0f : data.animePlaySpeeds[motionKindIndex];
+		
+		shot.UpdateMotion( fabsf( elapsedTime ) * motionAcceleration, scast<int>( motionIndex ) );
 	}
 
+	const Donya::Model::Pose &shotPose = shot.GetCurrentPose();
 	std::vector<Donya::Model::Animation::Node> normalPose = model.GetCurrentPose().GetCurrentPose();
 	assert( shotPose.HasCompatibleWith( normalPose ) );
 
@@ -883,29 +890,26 @@ void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, Mo
 		// If the current node is the root bone of apply targets
 		if ( IsTargetRootName( node.bone.name ) )
 		{
-			const auto &d = dest.global;
 			const auto &n = node.global;
+			const auto &d = dest.global;
 
 			Donya::Vector4x4 blend;
-			// Apply destination's orientation(and scale)
-			blend._11 = d._11;		blend._12 = d._12;		blend._13 = d._13;
-			blend._21 = d._21;		blend._22 = d._22;		blend._23 = d._23;
-			blend._31 = d._31;		blend._32 = d._32;		blend._33 = d._33;
+			// Apply destination's S and R
+			blend._11 = d._11;	blend._12 = d._12;	blend._13 = d._13;
+			blend._21 = d._21;	blend._22 = d._22;	blend._23 = d._23;
+			blend._31 = d._31;	blend._32 = d._32;	blend._33 = d._33;
+
 			// Blend the translations
 			blend._41 = Donya::Lerp( n._41, d._41, partData.rootTranslationBlendPercent.x );
 			blend._42 = Donya::Lerp( n._42, d._42, partData.rootTranslationBlendPercent.y );
 			blend._43 = Donya::Lerp( n._43, d._43, partData.rootTranslationBlendPercent.z );
-			
 			node.global = blend;
 		}
 		else
 		{
-			const Donya::Vector4x4 parentGlobal =
-			( node.bone.parentIndex != -1 )
-			? normalPose[node.bone.parentIndex].global
-			: Donya::Vector4x4::Identity();
-
-			node.global = dest.local * parentGlobal;
+			node.global = ( node.bone.parentIndex == -1 )
+						? dest.local
+						: dest.local * normalPose[node.bone.parentIndex].global;
 		}
 	}
 
