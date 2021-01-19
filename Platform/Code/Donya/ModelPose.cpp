@@ -13,8 +13,11 @@ namespace Donya
 
 			for ( size_t i = 0; i < boneCount; ++i )
 			{
-				result.skeletal[i] = Animation::Node::Interpolate( from.skeletal[i], to.skeletal[i], t );
+				// result.skeletal[i] = Animation::Node::Interpolate( from.skeletal[i], to.skeletal[i], t );
+				result.skeletal[i].bone = Animation::Bone::Interpolate( from.skeletal[i].bone, to.skeletal[i].bone, t );
 			}
+
+			result.UpdateTransformMatrices();
 
 			return std::move( result );
 		}

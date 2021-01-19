@@ -338,7 +338,7 @@ namespace Bullet
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();
 
-		pRenderer->Render( model.pResource->model, model.pose );
+		pRenderer->Render( model.pResource->model, model.GetCurrentPose() );
 
 		pRenderer->DeactivateConstantModel();
 	}

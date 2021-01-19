@@ -23,6 +23,10 @@ namespace ModelHelper
 	{
 		interpolation.transSecond = takingSecond;
 	}
+	const Donya::Model::Pose &SkinningOperator::GetCurrentPose() const
+	{
+		return ( 1.0f <= interpolation.transPercent ) ? pose : interpolation.lerpedPose;
+	}
 	int  SkinningOperator::GetMotionCount() const
 	{
 		return ( !pResource ) ? 0 : scast<int>( pResource->motionHolder.GetMotionCount() );
@@ -48,7 +52,7 @@ namespace ModelHelper
 		{
 			interpolation.currMotionIndex	= motionIndex;
 			interpolation.transPercent		= 0.0f;
-			interpolation.prevPose			= interpolation.lerpedPose;
+			interpolation.prevPose			= pose;
 		}
 
 		const auto &motion = pResource->motionHolder.GetMotion( motionIndex );
@@ -64,9 +68,9 @@ namespace ModelHelper
 		animator.Update( elapsedTime );
 		AssignMotion( motionIndex );
 
-		UpdateInterpolation( elapsedTime );
+		AdvanceInterpolation( elapsedTime );
 	}
-	void SkinningOperator::UpdateInterpolation( float elapsedTime )
+	void SkinningOperator::AdvanceInterpolation( float elapsedTime )
 	{
 		Interpolation &lerp = interpolation;
 

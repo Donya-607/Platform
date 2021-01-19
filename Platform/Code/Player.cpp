@@ -739,6 +739,7 @@ void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAn
 		model.animator.Update( elapsedTime * motionAcceleration );
 	}
 	AssignPose( currKind );
+	model.AdvanceInterpolation( elapsedTime );
 
 	UpdateShotMotion( inst, elapsedTime );
 }
@@ -758,7 +759,7 @@ void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vecto
 	pRenderer->UpdateConstant( modelConstant );
 	pRenderer->ActivateConstantModel();
 
-	pRenderer->Render( model.pResource->model, model.pose );
+	pRenderer->Render( model.pResource->model, model.GetCurrentPose() );
 
 	pRenderer->DeactivateConstantModel();
 }
@@ -850,7 +851,7 @@ void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, Mo
 		shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
 	}
 
-	std::vector<Donya::Model::Animation::Node> normalPose = model.pose.GetCurrentPose();
+	std::vector<Donya::Model::Animation::Node> normalPose = model.GetCurrentPose().GetCurrentPose();
 	assert( shotPose.HasCompatibleWith( normalPose ) );
 
 	std::vector<size_t> applyBoneIndices{};
