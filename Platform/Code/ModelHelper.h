@@ -52,8 +52,9 @@ namespace ModelHelper
 		void Initialize( const std::shared_ptr<ModelHelper::SkinningSet> &pAssignResource );
 	public:
 		void SetInterpolationSecond( float takingSecond );
-	public:
+		Donya::Model::Pose &GetCurrentPose();
 		const Donya::Model::Pose &GetCurrentPose() const;
+	public:
 		int  GetMotionCount() const;
 		/// <summary>
 		/// pResource != nullptr &amp;&amp; 0 &lt;= motionIndex &lt; GetMotionCount()

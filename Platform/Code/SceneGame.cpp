@@ -2974,16 +2974,26 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	UseScreenSpaceImGui();
 
-	static Donya::Vector3 beforeBossRoomPosition{ 78.0f, -15.0f, 0.0f };
-	auto SetPlayerToBeforeBossRoom = [&]()
+	static std::array<Donya::Vector3, 3> teleportDestinations
 	{
+		Donya::Vector3{  26.5f, -54.0f, 0.0f },
+		Donya::Vector3{  78.0f, -15.0f, 0.0f },
+		Donya::Vector3{ 202.5f, -28.0f, 0.0f },
+	};
+	auto TeleportPlayerTo = [&]( size_t destIndex )
+	{
+		if ( teleportDestinations.size() <= destIndex ) { return; }
+		// else
+
+		const Donya::Vector3 &destination = teleportDestinations[destIndex];
+
 		const Map emptyMap{}; // Used for empty argument. Fali safe.
 		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 
-		PlayerInitializer preBossSetter{};
-		preBossSetter.AssignParameter( beforeBossRoomPosition );
+		PlayerInitializer setter{};
+		setter.AssignParameter( destination );
 
-		PlayerInit( preBossSetter, mapRef );
+		PlayerInit( setter, mapRef );
 
 		currentRoomID = CalcCurrentRoomID();
 		const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
@@ -3000,6 +3010,29 @@ void SceneGame::UseImGui( float elapsedTime )
 		scroll.active			= false;
 		scroll.elapsedSecond	= 0.0f;
 		currentScreen = CalcCurrentScreenPlane();
+	};
+
+	auto ChangeAvailableWeapon = [&]( bool unlock )
+	{
+		auto &admin = SaveData::Admin::Get();
+
+		SaveData::File tmp = admin.NowData();
+		if ( unlock )
+		{
+			tmp.availableWeapons.Activate( Definition::WeaponKind::SkullShield );
+		}
+		else
+		{
+			tmp.availableWeapons.Reset();
+		}
+		admin.Write( tmp );
+
+		admin.Save();
+
+		if ( pPlayer )
+		{
+			pPlayer->ApplyAvailableWeapon( tmp.availableWeapons );
+		}
 	};
 
 	// Choose a room by mouse
@@ -3042,40 +3075,34 @@ void SceneGame::UseImGui( float elapsedTime )
 					? nullptr
 					: pHouse->FindRoomOrNullptr( choiceID );
 	}
-
-	if ( Donya::Keyboard::Trigger( 'L' ) && Donya::Keyboard::Press( VK_MENU ) )
+	// "drawLightSources" and TeleportPlayerTo()
+	if ( Donya::Keyboard::Press( VK_MENU ) )
 	{
-		drawLightSources = !drawLightSources;
+		if ( Donya::Keyboard::Trigger( 'L' ) )
+		{
+			drawLightSources = !drawLightSources;
+		}
+		
+		const int placeCount = scast<int>( teleportDestinations.size() );
+		for ( int i = 0; i < placeCount; ++i )
+		{
+			// 1-based, 1 or 2 or ... or size()
+			if ( Donya::Keyboard::Trigger( '0' + 1 + i ) )
+			{
+				// 0-based
+				TeleportPlayerTo( scast<size_t>( i ) );
+				break;
+			}
+		}
 	}
 	if ( Donya::Keyboard::Trigger( VK_F4 ) )
 	{
 		projectLightCamera = !projectLightCamera;
 	}
-	if ( Donya::Keyboard::Trigger( VK_F6 ) )
-	{
-		SetPlayerToBeforeBossRoom();
-	}
 	if ( Donya::Keyboard::Trigger( VK_F7 ) )
 	{
-		auto &admin = SaveData::Admin::Get();
-
-		SaveData::File tmp = admin.NowData();
-		if ( Donya::Keyboard::Press( VK_CONTROL ) )
-		{
-			tmp.availableWeapons.Reset();
-		}
-		else
-		{
-			tmp.availableWeapons.Activate( Definition::WeaponKind::SkullShield );
-		}
-		admin.Write( tmp );
-
-		admin.Save();
-
-		if ( pPlayer )
-		{
-			pPlayer->ApplyAvailableWeapon( tmp.availableWeapons );
-		}
+		const bool unlock = !Donya::Keyboard::Press( VK_CONTROL );
+		ChangeAvailableWeapon( unlock );
 	}
 
 	ImGui::SetNextWindowBgAlpha( bgAlpha );
@@ -3084,8 +3111,11 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	ImGui::Checkbox( u8"[ALT+L]	光源の可視化",		&drawLightSources	);
 	ImGui::Checkbox( u8"[F4]	光視点にする",		&projectLightCamera	);
-	ImGui::Text( u8"[F7]		全武器解放＆セーブ"	);
-	ImGui::Text( u8"[CTRL+F7]	全武器制限＆セーブ"	);
+	if ( ImGui::Button( u8"[F7]			全武器解放＆セーブ" ) ) { ChangeAvailableWeapon( /* unlock = */ true  ); }
+	if ( ImGui::Button( u8"[CTRL+F7]	全武器制限＆セーブ" ) ) { ChangeAvailableWeapon( /* unlock = */ false ); }
+	if ( ImGui::Button( u8"[ALT+ 1 ]	自機を 開始地点 へ" ) ) { TeleportPlayerTo( 0 ); }
+	if ( ImGui::Button( u8"[ALT+ 2 ]	自機を 中間地点 へ" ) ) { TeleportPlayerTo( 1 ); }
+	if ( ImGui::Button( u8"[ALT+ 3 ]	自機を ボス直前 へ" ) ) { TeleportPlayerTo( 2 ); }
 	Effect::Admin::Get().SetProjectionMatrix
 	(
 		( projectLightCamera )

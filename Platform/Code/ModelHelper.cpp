@@ -23,6 +23,10 @@ namespace ModelHelper
 	{
 		interpolation.transSecond = takingSecond;
 	}
+	Donya::Model::Pose &SkinningOperator::GetCurrentPose()
+	{
+		return ( 1.0f <= interpolation.transPercent ) ? pose : interpolation.lerpedPose;
+	}
 	const Donya::Model::Pose &SkinningOperator::GetCurrentPose() const
 	{
 		return ( 1.0f <= interpolation.transPercent ) ? pose : interpolation.lerpedPose;
@@ -50,9 +54,21 @@ namespace ModelHelper
 
 		if ( motionIndex != interpolation.currMotionIndex )
 		{
-			interpolation.currMotionIndex	= motionIndex;
-			interpolation.transPercent		= 0.0f;
-			interpolation.prevPose			= pose;
+			Interpolation &lerp = interpolation;
+			if ( lerp.transPercent < 1.0f )
+			{
+				// Use the lerp-ing pose
+				lerp.prevPose = lerp.lerpedPose;
+			}
+			else
+			{
+				// But the "lerpedPose" be not updated when the lerp is ended,
+				// So the latest pose is "pose".
+				lerp.prevPose = pose;
+			}
+
+			lerp.currMotionIndex	= motionIndex;
+			lerp.transPercent		= 0.0f;
 		}
 
 		const auto &motion = pResource->motionHolder.GetMotion( motionIndex );

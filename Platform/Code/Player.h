@@ -203,7 +203,8 @@ private:
 		MotionKind currKind = MotionKind::Jump_Fall;
 		ModelHelper::SkinningOperator model;
 
-		ModelHelper::SkinningOperator shot;
+		Donya::Model::Pose		shotPose;
+		Donya::Model::Animator	shotAnimator;
 		bool shotWasCharged = false;
 		bool shouldPoseShot = false;
 	public:

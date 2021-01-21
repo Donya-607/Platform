@@ -712,12 +712,11 @@ void Player::MotionManager::Init()
 
 	auto resource = GetModelOrNullptr();
 	model.Initialize( resource );
-	shot .Initialize( resource );
 	AssignPose( currKind );
 
 	
-	shot.animator.ResetTimer();
-	shot.animator.DisableLoop();
+	shotAnimator.ResetTimer();
+	shotAnimator.DisableLoop();
 	shotWasCharged = false;
 	shouldPoseShot = false;
 }
@@ -745,8 +744,7 @@ void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAn
 	AssignPose( currKind );
 
 	model.AdvanceInterpolation( elapsedTime );
-	shot .AdvanceInterpolation( elapsedTime );
-
+	
 	UpdateShotMotion( inst, elapsedTime );
 }
 void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &W, const Donya::Vector3 &color, float alpha ) const
@@ -780,12 +778,11 @@ bool Player::MotionManager::WasCurrentMotionEnded() const
 void Player::MotionManager::QuitShotMotion()
 {
 	shouldPoseShot = false;
-	shot.animator.ResetTimer();
-	shot.interpolation.transPercent = 1.0f;
+	shotAnimator.ResetTimer();
 }
 void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 {
-	if ( shot.animator.WasEnded() )
+	if ( shotAnimator.WasEnded() )
 	{
 		shouldPoseShot = false;
 	}
@@ -794,9 +791,7 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 	{
 		shouldPoseShot = true;
 		shotWasCharged = IsFullyCharged( inst.shotManager.ChargeLevel() );
-		shot.animator.ResetTimer();
-		shot.interpolation.transPercent = 0.0f;
-		shot.interpolation.currMotionIndex = -1; // To be trigger the interpolation
+		shotAnimator.ResetTimer();
 	}
 
 	if ( !shouldPoseShot ) { return; }
@@ -850,21 +845,25 @@ void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, Mo
 
 	// Update "shotAnimator" and "shotPose" by "motionIndex"
 	{
-		const auto   &motion			= holder.GetMotion( motionIndex );
+		const auto &motion = holder.GetMotion( motionIndex );
+		shotAnimator.SetRepeatRange( motion );
+
 		const size_t motionKindIndex	= scast<size_t>( useMotionKind );
 		const float  motionAcceleration	= ( data.animePlaySpeeds.size() <= motionKindIndex ) ? 1.0f : data.animePlaySpeeds[motionKindIndex];
-		
-		shot.UpdateMotion( fabsf( elapsedTime ) * motionAcceleration, scast<int>( motionIndex ) );
+		shotAnimator.Update( fabsf( elapsedTime ) * motionAcceleration );
+
+		shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
 	}
 
-	const Donya::Model::Pose &shotPose = shot.GetCurrentPose();
-	std::vector<Donya::Model::Animation::Node> normalPose = model.GetCurrentPose().GetCurrentPose();
-	assert( shotPose.HasCompatibleWith( normalPose ) );
+	Donya::Model::Pose &refCurrentPose = model.GetCurrentPose();
+
+	std::vector<Donya::Model::Animation::Node> editNodes = refCurrentPose.GetCurrentPose();
+	assert( shotPose.HasCompatibleWith( editNodes ) );
 
 	std::vector<size_t> applyBoneIndices{};
 	for ( const auto &rootName : partData.applyRootBoneNames )
 	{
-		ExplorePartBone( &applyBoneIndices, normalPose, rootName );
+		ExplorePartBone( &applyBoneIndices, editNodes, rootName );
 	}
 
 	auto IsTargetRootName = [&partData]( const std::string &boneName )
@@ -878,11 +877,11 @@ void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, Mo
 		return ( found != partData.applyRootBoneNames.end() ) ? true : false;
 	};
 
-	const auto &destPose = shotPose.GetCurrentPose();
+	const std::vector<Donya::Model::Animation::Node> &destNodes = shotPose.GetCurrentPose();
 	for ( auto &i : applyBoneIndices )
 	{
-		auto &node = normalPose[i];
-		auto &dest = destPose[i];
+		auto &node = editNodes[i];
+		auto &dest = destNodes[i];
 
 		node.bone  = dest.bone;
 		node.local = dest.local;
@@ -909,11 +908,11 @@ void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, Mo
 		{
 			node.global = ( node.bone.parentIndex == -1 )
 						? dest.local
-						: dest.local * normalPose[node.bone.parentIndex].global;
+						: dest.local * editNodes[node.bone.parentIndex].global;
 		}
 	}
 
-	model.pose.AssignSkeletal( normalPose );
+	refCurrentPose.AssignSkeletal( editNodes );
 }
 void Player::MotionManager::ExplorePartBone( std::vector<size_t> *pIndices, const std::vector<Donya::Model::Animation::Node> &skeletal, const std::string &searchName )
 {

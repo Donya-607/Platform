@@ -74,6 +74,7 @@ namespace Boss
 		inst.model.animator.Update( elapsedTime * motionAcceleration );
 		
 		AssignPose( inst, currKind );
+		inst.model.AdvanceInterpolation( elapsedTime );
 	}
 	void Skull::MotionManager::ChangeMotion( Skull &inst, MotionKind nextKind, bool resetTimerIfSameMotion )
 	{
