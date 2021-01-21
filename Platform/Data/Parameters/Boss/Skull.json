@@ -1,6 +1,6 @@
 {
     "Skull": {
-        "cereal_class_version": 11,
+        "cereal_class_version": 12,
         "hp": 28,
         "touchDamage": {
             "cereal_class_version": 0,
@@ -110,6 +110,18 @@
         "appearRoarTiming": 0.6100000143051148,
         "appearWaitMotionSec": 2.5,
         "detectFirstWaitSec": 0.5,
-        "detectWaitSecMax": 3.0
+        "detectWaitSecMax": 3.0,
+        "animeTransSeconds": [
+            0.0833333358168602,
+            0.01600000075995922,
+            0.0,
+            0.0,
+            0.08299999684095383,
+            0.0833333358168602,
+            0.0,
+            0.0833333358168602,
+            0.0833333358168602,
+            0.0
+        ]
     }
 }

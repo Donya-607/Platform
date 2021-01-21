@@ -1,6 +1,6 @@
 {
     "SkeletonJoe": {
-        "cereal_class_version": 0,
+        "cereal_class_version": 1,
         "basic": {
             "cereal_class_version": 0,
             "hp": 3,
@@ -64,6 +64,12 @@
             1.0,
             1.2000000476837159,
             1.2000000476837159
+        ],
+        "animeTransSeconds": [
+            0.0,
+            0.0,
+            0.08299999684095383,
+            0.0833333358168602
         ]
     }
 }
