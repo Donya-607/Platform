@@ -121,6 +121,21 @@ namespace Enemy
 	}
 	void SuperBallMachine::ChangeMotion( MotionKind nextKind )
 	{
+		const int intNextKind = scast<int>( nextKind );
+		if ( currentMotion != nextKind )
+		{
+			const auto &transSeconds = Parameter::GetSuperBallMachine().animeTransSeconds;
+			const bool indexIsSafe = ( 0 <= intNextKind && intNextKind < scast<int>( transSeconds.size() ) );
+			if ( indexIsSafe )
+			{
+				model.SetInterpolationSecond( transSeconds[intNextKind] );
+			}
+			else
+			{
+				model.SetInterpolationSecond( 0.0f );
+			}
+		}
+
 		currentMotion = nextKind;
 
 		model.animator.ResetTimer();
@@ -129,7 +144,7 @@ namespace Enemy
 		? model.animator.DisableLoop()
 		: model.animator.EnableLoop();
 
-		model.AssignMotion( scast<int>( nextKind ) );
+		model.AssignMotion( intNextKind );
 	}
 	void SuperBallMachine::ShotIfNeeded( float elapsedTime, const Donya::Vector3 &wsTargetPos )
 	{
@@ -205,6 +220,10 @@ namespace Enemy
 		{
 			animePlaySpeeds.resize( motionCount, 1.0f );
 		}
+		if ( animeTransSeconds.size() != motionCount )
+		{
+			animeTransSeconds.resize( motionCount, ModelHelper::SkinningOperator::Interpolation::defaultTransitionSecond );
+		}
 		if ( ImGui::TreeNode( u8"モーション再生速度" ) )
 		{
 			for ( size_t i = 0; i < motionCount; ++i )
@@ -213,6 +232,19 @@ namespace Enemy
 				(
 					GetMotionName( scast<SuperBallMachine::MotionKind>( i ) ),
 					&animePlaySpeeds[i], 0.01f
+				);
+			}
+
+			ImGui::TreePop();
+		}
+		if ( ImGui::TreeNode( u8"モーション遷移にかける秒数" ) )
+		{
+			for ( size_t i = 0; i < motionCount; ++i )
+			{
+				ImGui::DragFloat
+				(
+					GetMotionName( scast<SuperBallMachine::MotionKind>( i ) ),
+					&animeTransSeconds[i], 0.01f
 				);
 			}
 

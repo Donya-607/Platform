@@ -386,6 +386,10 @@ void PlayerParam::ShowImGuiNode()
 	{
 		animePlaySpeeds.resize( motionCount, 1.0f );
 	}
+	if ( animeTransSeconds.size() != motionCount )
+	{
+		animeTransSeconds.resize( motionCount, ModelHelper::SkinningOperator::Interpolation::defaultTransitionSecond );
+	}
 	if ( ImGui::TreeNode( u8"アニメーション関係" ) )
 	{
 		if ( ImGui::TreeNode( u8"再生速度" ) )
@@ -393,6 +397,15 @@ void PlayerParam::ShowImGuiNode()
 			for ( size_t i = 0; i < motionCount; ++i )
 			{
 				ImGui::DragFloat( KIND_NAMES[i], &animePlaySpeeds[i], 0.01f );
+			}
+
+			ImGui::TreePop();
+		}
+		if ( ImGui::TreeNode( u8"遷移にかける秒数" ) )
+		{
+			for ( size_t i = 0; i < motionCount; ++i )
+			{
+				ImGui::DragFloat( KIND_NAMES[i], &animeTransSeconds[i], 0.01f );
 			}
 
 			ImGui::TreePop();
@@ -956,6 +969,20 @@ void Player::MotionManager::AssignPose( MotionKind kind )
 		return;
 	}
 	// else
+
+	if ( kind != prevKind )
+	{
+		const auto &transSeconds = Parameter().Get().animeTransSeconds;
+		const bool indexIsSafe = ( 0 <= motionIndex && motionIndex < scast<int>( transSeconds.size() ) );
+		if ( indexIsSafe )
+		{
+			model.SetInterpolationSecond( transSeconds[motionIndex] );
+		}
+		else
+		{
+			model.SetInterpolationSecond( 0.0f );
+		}
+	}
 
 	model.AssignMotion( motionIndex );
 }

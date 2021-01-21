@@ -146,6 +146,21 @@ namespace Enemy
 	}
 	void SkeletonJoe::ChangeMotion( MotionKind nextKind )
 	{
+		const int intNextKind = scast<int>( nextKind );
+		if ( status != nextKind )
+		{
+			const auto &transSeconds = Parameter::GetSkeletonJoe().animeTransSeconds;
+			const bool indexIsSafe = ( 0 <= intNextKind && intNextKind < scast<int>( transSeconds.size() ) );
+			if ( indexIsSafe )
+			{
+				model.SetInterpolationSecond( transSeconds[intNextKind] );
+			}
+			else
+			{
+				model.SetInterpolationSecond( 0.0f );
+			}
+		}
+
 		status = nextKind;
 
 		( nextKind == MotionKind::Idle )
@@ -288,6 +303,7 @@ namespace Enemy
 
 		if ( stateSeconds.size() != motionCount ) { stateSeconds.resize( motionCount, 1.0f ); }
 		if ( animePlaySpeeds.size() != motionCount ) { animePlaySpeeds.resize( motionCount, 1.0f ); }
+		if ( animeTransSeconds.size() != motionCount ) { animeTransSeconds.resize( motionCount, ModelHelper::SkinningOperator::Interpolation::defaultTransitionSecond ); }
 		if ( ImGui::TreeNode( u8"各ステートの滞在時間" ) )
 		{
 			for ( size_t i = 0; i < motionCount; ++i )
@@ -310,6 +326,19 @@ namespace Enemy
 				(
 					GetMotionName( scast<SkeletonJoe::MotionKind>( i ) ),
 					&animePlaySpeeds[i], 0.01f
+				);
+			}
+
+			ImGui::TreePop();
+		}
+		if ( ImGui::TreeNode( u8"モーション遷移にかける秒数" ) )
+		{
+			for ( size_t i = 0; i < motionCount; ++i )
+			{
+				ImGui::DragFloat
+				(
+					GetMotionName( scast<SkeletonJoe::MotionKind>( i ) ),
+					&animeTransSeconds[i], 0.01f
 				);
 			}
 

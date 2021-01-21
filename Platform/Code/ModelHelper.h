@@ -35,7 +35,7 @@ namespace ModelHelper
 	public:
 		struct Interpolation
 		{
-			static constexpr float defaultTransitionSecond = 1.0f / 4.0f;
+			static constexpr float defaultTransitionSecond = 1.0f / 6.0f;
 		public:
 			int					currMotionIndex	= 0;
 			float				transPercent	= 1.0f; // 0.0f:Previous ~ 1.0f:Current

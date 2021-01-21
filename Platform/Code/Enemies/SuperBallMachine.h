@@ -72,6 +72,7 @@ namespace Enemy
 		float				initialTimerSecond	= 0.0f;
 		float				gravity				= 1.0f;
 		std::vector<float>	animePlaySpeeds;					// size() == SuperBallMachine::MotionKind::MotionCount
+		std::vector<float>	animeTransSeconds;					// It interest only destination motion kind. It size() == Player::MotionKind::MotionCount
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -104,6 +105,10 @@ namespace Enemy
 			}
 			if ( 5 <= version )
 			{
+				archive( CEREAL_NVP( animeTransSeconds ) );
+			}
+			if ( 6 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -116,4 +121,4 @@ namespace Enemy
 CEREAL_CLASS_VERSION( Enemy::SuperBallMachine, 0 )
 CEREAL_REGISTER_TYPE( Enemy::SuperBallMachine )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::SuperBallMachine )
-CEREAL_CLASS_VERSION( Enemy::SuperBallMachineParam, 4 )
+CEREAL_CLASS_VERSION( Enemy::SuperBallMachineParam, 5 )

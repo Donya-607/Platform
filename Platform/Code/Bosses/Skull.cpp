@@ -111,6 +111,21 @@ namespace Boss
 		}
 		// else
 
+		if ( kind != currKind )
+		{
+			const auto &transSeconds = Parameter::GetSkull().animeTransSeconds;
+			const bool indexIsSafe = ( 0 <= motionIndex && motionIndex < scast<int>( transSeconds.size() ) );
+			if ( indexIsSafe )
+			{
+				inst.model.SetInterpolationSecond( transSeconds[motionIndex] );
+			}
+			else
+			{
+				inst.model.SetInterpolationSecond( 0.0f );
+			}
+		}
+
+
 		inst.model.AssignMotion( motionIndex );
 		return true;
 	}
@@ -976,6 +991,10 @@ namespace Boss
 		{
 			animePlaySpeeds.resize( motionCount, 1.0f );
 		}
+		if ( animeTransSeconds.size() != motionCount )
+		{
+			animeTransSeconds.resize( motionCount, ModelHelper::SkinningOperator::Interpolation::defaultTransitionSecond );
+		}
 		if ( ImGui::TreeNode( u8"アニメーション関連" ) )
 		{
 			if ( ImGui::TreeNode( u8"再生速度の設定" ) )
@@ -987,6 +1006,21 @@ namespace Boss
 					(
 						GetMotionName( scast<Skull::MotionKind>( i ) ),
 						&animePlaySpeeds[i], 0.01f
+					);
+				}
+				
+				ImGui::TreePop();
+			}
+			
+			if ( ImGui::TreeNode( u8"遷移にかける秒数" ) )
+			{
+				std::string caption;
+				for ( size_t i = 0; i < motionCount; ++i )
+				{
+					ImGui::DragFloat
+					(
+						GetMotionName( scast<Skull::MotionKind>( i ) ),
+						&animeTransSeconds[i], 0.01f
 					);
 				}
 				

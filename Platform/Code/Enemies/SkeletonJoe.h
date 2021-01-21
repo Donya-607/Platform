@@ -73,6 +73,7 @@ namespace Enemy
 		float				impactSecond		= 1.0f;
 		std::vector<float>	stateSeconds;		// Staying second of each state. size() == SkeletonJoe::MotionKind::MotionCount
 		std::vector<float>	animePlaySpeeds;	// size() == SkeletonJoe::MotionKind::MotionCount
+		std::vector<float>	animeTransSeconds;	// It interest only destination motion kind. It size() == Player::MotionKind::MotionCount
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -90,6 +91,10 @@ namespace Enemy
 
 			if ( 1 <= version )
 			{
+				archive( CEREAL_NVP( animeTransSeconds ) );
+			}
+			if ( 2 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -102,4 +107,4 @@ namespace Enemy
 CEREAL_CLASS_VERSION( Enemy::SkeletonJoe, 0 )
 CEREAL_REGISTER_TYPE( Enemy::SkeletonJoe )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Enemy::Base, Enemy::SkeletonJoe )
-CEREAL_CLASS_VERSION( Enemy::SkeletonJoeParam, 0 )
+CEREAL_CLASS_VERSION( Enemy::SkeletonJoeParam, 1 )
