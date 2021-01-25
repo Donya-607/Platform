@@ -214,9 +214,11 @@ private:
 	public:
 		void ResetMotionFrame();
 		void QuitShotMotion();
+		void OverwriteLerpSecond( float newSecond );
 	public:
 		bool WasCurrentMotionEnded() const;
 		MotionKind CurrentKind() const { return currKind; }
+		bool NowShotPoses() const;
 	private:
 		void UpdateShotMotion( Player &instance, float elapsedTime );
 		void ApplyPartMotion( Player &instance, float elapsedTime, MotionKind useMotion );

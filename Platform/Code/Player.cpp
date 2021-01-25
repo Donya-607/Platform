@@ -788,10 +788,18 @@ bool Player::MotionManager::WasCurrentMotionEnded() const
 {
 	return model.animator.WasEnded();
 }
+bool Player::MotionManager::NowShotPoses() const
+{
+	return shouldPoseShot;
+}
 void Player::MotionManager::QuitShotMotion()
 {
 	shouldPoseShot = false;
 	shotAnimator.ResetTimer();
+}
+void Player::MotionManager::OverwriteLerpSecond( float newSecond )
+{
+	model.SetInterpolationSecond( newSecond );
 }
 void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 {
@@ -1734,6 +1742,16 @@ void Player::GrabLadder::Uninit( Player &inst )
 
 	// Cancel the grab motion
 	MotionUpdate( inst, 0.0001f, /* stopAnimation = */ true );
+
+	// Shot pose's face looks to side.
+	// So I want to prevent the face looks here or back side when end the grab motion,
+	// by interpolate the motion as immediately.
+	if ( inst.motionManager.NowShotPoses() )
+	{
+		inst.motionManager.OverwriteLerpSecond( 0.0f );
+		// Then apply that overwrite
+		MotionUpdate( inst, 0.0001f, /* stopAnimation = */ true );
+	}
 }
 void Player::GrabLadder::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
