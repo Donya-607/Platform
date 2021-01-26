@@ -1,0 +1,174 @@
+{
+    "Buster": {
+        "cereal_class_version": 3,
+        "params": [
+            {
+                "cereal_class_version": 1,
+                "basic": {
+                    "cereal_class_version": 1,
+                    "hitBoxOffset": {
+                        "cereal_class_version": 0,
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "hitBoxSize": {
+                        "x": 0.15000000596046449,
+                        "y": 0.1599999964237213,
+                        "z": 0.15000000596046449
+                    },
+                    "damage": {
+                        "cereal_class_version": 0,
+                        "amount": 1,
+                        "type": 1
+                    },
+                    "animePlaySpeed": 1.0
+                },
+                "accelRate": 1.0,
+                "lightSource": {
+                    "cereal_class_version": 0,
+                    "light": {
+                        "cereal_class_version": 1,
+                        "diffuseColor": {
+                            "cereal_class_version": 0,
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 0.0,
+                            "w": 1.0
+                        },
+                        "specularColor": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 0.0,
+                            "w": 1.0
+                        },
+                        "ambientColor": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0,
+                            "w": 1.0
+                        }
+                    },
+                    "wsPos": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": -1.0
+                    },
+                    "attenuation": {
+                        "x": 1.0,
+                        "y": 2.0,
+                        "z": 3.5
+                    },
+                    "range": 3.0
+                }
+            },
+            {
+                "basic": {
+                    "hitBoxOffset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": -0.125
+                    },
+                    "hitBoxSize": {
+                        "x": 0.25,
+                        "y": 0.2199999988079071,
+                        "z": 0.27000001072883608
+                    },
+                    "damage": {
+                        "amount": 1,
+                        "type": 3
+                    },
+                    "animePlaySpeed": 1.2000000476837159
+                },
+                "accelRate": 1.0,
+                "lightSource": {
+                    "light": {
+                        "diffuseColor": {
+                            "x": 0.7921568751335144,
+                            "y": 1.0,
+                            "z": 0.5254902243614197,
+                            "w": 1.0
+                        },
+                        "specularColor": {
+                            "x": 0.7921568751335144,
+                            "y": 1.0,
+                            "z": 0.5254902243614197,
+                            "w": 1.0
+                        },
+                        "ambientColor": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0,
+                            "w": 1.0
+                        }
+                    },
+                    "wsPos": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": -1.0
+                    },
+                    "attenuation": {
+                        "x": 1.0,
+                        "y": 0.699999988079071,
+                        "z": 1.7999999523162842
+                    },
+                    "range": 7.0
+                }
+            },
+            {
+                "basic": {
+                    "hitBoxOffset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": -0.36000001430511477
+                    },
+                    "hitBoxSize": {
+                        "x": 0.6499999761581421,
+                        "y": 0.6200000047683716,
+                        "z": 0.5400000214576721
+                    },
+                    "damage": {
+                        "amount": 1,
+                        "type": 3
+                    },
+                    "animePlaySpeed": 2.0
+                },
+                "accelRate": 1.2000000476837159,
+                "lightSource": {
+                    "light": {
+                        "diffuseColor": {
+                            "x": 0.7686274647712708,
+                            "y": 1.0,
+                            "z": 0.6784313917160034,
+                            "w": 1.0
+                        },
+                        "specularColor": {
+                            "x": 0.501960813999176,
+                            "y": 1.0,
+                            "z": 0.7058823704719544,
+                            "w": 1.0
+                        },
+                        "ambientColor": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0,
+                            "w": 1.0
+                        }
+                    },
+                    "wsPos": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": -1.0
+                    },
+                    "attenuation": {
+                        "x": 1.0,
+                        "y": 0.3499999940395355,
+                        "z": 0.4399999976158142
+                    },
+                    "range": 13.0
+                }
+            }
+        ],
+        "chargedTracingInterval": 0.02500000037252903
+    }
+}

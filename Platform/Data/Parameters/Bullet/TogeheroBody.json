@@ -1,0 +1,28 @@
+{
+    "TogeheroBody": {
+        "cereal_class_version": 0,
+        "basic": {
+            "cereal_class_version": 1,
+            "hitBoxOffset": {
+                "cereal_class_version": 0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hitBoxSize": {
+                "x": 0.47999998927116396,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "damage": {
+                "cereal_class_version": 0,
+                "amount": 4,
+                "type": 2
+            },
+            "animePlaySpeed": -1.2000000476837159
+        },
+        "rotateSpeed": -192.8571014404297,
+        "zigzagDistance": 2.0,
+        "zigzagInterval": 0.699999988079071
+    }
+}

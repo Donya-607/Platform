@@ -8,6 +8,7 @@
 
 #include "Common.h"
 #include "Effect/EffectAdmin.h"
+#include "Enemies/SkeletonJoe.h"
 #include "Enemies/SuperBallMachine.h"
 #include "Enemies/Togehero.h"
 #include "FilePath.h"
@@ -28,7 +29,9 @@ namespace Enemy
 		{
 			"SuperBallMachine",
 			"Togehero",
+			"SkeletonJoe",
 		};
+		constexpr const char *ignoreName = "Togehero";
 
 		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
 
@@ -40,6 +43,19 @@ namespace Enemy
 			for ( size_t i = 0; i < kindCount; ++i )
 			{
 				if ( modelPtrs[i] ) { continue; }
+				// else
+				if ( strcmp( modelNames[i], ignoreName ) == 0 )
+				{
+					// Assign other something for do not make nullptr
+					for ( size_t j = 0; j < kindCount; ++j )
+					{
+						if ( j != i )
+						{
+							modelPtrs[i] = modelPtrs[j];
+						}
+					}
+					continue;
+				}
 				// else
 
 				filePath = MakeModelPath( folderName + modelNames[i] );
@@ -103,6 +119,7 @@ namespace Enemy
 		{
 			Impl::LoadTogehero();
 			Impl::LoadSuperBallMachine();
+			Impl::LoadSkeletonJoe();
 		}
 
 	#if USE_IMGUI
@@ -113,6 +130,7 @@ namespace Enemy
 
 			Impl::UpdateTogehero		( u8"Togehero" );
 			Impl::UpdateSuperBallMachine( u8"SuperBallMachine" );
+			Impl::UpdateSkeletonJoe		( u8"SkeletonJoe" );
 
 			ImGui::TreePop();
 		}
@@ -258,7 +276,7 @@ namespace Enemy
 
 		ApplyReceivedDamageIfHas();
 	}
-	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )
+	void Base::PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence )
 	{
 		if ( NowWaiting() ) { return; }
 		// else
@@ -269,10 +287,10 @@ namespace Enemy
 			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
 		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
 
-		Actor::MoveX( movement.x, aroundSolids );
-		Actor::MoveZ( movement.z, aroundSolids );
+		Actor::MoveX( movement.x, aroundSolids, considerBodyExistence );
+		Actor::MoveZ( movement.z, aroundSolids, considerBodyExistence );
 
-		const int collideIndex = Actor::MoveY( movement.y, aroundSolids );
+		const int collideIndex = Actor::MoveY( movement.y, aroundSolids, considerBodyExistence );
 		if ( collideIndex != -1 ) // If collided to any
 		{
 			// Consider as landing
@@ -309,13 +327,14 @@ namespace Enemy
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();
 
-		pRenderer->Render( model.pResource->model, model.pose );
+		pRenderer->Render( model.pResource->model, model.GetCurrentPose() );
 
 		pRenderer->DeactivateConstantModel();
 	}
 	void Base::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 	{
-		if ( NowWaiting() ) { return; }
+		if ( !pRenderer		) { return; }
+		if ( NowWaiting()	) { return; }
 		// else
 		
 	#if DEBUG_MODE
@@ -587,11 +606,9 @@ namespace Enemy
 		{
 		case Kind::SuperBallMachine:instance = std::make_shared<Enemy::SuperBallMachine>();	break;
 		case Kind::Togehero:		instance = std::make_shared<Enemy::Togehero>();			break;
-		// case Kind::SkeletonJoe:		instance = std::make_shared<Enemy::>();	break;
+		case Kind::SkeletonJoe:		instance = std::make_shared<Enemy::SkeletonJoe>();		break;
 		// case Kind::ShieldAttacker:	instance = std::make_shared<Enemy::>();	break;
 		// case Kind::Battonton:		instance = std::make_shared<Enemy::>();	break;
-		// case Kind::SkullMet:		instance = std::make_shared<Enemy::>();	break;
-		// case Kind::Imorm:			instance = std::make_shared<Enemy::>();	break;
 		default: break;
 		}
 
@@ -604,6 +621,68 @@ namespace Enemy
 
 		instance->Init( parameter, wsTargetPos, wsScreen );
 		enemyPtrs.emplace_back( std::move( instance ) );
+	}
+	void Admin::AdjustPosToLeftBottom( Donya::Vector3 *footPos, const Kind &kind ) const
+	{
+		/*
+		It adjustment is for hitbox.
+		The horizontal hitbox must there to center because that may rotate.
+		So adjust the position here.
+		However the vertical hitbox is not rotate, so here is not adjust.
+		*/
+
+		/*
+		[0:Empty, 1:Enemy chip, X:Enemy body]
+
+		If a map chip passed as:
+			0,0,0,0,0,
+			0,0,1,0,0,
+
+		It method to be:
+		(body size is [1,2])
+			0,0,X,0,0,
+			0,0,1,0,0,
+		(body size is [2,2])
+			0,0,X,X,0,
+			0,0,1,X,0,
+		(body size is [3,2])
+			0,0,X,X,X,
+			0,0,1,X,X,
+		*/
+
+		const size_t intKind = scast<size_t>( kind );
+		if ( kindCount <= intKind )
+		{
+			_ASSERT_EXPR( 0, L"Error: Unexpected Kind!" );
+			return;
+		}
+		// else
+
+		_ASSERT_EXPR( kindCount == 3, L"WARN: Append new kind to it!" );
+		constexpr std::array<int, kindCount> bodyWidths
+		{
+			2, // SuperBallMachine
+			1, // Togehero
+			2, // SkeletonJoe
+		};
+
+		int targetWidth = bodyWidths[intKind];
+		if ( targetWidth <= 1 ) { return; }
+		// else
+
+		// enemy's body width -> shift count
+		targetWidth--;
+
+		// The "footPos" is already shifted by the half tile size by the argument of Map::ToWorldPos().
+		// So first shift is half size.
+		footPos->x += Tile::unitWholeSize * 0.5f;
+		targetWidth--;
+		if ( targetWidth <= 0 ) { return; }
+		// else
+
+		// More shifts if the body width is greater than 2
+		const float shiftAmount = Tile::unitWholeSize * scast<float>( targetWidth );
+		footPos->x += shiftAmount;
 	}
 	void Admin::RemakeByCSV( const CSVLoader &loadedData, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
@@ -638,10 +717,11 @@ namespace Enemy
 			// else
 
 			InitializeParam tmp;
-			tmp.lookDirection	= InitializeParam::LookDirection::ToTarget;
+			tmp.lookDirection	= InitializeParam::LookDirection::ToTarget; // Default
 			tmp.wsPos			= Map::ToWorldPos( row, column, /* alignToCenterOfTile = */ true );
-			tmp.wsPos.y			-= Tile::unitWholeSize * 0.5f;
+			tmp.wsPos.y			-= Tile::unitWholeSize * 0.5f; // Foot pos
 			const Kind kind = scast<Kind>( id - StageFormat::EnemyStart );
+			AdjustPosToLeftBottom( &tmp.wsPos, kind );
 			AppendEnemy( kind, tmp, wsTargetPos, wsScreen );
 		};
 
@@ -692,6 +772,12 @@ namespace Enemy
 			ImGui::TreePop();
 		}
 
+		ShowIONode( stageNo, wsTargetPos, wsScreen );
+
+		ImGui::TreePop();
+	}
+	void Admin::ShowIONode( int stageNo, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	{
 		const auto result = ParameterHelper::ShowIONode();
 		using Op = ParameterHelper::IOOperation;
 		if ( result == Op::Save )
@@ -707,8 +793,6 @@ namespace Enemy
 		{
 			LoadEnemies( stageNo, wsTargetPos, wsScreen, false );
 		}
-
-		ImGui::TreePop();
 	}
 	void Admin::ShowInstanceNode( size_t index )
 	{

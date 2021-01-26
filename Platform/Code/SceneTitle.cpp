@@ -36,6 +36,7 @@
 #include "Parameter.h"
 #include "PlayerParam.h"			// Use for reset the remaining
 #include "PointLightStorage.h"
+#include "RenderingStuff.h"
 #include "SaveData.h"
 #include "StageNumber.h"
 
@@ -504,23 +505,13 @@ void SceneTitle::Init()
 	const auto &data = FetchParameter();
 
 	constexpr int stageNo = Definition::StageNumber::Title();
-	constexpr Donya::Int2 wholeScreenSize
-	{
-		Common::ScreenWidth(),
-		Common::ScreenHeight(),
-	};
 
 	bool result{};
 
 	{
-		result = CreateRenderers( wholeScreenSize );
-		assert( result );
-
-		result = CreateSurfaces( wholeScreenSize );
-		assert( result );
-
-		result = CreateShaders();
-		assert( result );
+		auto &renderer = RenderingStuffInstance::Get();
+		renderer.AssignBloomParameter( data.bloomParam );
+		renderer.ClearBuffers();
 
 		pSky = std::make_unique<Sky>();
 		result = pSky->Init();
@@ -639,6 +630,11 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 			CameraInit();
 		}
 	}
+
+	if ( Donya::Keyboard::Trigger( VK_SPACE ) )
+	{
+		RenderingStuffInstance::Get().ClearBuffers();
+	}
 #endif // DEBUG_MODE
 
 #if USE_IMGUI
@@ -647,7 +643,7 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	// Apply for be able to see an adjustment immediately
 	{
 		const auto &data = FetchParameter();
-		if ( pBloomer ) { pBloomer->AssignParameter( data.bloomParam ); }
+		RenderingStuffInstance::Get().AssignBloomParameter( data.bloomParam );
 
 		auto &effectAdmin = Effect::Admin::Get();
 		effectAdmin.SetLightColorAmbient( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
@@ -705,7 +701,7 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
-	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
+	Item::Admin::Get().Update( deltaTimeForMove, currentScreen, mapRef );
 
 	// PhysicUpdates
 	{
@@ -765,7 +761,8 @@ void SceneTitle::Draw( float elapsedTime )
 {
 	ClearBackGround();
 
-	if ( !AreRenderersReady() ) { return; }
+	RenderingStuff *p = RenderingStuffInstance::Get().Ptr();
+	if ( !p ) { return; }
 	// else
 
 	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix )
@@ -775,7 +772,7 @@ void SceneTitle::Draw( float elapsedTime )
 		constant.eyePosition		= eyePos;
 		constant.viewMatrix			= viewMatrix;
 		constant.viewProjMatrix		= viewProjectionMatrix;
-		pRenderer->UpdateConstant( constant );
+		p->renderer.UpdateConstant( constant );
 	};
 	auto DrawObjects			= [&]( DrawTarget option, bool castShadow )
 	{
@@ -788,29 +785,29 @@ void SceneTitle::Draw( float elapsedTime )
 		// The drawing priority is determined by the priority of the information.
 
 		( castShadow )
-		? pRenderer->ActivateShaderShadowStatic()
-		: pRenderer->ActivateShaderNormalStatic();
+		? p->renderer.ActivateShaderShadowStatic()
+		: p->renderer.ActivateShaderNormalStatic();
 
-		if ( Drawable( Kind::Map ) && pMap ) { pMap->Draw( pRenderer.get() ); }
-
-		( castShadow )
-		? pRenderer->DeactivateShaderShadowStatic()
-		: pRenderer->DeactivateShaderNormalStatic();
-
+		if ( Drawable( Kind::Map ) && pMap ) { pMap->Draw( &p->renderer ); }
 
 		( castShadow )
-		? pRenderer->ActivateShaderShadowSkinning()
-		: pRenderer->ActivateShaderNormalSkinning();
+		? p->renderer.DeactivateShaderShadowStatic()
+		: p->renderer.DeactivateShaderNormalStatic();
 
-		if ( Drawable( Kind::Player	) && pPlayer	) { pPlayer->Draw( pRenderer.get() );	}
-		if ( Drawable( Kind::Boss	) && pBoss		) { pBoss->Draw( pRenderer.get() );		}
-		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );		}
-		if ( Drawable( Kind::Item	) ) { Item::Admin::Get().Draw( pRenderer.get() );		}
-		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() );		}
 
 		( castShadow )
-		? pRenderer->DeactivateShaderShadowSkinning()
-		: pRenderer->DeactivateShaderNormalSkinning();
+		? p->renderer.ActivateShaderShadowSkinning()
+		: p->renderer.ActivateShaderNormalSkinning();
+
+		if ( Drawable( Kind::Player	) && pPlayer	)	{ pPlayer->				Draw( &p->renderer ); }
+		if ( Drawable( Kind::Boss	) && pBoss		)	{ pBoss->				Draw( &p->renderer ); }
+		if ( Drawable( Kind::Enemy	) )					{ Enemy::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Kind::Item	) )					{ Item::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Kind::Bullet	) )					{ Bullet::Admin::Get().	Draw( &p->renderer ); }
+
+		( castShadow )
+		? p->renderer.DeactivateShaderShadowSkinning()
+		: p->renderer.DeactivateShaderNormalSkinning();
 	};
 
 	Donya::Vector4   cameraPos{};
@@ -853,10 +850,11 @@ void SceneTitle::Draw( float elapsedTime )
 		const auto zFar			= curr.GetZFar();
 		const auto P			= Donya::Vector4x4::MakePerspectiveFovLH( lerpedFOV, screenSize.x / screenSize.y, zNear, zFar );
 		VP = V * P;
-
-		Effect::Admin::Get().SetViewMatrix( V );
+		
 		Effect::Admin::Get().SetProjectionMatrix( P );
 	}
+
+	Effect::Admin::Get().SetViewMatrix( V );
 
 	const Donya::Vector4   lightPos = Donya::Vector4{ lightCamera.GetPosition(), 1.0f };
 	const Donya::Vector4x4 LV  = CalcLightViewMatrix();
@@ -866,8 +864,8 @@ void SceneTitle::Draw( float elapsedTime )
 	// Draw the back-ground
 	if ( pSky )
 	{
-		pScreenSurface->SetRenderTarget();
-		pScreenSurface->SetViewport();
+		p->screenSurface.SetRenderTarget();
+		p->screenSurface.SetViewport();
 
 		pSky->Draw( cameraPos.XYZ(), VP );
 
@@ -876,12 +874,12 @@ void SceneTitle::Draw( float elapsedTime )
 
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
-	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
-	pRenderer->ActivateSamplerNormal( Donya::Sampler::Defined::Point_Wrap );
+	p->renderer.ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
+	p->renderer.ActivateSamplerNormal( Donya::Sampler::Defined::Point_Wrap );
 
 
-	pShadowMap->SetRenderTarget();
-	pShadowMap->SetViewport();
+	p->shadowMap.SetRenderTarget();
+	p->shadowMap.SetViewport();
 	// Make the shadow map
 	{
 		// Update scene constant as light source
@@ -890,16 +888,16 @@ void SceneTitle::Draw( float elapsedTime )
 			tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
 			UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP );
 		}
-		pRenderer->ActivateConstantScene();
+		p->renderer.ActivateConstantScene();
 
 		DrawObjects( DrawTarget::All, /* castShadow = */ true );
 
-		pRenderer->DeactivateConstantScene();
+		p->renderer.DeactivateConstantScene();
 	}
 	Donya::Surface::ResetRenderTarget();
 
-	pScreenSurface->SetRenderTarget();
-	pScreenSurface->SetViewport();
+	p->screenSurface.SetRenderTarget();
+	p->screenSurface.SetViewport();
 
 	// Draw normal scene with shadow map
 	{
@@ -911,33 +909,33 @@ void SceneTitle::Draw( float elapsedTime )
 			shadowConstant.lightProjMatrix	= LVP;
 			shadowConstant.shadowColor		= data.shadowMap.color;
 			shadowConstant.shadowBias		= data.shadowMap.bias;
-			pRenderer->UpdateConstant( shadowConstant );
+			p->renderer.UpdateConstant( shadowConstant );
 		}
 		// Update voxelize constant
 		{
-			pRenderer->UpdateConstant( data.voxelize );
+			p->renderer.UpdateConstant( data.voxelize );
 		}
 		// Update point light constant
 		{
-			pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
+			p->renderer.UpdateConstant( PointLightStorage::Get().GetStorage() );
 		}
 
-		pRenderer->ActivateConstantScene();
-		pRenderer->ActivateConstantPointLight();
-		pRenderer->ActivateConstantShadow();
-		pRenderer->ActivateConstantVoxelize();
-		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
-		pRenderer->ActivateShadowMap( *pShadowMap );
+		p->renderer.ActivateConstantScene();
+		p->renderer.ActivateConstantPointLight();
+		p->renderer.ActivateConstantShadow();
+		p->renderer.ActivateConstantVoxelize();
+		p->renderer.ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
+		p->renderer.ActivateShadowMap( p->shadowMap );
 
 		constexpr DrawTarget option = DrawTarget::All ^ DrawTarget::Bullet ^ DrawTarget::Item;
 		DrawObjects( option, /* castShadow = */ false );
 
 		// Disable shadow
 		{
-			pRenderer->DeactivateConstantShadow();
+			p->renderer.DeactivateConstantShadow();
 			shadowConstant.shadowBias = 1.0f; // Make the pixel to nearest
-			pRenderer->UpdateConstant( shadowConstant );
-			pRenderer->ActivateConstantShadow();
+			p->renderer.UpdateConstant( shadowConstant );
+			p->renderer.ActivateConstantShadow();
 		}
 
 		DrawObjects( DrawTarget::Item, /* castShadow = */ false );
@@ -946,16 +944,16 @@ void SceneTitle::Draw( float elapsedTime )
 		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 
-		pRenderer->DeactivateShadowMap( *pShadowMap );
-		pRenderer->DeactivateSamplerShadow();
-		pRenderer->DeactivateConstantVoxelize();
-		pRenderer->DeactivateConstantShadow();
-		pRenderer->DeactivateConstantPointLight();
-		pRenderer->DeactivateConstantScene();
+		p->renderer.DeactivateShadowMap( p->shadowMap );
+		p->renderer.DeactivateSamplerShadow();
+		p->renderer.DeactivateConstantVoxelize();
+		p->renderer.DeactivateConstantShadow();
+		p->renderer.DeactivateConstantPointLight();
+		p->renderer.DeactivateConstantScene();
 	}
 	
-	pRenderer->DeactivateSamplerNormal();
-	pRenderer->DeactivateSamplerModel();
+	p->renderer.DeactivateSamplerNormal();
+	p->renderer.DeactivateSamplerModel();
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
 
@@ -983,18 +981,18 @@ void SceneTitle::Draw( float elapsedTime )
 
 	// Generate the buffers of bloom
 	{
-		constexpr Donya::Vector4 black{ 0.0f, 0.0f, 0.0f, 1.0f };
-		pBloomer->ClearBuffers( black );
-
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
 		Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
 
+		const float oldDepth = Donya::Sprite::GetDrawDepth();
+		Donya::Sprite::SetDrawDepth( 0.0f );
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0 );
-		pBloomer->WriteLuminance( *pScreenSurface );
+		p->bloomer.WriteLuminance( p->screenSurface );
 		Donya::Sampler::ResetPS( 0 );
+		Donya::Sprite::SetDrawDepth( oldDepth );
 
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
-		pBloomer->WriteBlur();
+		p->bloomer.WriteBlur();
 		Donya::Sampler::ResetPS( 0 );
 
 		Donya::Rasterizer::Deactivate();
@@ -1006,8 +1004,8 @@ void SceneTitle::Draw( float elapsedTime )
 		const auto pFontRenderer = FontHelper::GetRendererOrNullptr( FontAttribute::Main );
 		if ( pFontRenderer )
 		{
-			pScreenSurface->SetRenderTarget();
-			pScreenSurface->SetViewport();
+			p->screenSurface.SetRenderTarget();
+			p->screenSurface.SetViewport();
 
 			constexpr Donya::Vector2 pivot			{ 0.5f, 0.5f };
 			constexpr Donya::Vector4 selectColor	{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -1121,7 +1119,7 @@ void SceneTitle::Draw( float elapsedTime )
 
 	Donya::SetDefaultRenderTargets();
 
-	const Donya::Vector2 screenSurfaceSize = pScreenSurface->GetSurfaceSizeF();
+	const Donya::Vector2 screenSurfaceSize = p->screenSurface.GetSurfaceSizeF();
 
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
@@ -1130,29 +1128,29 @@ void SceneTitle::Draw( float elapsedTime )
 	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA );
 	// Draw the scene to screen
 	{
-		pQuadShader->VS.Activate();
-		pQuadShader->PS.Activate();
+		p->quadShader.VS.Activate();
+		p->quadShader.PS.Activate();
 
-		pScreenSurface->SetRenderTargetShaderResourcePS( 0U );
+		p->screenSurface.SetRenderTargetShaderResourcePS( 0U );
 
 		Donya::Sprite::SetDrawDepth( 1.0f );
-		pDisplayer->Draw
+		p->displayer.Draw
 		(
 			screenSurfaceSize,
 			Donya::Vector2::Zero()
 		);
 
-		pScreenSurface->ResetShaderResourcePS( 0U );
+		p->screenSurface.ResetShaderResourcePS( 0U );
 
-		pQuadShader->PS.Deactivate();
-		pQuadShader->VS.Deactivate();
+		p->quadShader.PS.Deactivate();
+		p->quadShader.VS.Deactivate();
 	}
 	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 	Donya::Sampler::ResetPS( 0 );
 
 	// Add the bloom buffers
 	Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
-	pBloomer->DrawBlurBuffers( screenSurfaceSize );
+	p->bloomer.DrawBlurBuffers( screenSurfaceSize );
 	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 
 	Donya::Rasterizer::Deactivate();
@@ -1162,13 +1160,13 @@ void SceneTitle::Draw( float elapsedTime )
 	// Object's hit/hurt boxes
 	if ( Common::IsShowCollision() )
 	{
-		if ( pPlayer	) { pPlayer->DrawHitBox( pRenderer.get(), VP );					}
-		if ( pBoss		) { pBoss->DrawHitBox( pRenderer.get(), VP );					}
-		if ( pMap		) { pMap->DrawHitBoxes( currentScreen, pRenderer.get(), VP );	}
-		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		Enemy ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		Item  ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		if ( pHouse		) { pHouse->DrawHitBoxes( pRenderer.get(), VP );				}
+		if ( pPlayer	) { pPlayer->	DrawHitBox	( &p->renderer, VP );	}
+		if ( pBoss		) { pBoss->		DrawHitBox	( &p->renderer, VP );	}
+		if ( pMap		) { pMap->		DrawHitBoxes( currentScreen, &p->renderer, VP ); }
+		Bullet::Admin::Get().DrawHitBoxes( &p->renderer, VP );
+		Enemy ::Admin::Get().DrawHitBoxes( &p->renderer, VP );
+		Item  ::Admin::Get().DrawHitBoxes( &p->renderer, VP );
+		if ( pHouse		) { pHouse->	DrawHitBoxes( &p->renderer, VP );	}
 	}
 #endif // DEBUG_MODE
 
@@ -1198,7 +1196,7 @@ void SceneTitle::Draw( float elapsedTime )
 			constant.matWorld._41 = pos.x;
 			constant.matWorld._42 = pos.y;
 			constant.matWorld._43 = pos.z;
-			pRenderer->ProcessDrawingCube( constant );
+			p->renderer.ProcessDrawingCube( constant );
 		};
 
 		// Screen box
@@ -1275,79 +1273,6 @@ void SceneTitle::Draw( float elapsedTime )
 #endif // DEBUG_MODE
 }
 
-bool SceneTitle::CreateRenderers( const Donya::Int2 &wholeScreenSize )
-{
-	bool succeeded = true;
-
-	pRenderer = std::make_unique<RenderingHelper>();
-	if ( !pRenderer->Init() ) { succeeded = false; }
-
-	pDisplayer = std::make_unique<Donya::Displayer>();
-	if ( !pDisplayer->Init() ) { succeeded = false; }
-
-	pBloomer = std::make_unique<BloomApplier>();
-	if ( !pBloomer->Init( wholeScreenSize ) ) { succeeded = false; }
-	pBloomer->AssignParameter( FetchParameter().bloomParam );
-
-	return succeeded;
-}
-bool SceneTitle::CreateSurfaces( const Donya::Int2 &wholeScreenSize )
-{
-	bool succeeded	= true;
-	bool result		= true;
-
-	pScreenSurface = std::make_unique<Donya::Surface>();
-	result = pScreenSurface->Init
-	(
-		wholeScreenSize.x,
-		wholeScreenSize.y,
-		DXGI_FORMAT_R16G16B16A16_FLOAT
-	);
-	if ( !result ) { succeeded = false; }
-	else { pScreenSurface->Clear( Donya::Color::Code::BLACK ); }
-
-	pShadowMap = std::make_unique<Donya::Surface>();
-	result = pShadowMap->Init
-	(
-		wholeScreenSize.x,
-		wholeScreenSize.y,
-		DXGI_FORMAT_R32_FLOAT, true,
-		DXGI_FORMAT_R32_TYPELESS, true
-	);
-	if ( !result ) { succeeded = false; }
-	else { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
-
-	return succeeded;
-}
-bool SceneTitle::CreateShaders()
-{
-	constexpr const char *VSPath = "./Data/Shaders/DisplayQuadVS.cso";
-	constexpr const char *PSPath = "./Data/Shaders/DisplayQuadPS.cso";
-	constexpr auto IEDescs = Donya::Displayer::Vertex::GenerateInputElements();
-
-	// The vertex shader requires IE-descs as std::vector<>
-	const std::vector<D3D11_INPUT_ELEMENT_DESC> IEDescsV{ IEDescs.begin(), IEDescs.end() };
-
-	bool succeeded = true;
-
-	pQuadShader = std::make_unique<Shader>();
-	if ( !pQuadShader->VS.CreateByCSO( VSPath, IEDescsV	) ) { succeeded = false; }
-	if ( !pQuadShader->PS.CreateByCSO( PSPath			) ) { succeeded = false; }
-
-	return succeeded;
-}
-bool SceneTitle::AreRenderersReady() const
-{
-	if ( !pRenderer			) { return false; }
-	if ( !pDisplayer		) { return false; }
-	if ( !pBloomer			) { return false; }
-	if ( !pScreenSurface	) { return false; }
-	if ( !pShadowMap		) { return false; }
-	if ( !pQuadShader		) { return false; }
-	// else
-	return true;
-}
-
 void SceneTitle::LoadSaveData()
 {
 	const bool oldExistence = saveDataIsExist;
@@ -1391,7 +1316,7 @@ void SceneTitle::UpdateChooseItem()
 	const bool trgRight		= Tilted( curr.moveVelocity.x, +1 ) && !Tilted( prev.moveVelocity.x, +1 );
 	const bool trgUp		= Tilted( curr.moveVelocity.y, +1 ) && !Tilted( prev.moveVelocity.y, +1 );
 	const bool trgDown		= Tilted( curr.moveVelocity.y, -1 ) && !Tilted( prev.moveVelocity.y, -1 );
-	const bool trgDecide	= Input::HasTrue( curr.useShots ) && !Input::HasTrue( prev.useShots );
+	const bool trgDecide	= controller.Trigger( Donya::Gamepad::Button::START ) || ( Input::HasTrue( curr.useShots ) && !Input::HasTrue( prev.useShots ) );
 
 	if ( saveDataIsExist )
 	{
@@ -1967,21 +1892,18 @@ int  SceneTitle::CalcCurrentRoomID() const
 
 void SceneTitle::ClearBackGround() const
 {
-	if ( pShadowMap ) { pShadowMap->Clear( Donya::Color::Code::BLACK ); }
+	RenderingStuffInstance::Get().ClearBuffers();
 
 	constexpr Donya::Vector3 gray = Donya::Color::MakeColor( Donya::Color::Code::GRAY );
 	constexpr FLOAT BG_COLOR[4]{ gray.x, gray.y, gray.z, 1.0f };
 	Donya::ClearViews( BG_COLOR );
 
-	if ( pScreenSurface ) { pScreenSurface->Clear( Donya::Vector4{ gray, 1.0f } ); }
 #if DEBUG_MODE
 	if ( nowDebugMode )
 	{
 		constexpr Donya::Vector3 teal = Donya::Color::MakeColor( Donya::Color::Code::CYAN );
 		constexpr FLOAT DEBUG_COLOR[4]{ teal.x, teal.y, teal.z, 1.0f };
 		Donya::ClearViews( DEBUG_COLOR );
-
-		if ( pScreenSurface ) { pScreenSurface->Clear( Donya::Vector4{ teal, 1.0f } ); }
 	}
 #endif // DEBUG_MODE
 }
@@ -2166,8 +2088,10 @@ void SceneTitle::UseImGui()
 		};
 		auto ApplyToItem	= [&]( const CSVLoader &loadedData )
 		{
+			const Map emptyMap{}; // Used for empty argument. Fali safe.
+			const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 			Item::Admin::Get().ClearInstances();
-			Item::Admin::Get().RemakeByCSV( loadedData );
+			Item::Admin::Get().RemakeByCSV( loadedData, mapRef );
 
 			if ( thenSave )
 			{
@@ -2379,7 +2303,9 @@ void SceneTitle::UseImGui()
 		Enemy::Parameter::Update( u8"敵のパラメータ" );
 		ImGui::Text( "" );
 
-		Item::Admin::Get().ShowImGuiNode( u8"アイテムの現在", stageNo );
+		const Map emptyMap{}; // Used for empty argument. Fali safe.
+		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+		Item::Admin::Get().ShowImGuiNode( u8"アイテムの現在", stageNo, mapRef );
 		Item::Parameter::Update( u8"アイテムのパラメータ" );
 		ImGui::Text( "" );
 
@@ -2395,35 +2321,8 @@ void SceneTitle::UseImGui()
 		ImGui::TreePop();
 	}
 
-	if ( ImGui::TreeNode( u8"サーフェス描画" ) )
-	{
-		static Donya::Vector2 drawSize{ 320.0f, 180.0f };
-		ImGui::DragFloat2( u8"描画サイズ", &drawSize.x, 10.0f );
-		drawSize.x = std::max( 10.0f, drawSize.x );
-		drawSize.y = std::max( 10.0f, drawSize.y );
+	RenderingStuffInstance::Get().ShowSurfacesToImGui( u8"サーフェス描画" );
 
-		if ( pShadowMap && ImGui::TreeNode( u8"シャドウマップ" ) )
-		{
-			pShadowMap->DrawDepthStencilToImGui( drawSize );
-			ImGui::TreePop();
-		}
-		if ( pScreenSurface && ImGui::TreeNode( u8"スクリーン" ) )
-		{
-			pScreenSurface->DrawRenderTargetToImGui( drawSize );
-			ImGui::TreePop();
-		}
-		if ( pBloomer && ImGui::TreeNode( u8"ブルーム" ) )
-		{
-			ImGui::Text( u8"輝度抽出：" );
-			pBloomer->DrawHighLuminanceToImGui( drawSize );
-			ImGui::Text( u8"縮小バッファたち：" );
-			pBloomer->DrawBlurBuffersToImGui( drawSize );
-			ImGui::TreePop();
-		}
-
-		ImGui::TreePop();
-	}
-	
 	ImGui::End();
 }
 #endif // USE_IMGUI

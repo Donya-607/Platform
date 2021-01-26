@@ -10,12 +10,9 @@
 #include "Donya/Collision.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
 #include "Donya/GamepadXInput.h"
-#include "Donya/Shader.h"
-#include "Donya/Surface.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
 #include "Boss.h"
-#include "Bloom.h"
 #include "CheckPoint.h"
 #include "ClearEvent.h"
 #include "Door.h"
@@ -26,7 +23,6 @@
 #include "PauseProcessor.h"
 #include "Performances/LoadPart.h"
 #include "Player.h"
-#include "Renderer.h"
 #include "Room.h"
 #include "Scene.h"
 #include "Sky.h"
@@ -51,11 +47,6 @@ public:
 		Donya::Vector3	cameraFocusStart;
 		Donya::Vector3	cameraFocusDest;
 	};
-	struct Shader
-	{
-		Donya::VertexShader VS;
-		Donya::PixelShader  PS;
-	};
 private:
 	Donya::ICamera						iCamera;
 	Scroll								scroll;
@@ -73,13 +64,6 @@ private:
 	State								status				= State::FirstInitialize;
 
 	Performer::LoadPart					loadPerformer;
-
-	std::unique_ptr<RenderingHelper>	pRenderer;
-	std::unique_ptr<Donya::Displayer>	pDisplayer;
-	std::unique_ptr<BloomApplier>		pBloomer;
-	std::unique_ptr<Donya::Surface>		pScreenSurface;
-	std::unique_ptr<Donya::Surface>		pShadowMap;
-	std::unique_ptr<Shader>				pQuadShader;
 	std::unique_ptr<PauseProcessor>		pPauser;
 
 	std::unique_ptr<Meter::Drawer>		pPlayerMeter;
@@ -106,8 +90,7 @@ private:
 	
 	Definition::WeaponKind	willUnlockWeapon	= Definition::WeaponKind::Buster; // "::Buster" means a none(that is always available)
 
-	Thread	thObjects;
-	Thread	thRenderers;
+	Thread thObjects;
 	
 #if DEBUG_MODE
 	bool	nowDebugMode				= false;
@@ -128,11 +111,6 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
-	bool	CreateRenderers( const Donya::Int2 &wholeScreenSize );
-	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
-	bool	CreateShaders();
-	bool	AreRenderersReady() const;
-
 	void	PlayBGM( Music::ID kind );
 	void	FadeOutBGM() const;
 
@@ -169,11 +147,15 @@ private:
 	void	AssignCameraPos();
 	void	CameraUpdate( float elapsedTime );
 
+	void	UpdateCurrentRoomID();
+
 	Donya::Vector4x4 CalcLightViewMatrix() const;
+
 
 	void	ReadyPlayer();
 	void	PlayerInit( const PlayerInitializer &initializer, const Map &terrain );
 	void	PlayerUpdate( float elapsedTime, const Map &terrain );
+	void	PlayerPhysicUpdate( float elapsedTime, const Map &terrain );
 	Donya::Vector3 GetPlayerPosition() const;
 	Donya::Vector3 MakeBossRoomInitialPosOf( int roomId ) const;
 	Player::Input  MakePlayerInput( float elapsedTime );
@@ -181,6 +163,7 @@ private:
 	void	UpdatePlayerIniter();
 
 	void	DoorUpdate();
+	bool	NowThroughingDoor() const;
 
 	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
 

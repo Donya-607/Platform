@@ -189,19 +189,23 @@ float3 CalcPointLightInfl( PointLight plight, const float3 wsPixelPos, const flo
 	float3	lightVec		= plight.wsPos.xyz - wsPixelPos;
 	float	distance		= length( lightVec );
 	
-	[branch]
-	if ( plight.range < distance ) { return 0; }
-	// else
+	// Pre-declare for avoid the warning X4000: use of potentially uninitialized variable
+	float3	influence		= 0;
+
+	if ( distance <= plight.range )
+	{
+		float3	nLightVec	= normalize( lightVec );
 	
-	float3	nLightVec		= normalize( lightVec );
+		float3	lightColor	= CalcLightInfluence( plight.light, nLightVec, nwsNormal, nwsEyeVec, ambient, diffuse, specular, shininess );
 	
-	float3	lightColor		= CalcLightInfluence( plight.light, nLightVec, nwsNormal, nwsEyeVec, ambient, diffuse, specular, shininess );
-	
-	float	attenuation		= plight.attenuation.x +
+		float	attenuation	= plight.attenuation.x +
 							  plight.attenuation.y * distance +
 							  plight.attenuation.z * distance * distance;
 	
-	return	lightColor / ( attenuation + EPSILON );
+				influence	= lightColor / ( attenuation + EPSILON );
+	}
+	
+	return influence;
 }
 
 // Calculate shadowing percent.

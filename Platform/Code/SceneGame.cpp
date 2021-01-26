@@ -22,6 +22,7 @@
 #include "Donya/Random.h"
 #endif // DEBUG_MODE
 
+#include "Bloom.h"
 #include "Bosses/Skull.h"			// Use SkullParam
 #include "Bullet.h"
 #include "Common.h"
@@ -40,6 +41,7 @@
 #include "Parameter.h"
 #include "PlayerParam.h"
 #include "PointLightStorage.h"
+#include "RenderingStuff.h"
 #include "SaveData.h"
 #include "StageNumber.h"
 
@@ -51,6 +53,10 @@
 namespace
 {
 #if DEBUG_MODE
+	constexpr bool  wantSilence  = true;
+	constexpr float silentSecond = 0.5f;
+	constexpr float silentVolume = 0.2f;
+
 	constexpr bool IOFromBinary = false;
 #else
 	constexpr bool IOFromBinary = true;
@@ -452,46 +458,30 @@ void SceneGame::Init()
 		constexpr auto stayFirstState = State::FirstInitialize;
 		pScene->InitStage( pScene->currentPlayingBGM, pScene->stageNumber, /* reloadModel = */ true, stayFirstState );
 
-		pResult->WriteResult( succeeded );
-		CoUninitialize();
-	};
-	auto InitRenderers	= [coInitValue]( SceneGame *pScene, Thread::Result *pResult )
-	{
-		if ( !pScene || !pResult ) { assert( !"HUMAN ERROR" ); return; }
-		// else
-
-		HRESULT hr = CoInitializeEx( NULL, coInitValue );
-		if ( FAILED( hr ) )
-		{
-			pResult->WriteResult( /* wasSucceeded = */ false );
-			return;
-		}
-		// else
-
-		bool succeeded	= true;
-		bool result		= true;
-
-		constexpr Donya::Int2 wholeScreenSize
-		{
-			Common::ScreenWidth(),
-			Common::ScreenHeight(),
-		};
-
-		result = pScene->CreateRenderers( wholeScreenSize );
-		if ( !result ) { succeeded = false; }
-
-		result = pScene->CreateSurfaces( wholeScreenSize );
-		if ( !result ) { succeeded = false; }
-
-		result = pScene->CreateShaders();
-		if ( !result ) { succeeded = false; }
+		// The item depends on the map for detect to be buried.
+		// So must initialize after the map's initialize.
+		auto &itemAdmin = Item::Admin::Get();
+		const Map emptyMap{}; // Used for empty argument. Fali safe.
+		const Map &mapRef = ( pScene->pMap ) ? *pScene->pMap : emptyMap;
+		itemAdmin.ClearInstances();
+		itemAdmin.LoadItems( pScene->stageNumber, mapRef, IOFromBinary );
+	#if DEBUG_MODE
+		itemAdmin.SaveItems( pScene->stageNumber, true );
+	#endif // DEBUG_MODE
 
 		pResult->WriteResult( succeeded );
 		CoUninitialize();
 	};
+	thObjects.pThread	= std::make_unique<std::thread>( InitObjects, this, &thObjects.result );
+	
+	auto &renderer = RenderingStuffInstance::Get();
+	renderer.AssignBloomParameter( FetchParameter().bloomParam );
+	renderer.ClearBuffers();
 
-	thObjects.pThread	= std::make_unique<std::thread>( InitObjects,	this, &thObjects.result );
-	thRenderers.pThread	= std::make_unique<std::thread>( InitRenderers,	this, &thRenderers.result );
+	auto &effectAdmin = Effect::Admin::Get();
+	effectAdmin.SetLightColorAmbient( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
+	effectAdmin.SetLightColorDiffuse( Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f } );
+	effectAdmin.SetLightDirection	( FetchParameter().directionalLight.direction.XYZ() );
 }
 void SceneGame::Uninit()
 {
@@ -557,7 +547,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	// Apply for be able to see an adjustment immediately
 	if ( status != State::FirstInitialize )
 	{
-		if ( pBloomer ) { pBloomer->AssignParameter( FetchParameter().bloomParam ); }
+		RenderingStuffInstance::Get().AssignBloomParameter( FetchParameter().bloomParam );
 
 		const auto &data = FetchParameter();
 		if ( pPlayerMeter ) { pPlayerMeter->SetDrawOption( data.playerMeter.hpDrawPos, data.playerMeter.hpDrawColor, data.playerMeter.hpDrawScale ); }
@@ -619,12 +609,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 
 	const int oldRoomID = currentRoomID;
-	if ( scroll.active )
-	{
-		// Update the roomID if the game is pausing for the scroll.
-		// That limit prevents the camera moves to not allowed direction.
-		currentRoomID = CalcCurrentRoomID();
-	}
+	UpdateCurrentRoomID();
 	const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
 	if ( oldRoomID != currentRoomID )
 	{
@@ -668,88 +653,18 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	Bullet::Admin::Get().Update( deltaTimeForMove, currentScreen );
 	Enemy::Admin::Get().Update( deltaTimeForMove, playerPos, currentScreen );
 	BossUpdate( deltaTimeForMove, playerPos );
-	Item::Admin::Get().Update( deltaTimeForMove, currentScreen );
+	Item::Admin::Get().Update( deltaTimeForMove, currentScreen, mapRef );
 
 
 
-	// PhysicUpdates
-	{
-		using Dir = Definition::Direction;
+	PlayerPhysicUpdate( deltaTimeForMove, mapRef );
+	Bullet::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
+	Enemy::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
+	Item::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
+	if ( pBossContainer ) { pBossContainer->PhysicUpdate( deltaTimeForMove, mapRef ); }
+	
 
-		const auto currentRoomArea	= ( pCurrentRoom )
-									? pHouse->CalcRoomArea( currentRoomID )
-									: currentScreen; // Fail safe
-		const auto transitionable	= ( pCurrentRoom )
-									? pCurrentRoom->GetTransitionableDirection()
-									: Dir::Nil;
-
-		if ( pPlayer )
-		{
-			prevPlayerPos = pPlayer->GetPosition();
-
-			const float leftBorder	= Contain( transitionable, Dir::Left )
-									? -FLT_MAX
-									: currentRoomArea.Min().x;
-			const float rightBorder	= Contain( transitionable, Dir::Right )
-									? FLT_MAX
-									: currentRoomArea.Max().x;
-			pPlayer->PhysicUpdate( deltaTimeForMove, mapRef, leftBorder, rightBorder );
-			
-			const int movedRoomID = CalcCurrentRoomID();
-			if ( movedRoomID != currentRoomID )
-			{
-				// RoomID will update in next frame of the game.
-				// But if the scroll is not allowed, stay in the current room.
-
-				// If allow the scroll to a connecting room, the scroll waiting will occur as strange.
-				if ( pCurrentRoom && !pCurrentRoom->IsConnectTo( movedRoomID ) )
-				{
-					bool scrollToUp		= false;
-					bool scrollToDown	= false;
-					{
-						const auto movedRoomArea = pHouse->CalcRoomArea( movedRoomID );
-						if ( currentRoomArea.pos.y < movedRoomArea.pos.y )
-						{
-							scrollToUp		= true;
-						}
-						if ( currentRoomArea.pos.y > movedRoomArea.pos.y )
-						{
-							scrollToDown	= true;
-						}
-					}
-
-					if ( scrollToUp )
-					{
-						if ( pPlayer->NowGrabbingLadder() && Contain( transitionable, Dir::Up ) )
-						{
-							PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-						}
-					}
-					else
-					if ( scrollToDown )
-					{
-						if ( Contain( transitionable, Dir::Down ) )
-						{
-							PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-						}
-					}
-					else
-					{
-						PrepareScrollIfNotActive( currentRoomID, movedRoomID );
-					}
-				}
-			}
-		}
-
-		Bullet::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
-		Enemy::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
-		Item::Admin::Get().PhysicUpdate( deltaTimeForMove, mapRef );
-
-		if ( pBossContainer ) { pBossContainer->PhysicUpdate( deltaTimeForMove, mapRef ); }
-	}
-
-
-	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
+	// AssignCameraPos() (will called in CameraUpdate()) depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate( elapsedTime );
 
@@ -820,7 +735,8 @@ void SceneGame::Draw( float elapsedTime )
 	}
 	// else
 
-	if ( !AreRenderersReady() ) { return; }
+	RenderingStuff *p = RenderingStuffInstance::Get().Ptr();
+	if ( !p ) { return; }
 	// else
 
 	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix, bool applyToEffect )
@@ -830,14 +746,15 @@ void SceneGame::Draw( float elapsedTime )
 		constant.eyePosition		= eyePos;
 		constant.viewMatrix			= viewMatrix;
 		constant.viewProjMatrix		= viewProjectionMatrix;
-		pRenderer->UpdateConstant( constant );
+		p->renderer.UpdateConstant( constant );
 
 		if ( applyToEffect )
 		{
 			auto &effectAdmin = Effect::Admin::Get();
 			effectAdmin.SetViewMatrix( viewMatrix );
-			effectAdmin.SetLightColorAmbient( directionalLight.light.ambientColor );
-			effectAdmin.SetLightColorDiffuse( directionalLight.light.diffuseColor );
+			// Currently I judge to it is not necessary
+			// effectAdmin.SetLightColorAmbient( directionalLight.light.ambientColor );
+			// effectAdmin.SetLightColorDiffuse( directionalLight.light.diffuseColor );
 			effectAdmin.SetLightDirection	( directionalLight.direction.XYZ() );
 		}
 	};
@@ -852,30 +769,30 @@ void SceneGame::Draw( float elapsedTime )
 		// The drawing priority is determined by the priority of the information.
 
 		( castShadow )
-		? pRenderer->ActivateShaderShadowStatic()
-		: pRenderer->ActivateShaderNormalStatic();
+		? p->renderer.ActivateShaderShadowStatic()
+		: p->renderer.ActivateShaderNormalStatic();
 
-		if ( Drawable( Kind::Map ) && pMap ) { pMap->Draw( pRenderer.get() ); }
-
-		( castShadow )
-		? pRenderer->DeactivateShaderShadowStatic()
-		: pRenderer->DeactivateShaderNormalStatic();
-
+		if ( Drawable( Kind::Map ) && pMap ) { pMap->Draw( &p->renderer ); }
 
 		( castShadow )
-		? pRenderer->ActivateShaderShadowSkinning()
-		: pRenderer->ActivateShaderNormalSkinning();
+		? p->renderer.DeactivateShaderShadowStatic()
+		: p->renderer.DeactivateShaderNormalStatic();
 
-		if ( Drawable( Kind::Player	) && pPlayer		) { pPlayer->Draw( pRenderer.get() );			}
-		if ( Drawable( Kind::Boss	) && pBossContainer	) { pBossContainer->Draw( pRenderer.get() );	}
-		if ( Drawable( Kind::Enemy	) ) { Enemy::Admin::Get().Draw( pRenderer.get() );					}
-		if ( Drawable( Kind::Door	) && pDoors			) { pDoors->Draw( pRenderer.get() );			}
-		if ( Drawable( Kind::Item	) ) { Item::Admin::Get().Draw( pRenderer.get() );					}
-		if ( Drawable( Kind::Bullet	) ) { Bullet::Admin::Get().Draw( pRenderer.get() );					}
 
 		( castShadow )
-		? pRenderer->DeactivateShaderShadowSkinning()
-		: pRenderer->DeactivateShaderNormalSkinning();
+		? p->renderer.ActivateShaderShadowSkinning()
+		: p->renderer.ActivateShaderNormalSkinning();
+
+		if ( Drawable( Kind::Player	) && pPlayer		)	{ pPlayer->				Draw( &p->renderer ); }
+		if ( Drawable( Kind::Boss	) && pBossContainer	)	{ pBossContainer->		Draw( &p->renderer ); }
+		if ( Drawable( Kind::Enemy	) )						{ Enemy::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Kind::Door	) && pDoors			)	{ pDoors->				Draw( &p->renderer ); }
+		if ( Drawable( Kind::Item	) )						{ Item::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Kind::Bullet	) )						{ Bullet::Admin::Get().	Draw( &p->renderer ); }
+
+		( castShadow )
+		? p->renderer.DeactivateShaderShadowSkinning()
+		: p->renderer.DeactivateShaderNormalSkinning();
 	};
 	
 #if DEBUG_MODE
@@ -902,8 +819,8 @@ void SceneGame::Draw( float elapsedTime )
 	// Draw the back-ground
 	if ( pSky )
 	{
-		pScreenSurface->SetRenderTarget();
-		pScreenSurface->SetViewport();
+		p->screenSurface.SetRenderTarget();
+		p->screenSurface.SetViewport();
 		
 		pSky->Draw( cameraPos.XYZ(), VP );
 
@@ -912,11 +829,11 @@ void SceneGame::Draw( float elapsedTime )
 
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullBack_CCW );
-	pRenderer->ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
-	pRenderer->ActivateSamplerNormal( Donya::Sampler::Defined::Point_Wrap );
+	p->renderer.ActivateSamplerModel( Donya::Sampler::Defined::Aniso_Wrap );
+	p->renderer.ActivateSamplerNormal( Donya::Sampler::Defined::Point_Wrap );
 
-	pShadowMap->SetRenderTarget();
-	pShadowMap->SetViewport();
+	p->shadowMap.SetRenderTarget();
+	p->shadowMap.SetViewport();
 	// Make the shadow map
 	{
 		// Update scene constant as light source
@@ -925,16 +842,16 @@ void SceneGame::Draw( float elapsedTime )
 			tmpDirLight.direction = Donya::Vector4{ data.shadowMap.projectDirection.Unit(), 0.0f };
 			UpdateSceneConstant( tmpDirLight, lightPos, LV, LVP, /* applyToEffect = */ false );
 		}
-		pRenderer->ActivateConstantScene();
+		p->renderer.ActivateConstantScene();
 
 		DrawObjects( DrawTarget::All, /* castShadow = */ true );
 
-		pRenderer->DeactivateConstantScene();
+		p->renderer.DeactivateConstantScene();
 	}
 	Donya::Surface::ResetRenderTarget();
 
-	pScreenSurface->SetRenderTarget();
-	pScreenSurface->SetViewport();
+	p->screenSurface.SetRenderTarget();
+	p->screenSurface.SetViewport();
 	// Draw normal scene with shadow map
 	{
 		RenderingHelper::ShadowConstant shadowConstant{};
@@ -950,33 +867,33 @@ void SceneGame::Draw( float elapsedTime )
 			shadowConstant.lightProjMatrix	= LVP;
 			shadowConstant.shadowColor		= data.shadowMap.color;
 			shadowConstant.shadowBias		= data.shadowMap.bias;
-			pRenderer->UpdateConstant( shadowConstant );
+			p->renderer.UpdateConstant( shadowConstant );
 		}
 		// Update voxelize constant
 		{
-			pRenderer->UpdateConstant( data.voxelize );
+			p->renderer.UpdateConstant( data.voxelize );
 		}
 		// Update point light constant
 		{
-			pRenderer->UpdateConstant( PointLightStorage::Get().GetStorage() );
+			p->renderer.UpdateConstant( PointLightStorage::Get().GetStorage() );
 		}
 
-		pRenderer->ActivateConstantScene();
-		pRenderer->ActivateConstantPointLight();
-		pRenderer->ActivateConstantShadow();
-		pRenderer->ActivateConstantVoxelize();
-		pRenderer->ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
-		pRenderer->ActivateShadowMap( *pShadowMap );
+		p->renderer.ActivateConstantScene();
+		p->renderer.ActivateConstantPointLight();
+		p->renderer.ActivateConstantShadow();
+		p->renderer.ActivateConstantVoxelize();
+		p->renderer.ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
+		p->renderer.ActivateShadowMap( p->shadowMap );
 
 		constexpr DrawTarget option = DrawTarget::All ^ DrawTarget::Bullet ^ DrawTarget::Item;
 		DrawObjects( option, /* castShadow = */ false );
 
 		// Disable shadow
 		{
-			pRenderer->DeactivateConstantShadow();
+			p->renderer.DeactivateConstantShadow();
 			shadowConstant.shadowBias = 1.0f; // Make the pixel to nearest
-			pRenderer->UpdateConstant( shadowConstant );
-			pRenderer->ActivateConstantShadow();
+			p->renderer.UpdateConstant( shadowConstant );
+			p->renderer.ActivateConstantShadow();
 		}
 
 		DrawObjects( DrawTarget::Item, /* castShadow = */ false );
@@ -985,38 +902,33 @@ void SceneGame::Draw( float elapsedTime )
 		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
 
-		pRenderer->DeactivateShadowMap( *pShadowMap );
-		pRenderer->DeactivateSamplerShadow();
-		pRenderer->DeactivateConstantVoxelize();
-		pRenderer->DeactivateConstantShadow();
-		pRenderer->DeactivateConstantPointLight();
-		pRenderer->DeactivateConstantScene();
+		p->renderer.DeactivateShadowMap( p->shadowMap );
+		p->renderer.DeactivateSamplerShadow();
+		p->renderer.DeactivateConstantVoxelize();
+		p->renderer.DeactivateConstantShadow();
+		p->renderer.DeactivateConstantPointLight();
+		p->renderer.DeactivateConstantScene();
 	}
 	Donya::Surface::ResetRenderTarget();
 
-	pRenderer->DeactivateSamplerModel();
+	p->renderer.DeactivateSamplerModel();
 	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
 
 	// Generate the buffers of bloom
 	{
-		constexpr Donya::Vector4 black{ 0.0f, 0.0f, 0.0f, 1.0f };
-		pBloomer->ClearBuffers( black );
-
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
 		Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
 
 		const float oldDepth = Donya::Sprite::GetDrawDepth();
 		Donya::Sprite::SetDrawDepth( 0.0f );
-
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Linear_Border_Black, 0 );
-		pBloomer->WriteLuminance( *pScreenSurface );
+		p->bloomer.WriteLuminance( p->screenSurface );
 		Donya::Sampler::ResetPS( 0 );
-
 		Donya::Sprite::SetDrawDepth( oldDepth );
 
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
-		pBloomer->WriteBlur();
+		p->bloomer.WriteBlur();
 		Donya::Sampler::ResetPS( 0 );
 
 		Donya::Rasterizer::Deactivate();
@@ -1025,7 +937,7 @@ void SceneGame::Draw( float elapsedTime )
 
 	Donya::SetDefaultRenderTargets();
 
-	const Donya::Vector2 screenSurfaceSize = pScreenSurface->GetSurfaceSizeF();
+	const Donya::Vector2 screenSurfaceSize = p->screenSurface.GetSurfaceSizeF();
 
 	Donya::Rasterizer::Activate( Donya::Rasterizer::Defined::Solid_CullNone );
 	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLessEq );
@@ -1034,21 +946,21 @@ void SceneGame::Draw( float elapsedTime )
 		Donya::Sampler::SetPS( Donya::Sampler::Defined::Aniso_Wrap, 0 );
 		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 
-		pQuadShader->VS.Activate();
-		pQuadShader->PS.Activate();
+		p->quadShader.VS.Activate();
+		p->quadShader.PS.Activate();
 
-		pScreenSurface->SetRenderTargetShaderResourcePS( 0U );
+		p->screenSurface.SetRenderTargetShaderResourcePS( 0U );
 
-		pDisplayer->Draw
+		p->displayer.Draw
 		(
 			screenSurfaceSize,
 			Donya::Vector2::Zero()
 		);
 
-		pScreenSurface->ResetShaderResourcePS( 0U );
+		p->screenSurface.ResetShaderResourcePS( 0U );
 
-		pQuadShader->PS.Deactivate();
-		pQuadShader->VS.Deactivate();
+		p->quadShader.PS.Deactivate();
+		p->quadShader.VS.Deactivate();
 
 		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 		Donya::Sampler::ResetPS( 0 );
@@ -1062,7 +974,7 @@ void SceneGame::Draw( float elapsedTime )
 		Donya::Sprite::SetDrawDepth( 0.0f );
 
 		Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
-		pBloomer->DrawBlurBuffers( screenSurfaceSize );
+		p->bloomer.DrawBlurBuffers( screenSurfaceSize );
 		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 
 		Donya::Sprite::SetDrawDepth( oldDepth );
@@ -1075,16 +987,16 @@ void SceneGame::Draw( float elapsedTime )
 	// Object's hit/hurt boxes
 	if ( Common::IsShowCollision() )
 	{
-		if ( pPlayer		) { pPlayer->DrawHitBox( pRenderer.get(), VP );					}
-		if ( pBossContainer	) { pBossContainer->DrawHitBoxes( pRenderer.get(), VP );		}
-		if ( pClearEvent	) { pClearEvent->DrawHitBoxes( pRenderer.get(), VP );			}
-		if ( pMap			) { pMap->DrawHitBoxes( currentScreen, pRenderer.get(), VP );	}
-		Bullet::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		Enemy ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		Item  ::Admin::Get().DrawHitBoxes( pRenderer.get(), VP );
-		checkPoint.DrawHitBoxes( pRenderer.get(), VP );
-		if ( pDoors			) { pDoors->DrawHitBoxes( pRenderer.get(), VP );				}
-		if ( pHouse			) { pHouse->DrawHitBoxes( pRenderer.get(), VP );				}
+		if ( pPlayer		) { pPlayer->		DrawHitBox	( &p->renderer, VP ); }
+		if ( pBossContainer	) { pBossContainer->DrawHitBoxes( &p->renderer, VP ); }
+		if ( pClearEvent	) { pClearEvent->	DrawHitBoxes( &p->renderer, VP ); }
+		if ( pMap			) { pMap->			DrawHitBoxes( currentScreen, &p->renderer, VP ); }
+		Bullet::Admin::Get().DrawHitBoxes( &p->renderer, VP );
+		Enemy ::Admin::Get().DrawHitBoxes( &p->renderer, VP );
+		Item  ::Admin::Get().DrawHitBoxes( &p->renderer, VP );
+		checkPoint.DrawHitBoxes( &p->renderer, VP );
+		if ( pDoors			) { pDoors->		DrawHitBoxes( &p->renderer, VP ); }
+		if ( pHouse			) { pHouse->		DrawHitBoxes( &p->renderer, VP ); }
 	}
 #endif // DEBUG_MODE
 
@@ -1132,7 +1044,7 @@ void SceneGame::Draw( float elapsedTime )
 			constant.matWorld._41 = pos.x;
 			constant.matWorld._42 = pos.y;
 			constant.matWorld._43 = pos.z;
-			pRenderer->ProcessDrawingCube( constant );
+			p->renderer.ProcessDrawingCube( constant );
 		};
 
 		// Screen box
@@ -1214,82 +1126,18 @@ void SceneGame::Draw( float elapsedTime )
 	loadPerformer.DrawIfActive( 0.0f );
 }
 
-bool SceneGame::CreateRenderers( const Donya::Int2 &wholeScreenSize )
-{
-	bool succeeded = true;
-
-	pRenderer = std::make_unique<RenderingHelper>();
-	if ( !pRenderer->Init() ) { succeeded = false; }
-
-	pDisplayer = std::make_unique<Donya::Displayer>();
-	if ( !pDisplayer->Init() ) { succeeded = false; }
-
-	pBloomer = std::make_unique<BloomApplier>();
-	if ( !pBloomer->Init( wholeScreenSize ) ) { succeeded = false; }
-	pBloomer->AssignParameter( FetchParameter().bloomParam );
-
-	return succeeded;
-}
-bool SceneGame::CreateSurfaces( const Donya::Int2 &wholeScreenSize )
-{
-	bool succeeded	= true;
-	bool result		= true;
-
-	pScreenSurface = std::make_unique<Donya::Surface>();
-	result = pScreenSurface->Init
-	(
-		wholeScreenSize.x,
-		wholeScreenSize.y,
-		DXGI_FORMAT_R16G16B16A16_FLOAT
-	);
-	if ( !result ) { succeeded = false; }
-
-	pShadowMap = std::make_unique<Donya::Surface>();
-	result = pShadowMap->Init
-	(
-		wholeScreenSize.x,
-		wholeScreenSize.y,
-		DXGI_FORMAT_R32_FLOAT, true,
-		DXGI_FORMAT_R32_TYPELESS, true
-	);
-	if ( !result ) { succeeded = false; }
-
-	return succeeded;
-}
-bool SceneGame::CreateShaders()
-{
-	constexpr const char *VSPath = "./Data/Shaders/DisplayQuadVS.cso";
-	constexpr const char *PSPath = "./Data/Shaders/DisplayQuadPS.cso";
-	constexpr auto IEDescs = Donya::Displayer::Vertex::GenerateInputElements();
-
-	// The vertex shader requires IE-descs as std::vector<>
-	const std::vector<D3D11_INPUT_ELEMENT_DESC> IEDescsV{ IEDescs.begin(), IEDescs.end() };
-
-	bool succeeded = true;
-
-	pQuadShader = std::make_unique<Shader>();
-	if ( !pQuadShader->VS.CreateByCSO( VSPath, IEDescsV	) ) { succeeded = false; }
-	if ( !pQuadShader->PS.CreateByCSO( PSPath			) ) { succeeded = false; }
-
-	return succeeded;
-}
-bool SceneGame::AreRenderersReady() const
-{
-	if ( !pRenderer			) { return false; }
-	if ( !pDisplayer		) { return false; }
-	if ( !pBloomer			) { return false; }
-	if ( !pScreenSurface	) { return false; }
-	if ( !pShadowMap		) { return false; }
-	if ( !pQuadShader		) { return false; }
-	// else
-	return true;
-}
-
 void SceneGame::PlayBGM( Music::ID kind )
 {
 	Donya::Sound::Stop( currentPlayingBGM, /* isEnableForAll = */ true );
 	currentPlayingBGM = kind;
 	Donya::Sound::Play( currentPlayingBGM );
+
+#if DEBUG_MODE
+	if ( wantSilence )
+	{
+		Donya::Sound::AppendFadePoint( currentPlayingBGM, silentSecond, silentVolume, /* isEnableForAll = */ true );
+	}
+#endif // DEBUG_MODE
 }
 void SceneGame::FadeOutBGM() const
 {
@@ -1460,12 +1308,8 @@ void SceneGame::InitStage( Music::ID nextBGM, int stageNo, bool reloadMapModel, 
 
 	Bullet::Admin::Get().ClearInstances();
 
-	auto &itemAdmin = Item::Admin::Get();
-	itemAdmin.ClearInstances();
-	itemAdmin.LoadItems( stageNo, IOFromBinary );
-#if DEBUG_MODE
-	itemAdmin.SaveItems( stageNo, true );
-#endif // DEBUG_MODE
+	// Don't touch the static generated instance
+	Item::Admin::Get().RemoveDynamicInstances();
 }
 void SceneGame::UninitStage()
 {
@@ -1484,7 +1328,9 @@ void SceneGame::UninitStage()
 
 	Bullet::Admin::Get().ClearInstances();
 	Enemy::Admin::Get().ClearInstances();
-	Item::Admin::Get().ClearInstances();
+	
+	// Don't touch the static generated instance
+	Item::Admin::Get().RemoveDynamicInstances();
 }
 
 void SceneGame::AssignCurrentInput()
@@ -1578,12 +1424,10 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 	if ( status != State::FirstInitialize ) { return; }
 	// else
 
-	if ( !thObjects.result.Finished()	) { return; }
-	if ( !thRenderers.result.Finished()	) { return; }
+	if ( !thObjects.result.Finished() ) { return; }
 	// else
 
 	thObjects.JoinThenRelease();
-	thRenderers.JoinThenRelease();
 
 #if USE_IMGUI
 	if ( dontFinishLoadState ) { return; }
@@ -2026,6 +1870,96 @@ void SceneGame::CameraUpdate( float elapsedTime )
 #endif // !DEBUG_MODE
 }
 
+void SceneGame::UpdateCurrentRoomID()
+{
+	if ( !pPlayer ) { return; }
+	// else
+
+	const int nextRoomID = CalcCurrentRoomID();
+	if ( nextRoomID == currentRoomID ) { return; }
+	// else
+
+
+	const Room *pCurrentRoom	= pHouse->FindRoomOrNullptr( currentRoomID	);
+	const Room *pNextRoom		= pHouse->FindRoomOrNullptr( nextRoomID		);
+	if ( !pCurrentRoom || !pNextRoom ) { return; }
+	// else
+
+
+	// If allow the scroll to a connecting room, the scroll waiting will occur as strange.
+	if ( pCurrentRoom->IsConnectTo( nextRoomID ) )
+	{
+		currentRoomID = nextRoomID;
+		return;
+	}
+	// else
+
+
+	// Here condition is "There in other room" however "I don't know can I transiton from old room to now room".
+	// So check the transition-able then scroll if transiton-able.
+
+	using Dir = Definition::Direction;
+	
+	const auto currentRoomArea	= pCurrentRoom->GetArea();
+	const auto nextRoomArea		= pNextRoom->GetArea();
+	const Donya::Vector3 delta	= nextRoomArea.pos - currentRoomArea.pos;
+	const Donya::Int2 deltaSign
+	{
+		Donya::SignBit( delta.x ),
+		Donya::SignBit( delta.y ),
+	};
+	Dir adjoinDir = Dir::Nil;
+	if ( deltaSign.x == +1 ) { adjoinDir |= Dir::Right;	}
+	if ( deltaSign.x == -1 ) { adjoinDir |= Dir::Left;	}
+	if ( deltaSign.y == +1 ) { adjoinDir |= Dir::Up;	}
+	if ( deltaSign.y == -1 ) { adjoinDir |= Dir::Down;	}
+
+	const Dir ableDir = pCurrentRoom->GetTransitionableDirection();
+	
+	// Verify the consistency between the adjoin direction and transition-able direction
+	bool hasConsistency = false;
+	constexpr Dir directions[]{ Dir::Right, Dir::Left, Dir::Up, Dir::Down };
+	for ( const auto &dir : directions )
+	{
+		if ( Contain( ableDir, dir ) )
+		{
+			if ( Contain( adjoinDir, dir ) )
+			{
+				hasConsistency = true;
+			}
+		}
+	}
+	if ( !hasConsistency ) { return; }
+	// else
+
+	// Up direction is only able to when grabbing a ladder
+	if ( Contain( adjoinDir, Dir::Up ) )
+	{
+		// But allow if may transition to horizontally
+		// If it is nothing, we can not transition to horizontally without a ladder from a room that has transition-able of [Up] and [Right] or [Left].
+		bool mayHorizontal = false;
+		if ( Contain( adjoinDir, Dir::Right | Dir::Left ) )
+		{
+			// Judge to "may transition" if "There the player in outside of old room"
+			const auto  playerBody = pPlayer->GetHitBox();
+			const float left  = playerBody.Min().x;
+			const float right = playerBody.Max().x;
+
+			if ( right < currentRoomArea.Min().x ) { mayHorizontal = true; }
+			if ( left  > currentRoomArea.Max().x ) { mayHorizontal = true; }
+		}
+
+		if ( !mayHorizontal && !pPlayer->NowGrabbingLadder() )
+		{
+			return;
+		}
+		// else
+	}
+
+	PrepareScrollIfNotActive( currentRoomID, nextRoomID );
+	currentRoomID = nextRoomID;
+}
+
 Donya::Vector4x4 SceneGame::CalcLightViewMatrix() const
 {
 	return lightCamera.CalcViewMatrix();
@@ -2122,6 +2056,30 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 		pPlayerMeter->SetDrawOption( meterData.hpDrawPos, pPlayer->GetThemeColor(), meterData.hpDrawScale );
 	}
 }
+void SceneGame::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
+{
+	if ( !pPlayer ) { return; }
+	// else
+
+	using Dir = Definition::Direction;
+
+	const Room *pCurrentRoom	= pHouse->FindRoomOrNullptr( currentRoomID );
+	const auto currentRoomArea	= ( pCurrentRoom )
+								? pHouse->CalcRoomArea( currentRoomID )
+								: currentScreen;	// Fail safe
+	const auto transitionable	= ( pCurrentRoom )
+								? pCurrentRoom->GetTransitionableDirection()
+								: Dir::Nil;			// Fail safe
+	const float leftBorder	= Contain( transitionable, Dir::Left )
+							? -FLT_MAX
+							: std::min( currentRoomArea.Min().x, currentScreen.Min().x );
+	const float rightBorder	= Contain( transitionable, Dir::Right )
+							? FLT_MAX
+							: std::max( currentRoomArea.Max().x, currentScreen.Max().x );
+
+	prevPlayerPos = pPlayer->GetPosition();
+	pPlayer->PhysicUpdate( elapsedTime, terrain, leftBorder, rightBorder );
+}
 Donya::Vector3 SceneGame::GetPlayerPosition() const
 {
 	return ( pPlayer ) ? pPlayer->GetPosition() : playerIniter.GetWorldInitialPos();
@@ -2198,7 +2156,7 @@ Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
 	}
 	else
 	{
-		if ( pThroughingDoor )
+		if ( NowThroughingDoor() )
 		{
 			auto destination = doorPassedPlayerPos;
 			destination.y = pPlayer->GetPosition().y;
@@ -2242,6 +2200,10 @@ void SceneGame::DoorUpdate()
 	{
 		pThroughingDoor = nullptr;
 	}
+}
+bool SceneGame::NowThroughingDoor() const
+{
+	return pThroughingDoor;
 }
 
 void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
@@ -2439,13 +2401,15 @@ void SceneGame::Collision_BulletVSBullet()
 		const bool protectibleB = Protectible( pB );
 		if ( protectibleA ) { pB->ProtectedBy( hitBoxA ); }
 		if ( protectibleB ) { pA->ProtectedBy( hitBoxB ); }
-		if ( protectibleA || protectibleB ) { return; }
-		// else
 
-		const bool destructibleA = pA->Destructible();
-		const bool destructibleB = pB->Destructible();
-		pA->CollidedToObject( destructibleB );
-		pB->CollidedToObject( destructibleA );
+		// Currently, there is not the hard(e.g. destructible and a lot of HP) bullet.
+		// So tells "pierced" to the collided bullet(s) for easily process, in the collision between bullet and bullet.
+		constexpr bool toPierce = true;
+		
+		// Do not call the protected bullet's method.
+		// But should call the not protected one's method for play the hit SE.
+		if ( !protectibleA ) { pB->CollidedToObject( toPierce, /* otherIsBullet = */ true ); }
+		if ( !protectibleB ) { pA->CollidedToObject( toPierce, /* otherIsBullet = */ true ); }
 	};
 	
 	const auto playerID = ExtractPlayerID( pPlayer );
@@ -2454,6 +2418,7 @@ void SceneGame::Collision_BulletVSBullet()
 	{
 		pA = bulletAdmin.GetInstanceOrNullptr( i );
 		if ( !pA ) { continue; }
+		// else
 
 		// Disallow collision between a protected bullet.
 		// Because if allowed hitting to multiple objects in the same timing,
@@ -2471,9 +2436,8 @@ void SceneGame::Collision_BulletVSBullet()
 		for ( size_t j = i + 1; j < bulletCount; ++j )
 		{
 			pB = bulletAdmin.GetInstanceOrNullptr( j );
-			if ( !pB ) { continue; }
-			// else
-			if ( pB->WasProtected() ) { continue; }
+			if ( !pB )					{ continue; }
+			if ( pB->WasProtected() )	{ continue; }
 			// else
 
 			const bool ownerB		= IsPlayerBullet( playerID, pB );
@@ -2549,7 +2513,7 @@ void SceneGame::Collision_BulletVSBoss()
 		else
 		{
 			pBoss->GiveDamage( pBullet->GetDamage() );
-			pBullet->CollidedToObject( pBoss->WillDie() );
+			pBullet->CollidedToObject( pBoss->WillDie(), /* otherIsBullet = */ false );
 		}
 	};
 
@@ -2628,20 +2592,6 @@ void SceneGame::Collision_BulletVSEnemy()
 	std::shared_ptr<const Bullet::Base> pBullet = nullptr;
 	std::shared_ptr<const Enemy::Base>  pOther  = nullptr;
 
-	auto DropItemByLottery = []( const Donya::Vector3 &wsGeneratePos)
-	{
-		const Item::Kind dropKind = Item::LotteryDropKind();
-		// If invalid is chosen
-		if ( dropKind == Item::Kind::KindCount ) { return; }
-		// else
-
-		Item::InitializeParam tmp;
-		tmp.kind		= dropKind;
-		tmp.aliveSecond	= Item::Parameter::GetItem().disappearSecond;
-		tmp.wsPos		= wsGeneratePos;
-		Item::Admin::Get().RequestGeneration( tmp );
-	};
-
 	struct ProccessResult
 	{
 		bool collided	= false;
@@ -2666,7 +2616,7 @@ void SceneGame::Collision_BulletVSEnemy()
 			pOther->GiveDamage( pBullet->GetDamage() );
 			if ( pOther->WillDie() )
 			{
-				DropItemByLottery( pOther->GetPosition() );
+				Item::DropItemByLottery( pOther->GetPosition() );
 			}
 			else
 			{
@@ -2702,7 +2652,7 @@ void SceneGame::Collision_BulletVSEnemy()
 							: Process( otherSphere	);
 		if ( result.collided )
 		{
-			pBullet->CollidedToObject( result.pierced );
+			pBullet->CollidedToObject( result.pierced, /* otherIsBullet = */ false );
 		}
 
 		collidedEnemyIndices.clear();
@@ -2712,6 +2662,7 @@ void SceneGame::Collision_BulletVSPlayer()
 {
 	if ( !pPlayer || pPlayer->NowMiss()	) { return; }
 	if ( !IsPlayingStatus( status )		) { return; } // Ignore if cleared
+	if ( NowThroughingDoor()			) { return; } // Ignore when throughing a door, because that case can not control the player.
 	// else
 
 	const auto playerBody = pPlayer->GetHurtBox();
@@ -2738,11 +2689,12 @@ void SceneGame::Collision_BulletVSPlayer()
 		if ( IsPlayerBullet( playerID, pBullet ) ) { continue; }
 		// else
 
+
 		bulletAABB = pBullet->GetHitBox();
 		if ( IsHit( playerBody, pBullet, bulletAABB ) )
 		{
 			pPlayer->GiveDamage( pBullet->GetDamage(), bulletAABB );
-			pBullet->CollidedToObject( pPlayer->WillDie() );
+			pBullet->CollidedToObject( pPlayer->WillDie(), /* otherIsBullet = */ false );
 			continue;
 		}
 		// else
@@ -2751,7 +2703,7 @@ void SceneGame::Collision_BulletVSPlayer()
 		if ( IsHit( playerBody, pBullet, bulletSphere ) )
 		{
 			pPlayer->GiveDamage( pBullet->GetDamage(), bulletSphere );
-			pBullet->CollidedToObject( pPlayer->WillDie() );
+			pBullet->CollidedToObject( pPlayer->WillDie(), /* otherIsBullet = */ false );
 		}
 	}
 }
@@ -2776,8 +2728,9 @@ void SceneGame::Collision_BossVSPlayer()
 }
 void SceneGame::Collision_EnemyVSPlayer()
 {
-	if ( !pPlayer					) { return; }
-	if ( !IsPlayingStatus( status )	) { return; } // Ignore if cleared
+	if ( !pPlayer || pPlayer->NowMiss()	) { return; }
+	if ( !IsPlayingStatus( status )		) { return; } // Ignore if cleared
+	if ( NowThroughingDoor()			) { return; } // Ignore when throughing a door, because that case can not control the player.
 	// else
 
 	const auto playerBody	= pPlayer->GetHurtBox();
@@ -2862,16 +2815,14 @@ void SceneGame::ClearBackGround() const
 	if ( status == State::FirstInitialize ) { return; }
 	// else
 
-	if ( pShadowMap		) { pShadowMap->Clear( Donya::Color::Code::BLACK );			}
-	if ( pScreenSurface	) { pScreenSurface->Clear( Donya::Vector4{ gray, 1.0f } );	}
+	RenderingStuffInstance::Get().ClearBuffers();
+
 #if DEBUG_MODE
 	if ( nowDebugMode )
 	{
 		constexpr Donya::Vector3 teal = Donya::Color::MakeColor( Donya::Color::Code::CYAN );
 		constexpr FLOAT DEBUG_COLOR[4]{ teal.x, teal.y, teal.z, 1.0f };
 		Donya::ClearViews( DEBUG_COLOR );
-
-		if ( pScreenSurface ) { pScreenSurface->Clear( Donya::Vector4{ teal, 1.0f } ); }
 	}
 #endif // DEBUG_MODE
 }
@@ -3001,16 +2952,10 @@ void SceneGame::UseImGui( float elapsedTime )
 			ImGui::Checkbox( u8"ロード画面のまま止める", &dontFinishLoadState );
 
 			bool prgrObj = thObjects.result.Finished();
-			bool prgrRnd = thRenderers.result.Finished();
 			bool doneObj = thObjects.result.Succeeded();
-			bool doneRnd = thRenderers.result.Succeeded();
-			ImGui::Checkbox( u8"終了・OBJ", &prgrObj );
+			ImGui::Checkbox( u8"終了したか", &prgrObj );
 			ImGui::SameLine();
-			ImGui::Checkbox( u8"成功・OBJ", &doneObj );
-			
-			ImGui::Checkbox( u8"終了・RNDR", &prgrRnd );
-			ImGui::SameLine();
-			ImGui::Checkbox( u8"成功・RNDR", &doneRnd );
+			ImGui::Checkbox( u8"成功したか", &doneObj );
 
 			Performer::LoadPart::ShowImGuiNode( u8"ロード演出の設定" );
 
@@ -3029,17 +2974,26 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	UseScreenSpaceImGui();
 
-	// static Donya::Vector3 beforeBossRoomPosition{ 84.0f, -8.0f, 0.0f };
-	static Donya::Vector3 beforeBossRoomPosition{ 62.0f, -6.0f, 0.0f };
-	auto SetPlayerToBeforeBossRoom = [&]()
+	static std::array<Donya::Vector3, 3> teleportDestinations
 	{
+		Donya::Vector3{  26.5f, -54.0f, 0.0f },
+		Donya::Vector3{  78.0f, -15.0f, 0.0f },
+		Donya::Vector3{ 202.5f, -28.0f, 0.0f },
+	};
+	auto TeleportPlayerTo = [&]( size_t destIndex )
+	{
+		if ( teleportDestinations.size() <= destIndex ) { return; }
+		// else
+
+		const Donya::Vector3 &destination = teleportDestinations[destIndex];
+
 		const Map emptyMap{}; // Used for empty argument. Fali safe.
 		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 
-		PlayerInitializer preBossSetter{};
-		preBossSetter.AssignParameter( beforeBossRoomPosition );
+		PlayerInitializer setter{};
+		setter.AssignParameter( destination );
 
-		PlayerInit( preBossSetter, mapRef );
+		PlayerInit( setter, mapRef );
 
 		currentRoomID = CalcCurrentRoomID();
 		const Room *pCurrentRoom = pHouse->FindRoomOrNullptr( currentRoomID );
@@ -3056,6 +3010,29 @@ void SceneGame::UseImGui( float elapsedTime )
 		scroll.active			= false;
 		scroll.elapsedSecond	= 0.0f;
 		currentScreen = CalcCurrentScreenPlane();
+	};
+
+	auto ChangeAvailableWeapon = [&]( bool unlock )
+	{
+		auto &admin = SaveData::Admin::Get();
+
+		SaveData::File tmp = admin.NowData();
+		if ( unlock )
+		{
+			tmp.availableWeapons.Activate( Definition::WeaponKind::SkullShield );
+		}
+		else
+		{
+			tmp.availableWeapons.Reset();
+		}
+		admin.Write( tmp );
+
+		admin.Save();
+
+		if ( pPlayer )
+		{
+			pPlayer->ApplyAvailableWeapon( tmp.availableWeapons );
+		}
 	};
 
 	// Choose a room by mouse
@@ -3098,40 +3075,34 @@ void SceneGame::UseImGui( float elapsedTime )
 					? nullptr
 					: pHouse->FindRoomOrNullptr( choiceID );
 	}
-
-	if ( Donya::Keyboard::Trigger( 'L' ) && Donya::Keyboard::Press( VK_MENU ) )
+	// "drawLightSources" and TeleportPlayerTo()
+	if ( Donya::Keyboard::Press( VK_MENU ) )
 	{
-		drawLightSources = !drawLightSources;
+		if ( Donya::Keyboard::Trigger( 'L' ) )
+		{
+			drawLightSources = !drawLightSources;
+		}
+		
+		const int placeCount = scast<int>( teleportDestinations.size() );
+		for ( int i = 0; i < placeCount; ++i )
+		{
+			// 1-based, 1 or 2 or ... or size()
+			if ( Donya::Keyboard::Trigger( '0' + 1 + i ) )
+			{
+				// 0-based
+				TeleportPlayerTo( scast<size_t>( i ) );
+				break;
+			}
+		}
 	}
 	if ( Donya::Keyboard::Trigger( VK_F4 ) )
 	{
 		projectLightCamera = !projectLightCamera;
 	}
-	if ( Donya::Keyboard::Trigger( VK_F6 ) )
-	{
-		SetPlayerToBeforeBossRoom();
-	}
 	if ( Donya::Keyboard::Trigger( VK_F7 ) )
 	{
-		auto &admin = SaveData::Admin::Get();
-
-		SaveData::File tmp = admin.NowData();
-		if ( Donya::Keyboard::Press( VK_CONTROL ) )
-		{
-			tmp.availableWeapons.Reset();
-		}
-		else
-		{
-			tmp.availableWeapons.Activate( Definition::WeaponKind::SkullShield );
-		}
-		admin.Write( tmp );
-
-		admin.Save();
-
-		if ( pPlayer )
-		{
-			pPlayer->ApplyAvailableWeapon( tmp.availableWeapons );
-		}
+		const bool unlock = !Donya::Keyboard::Press( VK_CONTROL );
+		ChangeAvailableWeapon( unlock );
 	}
 
 	ImGui::SetNextWindowBgAlpha( bgAlpha );
@@ -3140,8 +3111,11 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	ImGui::Checkbox( u8"[ALT+L]	光源の可視化",		&drawLightSources	);
 	ImGui::Checkbox( u8"[F4]	光視点にする",		&projectLightCamera	);
-	ImGui::Text( u8"[F7]		全武器解放＆セーブ"	);
-	ImGui::Text( u8"[CTRL+F7]	全武器制限＆セーブ"	);
+	if ( ImGui::Button( u8"[F7]			全武器解放＆セーブ" ) ) { ChangeAvailableWeapon( /* unlock = */ true  ); }
+	if ( ImGui::Button( u8"[CTRL+F7]	全武器制限＆セーブ" ) ) { ChangeAvailableWeapon( /* unlock = */ false ); }
+	if ( ImGui::Button( u8"[ALT+ 1 ]	自機を 開始地点 へ" ) ) { TeleportPlayerTo( 0 ); }
+	if ( ImGui::Button( u8"[ALT+ 2 ]	自機を 中間地点 へ" ) ) { TeleportPlayerTo( 1 ); }
+	if ( ImGui::Button( u8"[ALT+ 3 ]	自機を ボス直前 へ" ) ) { TeleportPlayerTo( 2 ); }
 	Effect::Admin::Get().SetProjectionMatrix
 	(
 		( projectLightCamera )
@@ -3259,8 +3233,10 @@ void SceneGame::UseImGui( float elapsedTime )
 		};
 		auto ApplyToItem	= [&]( const CSVLoader &loadedData )
 		{
+			const Map emptyMap{}; // Used for empty argument. Fali safe.
+			const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 			Item::Admin::Get().ClearInstances();
-			Item::Admin::Get().RemakeByCSV( loadedData );
+			Item::Admin::Get().RemakeByCSV( loadedData, mapRef );
 
 			if ( thenSave )
 			{
@@ -3412,6 +3388,11 @@ void SceneGame::UseImGui( float elapsedTime )
 			ImGui::Checkbox( u8"中間ポイントに適用",		&applyCheckPt	); ImGui::SameLine();
 			ImGui::Checkbox( u8"ドアに適用",				&applyDoor		);
 			ImGui::Checkbox( u8"ルームに適用",			&applyRoom		);
+			if ( ImGui::Button( u8"マップ関連をオフ" ) )
+			{ applyMap = applyPlayer = applyCheckPt = applyDoor = false; }
+			ImGui::SameLine();
+			if ( ImGui::Button( u8"マップ関連をオン" ) )
+			{ applyMap = applyPlayer = applyCheckPt = applyDoor = true; }
 		
 			if ( ImGui::Button( u8"CSVファイルを読み込む" ) )
 			{
@@ -3500,7 +3481,9 @@ void SceneGame::UseImGui( float elapsedTime )
 		Boss::Parameter::Update( u8"ボスのパラメータ" );
 		ImGui::Text( "" );
 
-		Item::Admin::Get().ShowImGuiNode( u8"アイテムの現在", stageNumber );
+		const Map emptyMap{}; // Used for empty argument. Fali safe.
+		const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
+		Item::Admin::Get().ShowImGuiNode( u8"アイテムの現在", stageNumber, mapRef );
 		Item::Parameter::Update( u8"アイテムのパラメータ" );
 		ImGui::Text( "" );
 
@@ -3523,34 +3506,7 @@ void SceneGame::UseImGui( float elapsedTime )
 		ImGui::TreePop();
 	}
 
-	if ( ImGui::TreeNode( u8"サーフェス描画" ) )
-	{
-		static Donya::Vector2 drawSize{ 320.0f, 180.0f };
-		ImGui::DragFloat2( u8"描画サイズ", &drawSize.x, 10.0f );
-		drawSize.x = std::max( 10.0f, drawSize.x );
-		drawSize.y = std::max( 10.0f, drawSize.y );
-
-		if ( pShadowMap && ImGui::TreeNode( u8"シャドウマップ" ) )
-		{
-			pShadowMap->DrawDepthStencilToImGui( drawSize );
-			ImGui::TreePop();
-		}
-		if ( pScreenSurface && ImGui::TreeNode( u8"スクリーン" ) )
-		{
-			pScreenSurface->DrawRenderTargetToImGui( drawSize );
-			ImGui::TreePop();
-		}
-		if ( pBloomer && ImGui::TreeNode( u8"ブルーム" ) )
-		{
-			ImGui::Text( u8"輝度抽出：" );
-			pBloomer->DrawHighLuminanceToImGui( drawSize );
-			ImGui::Text( u8"縮小バッファたち：" );
-			pBloomer->DrawBlurBuffersToImGui( drawSize );
-			ImGui::TreePop();
-		}
-
-		ImGui::TreePop();
-	}
+	RenderingStuffInstance::Get().ShowSurfacesToImGui( u8"サーフェス描画" );
 
 	if ( ImGui::TreeNode( u8"ルーム選択" ) )
 	{
@@ -3721,6 +3677,9 @@ void SceneGame::UseScreenSpaceImGui()
 
 	// Enemies
 	{
+		auto &enemyAdmin = Enemy::Admin::Get();
+		const auto playerPos = GetPlayerPosition();
+
 		auto Show = [&]( const Donya::Vector2 &ssPos, size_t enemyIndex, auto ShowInstanceNodeMethod )
 		{
 			enemyWindow.pos = ssPos;
@@ -3731,13 +3690,13 @@ void SceneGame::UseScreenSpaceImGui()
 			if ( ImGui::BeginIfAllowed( caption.c_str() ) )
 			{
 				ShowInstanceNodeMethod();
+				enemyAdmin.ShowIONode( stageNumber, playerPos, currentScreen );
 				Enemy::Parameter::Update( u8"敵のパラメータ" );
 
 				ImGui::End();
 			}
 		};
-
-		auto  &enemyAdmin		= Enemy::Admin::Get();
+		
 		const size_t enemyCount	= enemyAdmin.GetInstanceCount();
 
 		Donya::Vector2 ssPos;

@@ -1,10 +1,12 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #undef max
 #undef min
+#include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
 
 #include "Donya/Collision.h"
@@ -23,6 +25,7 @@ public:
 	int		maxRemainCount			= 9;
 	int		initialRemainCount		= 2;
 	float	moveSpeed				= 1.0f;
+	float	inertialMoveSpeed		= 1.0f;
 	float	slideMoveSpeed			= 1.0f;
 	float	slideMoveSeconds		= 1.0f;
 	float	ladderMoveSpeed			= 1.0f;
@@ -52,11 +55,10 @@ public:
 	Donya::Collision::Box3F			slideHurtBox;	// VS an attack(e.g. enemy) when sliding
 	Donya::Collision::Box3F			ladderGrabArea;	// It using for considering to continue to grab the ladder
 	Bullet::FireDesc				fireParam;
-	std::vector<float>				animePlaySpeeds;// It size() == Player::MotionKind::MotionCount
+	std::vector<float>				animePlaySpeeds;	// It size() == Player::MotionKind::MotionCount
+	std::vector<float>				animeTransSeconds;	// It interest only destination motion kind. It size() == Player::MotionKind::MotionCount
 
-	ModelHelper::PartApply			normalLeftArm;
-	ModelHelper::PartApply			ladderLeftArm;
-	ModelHelper::PartApply			ladderRightArm;
+	std::unordered_map<int, ModelHelper::PartApply> partMotions; // Key is Player::MotionKind
 
 	struct PerChargeLevel
 	{
@@ -159,15 +161,7 @@ private:
 		{
 			archive( CEREAL_NVP( animePlaySpeeds ) );
 		}
-		if ( 8 <= version )
-		{
-			archive
-			(
-				CEREAL_NVP( normalLeftArm  ),
-				CEREAL_NVP( ladderLeftArm  ),
-				CEREAL_NVP( ladderRightArm )
-			);
-		}
+		//if ( 8 <= version && version < 18 )
 		if ( 9 <= version )
 		{
 			archive( CEREAL_NVP( chargeParams ) );
@@ -215,6 +209,19 @@ private:
 		}
 		if ( 16 <= version )
 		{
+			archive( CEREAL_NVP( inertialMoveSpeed ) );
+		}
+		//if ( 17 <= version && version < 18 )
+		if ( 18 <= version )
+		{
+			archive( CEREAL_NVP( partMotions ) );
+		}
+		if ( 19 <= version )
+		{
+			archive( CEREAL_NVP( animeTransSeconds ) );
+		}
+		if ( 20 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -223,4 +230,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 15 )
+CEREAL_CLASS_VERSION( PlayerParam, 19 )

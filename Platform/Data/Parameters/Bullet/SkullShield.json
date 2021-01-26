@@ -1,0 +1,29 @@
+{
+    "SkullShield": {
+        "cereal_class_version": 2,
+        "basic": {
+            "cereal_class_version": 1,
+            "hitBoxOffset": {
+                "cereal_class_version": 0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hitBoxSize": {
+                "x": 1.2999999523162842,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "damage": {
+                "cereal_class_version": 0,
+                "amount": 2,
+                "type": 10
+            },
+            "animePlaySpeed": 1.0
+        },
+        "partCount": 4,
+        "rotateDegree": 240.0,
+        "drawPartOffset": 1.149999976158142,
+        "subtractorRadius": 0.800000011920929
+    }
+}

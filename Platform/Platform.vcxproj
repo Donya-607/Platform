@@ -93,6 +93,12 @@
       <AdditionalLibraryDirectories>$(ProjectDir)External\DirectXTK\Inc\;$(ProjectDir)External\Effekseer\lib\;$(ProjectDir)External\FMOD\LowLevel\lib\;$(ProjectDir)External\FMOD\Studio\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d11.lib;dxgi.lib;DirectXTK_d.lib;Effekseerd.lib;EffekseerRendererDX11d.lib;fmodL_vc.lib;fmodstudioL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>$(ProjectDir)Data\Shaders\%(Filename).cso</ObjectFileOutput>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
+      <AssemblerOutputFile>$(ProjectDir)Code\Shader\%(Filename).cod</AssemblerOutputFile>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -129,6 +135,12 @@
       <AdditionalLibraryDirectories>$(ProjectDir)External\DirectXTK\Inc\;$(ProjectDir)External\Effekseer\lib\;$(ProjectDir)External\FMOD\LowLevel\lib\;$(ProjectDir)External\FMOD\Studio\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d11.lib;dxgi.lib;DirectXTK.lib;Effekseer.lib;EffekseerRendererDX11.lib;fmod_vc.lib;fmodstudio_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+      <ObjectFileOutput>$(ProjectDir)Data\Shaders\%(Filename).cso</ObjectFileOutput>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
+      <AssemblerOutputFile>$(ProjectDir)Code\Shader\%(Filename).cod</AssemblerOutputFile>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -156,9 +168,11 @@
     <ClCompile Include="Code\Boss.cpp" />
     <ClCompile Include="Code\Bosses\Skull.cpp" />
     <ClCompile Include="Code\Bullet.cpp" />
+    <ClCompile Include="Code\Bullets\Bone.cpp" />
     <ClCompile Include="Code\Bullets\Buster.cpp" />
     <ClCompile Include="Code\Bullets\SkullBullet.cpp" />
     <ClCompile Include="Code\Bullets\SuperBall.cpp" />
+    <ClCompile Include="Code\Bullets\TogeheroBody.cpp" />
     <ClCompile Include="Code\CheckPoint.cpp" />
     <ClCompile Include="Code\ClearEvent.cpp" />
     <ClCompile Include="Code\Common.cpp" />
@@ -203,6 +217,7 @@
     <ClCompile Include="Code\Effect\Effect.cpp" />
     <ClCompile Include="Code\Effect\EffectAdmin.cpp" />
     <ClCompile Include="Code\Effect\EffectUtil.cpp" />
+    <ClCompile Include="Code\Enemies\SkeletonJoe.cpp" />
     <ClCompile Include="Code\Enemies\SuperBallMachine.cpp" />
     <ClCompile Include="Code\Enemy.cpp" />
     <ClCompile Include="Code\Fader.cpp" />
@@ -223,6 +238,7 @@
     <ClCompile Include="Code\Player.cpp" />
     <ClCompile Include="Code\PointLightStorage.cpp" />
     <ClCompile Include="Code\Renderer.cpp" />
+    <ClCompile Include="Code\RenderingStuff.cpp" />
     <ClCompile Include="Code\Room.cpp" />
     <ClCompile Include="Code\SaveData.cpp" />
     <ClCompile Include="Code\SceneGame.cpp" />
@@ -251,9 +267,11 @@
     <ClInclude Include="Code\Bosses\Skull.h" />
     <ClInclude Include="Code\Bullet.h" />
     <ClInclude Include="Code\BulletParam.h" />
+    <ClInclude Include="Code\Bullets\Bone.h" />
     <ClInclude Include="Code\Bullets\Buster.h" />
     <ClInclude Include="Code\Bullets\SkullBullet.h" />
     <ClInclude Include="Code\Bullets\SuperBall.h" />
+    <ClInclude Include="Code\Bullets\TogeheroBody.h" />
     <ClInclude Include="Code\CheckPoint.h" />
     <ClInclude Include="Code\ClearEvent.h" />
     <ClInclude Include="Code\Common.h" />
@@ -311,6 +329,7 @@
     <ClInclude Include="Code\Effect\EffectKind.h" />
     <ClInclude Include="Code\Effect\EffectParam.h" />
     <ClInclude Include="Code\Effect\EffectUtil.h" />
+    <ClInclude Include="Code\Enemies\SkeletonJoe.h" />
     <ClInclude Include="Code\Enemies\SuperBallMachine.h" />
     <ClInclude Include="Code\Enemy.h" />
     <ClInclude Include="Code\Fader.h" />
@@ -339,6 +358,7 @@
     <ClInclude Include="Code\PlayerParam.h" />
     <ClInclude Include="Code\PointLightStorage.h" />
     <ClInclude Include="Code\Renderer.h" />
+    <ClInclude Include="Code\RenderingStuff.h" />
     <ClInclude Include="Code\Room.h" />
     <ClInclude Include="Code\SaveData.h" />
     <ClInclude Include="Code\Scene.h" />

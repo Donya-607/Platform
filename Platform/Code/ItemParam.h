@@ -77,8 +77,10 @@ namespace Item
 		General				extraLife;
 		Energy				lifeEnergyBig;
 		Energy				lifeEnergySmall;
-		float				disappearSecond = 1.0f;	// It using for drop item
-		std::vector<int>	dropPercents;			// Also contain the percent of do not drop. size() == Item::Kind::KindCount + 1
+		float				disappearSecond		= 1.0f;	// It using for drop item
+		float				flushingSecond		= 1.0f;
+		float				flushingInterval	= 0.1f;
+		std::vector<int>	dropPercents;				// Also contain the percent of do not drop. size() == Item::Kind::KindCount + 1
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -101,6 +103,14 @@ namespace Item
 			}
 			if ( 2 <= version )
 			{
+				archive
+				(
+					CEREAL_NVP( flushingSecond		),
+					CEREAL_NVP( flushingInterval	)
+				);
+			}
+			if ( 3 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -110,6 +120,6 @@ namespace Item
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Item::ItemParam,			1 )
+CEREAL_CLASS_VERSION( Item::ItemParam,			2 )
 CEREAL_CLASS_VERSION( Item::ItemParam::General,	2 )
 CEREAL_CLASS_VERSION( Item::ItemParam::Energy,	0 )

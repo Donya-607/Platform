@@ -122,6 +122,21 @@ namespace Bullet
 			lightSource.wsPos += GetPosition();
 			PointLightStorage::Get().RegisterIfThereSpace( lightSource );
 		}
+
+		if ( Player::IsFullyCharged( chargeLevel ) )
+		{
+			generationTimer += elapsedTime;
+
+			const float &generateInterval = Parameter::GetBuster().chargedTracingInterval;
+			if ( generateInterval <= generationTimer )
+			{
+				generationTimer = 0.0f;
+
+				Effect::Handle handle = Effect::Handle::Generate( Effect::Kind::ChargedBustersTracing, GetPosition() );
+				handle.SetRotation( orientation );
+				Effect::Admin::Get().AddCopy( handle ); // Leave management of the effect instance to admin
+			}
+		}
 	}
 	Kind Buster::GetKind() const
 	{
@@ -129,7 +144,8 @@ namespace Bullet
 	}
 	void Buster::GenerateCollidedEffect() const
 	{
-		Effect::Admin::Get().GenerateInstance( Effect::Kind::Hit_Buster, GetPosition() );
+		const auto kind = ( Player::IsFullyCharged( chargeLevel ) ) ? Effect::Kind::Hit_ChargedBuster : Effect::Kind::Hit_Buster;
+		Effect::Admin::Get().GenerateInstance( kind, GetPosition() );
 	}
 	void Buster::PlayCollidedSE() const
 	{
@@ -177,11 +193,13 @@ namespace Bullet
 	}
 	void BusterParam::ShowImGuiNode()
 	{
+		ImGui::DragFloat( u8"ƒ`ƒƒ[ƒW’e‚ÌŽc‘œ‚Ì¶¬ŠÔŠui•bj", &chargedTracingInterval, 0.01f );
+		chargedTracingInterval = std::max( 0.0f, chargedTracingInterval );
+
 		if ( params.size() != chargeLevelCount )
 		{
 			params.resize( chargeLevelCount );
 		}
-
 		using Level = Player::ShotLevel;
 		for ( size_t i = 0; i < chargeLevelCount; ++i )
 		{

@@ -33,8 +33,10 @@
 #include "Input.h"
 #include "Meter.h"
 #include "Music.h"
+#include "RenderingStuff.h"
 #include "Parameter.h"
 #include "Player.h"
+#include "SaveData.h"
 
 #define LOAD_EFFECT_BY_ANOTHER_THREAD ( false )
 
@@ -90,11 +92,12 @@ void SceneLoad::Init()
 
 	sceneParam.LoadParameter();
 	Performer::LoadPart::LoadParameter();
+	SaveData::Admin::Get().Load();
 	Input::LoadParameter();
 
 	loadPerformer.Init();
 	loadPerformer.Start( FetchParameter().ssLoadingDrawPos, Donya::Color::Code::GRAY );
-	
+
 	constexpr auto coInitValue = COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE;
 	auto LoadingEffects	= [coInitValue]( Thread::Result *pResult )
 	{
@@ -120,7 +123,7 @@ void SceneLoad::Init()
 				succeeded = false;
 			}
 		}
-		
+
 		_ASSERT_EXPR( succeeded, L"Failed: Effects load is failed." );
 
 		pResult->WriteResult( succeeded );
@@ -144,47 +147,15 @@ void SceneLoad::Init()
 
 		bool succeeded = true;
 
-		if ( !Boss	::LoadResource()	) { succeeded = false; }
-		if ( !Bullet::LoadResource()	) { succeeded = false; }
-		if ( !Door	::LoadResource()	) { succeeded = false; }
-		if ( !Enemy	::LoadResource()	) { succeeded = false; }
-		if ( !Item	::LoadResource()	) { succeeded = false; }
-		if ( !Meter	::LoadResource()	) { succeeded = false; }
-		if ( !Player::LoadResource()	) { succeeded = false; }
-		
+		if ( !Boss	::LoadResource() ) { succeeded = false; }
+		if ( !Bullet::LoadResource() ) { succeeded = false; }
+		if ( !Door	::LoadResource() ) { succeeded = false; }
+		if ( !Enemy	::LoadResource() ) { succeeded = false; }
+		if ( !Item	::LoadResource() ) { succeeded = false; }
+		if ( !Meter	::LoadResource() ) { succeeded = false; }
+		if ( !Player::LoadResource() ) { succeeded = false; }
+
 		_ASSERT_EXPR( succeeded, L"Failed: Models load is failed." );
-
-		pResult->WriteResult( succeeded );
-
-		CoUninitialize();
-	};
-	auto LoadingSprites	= [coInitValue]( Thread::Result *pResult )
-	{
-		if ( !pResult ) { assert( !"HUMAN ERROR" ); return; }
-		// else
-
-		HRESULT hr = CoInitializeEx( NULL, coInitValue );
-		if ( FAILED( hr ) )
-		{
-			pResult->WriteResult( /* wasSucceeded = */ false );
-			return;
-		}
-		// else
-
-		using Attr = SpriteAttribute;
-
-		auto MakeTextureCache = []( Attr attr )->bool
-		{
-			const auto handle = Donya::Sprite::Load( GetSpritePath( attr ), GetSpriteInstanceCount( attr ) );
-			return  (  handle == NULL ) ? false : true;
-		};
-
-		bool succeeded = true;
-		if ( !MakeTextureCache( Attr::TitleLogo		) ) { succeeded = false; }
-		if ( !MakeTextureCache( Attr::InputButtons	) ) { succeeded = false; }
-		if ( !MakeTextureCache( Attr::Meter			) ) { succeeded = false; }
-		
-		_ASSERT_EXPR( succeeded, L"Failed: Sprites load is failed." );
 
 		pResult->WriteResult( succeeded );
 
@@ -208,67 +179,74 @@ void SceneLoad::Init()
 		struct Bundle
 		{
 			ID			id;
-			const char	*filePath;
+			const char *filePath;
 			bool		isEnableLoop;
 		public:
 			constexpr Bundle( ID id, const char *filePath, bool isEnableLoop )
-				: id( id ), filePath( filePath ), isEnableLoop( isEnableLoop ) {}
+				: id( id ), filePath( filePath ), isEnableLoop( isEnableLoop )
+			{}
 		};
 
 		constexpr std::array<Bundle, ID::MUSIC_COUNT> bundles
 		{
 			// ID, FilePath, isEnableLoop
 
-			Bundle{ ID::BGM_Title,					"./Data/Sounds/BGM/Title.ogg",						true	},
-			Bundle{ ID::BGM_Game,					"./Data/Sounds/BGM/Game.ogg",						true	},
-			Bundle{ ID::BGM_Boss,					"./Data/Sounds/BGM/BossBattle.ogg",					true	},
-			Bundle{ ID::BGM_Over,					"./Data/Sounds/BGM/GameOver.ogg",					false	},
-			Bundle{ ID::BGM_Result,					"./Data/Sounds/BGM/Result.ogg",						true	},
+			Bundle{ ID::BGM_Title,						"./Data/Sounds/BGM/Title.ogg",							true	},
+			Bundle{ ID::BGM_Game,						"./Data/Sounds/BGM/Game.ogg",							true	},
+			Bundle{ ID::BGM_Boss,						"./Data/Sounds/BGM/BossBattle.ogg",						true	},
+			Bundle{ ID::BGM_Over,						"./Data/Sounds/BGM/GameOver.ogg",						false	},
+			Bundle{ ID::BGM_Result,						"./Data/Sounds/BGM/Result.ogg",							true	},
 
-			Bundle{ ID::Bullet_HitBuster,			"./Data/Sounds/SE/Bullet/Hit_Buster.wav",			false	},
-			Bundle{ ID::Bullet_HitShield,			"./Data/Sounds/SE/Bullet/Hit_Shield.wav",			false	},
-			Bundle{ ID::Bullet_HitSuperBall,		"./Data/Sounds/SE/Bullet/Hit_SuperBall.ogg",		false	},
-			Bundle{ ID::Bullet_Protected,			"./Data/Sounds/SE/Bullet/Protected.wav",			false	},
-			Bundle{ ID::Bullet_ShotBuster,			"./Data/Sounds/SE/Bullet/Shot_Buster.wav",			false	},
-			Bundle{ ID::Bullet_ShotShield_Expand,	"./Data/Sounds/SE/Bullet/Shot_Shield_Expand.wav",	false	},
-			Bundle{ ID::Bullet_ShotShield_Throw,	"./Data/Sounds/SE/Bullet/Shot_Shield_Throw.wav",	false	},
-			Bundle{ ID::Bullet_ShotSkullBuster,		"./Data/Sounds/SE/Bullet/Shot_Skull_Buster.wav",	false	},
-			
-			Bundle{ ID::CatchItem,					"./Data/Sounds/SE/Effect/CatchItem.ogg",			false	},
-			
-			Bundle{ ID::Charge_Complete,			"./Data/Sounds/SE/Effect/Charge_Complete.wav",		false	},
-			Bundle{ ID::Charge_Loop,				"./Data/Sounds/SE/Effect/Charge_Loop.ogg",			true	},
-			Bundle{ ID::Charge_Start,				"./Data/Sounds/SE/Effect/Charge_Start.wav",			false	},
-			
-			Bundle{ ID::Door_OpenClose,				"./Data/Sounds/SE/Map/Door_OpenClose.ogg",			false	},
-			
-			Bundle{ ID::Performance_AppearBoss,		"./Data/Sounds/SE/Performance/AppearBoss.ogg",		false	},
-			Bundle{ ID::Performance_ClearStage,		"./Data/Sounds/SE/Performance/ClearStage.ogg",		false	},
-			
-			Bundle{ ID::Player_1UP,					"./Data/Sounds/SE/Player/ExtraLife.wav",			false	},
-			Bundle{ ID::Player_Appear,				"./Data/Sounds/SE/Player/Appear.ogg",				false	},
-			Bundle{ ID::Player_Damage,				"./Data/Sounds/SE/Player/Damage.wav",				false	},
-			Bundle{ ID::Player_Dash,				"./Data/Sounds/SE/Player/Dash.wav",					false	},
-			Bundle{ ID::Player_Jump,				"./Data/Sounds/SE/Player/Jump.wav",					false	},
-			Bundle{ ID::Player_Landing,				"./Data/Sounds/SE/Player/Landing.wav",				false	},
-			Bundle{ ID::Player_Leave,				"./Data/Sounds/SE/Player/Leave.ogg",				false	},
-			Bundle{ ID::Player_Miss,				"./Data/Sounds/SE/Player/Miss.wav",					false	},
-			Bundle{ ID::Player_ShiftGun,			"./Data/Sounds/SE/Player/ShiftGun.ogg",				false	},
-			
-			Bundle{ ID::RecoverHP,					"./Data/Sounds/SE/Effect/RecoverHP.wav",			false	},
-			
-			Bundle{ ID::Skull_Landing,				"./Data/Sounds/SE/Boss/Skull_Landing.wav",			false	},
-			Bundle{ ID::Skull_Jump,					"./Data/Sounds/SE/Boss/Skull_Jump.wav",				false	},
-			Bundle{ ID::Skull_Roar,					"./Data/Sounds/SE/Boss/Skull_Roar.wav",				false	},
-			
-			Bundle{ ID::SuperBallMachine_Shot,		"./Data/Sounds/SE/Enemy/SBM_Shot.wav",				false	},
-			
-			Bundle{ ID::UI_Choose,					"./Data/Sounds/SE/UI/Choose.ogg",					false	},
-			Bundle{ ID::UI_Decide,					"./Data/Sounds/SE/UI/Decide.ogg",					false	},
-			
+			Bundle{ ID::Bullet_HitBone,					"./Data/Sounds/SE/Bullet/Hit_Bone.ogg",					false	},
+			Bundle{ ID::Bullet_HitBuster,				"./Data/Sounds/SE/Bullet/Hit_Buster.wav",				false	},
+			Bundle{ ID::Bullet_HitShield,				"./Data/Sounds/SE/Bullet/Hit_Shield.wav",				false	},
+			Bundle{ ID::Bullet_HitSuperBall,			"./Data/Sounds/SE/Bullet/Hit_SuperBall.ogg",			false	},
+			Bundle{ ID::Bullet_Protected,				"./Data/Sounds/SE/Bullet/Protected.wav",				false	},
+			Bundle{ ID::Bullet_ShotBone,				"./Data/Sounds/SE/Bullet/Shot_Bone.ogg",				false	},
+			Bundle{ ID::Bullet_ShotBuster,				"./Data/Sounds/SE/Bullet/Shot_Buster.wav",				false	},
+			Bundle{ ID::Bullet_ShotShield_Expand,		"./Data/Sounds/SE/Bullet/Shot_Shield_Expand.wav",		false	},
+			Bundle{ ID::Bullet_ShotShield_Throw,		"./Data/Sounds/SE/Bullet/Shot_Shield_Throw.wav",		false	},
+			Bundle{ ID::Bullet_ShotSkullBuster,			"./Data/Sounds/SE/Bullet/Shot_Skull_Buster.wav",		false	},
+
+			Bundle{ ID::CatchItem,						"./Data/Sounds/SE/Effect/CatchItem.ogg",				false	},
+
+			Bundle{ ID::Charge_Complete,				"./Data/Sounds/SE/Effect/Charge_Complete.wav",			false	},
+			Bundle{ ID::Charge_Loop,					"./Data/Sounds/SE/Effect/Charge_Loop.ogg",				true	},
+			Bundle{ ID::Charge_Start,					"./Data/Sounds/SE/Effect/Charge_Start.wav",				false	},
+
+			Bundle{ ID::Door_OpenClose,					"./Data/Sounds/SE/Map/Door_OpenClose.ogg",				false	},
+
+			Bundle{ ID::Performance_AppearBoss,			"./Data/Sounds/SE/Performance/AppearBoss.ogg",			false	},
+			Bundle{ ID::Performance_ClearStage,			"./Data/Sounds/SE/Performance/ClearStage.ogg",			false	},
+
+			Bundle{ ID::Player_1UP,						"./Data/Sounds/SE/Player/ExtraLife.wav",				false	},
+			Bundle{ ID::Player_Appear,					"./Data/Sounds/SE/Player/Appear.ogg",					false	},
+			Bundle{ ID::Player_Damage,					"./Data/Sounds/SE/Player/Damage.wav",					false	},
+			Bundle{ ID::Player_Dash,					"./Data/Sounds/SE/Player/Dash.wav",						false	},
+			Bundle{ ID::Player_Jump,					"./Data/Sounds/SE/Player/Jump.wav",						false	},
+			Bundle{ ID::Player_Landing,					"./Data/Sounds/SE/Player/Landing.wav",					false	},
+			Bundle{ ID::Player_Leave,					"./Data/Sounds/SE/Player/Leave.ogg",					false	},
+			Bundle{ ID::Player_Miss,					"./Data/Sounds/SE/Player/Miss.wav",						false	},
+			Bundle{ ID::Player_ShiftGun,				"./Data/Sounds/SE/Player/ShiftGun.ogg",					false	},
+
+			Bundle{ ID::RecoverHP,						"./Data/Sounds/SE/Effect/RecoverHP.wav",				false	},
+
+			Bundle{ ID::SkeletonJoe_Break,				"./Data/Sounds/SE/Enemy/SklJoe_Break.ogg",				false	},
+			Bundle{ ID::SkeletonJoe_ReAssemble_Begin,	"./Data/Sounds/SE/Enemy/SklJoe_ReAssemble_Begin.ogg",	false	},
+			Bundle{ ID::SkeletonJoe_ReAssemble_End,		"./Data/Sounds/SE/Enemy/SklJoe_ReAssemble_End.ogg",		false	},
+
+			Bundle{ ID::Skull_Landing,					"./Data/Sounds/SE/Boss/Skull_Landing.wav",				false	},
+			Bundle{ ID::Skull_Jump,						"./Data/Sounds/SE/Boss/Skull_Jump.wav",					false	},
+			Bundle{ ID::Skull_Roar,						"./Data/Sounds/SE/Boss/Skull_Roar.wav",					false	},
+
+			Bundle{ ID::SuperBallMachine_Shot,			"./Data/Sounds/SE/Enemy/SBM_Shot.wav",					false	},
+
+			Bundle{ ID::UI_Choose,						"./Data/Sounds/SE/UI/Choose.ogg",						false	},
+			Bundle{ ID::UI_Decide,						"./Data/Sounds/SE/UI/Decide.ogg",						false	},
+
 			#if DEBUG_MODE
-			Bundle{ ID::DEBUG_Strong,				"./Data/Sounds/SE/UI/Decide.ogg",					false	},
-			Bundle{ ID::DEBUG_Weak,					"./Data/Sounds/SE/UI/Choose.ogg",					false	},
+			Bundle{ ID::DEBUG_Strong,					"./Data/Sounds/SE/UI/Decide.ogg",						false	},
+			Bundle{ ID::DEBUG_Weak,						"./Data/Sounds/SE/UI/Choose.ogg",						false	},
 			#endif // DEBUG_MODE
 		};
 
@@ -290,16 +268,88 @@ void SceneLoad::Init()
 
 		CoUninitialize();
 	};
+	auto LoadingSprites	= [coInitValue]( Thread::Result *pResult )
+	{
+		if ( !pResult ) { assert( !"HUMAN ERROR" ); return; }
+		// else
+
+		HRESULT hr = CoInitializeEx( NULL, coInitValue );
+		if ( FAILED( hr ) )
+		{
+			pResult->WriteResult( /* wasSucceeded = */ false );
+			return;
+		}
+		// else
+
+		using Attr = SpriteAttribute;
+
+		auto MakeTextureCache = []( Attr attr )->bool
+		{
+			const auto handle = Donya::Sprite::Load( GetSpritePath( attr ), GetSpriteInstanceCount( attr ) );
+			return  ( handle == NULL ) ? false : true;
+		};
+
+		bool succeeded = true;
+		if ( !MakeTextureCache( Attr::TitleLogo		) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::InputButtons	) ) { succeeded = false; }
+		if ( !MakeTextureCache( Attr::Meter			) ) { succeeded = false; }
+
+		_ASSERT_EXPR( succeeded, L"Failed: Sprites load is failed." );
+
+		pResult->WriteResult( succeeded );
+
+		CoUninitialize();
+	};
+	auto CreateRenderer	= [coInitValue]( Thread::Result *pResult )
+	{
+		if ( !pResult ) { assert( !"HUMAN ERROR" ); return; }
+		// else
+
+		HRESULT hr = CoInitializeEx( NULL, coInitValue );
+		if ( FAILED( hr ) )
+		{
+			pResult->WriteResult( /* wasSucceeded = */ false );
+			return;
+		}
+		// else
+
+		const bool succeeded = RenderingStuffInstance::Get().Initialize();
+
+		_ASSERT_EXPR( succeeded, L"Failed: Rendering stuffs creation is failed." );
+
+		pResult->WriteResult( succeeded );
+
+		CoUninitialize();
+	};
+
+	using FunctionType = std::function<void( Thread::Result * )>;
+	std::array<FunctionType, ThreadKind::ThreadCount> functions
+	{
+		LoadingEffects,
+		LoadingModels,
+		LoadingSounds,
+		LoadingSprites,
+		CreateRenderer
+	};
 
 #if LOAD_EFFECT_BY_ANOTHER_THREAD
-	thEffects.pThread	= std::make_unique<std::thread>( LoadingModels, &thEffects.result );
+	for ( int i = 0; i < ThreadKind::ThreadCount; ++i )
+	{
+		threads[i].pThread =
+		std::make_unique<std::thread>( functions[i], &threads[i].result );
+	}
 #else
-	LoadingEffects( &thEffects.result );
-#endif // LOAD_EFFECT_BY_ANOTHER_THREAD
+	for ( int i = 0; i < ThreadKind::ThreadCount; ++i )
+	{
+		if ( i == Effect ) { continue; }
+		// else
 
-	thModels.pThread	= std::make_unique<std::thread>( LoadingModels,		&thModels.result  );
-	thSounds.pThread	= std::make_unique<std::thread>( LoadingSounds,		&thSounds.result  );
-	thSprites.pThread	= std::make_unique<std::thread>( LoadingSprites,	&thSprites.result );
+		threads[i].pThread =
+		std::make_unique<std::thread>( functions[i], &threads[i].result );
+	}
+
+	LoadingEffects( &threads[Effect].result );
+#endif // LOAD_EFFECT_BY_ANOTHER_THREAD
 }
 void SceneLoad::Uninit()
 {
@@ -361,27 +411,27 @@ void SceneLoad::Draw( float elapsedTime )
 
 void SceneLoad::ReleaseAllThread()
 {
-	thEffects.JoinThenRelease();
-	thModels.JoinThenRelease();
-	thSounds.JoinThenRelease();
-	thSprites.JoinThenRelease();
+	for ( auto &th : threads )
+	{
+		th.JoinThenRelease();
+	}
 }
 
 bool SceneLoad::AllFinished() const
 {
-	if ( !thEffects	.result.Finished() ) { return false; }
-	if ( !thModels	.result.Finished() ) { return false; }
-	if ( !thSounds	.result.Finished() ) { return false; }
-	if ( !thSprites	.result.Finished() ) { return false; }
+	for ( auto &th : threads )
+	{
+		if ( !th.result.Finished() ) { return false; }
+	}
 
 	return true;
 }
 bool SceneLoad::AllSucceeded() const
 {
-	if ( !thEffects	.result.Succeeded() ) { return false; }
-	if ( !thModels	.result.Succeeded() ) { return false; }
-	if ( !thSounds	.result.Succeeded() ) { return false; }
-	if ( !thSprites	.result.Succeeded() ) { return false; }
+	for ( auto &th : threads )
+	{
+		if ( !th.result.Succeeded() ) { return false; }
+	}
 
 	return true;
 }
@@ -426,30 +476,46 @@ Scene::Result SceneLoad::ReturnResult()
 #if USE_IMGUI
 void SceneLoad::UseImGui()
 {
-	if ( ImGui::BeginIfAllowed() )
+	if ( !ImGui::BeginIfAllowed() ) { return; }
+	// else
+
+	ImGui::Checkbox( u8"フェードアウトを止める", &stopFadeout );
+
+	ImGui::Text( u8"経過時間：[%6.3f]", elapsedTimer );
+
+	sceneParam.ShowImGuiNode( u8"ロード画面のパラメータ" );
+
+	auto GetBoolStr = []( bool v )->std::string
 	{
-		if ( ImGui::TreeNode( u8"ロード画面のメンバ" ) )
+		return ( v ) ? "True" : "False";
+	};
+	auto GetNameStr = []( ThreadKind kind )->std::string
+	{
+		std::string str = u8"終了フラグ・";
+
+		switch ( kind )
 		{
-			ImGui::Checkbox( u8"フェードアウトを止めるか", &stopFadeout );
-
-			sceneParam.ShowImGuiNode( u8"パラメータ調整" );
-
-			auto GetBoolStr = []( bool v )->std::string
-			{
-				return ( v ) ? "True" : "False";
-			};
-
-			ImGui::Text( u8"終了フラグ・エフェクト[%s]",	GetBoolStr( thEffects	.result.Finished() ).c_str() );
-			ImGui::Text( u8"終了フラグ・モデル[%s]",		GetBoolStr( thModels	.result.Finished() ).c_str() );
-			ImGui::Text( u8"終了フラグ・スプライト[%s]",	GetBoolStr( thSounds	.result.Finished() ).c_str() );
-			ImGui::Text( u8"終了フラグ・サウンド[%s]",	GetBoolStr( thSprites	.result.Finished() ).c_str() );
-			
-			ImGui::Text( u8"経過時間：[%6.3f]", elapsedTimer );
-
-			ImGui::TreePop();
+		case SceneLoad::Effect:		str += u8"エフェクト";	break;
+		case SceneLoad::Models:		str += u8"モデル";		break;
+		case SceneLoad::Sounds:		str += u8"スプライト";	break;
+		case SceneLoad::Sprites:	str += u8"サウンド";		break;
+		case SceneLoad::Renderer:	str += u8"レンダラ";		break;
+		default: str += u8"!ERROR_KIND!"; break;
 		}
 
-		ImGui::End();
+		str += u8"[%s]";
+		return str;
+	};
+
+	for ( int i = 0; i < ThreadKind::ThreadCount; ++i )
+	{
+		ImGui::Text
+		(
+			GetNameStr( scast<ThreadKind>( i )			).c_str(),
+			GetBoolStr( threads[i].result.Finished()	).c_str()
+		);
 	}
+
+	ImGui::End();
 }
 #endif // USE_IMGUI

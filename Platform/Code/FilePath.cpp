@@ -179,12 +179,18 @@ namespace Effect
 			return Make( u"Charge_Complete.efk" );
 		case Effect::Kind::Charge_Loop:
 			return Make( u"Charge_Loop.efk" );
+		case Effect::Kind::Charge_Loop_Charged:
+			return Make( u"Charge_Loop_Charged.efk" );
+		case Effect::Kind::ChargedBustersTracing:
+			return Make( u"ChargedBustersTracing.efk" );
 		case Effect::Kind::Death:
 			return Make( u"Death.efk" );
 		case Effect::Kind::DefeatEnemy_Small:
 			return Make( u"Defeat_Small.efk" );
-		case Effect::Kind::Hit_Buster:	
+		case Effect::Kind::Hit_Buster:
 			return Make( u"Hit_Buster.efk" );
+		case Effect::Kind::Hit_ChargedBuster:
+			return Make( u"Hit_ChargedBuster.efk" );
 		case Effect::Kind::HurtDamage:
 			return Make( u"Hurt.efk" );
 		case Effect::Kind::Player_Appear:

@@ -1,0 +1,52 @@
+{
+    "CheckPoints": {
+        "cereal_class_version": 0,
+        "areas": [
+            {
+                "cereal_class_version": 0,
+                "area": {
+                    "cereal_class_version": 0,
+                    "pos": {
+                        "cereal_class_version": 0,
+                        "x": 76.5,
+                        "y": -16.0,
+                        "z": 0.0
+                    },
+                    "offset": {
+                        "x": 4.5,
+                        "y": 2.0,
+                        "z": 0.0
+                    },
+                    "size": {
+                        "x": 8.0,
+                        "y": 6.0,
+                        "z": 0.5
+                    },
+                    "exist": true
+                },
+                "lookingRight": true
+            },
+            {
+                "area": {
+                    "pos": {
+                        "x": 202.0,
+                        "y": -28.0,
+                        "z": 0.0
+                    },
+                    "offset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "size": {
+                        "x": 11.0,
+                        "y": 6.0,
+                        "z": 0.5
+                    },
+                    "exist": true
+                },
+                "lookingRight": true
+            }
+        ]
+    }
+}

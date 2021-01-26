@@ -8,6 +8,8 @@
 #include "Bullets/Buster.h"
 #include "Bullets/SkullBullet.h"
 #include "Bullets/SuperBall.h"
+#include "Bullets/Bone.h"
+#include "Bullets/TogeheroBody.h"
 #include "Common.h"				// Use IsShowCollision()
 #include "Effect/EffectAdmin.h"
 #include "Effect/EffectKind.h"
@@ -28,6 +30,8 @@ namespace Bullet
 			"SkullBuster",
 			"SkullShield",
 			"SuperBall",
+			"Bone",
+			"Togehero",
 		};
 
 		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
@@ -106,6 +110,8 @@ namespace Bullet
 			Impl::LoadSkullBuster();
 			Impl::LoadSkullShield();
 			Impl::LoadSuperBall();
+			Impl::LoadBone();
+			Impl::LoadTogeheroBody();
 		}
 
 	#if USE_IMGUI
@@ -119,6 +125,8 @@ namespace Bullet
 			Impl::UpdateSkullBuster	( u8"SkullBuster" );
 			Impl::UpdateSkullShield	( u8"SkullShield" );
 			Impl::UpdateSuperBall	( u8"SuperBall" );
+			Impl::UpdateBone		( u8"Bone" );
+			Impl::UpdateTogeheroBody( u8"TogeheroBody" );
 
 			ImGui::TreePop();
 		}
@@ -159,6 +167,7 @@ namespace Bullet
 		case Kind::SkullBuster:	return "SkullBuster";
 		case Kind::SkullShield:	return "SkullShield";
 		case Kind::SuperBall:	return "SuperBall";
+		case Kind::Bone:		return "Bone";
 		default: break;
 		}
 
@@ -298,7 +307,7 @@ namespace Bullet
 
 		if ( removeIfOutScreen && OnOutSide( wsScreen ) )
 		{
-			wantRemove = true;
+			ProcessOnOutSide();
 		}
 	}
 	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )
@@ -329,7 +338,7 @@ namespace Bullet
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();
 
-		pRenderer->Render( model.pResource->model, model.pose );
+		pRenderer->Render( model.pResource->model, model.GetCurrentPose() );
 
 		pRenderer->DeactivateConstantModel();
 	}
@@ -397,7 +406,7 @@ namespace Bullet
 		const bool outSphere	= ( IsZero( hitSphere.radius )	|| !Donya::Collision::IsHit( hitSphere,	wsScreen, /* considerExistFlag = */ false ) );
 		return outAABB & outSphere; // Which one is true certainly, so I should combine it.
 	}
-	void Base::CollidedToObject( bool otherIsBroken ) const
+	void Base::CollidedToObject( bool otherIsBroken, bool otherIsBullet ) const
 	{
 		// Play a SE and an effect only first time. Because it may called multiple times in the same frame
 		collidedCallingCount++;
@@ -457,6 +466,10 @@ namespace Bullet
 		wasProtected	= ( fromRightSide )
 						? ProtectedInfo::ByRightSide
 						: ProtectedInfo::ByLeftSide;
+	}
+	void Base::ProcessOnOutSide()
+	{
+		wantRemove = true;
 	}
 	Donya::Collision::Sphere3F	Base::GetHitSphere()			const
 	{
@@ -747,6 +760,8 @@ namespace Bullet
 			case Kind::SkullBuster:	tmp = std::make_shared<SkullBuster>();	break;
 			case Kind::SkullShield:	tmp = std::make_shared<SkullShield>();	break;
 			case Kind::SuperBall:	tmp = std::make_shared<SuperBall>();	break;
+			case Kind::Bone:		tmp = std::make_shared<Bone>();			break;
+			case Kind::TogeheroBody:tmp = std::make_shared<TogeheroBody>();	break;
 			default: _ASSERT_EXPR( 0, L"Error: Unexpected bullet kind!" );	return;
 			}
 

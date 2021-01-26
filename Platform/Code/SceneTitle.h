@@ -9,12 +9,10 @@
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
 #include "Boss.h"
-#include "Bloom.h"
 #include "ClearEvent.h"
 #include "Map.h"
 #include "ObjectBase.h"
 #include "Player.h"
-#include "Renderer.h"
 #include "Room.h"
 #include "Scene.h"
 #include "Sky.h"
@@ -53,12 +51,6 @@ public:
 		ItemCount,		// Do not select anything
 	};
 private:
-	struct Shader
-	{
-		Donya::VertexShader VS;
-		Donya::PixelShader  PS;
-	};
-private:
 	std::array<Donya::ICamera, cameraStateCount>	stateCameras;
 	Donya::ICamera									lightCamera;
 
@@ -76,12 +68,6 @@ private:
 
 	PerformanceState								performanceStatus	= PerformanceState::NotPerforming;
 
-	std::unique_ptr<RenderingHelper>				pRenderer;
-	std::unique_ptr<Donya::Displayer>				pDisplayer;
-	std::unique_ptr<BloomApplier>					pBloomer;
-	std::unique_ptr<Donya::Surface>					pScreenSurface;
-	std::unique_ptr<Donya::Surface>					pShadowMap;
-	std::unique_ptr<Shader>							pQuadShader;
 	std::unique_ptr<Map>							pMap;
 	std::unique_ptr<Sky>							pSky;
 	std::unique_ptr<House>							pHouse;
@@ -117,11 +103,6 @@ public:
 
 	void	Draw( float elapsedTime ) override;
 private:
-	bool	CreateRenderers( const Donya::Int2 &wholeScreenSize );
-	bool	CreateSurfaces( const Donya::Int2 &wholeScreenSize );
-	bool	CreateShaders();
-	bool	AreRenderersReady() const;
-
 	void	LoadSaveData();
 
 	void	UpdateInput();

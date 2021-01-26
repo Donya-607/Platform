@@ -12,6 +12,24 @@ namespace ModelHelper
 			pose.AssignSkeletal( pResource->skeletal );
 			animator.ResetTimer();
 		}
+
+		interpolation.currMotionIndex	= 0;
+		interpolation.transPercent		= 1.0f;
+		interpolation.transSecond		= Interpolation::defaultTransitionSecond;
+		interpolation.prevPose			= pose;
+		interpolation.lerpedPose		= pose;
+	}
+	void SkinningOperator::SetInterpolationSecond( float takingSecond )
+	{
+		interpolation.transSecond = takingSecond;
+	}
+	Donya::Model::Pose &SkinningOperator::GetCurrentPose()
+	{
+		return ( 1.0f <= interpolation.transPercent ) ? pose : interpolation.lerpedPose;
+	}
+	const Donya::Model::Pose &SkinningOperator::GetCurrentPose() const
+	{
+		return ( 1.0f <= interpolation.transPercent ) ? pose : interpolation.lerpedPose;
 	}
 	int  SkinningOperator::GetMotionCount() const
 	{
@@ -34,6 +52,25 @@ namespace ModelHelper
 		}
 		// else
 
+		if ( motionIndex != interpolation.currMotionIndex )
+		{
+			Interpolation &lerp = interpolation;
+			if ( lerp.transPercent < 1.0f )
+			{
+				// Use the lerp-ing pose
+				lerp.prevPose = lerp.lerpedPose;
+			}
+			else
+			{
+				// But the "lerpedPose" be not updated when the lerp is ended,
+				// So the latest pose is "pose".
+				lerp.prevPose = pose;
+			}
+
+			lerp.currMotionIndex	= motionIndex;
+			lerp.transPercent		= 0.0f;
+		}
+
 		const auto &motion = pResource->motionHolder.GetMotion( motionIndex );
 
 		animator.SetRepeatRange( motion );
@@ -46,6 +83,36 @@ namespace ModelHelper
 
 		animator.Update( elapsedTime );
 		AssignMotion( motionIndex );
+
+		AdvanceInterpolation( elapsedTime );
+	}
+	void SkinningOperator::AdvanceInterpolation( float elapsedTime )
+	{
+		Interpolation &lerp = interpolation;
+
+		if ( 1.0f <= lerp.transPercent ) { return; }
+		// else
+
+		// Finish immediately
+		if ( IsZero( lerp.transSecond ) || lerp.transSecond < 0.0f )
+		{
+			lerp.transPercent	= 1.0f;
+			lerp.lerpedPose		= pose;
+			return;
+		}
+		// else
+
+		const float updateSecond = 1.0f / lerp.transSecond;
+		lerp.transPercent += updateSecond * elapsedTime;
+
+		if ( 1.0f <= lerp.transPercent )
+		{
+			lerp.lerpedPose = pose;
+			return;
+		}
+		// else
+
+		lerp.lerpedPose = Donya::Model::Pose::Interpolate( lerp.prevPose, pose, lerp.transPercent );
 	}
 
 	bool Load( const std::string &filePath, StaticSet *pOut )

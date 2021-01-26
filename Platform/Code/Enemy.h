@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#undef max
+#undef min
 #include <cereal/types/memory.hpp>
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
@@ -24,23 +26,23 @@ namespace Enemy
 	{
 		SuperBallMachine,
 		Togehero,
-		// SkeletonJoe,
+		SkeletonJoe,
 		// ShieldAttacker,
 		// Battonton,
-		// SkullMet,
-		// Imorm,
 		
 		KindCount
 	};
 
 	struct SuperBallMachineParam;
 	struct TogeheroParam;
+	struct SkeletonJoeParam;
 	namespace Parameter
 	{
 		void Load();
 
 		const SuperBallMachineParam	&GetSuperBallMachine();
 		const TogeheroParam			&GetTogehero();
+		const SkeletonJoeParam		&GetSkeletonJoe();
 
 	#if USE_IMGUI
 		void Update( const std::string &nodeCaption );
@@ -49,9 +51,11 @@ namespace Enemy
 		{
 			void LoadSuperBallMachine();
 			void LoadTogehero();
+			void LoadSkeletonJoe();
 		#if USE_IMGUI
 			void UpdateSuperBallMachine( const std::string &nodeCaption );
 			void UpdateTogehero( const std::string &nodeCaption );
+			void UpdateSkeletonJoe( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}
 	}
@@ -96,7 +100,7 @@ namespace Enemy
 
 	class Base : public Actor
 	{
-	private: // Seralize values
+	protected: // Seralize value
 		InitializeParam initializer;
 	protected:
 		ModelHelper::SkinningOperator	model;
@@ -138,7 +142,7 @@ namespace Enemy
 		virtual void Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		virtual void Uninit();
 		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
-		virtual void PhysicUpdate( float elapsedTime, const Map &terrain );
+		virtual void PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence = true );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
@@ -215,11 +219,14 @@ namespace Enemy
 		void RemoveEnemiesIfNeeded();
 	#if USE_IMGUI
 		void AppendEnemy( Kind appendKind, const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
+	private:
+		void AdjustPosToLeftBottom( Donya::Vector3 *footPos, const Kind &kind ) const;
 	public:
 		void RemakeByCSV( const CSVLoader &loadedData, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		void SaveEnemies( int stageNumber, bool fromBinary );
 	public:
 		void ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
+		void ShowIONode( int stageNo, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		void ShowInstanceNode( size_t instanceIndex );
 	#endif // USE_IMGUI
 	};

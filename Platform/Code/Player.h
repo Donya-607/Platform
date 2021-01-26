@@ -129,8 +129,11 @@ public:
 		KnockBack,
 		GrabLadder,
 		Shot,
+		ChargedShot,
 		LadderShotLeft,
+		LadderChargedShotLeft,
 		LadderShotRight,
+		LadderChargedShotRight,
 		Brace,
 		Appear,
 		Winning,
@@ -145,6 +148,12 @@ public:
 
 		LevelCount	// Invalid
 	};
+	static constexpr bool IsFullyCharged( ShotLevel level )
+	{
+		constexpr int border   = scast<int>( ShotLevel::Strong );
+		const     int intLevel = scast<int>( level );
+		return ( border <= intLevel );
+	}
 private:
 	class InputManager
 	{
@@ -196,7 +205,8 @@ private:
 
 		Donya::Model::Pose		shotPose;
 		Donya::Model::Animator	shotAnimator;
-		bool					shouldPoseShot = false;
+		bool shotWasCharged = false;
+		bool shouldPoseShot = false;
 	public:
 		void Init();
 		void Update( Player &instance, float elapsedTime, bool stopAnimation = false );
@@ -204,12 +214,14 @@ private:
 	public:
 		void ResetMotionFrame();
 		void QuitShotMotion();
+		void OverwriteLerpSecond( float newSecond );
 	public:
 		bool WasCurrentMotionEnded() const;
 		MotionKind CurrentKind() const { return currKind; }
+		bool NowShotPoses() const;
 	private:
 		void UpdateShotMotion( Player &instance, float elapsedTime );
-		void ApplyPartMotion( Player &instance, float elapsedTime, MotionKind useMotion, const ModelHelper::PartApply &partData );
+		void ApplyPartMotion( Player &instance, float elapsedTime, MotionKind useMotion );
 		void ExplorePartBone( std::vector<size_t> *pTargetBoneIndices, const std::vector<Donya::Model::Animation::Node> &exploreSkeletal, const std::string &searchBoneRootName );
 	private:
 		int  ToMotionIndex( MotionKind kind ) const;
@@ -233,9 +245,11 @@ private:
 		~ShotManager();
 	public:
 		void Init();
+		void Uninit();
 		void Update( const Player &instance, float elapsedTime );
 	public:
 		void ChargeFully();
+		void SetFXPosition( const Donya::Vector3 &wsPosition );
 	public:
 		bool			IsShotRequested( const Player &instance ) const;
 		float			ChargeSecond()		const { return currChargeSecond;	}
@@ -245,6 +259,7 @@ private:
 		bool NowTriggered( const InputManager &input ) const;
 		ShotLevel		CalcChargeLevel() const;
 		Donya::Vector3	CalcEmissiveColor() const;
+		void AssignLoopFX( Effect::Kind kind );
 		void PlayLoopSFXIfStopping();
 		void StopLoopSFXIfPlaying( bool forcely = false );
 	};
@@ -259,6 +274,7 @@ private:
 	public:
 		void Start( float flushingSeconds );
 		void Update( const Player &instance, float elapsedTime );
+		void SetFXPosition( const Donya::Vector3 &wsPosition );
 		bool Drawable() const;
 		/// <summary>
 		/// It means now invincible.
@@ -322,7 +338,6 @@ private:
 	private:
 		Destination	nextStatus	= Destination::None;
 		float		timer		= 0.0f;
-		float		slideSign	= 1.0f;
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
@@ -537,6 +552,7 @@ private:
 	int									currentHP			= 1;
 	float								lookingSign			= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
 	bool								onGround			= false;
+	bool								wasJumpedWhileSlide	= false;
 	// TODO: These status variables can be combine by replace to MotionKind value
 	bool								prevSlidingStatus	= false;
 	bool								prevBracingStatus	= false;
@@ -643,6 +659,7 @@ private:
 	void Fall( float elapsedTime );
 	void Landing();
 	void ShiftGunIfNeeded( float elapsedTime );
+	void GenerateSlideEffects() const;
 private:
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 public:

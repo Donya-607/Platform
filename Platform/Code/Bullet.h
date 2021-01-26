@@ -28,6 +28,8 @@ namespace Bullet
 		SkullBuster,
 		SkullShield,
 		SuperBall,
+		Bone,
+		TogeheroBody,
 
 		KindCount
 	};
@@ -37,6 +39,8 @@ namespace Bullet
 	struct SkullBusterParam;
 	struct SkullShieldParam;
 	struct SuperBallParam;
+	struct BoneParam;
+	struct TogeheroBodyParam;
 	namespace Parameter
 	{
 		void Load();
@@ -50,6 +54,8 @@ namespace Bullet
 		const SkullBusterParam	&GetSkullBuster();
 		const SkullShieldParam	&GetSkullShield();
 		const SuperBallParam	&GetSuperBall();
+		const BoneParam			&GetBone();
+		const TogeheroBodyParam	&GetTogeheroBody();
 
 		namespace Impl
 		{
@@ -58,12 +64,16 @@ namespace Bullet
 			void LoadSkullBuster();
 			void LoadSkullShield();
 			void LoadSuperBall();
+			void LoadBone();
+			void LoadTogeheroBody();
 		#if USE_IMGUI
 			void UpdateBuster( const std::string &nodeCaption );
 			void UpdateGeneral( const std::string &nodeCaption );
 			void UpdateSkullBuster( const std::string &nodeCaption );
 			void UpdateSkullShield( const std::string &nodeCaption );
 			void UpdateSuperBall( const std::string &nodeCaption );
+			void UpdateBone( const std::string &nodeCaption );
+			void UpdateTogeheroBody( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}
 	}
@@ -160,11 +170,12 @@ namespace Bullet
 		virtual bool ShouldRemove() const;
 		virtual bool WasProtected() const;
 		virtual bool OnOutSide( const Donya::Collision::Box3F &wsScreenHitBox ) const;
-		virtual void CollidedToObject( bool otherIsBroken ) const;
+		virtual void CollidedToObject( bool otherIsBroken, bool otherIsBullet ) const;
 		virtual void ProtectedBy( const Donya::Collision::Box3F		&protectObjectBody ) const;
 		virtual void ProtectedBy( const Donya::Collision::Sphere3F	&protectObjectBody ) const;
 	protected:
 		virtual void ProtectedByImpl( float distLeft, float distRight ) const;
+		virtual void ProcessOnOutSide();
 	public:
 		using						 Solid::GetHitBox;
 		virtual Donya::Collision::Sphere3F	GetHitSphere()				const;

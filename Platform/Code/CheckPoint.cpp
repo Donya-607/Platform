@@ -26,6 +26,12 @@ namespace CheckPoint
 	{
 		area.pos		= wsFootPos;
 		lookingRight	= lookRight;
+
+		// Prevent to forgot
+		if ( area.size.IsZero() )
+		{
+			area.size = Tile::unitWholeSize * 0.5f;
+		}
 	}
 	void Instance::Activate()
 	{
@@ -104,6 +110,7 @@ namespace CheckPoint
 	}
 	void Container::LoadParameter( int stageNo )
 	{
+		areas.clear();
 	#if DEBUG_MODE
 		LoadJson( stageNo );
 		// If a user was changed only a json file, the user wanna apply the changes to binary file also.

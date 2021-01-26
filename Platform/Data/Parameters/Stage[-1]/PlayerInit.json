@@ -1,0 +1,12 @@
+{
+    "PlayerInit": {
+        "cereal_class_version": 0,
+        "wsInitialPos": {
+            "cereal_class_version": 0,
+            "x": 39.5,
+            "y": -11.0,
+            "z": 0.0
+        },
+        "lookingRight": false
+    }
+}

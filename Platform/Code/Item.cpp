@@ -123,6 +123,19 @@ namespace Item
 
 		return scast<Kind>( chosen );
 	}
+	void DropItemByLottery( const Donya::Vector3 &wsGeneratePos )
+	{
+		const Kind dropKind = LotteryDropKind();
+		// If invalid is chosen
+		if ( dropKind == Kind::KindCount ) { return; }
+		// else
+
+		InitializeParam tmp;
+		tmp.kind		= dropKind;
+		tmp.aliveSecond	= Parameter::GetItem().disappearSecond;
+		tmp.wsPos		= wsGeneratePos;
+		Admin::Get().RequestGeneration( tmp );
+	};
 
 	namespace Parameter
 	{
@@ -244,8 +257,12 @@ namespace Item
 		lifeEnergyBig.ShowImGuiNode		( u8"ＨＰ回復・大"	);
 		lifeEnergySmall.ShowImGuiNode	( u8"ＨＰ回復・小"	);
 
-		ImGui::DragFloat( u8"ドロップしたものが消える秒数", &disappearSecond, 0.01f );
-		disappearSecond = std::max( 0.001f, disappearSecond );
+		ImGui::DragFloat( u8"ドロップしたものが消える秒数",	&disappearSecond,	0.01f );
+		ImGui::DragFloat( u8"消える前の点滅・秒数",			&flushingSecond,	0.01f );
+		ImGui::DragFloat( u8"消える前の点滅・間隔",			&flushingInterval,	0.01f );
+		disappearSecond		= std::max( 0.001f, disappearSecond		);
+		flushingSecond		= std::max( 0.001f, flushingSecond		);
+		flushingInterval	= std::max( 0.001f, flushingInterval	);
 
 		constexpr size_t dropCount = kindCount + 1;
 		if ( dropPercents.size() != dropCount ) { dropPercents.resize( dropCount ); }
@@ -268,6 +285,39 @@ namespace Item
 	}
 #endif // USE_IMGUI
 
+	void Item::Flusher::Start()
+	{
+		timer	= 0.0f;
+		active	= true;
+	}
+	void Item::Flusher::Update( float elapsedTime )
+	{
+		if ( !active ) { return; }
+		// else
+		timer += elapsedTime;
+	}
+	bool Item::Flusher::IsActive() const
+	{
+		return active;
+	}
+	bool Item::Flusher::Drawable() const
+	{
+		if ( !active ) { return true; }
+		// else
+
+		/*
+		--- cycle
+		Undrawable
+		--- cycle * 0.5f
+		Drawable
+		--- 0.0f
+		*/
+
+		const float &cycle = Parameter::GetItem().flushingInterval;
+		const float remain = std::fmodf( timer, cycle );
+		return ( remain < cycle * 0.5f );
+	}
+
 	namespace
 	{
 		const ItemParam::General *GetGeneralOrNull( Kind kind )
@@ -287,7 +337,7 @@ namespace Item
 		}
 	}
 
-	void Item::Init( const InitializeParam &parameter )
+	void Item::Init( const InitializeParam &parameter, const Map &terrain )
 	{
 		initializer		= parameter;
 
@@ -299,11 +349,16 @@ namespace Item
 		aliveTimer		= 0.0f;
 		wantRemove		= false;
 
-		const auto *pData = GetGeneralOrNull( GetKind() );
-		velocity.y		= ( pData ) ? pData->dropBoundStrength : 0.0f;
+		// If the generated position is inside of terrain
+		beBuried		= IsHitToAnyOf( FetchAroundSolids( 0.0f, terrain ) );
+		if ( !beBuried )
+		{
+			const auto *pData = GetGeneralOrNull( GetKind() );
+			velocity.y	= ( pData ) ? pData->dropBoundStrength : 0.0f;
+		}
 	}
-	void Item::Uninit() {}
-	void Item::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
+	void Item::Uninit() {} // No op
+	void Item::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen, const Map &terrain )
 	{
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
@@ -314,9 +369,14 @@ namespace Item
 
 		aliveTimer += elapsedTime;
 
-		velocity.y -= GetGravity() * elapsedTime;
-
 		UpdateRemoveCondition( wsScreen );
+
+		flusher.Update( elapsedTime );
+
+		if ( !beBuried )
+		{
+			velocity.y -= GetGravity() * elapsedTime;
+		}
 
 		const auto *pData = GetGeneralOrNull( GetKind() );
 		const float animePlaySpeed = ( pData ) ? pData->animePlaySpeed : 1.0f;
@@ -324,11 +384,20 @@ namespace Item
 	}
 	void Item::PhysicUpdate( float elapsedTime, const Map &terrain )
 	{
-		const auto myBody		= GetHitBox();
 		const auto movement		= velocity * elapsedTime;
-		const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
-			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
-		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
+		const auto aroundSolids	= FetchAroundSolids( elapsedTime, terrain );
+
+		if ( beBuried )
+		{
+			if ( !IsHitToAnyOf( aroundSolids ) )
+			{
+				beBuried = false;
+			}
+		
+			velocity = 0.0f;
+			return;
+		}
+		// else
 
 		Actor::MoveX( movement.x, aroundSolids );
 		Actor::MoveZ( movement.z, aroundSolids );
@@ -349,14 +418,15 @@ namespace Item
 
 		const Donya::Vector3 &drawPos = body.pos; // I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
 		const Donya::Vector4x4 W = MakeWorldMatrix( 1.0f, /* enableRotation = */ true, drawPos );
+		const float alpha = ( flusher.Drawable() ) ? 1.0f : 0.0f;
 
 		Donya::Model::Constants::PerModel::Common modelConstant{};
-		modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+		modelConstant.drawColor		= Donya::Vector4{ 1.0f, 1.0f, 1.0f, alpha };
 		modelConstant.worldMatrix	= W;;
 		pRenderer->UpdateConstant( modelConstant );
 		pRenderer->ActivateConstantModel();
 
-		pRenderer->Render( model.pResource->model, model.pose );
+		pRenderer->Render( model.pResource->model, model.GetCurrentPose() );
 
 		pRenderer->DeactivateConstantModel();
 	}
@@ -402,19 +472,23 @@ namespace Item
 		}
 	#endif // DEBUG_MODE
 	}
-	bool Item::ShouldRemove() const
+	bool					Item::IsDynamic()		const
+	{
+		return ( initializer.aliveSecond < 0.0f ) ? false : true;
+	}
+	bool					Item::ShouldRemove()	const
 	{
 		return wantRemove;
 	}
-	Donya::Collision::Box3F	Item::GetCatchArea() const
+	Donya::Collision::Box3F	Item::GetCatchArea()	const
 	{
 		return catchArea;
 	}
-	Kind					Item::GetKind() const
+	Kind					Item::GetKind()			const
 	{
 		return initializer.kind;
 	}
-	InitializeParam			Item::GetInitializer() const
+	InitializeParam			Item::GetInitializer()	const
 	{
 		return initializer;
 	}
@@ -422,6 +496,29 @@ namespace Item
 	{
 		wantRemove = true;
 		Donya::Sound::Play( Music::CatchItem );
+	}
+	std::vector<Donya::Collision::Box3F> Item::FetchAroundSolids( float elapsedTime, const Map &terrain ) const
+	{
+		const auto myBody		= GetHitBox();
+		const auto movement		= velocity * elapsedTime;
+		const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
+			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
+		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
+
+		return aroundSolids;
+	}
+	bool Item::IsHitToAnyOf( const std::vector<Donya::Collision::Box3F> &solids ) const
+	{
+		const auto me = GetHitBox();
+		for ( const auto &it : solids )
+		{
+			if ( Donya::Collision::IsHit( me, it ) )
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 	bool Item::OnOutSideScreen( const Donya::Collision::Box3F &wsScreen )
 	{
@@ -435,6 +532,15 @@ namespace Item
 		const float &aliveLimit = initializer.aliveSecond;
 		if ( aliveLimit < 0.0f ) { return; } // Minus time specifies don't remove until caught
 		// else
+
+		if ( !flusher.IsActive() )
+		{
+			const float beginFlushingSecond = aliveLimit - Parameter::GetItem().flushingSecond;
+			if ( beginFlushingSecond <= aliveTimer )
+			{
+				flusher.Start();
+			}
+		}
 
 		const bool willDisappear = ( aliveLimit <= aliveTimer );
 		if ( willDisappear || OnOutSideScreen( wsScreen ) )
@@ -506,14 +612,14 @@ namespace Item
 			it.Uninit();
 		}
 	}
-	void Admin::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
+	void Admin::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen, const Map &terrain )
 	{
-		GenerateRequestedItems();
+		GenerateRequestedItems( terrain );
 		generateRequests.clear();
 
 		for ( auto &it : items )
 		{
-			it.Update( elapsedTime, wsScreen );
+			it.Update( elapsedTime, wsScreen, terrain );
 		}
 
 		RemoveItemsIfNeeds();
@@ -553,11 +659,32 @@ namespace Item
 		}
 		items.clear();
 	}
+	void Admin::RemoveDynamicInstances()
+	{
+		// Finalize only item that will be removed
+		for ( auto &it : items )
+		{
+			if ( it.IsDynamic() )
+			{
+				it.Uninit();
+			}
+		}
+
+		auto result = std::remove_if
+		(
+			items.begin(), items.end(),
+			[]( Item &element )
+			{
+				return element.IsDynamic();
+			}
+		);
+		items.erase( result, items.end() );
+	}
 	void Admin::RequestGeneration( const InitializeParam &initializer )
 	{
 		generateRequests.emplace_back( initializer );
 	}
-	bool Admin::LoadItems( int stageNumber, bool fromBinary )
+	bool Admin::LoadItems( int stageNumber, const Map &terrain, bool fromBinary )
 	{
 		ClearInstances();
 
@@ -572,7 +699,7 @@ namespace Item
 		// I should call Init()
 		for ( auto &it : items )
 		{
-			it.Init( it.GetInitializer() );
+			it.Init( it.GetInitializer(), terrain );
 		}
 
 		return succeeded;
@@ -591,12 +718,12 @@ namespace Item
 		// else
 		return &items[instanceIndex];
 	}
-	void Admin::GenerateRequestedItems()
+	void Admin::GenerateRequestedItems( const Map &terrain )
 	{
 		for ( const auto &it : generateRequests )
 		{
 			Item tmp{};
-			tmp.Init( it );
+			tmp.Init( it, terrain );
 			items.emplace_back( std::move( tmp ) );
 		}
 	}
@@ -613,7 +740,7 @@ namespace Item
 		items.erase( itr, items.end() );
 	}
 #if USE_IMGUI
-	void Admin::RemakeByCSV( const CSVLoader &loadedData )
+	void Admin::RemakeByCSV( const CSVLoader &loadedData, const Map &terrain )
 	{
 		auto IsItemID	= []( int id )
 		{
@@ -650,7 +777,7 @@ namespace Item
 			init.aliveSecond	= -1.0f; // Specify to living as infinitely
 			init.wsPos			= Map::ToWorldPos( row, column );
 			Item tmp{};
-			tmp.Init( init );
+			tmp.Init( init, terrain );
 			items.emplace_back( std::move( tmp ) );
 		};
 
@@ -680,7 +807,7 @@ namespace Item
 		? tmp.SaveBinary( *this, filePath.c_str(), ID )
 		: tmp.SaveJSON	( *this, filePath.c_str(), ID );
 	}
-	void Admin::ShowImGuiNode( const std::string &nodeCaption, int stageNo )
+	void Admin::ShowImGuiNode( const std::string &nodeCaption, int stageNo, const Map &terrain )
 	{
 		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 		// else
@@ -706,11 +833,11 @@ namespace Item
 		}
 		else if ( result == Op::LoadBinary )
 		{
-			LoadItems( stageNo, true );
+			LoadItems( stageNo, terrain, true );
 		}
 		else if ( result == Op::LoadJson )
 		{
-			LoadItems( stageNo, false );
+			LoadItems( stageNo, terrain, false );
 		}
 
 		ImGui::TreePop();

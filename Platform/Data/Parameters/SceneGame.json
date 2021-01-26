@@ -1,0 +1,139 @@
+{
+    "SceneGame": {
+        "cereal_class_version": 16,
+        "camera.slerpFactor": 1.0,
+        "camera.fovDegree": 33.0,
+        "camera.offsetPos": {
+            "cereal_class_version": 0,
+            "x": 0.0,
+            "y": 0.0,
+            "z": -20.0
+        },
+        "camera.offsetFocus": {
+            "x": 0.0,
+            "y": -1.2000000476837159,
+            "z": 0.0
+        },
+        "waitSecondRetry": 1.0,
+        "scrollTakeSecond": 0.8999999761581421,
+        "directionalLight": {
+            "cereal_class_version": 0,
+            "light": {
+                "cereal_class_version": 1,
+                "diffuseColor": {
+                    "cereal_class_version": 0,
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0,
+                    "w": 1.0
+                },
+                "specularColor": {
+                    "x": 1.0,
+                    "y": 0.9999899864196777,
+                    "z": 0.9999899864196777,
+                    "w": 2.0
+                },
+                "ambientColor": {
+                    "x": 1.0,
+                    "y": 0.9999899864196777,
+                    "z": 0.9999899864196777,
+                    "w": 1.0
+                }
+            },
+            "direction": {
+                "x": 0.0,
+                "y": -0.7071067690849304,
+                "z": 0.7071067690849304,
+                "w": 0.0
+            }
+        },
+        "shadowMap": {
+            "cereal_class_version": 0,
+            "color": {
+                "x": 9.999899930335233e-7,
+                "y": 9.999999974752428e-7,
+                "z": 9.999912435887382e-7
+            },
+            "bias": 0.003000000026077032,
+            "offsetDistance": 20.0,
+            "projectDirection": {
+                "x": -0.3805333077907562,
+                "y": -0.3829346001148224,
+                "z": 0.8417574167251587
+            },
+            "projectDistance": {
+                "x": 43.0,
+                "y": 25.0,
+                "z": 80.0
+            },
+            "nearDistance": 1.0
+        },
+        "bloomParam": {
+            "cereal_class_version": 0,
+            "luminanceThreshold": 0.8999999761581421,
+            "blurDeviation": 2.5,
+            "blurSampleCount": 8
+        },
+        "deadZone": {
+            "cereal_class_version": 0,
+            "x": 0.6000000238418579,
+            "y": 0.699999988079071
+        },
+        "projectScreenAreaMin": {
+            "x": 0.0,
+            "y": 0.0
+        },
+        "projectScreenAreaMax": {
+            "x": 1664.0,
+            "y": 964.0
+        },
+        "playerMeter": {
+            "cereal_class_version": 0,
+            "hpDrawPos": {
+                "x": 80.0,
+                "y": 80.0
+            },
+            "hpDrawColor": {
+                "x": 0.5882353186607361,
+                "y": 0.8901960849761963,
+                "z": 0.686274528503418
+            },
+            "hpDrawScale": 1.0
+        },
+        "skullMeter": {
+            "hpDrawPos": {
+                "x": 1440.0,
+                "y": 80.0
+            },
+            "hpDrawColor": {
+                "x": 0.5899730920791626,
+                "y": 0.724190354347229,
+                "z": 0.8901960849761963
+            },
+            "hpDrawScale": 1.0
+        },
+        "readyFxPosOffset": {
+            "x": 0.0,
+            "y": 1.0,
+            "z": 0.0
+        },
+        "readyFxBeginDelaySecond": 0.20000000298023225,
+        "fadeOutSecondOfBGM": 2.0,
+        "waitSecBet_ClearLeave": 5.900000095367432,
+        "waitSecBet_LeaveFade": 1.7999999523162842,
+        "waitSec_PlayAppearBossSE": 1.0,
+        "waitSec_PlayClearSE": 2.799999952316284,
+        "bossRoomInitialPosOffset": 5.5,
+        "ssLoadingDrawPos": {
+            "x": 1300.0,
+            "y": 750.0
+        },
+        "waitSecondToOver": 3.0,
+        "voxelize": {
+            "cereal_class_version": 0,
+            "voxelSize": 0.10000000149011612,
+            "edgeSize": 0.125,
+            "edgeDarkness": 0.10000000149011612
+        }
+    }
+}

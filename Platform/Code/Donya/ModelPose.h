@@ -13,6 +13,8 @@ namespace Donya
 		/// </summary>
 		class Pose
 		{
+		public:
+			static Pose Interpolate( const Pose &from, const Pose &to, float time );
 		private:
 			std::vector<Animation::Node> skeletal;	// Provides the matrices of the current pose. That transforms space is bone -> mesh.
 		public:

@@ -33,11 +33,27 @@ namespace ModelHelper
 	class  SkinningOperator
 	{
 	public:
+		struct Interpolation
+		{
+			static constexpr float defaultTransitionSecond = 1.0f / 12.0f;
+		public:
+			int					currMotionIndex	= 0;
+			float				transPercent	= 1.0f; // 0.0f:Previous ~ 1.0f:Current
+			float				transSecond		= defaultTransitionSecond;
+			Donya::Model::Pose	prevPose;
+			Donya::Model::Pose	lerpedPose;
+		};
+	public:
 		std::shared_ptr<ModelHelper::SkinningSet> pResource = nullptr;
 		Donya::Model::Pose			pose;
 		Donya::Model::Animator		animator;
+		Interpolation				interpolation;
 	public:
 		void Initialize( const std::shared_ptr<ModelHelper::SkinningSet> &pAssignResource );
+	public:
+		void SetInterpolationSecond( float takingSecond );
+		Donya::Model::Pose &GetCurrentPose();
+		const Donya::Model::Pose &GetCurrentPose() const;
 	public:
 		int  GetMotionCount() const;
 		/// <summary>
@@ -50,8 +66,15 @@ namespace ModelHelper
 		void AssignMotion( int motionIndex );
 		/// <summary>
 		/// Update the animator then call AssignMotion().
+		/// And advance motion interpolation if now transition-ing.
 		/// </summary>
 		void UpdateMotion( float elapsedTime, int motionIndex );
+	public:
+		/// <summary>
+		/// Only update the interpolate process.
+		/// The UpdateMotion() is also calls this, so you have not need to call it if you call UpdateMotion().
+		/// </summary>
+		void AdvanceInterpolation( float elapsedTime );
 	};
 
 	/// <summary>

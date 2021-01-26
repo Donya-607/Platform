@@ -26,7 +26,8 @@ namespace Bullet
 	public:
 		static int GetLivingCount();
 	private:
-		Player::ShotLevel chargeLevel;
+		float				generationTimer = 0.0f;
+		Player::ShotLevel	chargeLevel;
 	public:
 		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
@@ -76,6 +77,8 @@ namespace Bullet
 		};
 	public:
 		std::vector<PerLevel> params; // size() == Player::ShotLevel::LevelCount
+
+		float chargedTracingInterval = 1.0f; // Second
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -85,21 +88,16 @@ namespace Bullet
 			{
 				archive( CEREAL_NVP( params ) );
 			}
+			if ( 3 <= version )
+			{
+				archive( CEREAL_NVP( chargedTracingInterval ) );
+			}
+			if ( 4 <= version )
+			{
+				// archive( CEREAL_NVP( x ) );
+			}
 
 			return;
-
-			/*
-			archive
-			(
-				CEREAL_NVP( hitBoxOffset ),
-				CEREAL_NVP( hitBoxSize   )
-			);
-
-			if ( 1 <= version )
-			{
-				archive( CEREAL_NVP( damage ) );
-			}
-			*/
 		}
 	public:
 	#if USE_IMGUI
@@ -107,5 +105,5 @@ namespace Bullet
 	#endif // USE_IMGUI
 	};
 }
-CEREAL_CLASS_VERSION( Bullet::BusterParam,				2 )
+CEREAL_CLASS_VERSION( Bullet::BusterParam,				3 )
 CEREAL_CLASS_VERSION( Bullet::BusterParam::PerLevel,	1 )

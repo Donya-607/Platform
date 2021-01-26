@@ -3,6 +3,8 @@
 #include <cstdint>		// Use for std::uint32_t.
 #include <DirectXMath.h>
 
+#undef max
+#undef min
 #include <cereal/cereal.hpp>
 
 #include "Useful.h"		// Use Donya::SignBit().

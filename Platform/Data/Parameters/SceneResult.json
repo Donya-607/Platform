@@ -1,0 +1,139 @@
+{
+    "SceneResult": {
+        "cereal_class_version": 5,
+        "camera.fovDegree": 30.0,
+        "camera.offsetPos": {
+            "cereal_class_version": 0,
+            "x": 8.0,
+            "y": -2.0999999046325685,
+            "z": -20.0
+        },
+        "camera.offsetFocus": {
+            "x": 8.0,
+            "y": -8.0,
+            "z": 10.0
+        },
+        "directionalLight": {
+            "cereal_class_version": 0,
+            "light": {
+                "cereal_class_version": 1,
+                "diffuseColor": {
+                    "cereal_class_version": 0,
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0,
+                    "w": 1.0
+                },
+                "specularColor": {
+                    "x": 0.9999942779541016,
+                    "y": 1.0,
+                    "z": 0.9999899864196777,
+                    "w": 1.0
+                },
+                "ambientColor": {
+                    "x": 1.0,
+                    "y": 0.9999899864196777,
+                    "z": 0.9999899864196777,
+                    "w": 1.0
+                }
+            },
+            "direction": {
+                "x": 0.232102170586586,
+                "y": 0.903121292591095,
+                "z": 0.36124852299690249,
+                "w": 0.0
+            }
+        },
+        "shadowMap": {
+            "cereal_class_version": 0,
+            "color": {
+                "x": 9.999999974752428e-7,
+                "y": 9.999899930335233e-7,
+                "z": 9.999899930335233e-7
+            },
+            "bias": 0.029999999329447748,
+            "offsetDistance": 20.0,
+            "projectDirection": {
+                "x": 0.16699212789535523,
+                "y": -0.970036506652832,
+                "z": 0.17647318542003632
+            },
+            "projectDistance": {
+                "x": 24.0,
+                "y": 6.0,
+                "z": 41.0
+            },
+            "nearDistance": 1.0
+        },
+        "bloomParam": {
+            "cereal_class_version": 0,
+            "luminanceThreshold": 1.0199999809265137,
+            "blurDeviation": 5.0,
+            "blurSampleCount": 8
+        },
+        "enemies": [
+            {
+                "cereal_class_version": 1,
+                "wsPos": {
+                    "x": 7.800000190734863,
+                    "y": -1.0,
+                    "z": 0.0
+                },
+                "lookDirection": 2
+            },
+            {
+                "wsPos": {
+                    "x": 13.800000190734864,
+                    "y": -1.0,
+                    "z": 0.0
+                },
+                "lookDirection": 2
+            }
+        ],
+        "firstGenerateEnemySecond": 2.0999999046325685,
+        "generateEnemyIntervalSecond": 16777216.0,
+        "useShotTimings": [
+            1.7999999523162842,
+            4.0,
+            4.599999904632568,
+            6.0,
+            6.699999809265137,
+            7.0
+        ],
+        "finishPerformanceSecond": 8.100000381469727,
+        "waitSecUntilFade": 1.0,
+        "ssMeterDrawPos": {
+            "cereal_class_version": 0,
+            "x": 780.0,
+            "y": 80.0
+        },
+        "ssMeterDrawScale": {
+            "x": 1.0,
+            "y": 1.0
+        },
+        "drawingShiftBack": {
+            "cereal_class_version": 0,
+            "ssPos": {
+                "x": -42.0,
+                "y": 151.0
+            },
+            "ssScale": {
+                "x": 1.0,
+                "y": 1.0
+            }
+        },
+        "drawingShiftAdvance": {
+            "ssPos": {
+                "x": 84.0,
+                "y": 151.0
+            },
+            "ssScale": {
+                "x": 1.0,
+                "y": 1.0
+            }
+        },
+        "firstShiftGunSecond": 1.25,
+        "beSkippableSecond": 1.7999999523162842,
+        "acceptSkipSecond": 1.2999999523162842
+    }
+}

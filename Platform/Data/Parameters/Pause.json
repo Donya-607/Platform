@@ -1,0 +1,25 @@
+{
+    "Pause": {
+        "cereal_class_version": 3,
+        "chooseItemScale": 1.5,
+        "otherItemScale": 1.0,
+        "itemPositions": [
+            {
+                "cereal_class_version": 0,
+                "x": 800.0,
+                "y": 512.0
+            },
+            {
+                "x": 800.0,
+                "y": 592.0
+            }
+        ],
+        "titleScale": 2.0,
+        "titlePos": {
+            "x": 800.0,
+            "y": 300.0
+        },
+        "soundVolume": 0.4000000059604645,
+        "fadeSoundSecond": 0.25
+    }
+}

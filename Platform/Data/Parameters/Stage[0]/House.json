@@ -1,0 +1,287 @@
+{
+    "House": {
+        "cereal_class_version": 0,
+        "rooms": [
+            {
+                "key": 12,
+                "value": {
+                    "cereal_class_version": 2,
+                    "id": 12,
+                    "transition": 2,
+                    "area": {
+                        "cereal_class_version": 0,
+                        "pos": {
+                            "cereal_class_version": 0,
+                            "x": 83.0,
+                            "y": -14.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 15.5,
+                    "connectingRoomIDs": [
+                        13
+                    ]
+                }
+            },
+            {
+                "key": 13,
+                "value": {
+                    "id": 13,
+                    "transition": 0,
+                    "area": {
+                        "pos": {
+                            "x": 109.5,
+                            "y": -14.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 15.5,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 15.699999809265137,
+                    "connectingRoomIDs": [
+                        12,
+                        14
+                    ]
+                }
+            },
+            {
+                "key": 14,
+                "value": {
+                    "id": 14,
+                    "transition": 2,
+                    "area": {
+                        "pos": {
+                            "x": 136.0,
+                            "y": -14.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 16.0,
+                    "connectingRoomIDs": [
+                        13
+                    ]
+                }
+            },
+            {
+                "key": 10,
+                "value": {
+                    "id": 10,
+                    "transition": 11,
+                    "area": {
+                        "pos": {
+                            "x": 83.0,
+                            "y": -26.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 14.0,
+                    "connectingRoomIDs": []
+                }
+            },
+            {
+                "key": 11,
+                "value": {
+                    "id": 11,
+                    "transition": 4,
+                    "area": {
+                        "pos": {
+                            "x": 105.0,
+                            "y": -26.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 17.5,
+                    "connectingRoomIDs": []
+                }
+            },
+            {
+                "key": 15,
+                "value": {
+                    "id": 15,
+                    "transition": 9,
+                    "area": {
+                        "pos": {
+                            "x": 158.0,
+                            "y": -26.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 33.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 16.799999237060548,
+                    "connectingRoomIDs": []
+                }
+            },
+            {
+                "key": 16,
+                "value": {
+                    "id": 16,
+                    "transition": 8,
+                    "area": {
+                        "pos": {
+                            "x": 202.0,
+                            "y": -26.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 16.899999618530275,
+                    "connectingRoomIDs": []
+                }
+            },
+            {
+                "key": 17,
+                "value": {
+                    "id": 17,
+                    "transition": 0,
+                    "area": {
+                        "pos": {
+                            "x": 224.0,
+                            "y": -26.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 17.0,
+                    "connectingRoomIDs": []
+                }
+            },
+            {
+                "key": 9,
+                "value": {
+                    "id": 9,
+                    "transition": 3,
+                    "area": {
+                        "pos": {
+                            "x": 83.0,
+                            "y": -38.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 11.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 15.380000114440918,
+                    "connectingRoomIDs": []
+                }
+            },
+            {
+                "key": 8,
+                "value": {
+                    "id": 8,
+                    "transition": 1,
+                    "area": {
+                        "pos": {
+                            "x": 55.0,
+                            "y": -50.0,
+                            "z": 0.0
+                        },
+                        "offset": {
+                            "x": 0.0,
+                            "y": 0.0,
+                            "z": 0.0
+                        },
+                        "size": {
+                            "x": 39.0,
+                            "y": 6.0,
+                            "z": 3.4028234663852887e38
+                        },
+                        "exist": true
+                    },
+                    "hour": 12.0,
+                    "connectingRoomIDs": []
+                }
+            }
+        ]
+    }
+}

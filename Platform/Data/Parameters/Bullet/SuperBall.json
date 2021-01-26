@@ -1,0 +1,27 @@
+{
+    "SuperBall": {
+        "cereal_class_version": 0,
+        "basic": {
+            "cereal_class_version": 1,
+            "hitBoxOffset": {
+                "cereal_class_version": 0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hitBoxSize": {
+                "x": 0.3499999940395355,
+                "y": 0.3499999940395355,
+                "z": 0.3499999940395355
+            },
+            "damage": {
+                "cereal_class_version": 0,
+                "amount": 1,
+                "type": 0
+            },
+            "animePlaySpeed": 1.0
+        },
+        "accelerateCount": 8,
+        "acceleratePercent": 1.1649999618530274
+    }
+}

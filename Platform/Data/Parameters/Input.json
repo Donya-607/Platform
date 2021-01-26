@@ -1,0 +1,146 @@
+{
+    "Input": {
+        "cereal_class_version": 1,
+        "texViews": [
+            {
+                "cereal_class_version": 0,
+                "keyboard": {
+                    "cereal_class_version": 0,
+                    "degree": 0.0,
+                    "alpha": 1.0,
+                    "pos": {
+                        "cereal_class_version": 0,
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "origin": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "texPos": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "texSize": {
+                        "x": 32.0,
+                        "y": 38.0
+                    },
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "color": {
+                        "cereal_class_version": 0,
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    }
+                },
+                "controller": {
+                    "degree": 0.0,
+                    "alpha": 1.0,
+                    "pos": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "origin": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "texPos": {
+                        "x": 64.0,
+                        "y": 0.0
+                    },
+                    "texSize": {
+                        "x": 36.0,
+                        "y": 38.0
+                    },
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "color": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    }
+                }
+            },
+            {
+                "keyboard": {
+                    "degree": 0.0,
+                    "alpha": 1.0,
+                    "pos": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "origin": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "texPos": {
+                        "x": 0.0,
+                        "y": 38.0
+                    },
+                    "texSize": {
+                        "x": 32.0,
+                        "y": 38.0
+                    },
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "color": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    }
+                },
+                "controller": {
+                    "degree": 0.0,
+                    "alpha": 1.0,
+                    "pos": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "origin": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "texPos": {
+                        "x": 64.0,
+                        "y": 38.0
+                    },
+                    "texSize": {
+                        "x": 36.0,
+                        "y": 38.0
+                    },
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0
+                    },
+                    "color": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    }
+                }
+            }
+        ],
+        "notifyingStretches": [
+            {
+                "x": 1.0,
+                "y": 1.0
+            },
+            {
+                "x": 3.0,
+                "y": 3.0
+            },
+            {
+                "x": 1.0,
+                "y": 1.0
+            }
+        ],
+        "notifyingSecond": 0.25
+    }
+}

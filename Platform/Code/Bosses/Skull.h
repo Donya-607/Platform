@@ -308,6 +308,7 @@ namespace Boss
 		Donya::Vector3		hurtBoxSize				{ 1.0f, 1.0f, 1.0f };
 
 		std::vector<float>	animePlaySpeeds;							// It size() == Skull::MotionKind::MotionCount
+		std::vector<float>	animeTransSeconds;							// It interest only destination motion kind. It size() == Player::MotionKind::MotionCount
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -402,6 +403,10 @@ namespace Boss
 			}
 			if ( 12 <= version )
 			{
+				archive( CEREAL_NVP( animeTransSeconds ) );
+			}
+			if ( 13 <= version )
+			{
 				// archive( CEREAL_NVP( x ) );
 			}
 		}
@@ -414,4 +419,4 @@ namespace Boss
 CEREAL_CLASS_VERSION( Boss::Skull, 0 )
 CEREAL_REGISTER_TYPE( Boss::Skull )
 CEREAL_REGISTER_POLYMORPHIC_RELATION( Boss::Base, Boss::Skull )
-CEREAL_CLASS_VERSION( Boss::SkullParam, 11 )
+CEREAL_CLASS_VERSION( Boss::SkullParam, 12 )

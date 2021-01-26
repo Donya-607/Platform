@@ -38,8 +38,11 @@ namespace
 		"KnockBack",
 		"GrabLadder",
 		"Shot",
+		"ChargedShot",
 		"LadderShotLeft",
+		"LadderChargedShotLeft",
 		"LadderShotRight",
+		"LadderChargedShotRight",
 		"Brace",
 		"Appear",
 		"Winning",
@@ -332,6 +335,7 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::DragInt  ( u8"最大残機数",				&maxRemainCount					);
 		ImGui::DragInt  ( u8"初期残機数",				&initialRemainCount				);
 		ImGui::DragFloat( u8"移動速度",					&moveSpeed,				0.01f	);
+		ImGui::DragFloat( u8"慣性ジャンプの移動速度",		&inertialMoveSpeed,		0.01f	);
 		ImGui::DragFloat( u8"スライディング速度",			&slideMoveSpeed,		0.01f	);
 		ImGui::DragFloat( u8"スライディング秒数",			&slideMoveSeconds,		0.01f	);
 		ImGui::DragFloat( u8"ジャンプ力",				&jumpStrength,			0.01f	);
@@ -359,6 +363,7 @@ void PlayerParam::ShowImGuiNode()
 		maxRemainCount		= std::max( 1, maxRemainCount		);
 		initialRemainCount	= std::max( 1, initialRemainCount	);
 		MakePositive( &moveSpeed			);
+		MakePositive( &inertialMoveSpeed	);
 		MakePositive( &slideMoveSpeed		);
 		MakePositive( &slideMoveSeconds		);
 		MakePositive( &jumpStrength			);
@@ -381,6 +386,10 @@ void PlayerParam::ShowImGuiNode()
 	{
 		animePlaySpeeds.resize( motionCount, 1.0f );
 	}
+	if ( animeTransSeconds.size() != motionCount )
+	{
+		animeTransSeconds.resize( motionCount, ModelHelper::SkinningOperator::Interpolation::defaultTransitionSecond );
+	}
 	if ( ImGui::TreeNode( u8"アニメーション関係" ) )
 	{
 		if ( ImGui::TreeNode( u8"再生速度" ) )
@@ -392,15 +401,44 @@ void PlayerParam::ShowImGuiNode()
 
 			ImGui::TreePop();
 		}
-		
-		if ( ImGui::TreeNode( u8"ショットモーション設定" ) )
+		if ( ImGui::TreeNode( u8"遷移にかける秒数" ) )
 		{
-			normalLeftArm .ShowImGuiNode( u8"通常" );
-			ladderLeftArm .ShowImGuiNode( u8"はしご・左向き" );
-			ladderRightArm.ShowImGuiNode( u8"はしご・右向き" );
+			for ( size_t i = 0; i < motionCount; ++i )
+			{
+				ImGui::DragFloat( KIND_NAMES[i], &animeTransSeconds[i], 0.01f );
+			}
 
 			ImGui::TreePop();
 		}
+		
+		ImGui::TreePop();
+	}
+
+	if ( ImGui::TreeNode( u8"部分モーション設定" ) )
+	{
+		auto ShowElement = [&]( const char *partName, Player::MotionKind kind )
+		{
+			const int intKind = scast<int>( kind );
+			auto found =  partMotions.find( intKind );
+			if ( found == partMotions.end() )
+			{
+				auto inserted = partMotions.insert
+				(
+					std::make_pair( intKind, ModelHelper::PartApply{} )
+				);
+				found  = inserted.first;
+			}
+
+			ModelHelper::PartApply &element = found->second;
+			element.ShowImGuiNode( partName );
+		};
+
+		ShowElement( u8"通常",					Player::MotionKind::Shot					);
+		ShowElement( u8"チャージショット",		Player::MotionKind::ChargedShot				);
+		ShowElement( u8"はしご・通常・左",		Player::MotionKind::LadderShotLeft			);
+		ShowElement( u8"はしご・チャージ・左",	Player::MotionKind::LadderChargedShotLeft	);
+		ShowElement( u8"はしご・通常・右",		Player::MotionKind::LadderShotRight			);
+		ShowElement( u8"はしご・チャージ・右",	Player::MotionKind::LadderChargedShotRight	);
 
 		ImGui::TreePop();
 	}
@@ -685,11 +723,14 @@ void Player::MotionManager::Init()
 {
 	prevKind = currKind = MotionKind::Jump_Fall;
 
-	model.Initialize( GetModelOrNullptr() );
+	auto resource = GetModelOrNullptr();
+	model.Initialize( resource );
 	AssignPose( currKind );
 
+	
 	shotAnimator.ResetTimer();
 	shotAnimator.DisableLoop();
+	shotWasCharged = false;
 	shouldPoseShot = false;
 }
 void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAnimation )
@@ -715,6 +756,8 @@ void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAn
 	}
 	AssignPose( currKind );
 
+	model.AdvanceInterpolation( elapsedTime );
+	
 	UpdateShotMotion( inst, elapsedTime );
 }
 void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &W, const Donya::Vector3 &color, float alpha ) const
@@ -733,7 +776,7 @@ void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vecto
 	pRenderer->UpdateConstant( modelConstant );
 	pRenderer->ActivateConstantModel();
 
-	pRenderer->Render( model.pResource->model, model.pose );
+	pRenderer->Render( model.pResource->model, model.GetCurrentPose() );
 
 	pRenderer->DeactivateConstantModel();
 }
@@ -745,10 +788,18 @@ bool Player::MotionManager::WasCurrentMotionEnded() const
 {
 	return model.animator.WasEnded();
 }
+bool Player::MotionManager::NowShotPoses() const
+{
+	return shouldPoseShot;
+}
 void Player::MotionManager::QuitShotMotion()
 {
 	shouldPoseShot = false;
 	shotAnimator.ResetTimer();
+}
+void Player::MotionManager::OverwriteLerpSecond( float newSecond )
+{
+	model.SetInterpolationSecond( newSecond );
 }
 void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 {
@@ -760,6 +811,7 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 	if ( inst.shotManager.IsShotRequested( inst ) && inst.NowShotable( elapsedTime ) )
 	{
 		shouldPoseShot = true;
+		shotWasCharged = IsFullyCharged( inst.shotManager.ChargeLevel() );
 		shotAnimator.ResetTimer();
 	}
 
@@ -768,29 +820,41 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 
 	const auto &data = Parameter().Get();
 
+	MotionKind applyKind = MotionKind::Shot;
 	if ( inst.pMover && inst.pMover->NowGrabbingLadder( inst ) )
 	{
-		if ( inst.lookingSign < 0.0f )
-		{
-			ApplyPartMotion( inst, elapsedTime, MotionKind::LadderShotLeft, data.ladderLeftArm );
-		}
-		else
-		{
-			ApplyPartMotion( inst, elapsedTime, MotionKind::LadderShotRight, data.ladderRightArm );
-		}
+		applyKind	= ( inst.lookingSign < 0.0f )
+					? MotionKind::LadderShotLeft
+					: MotionKind::LadderShotRight;
 	}
-	else
+
+	if ( shotWasCharged )
 	{
-		ApplyPartMotion( inst, elapsedTime, MotionKind::Shot, data.normalLeftArm );
+		// Charged versions are located next
+		size_t intKind = scast<size_t>( applyKind );
+		intKind++;
+		intKind = std::min( intKind, MOTION_COUNT - 1 );
+		applyKind = scast<MotionKind>( intKind );
 	}
+
+	ApplyPartMotion( inst, elapsedTime, applyKind );
 }
-void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, MotionKind useMotionKind, const ModelHelper::PartApply &partData )
+void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, MotionKind useMotionKind )
 {
 	if ( !model.pResource ) { return; }
 	// else
 
 	const auto &data	= Parameter().Get();
 	const auto &holder	= model.pResource->motionHolder;
+
+	const auto foundItr = data.partMotions.find( scast<int>( useMotionKind ) );
+	if ( foundItr == data.partMotions.end() )
+	{
+		shouldPoseShot = false;
+		return;
+	}
+
+	const ModelHelper::PartApply partData = foundItr->second;
 
 	const size_t motionIndex = holder.FindMotionIndex( partData.motionName );
 	if ( holder.GetMotionCount() <= motionIndex )
@@ -802,23 +866,25 @@ void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, Mo
 
 	// Update "shotAnimator" and "shotPose" by "motionIndex"
 	{
-		const auto &motion	= holder.GetMotion( motionIndex );
+		const auto &motion = holder.GetMotion( motionIndex );
 		shotAnimator.SetRepeatRange( motion );
 
 		const size_t motionKindIndex	= scast<size_t>( useMotionKind );
-		const float  motionAcceleration = ( data.animePlaySpeeds.size() <= motionKindIndex ) ? 1.0f : data.animePlaySpeeds[motionKindIndex];
+		const float  motionAcceleration	= ( data.animePlaySpeeds.size() <= motionKindIndex ) ? 1.0f : data.animePlaySpeeds[motionKindIndex];
 		shotAnimator.Update( fabsf( elapsedTime ) * motionAcceleration );
 
 		shotPose.AssignSkeletal( shotAnimator.CalcCurrentPose( motion ) );
 	}
 
-	std::vector<Donya::Model::Animation::Node> normalPose = model.pose.GetCurrentPose();
-	assert( shotPose.HasCompatibleWith( normalPose ) );
+	Donya::Model::Pose &refCurrentPose = model.GetCurrentPose();
+
+	std::vector<Donya::Model::Animation::Node> editNodes = refCurrentPose.GetCurrentPose();
+	assert( shotPose.HasCompatibleWith( editNodes ) );
 
 	std::vector<size_t> applyBoneIndices{};
 	for ( const auto &rootName : partData.applyRootBoneNames )
 	{
-		ExplorePartBone( &applyBoneIndices, normalPose, rootName );
+		ExplorePartBone( &applyBoneIndices, editNodes, rootName );
 	}
 
 	auto IsTargetRootName = [&partData]( const std::string &boneName )
@@ -832,11 +898,11 @@ void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, Mo
 		return ( found != partData.applyRootBoneNames.end() ) ? true : false;
 	};
 
-	const auto &destPose = shotPose.GetCurrentPose();
+	const std::vector<Donya::Model::Animation::Node> &destNodes = shotPose.GetCurrentPose();
 	for ( auto &i : applyBoneIndices )
 	{
-		auto &node = normalPose[i];
-		auto &dest = destPose[i];
+		auto &node = editNodes[i];
+		auto &dest = destNodes[i];
 
 		node.bone  = dest.bone;
 		node.local = dest.local;
@@ -844,33 +910,30 @@ void Player::MotionManager::ApplyPartMotion( Player &inst, float elapsedTime, Mo
 		// If the current node is the root bone of apply targets
 		if ( IsTargetRootName( node.bone.name ) )
 		{
-			const auto &d = dest.global;
 			const auto &n = node.global;
+			const auto &d = dest.global;
 
 			Donya::Vector4x4 blend;
-			// Apply destination's orientation(and scale)
-			blend._11 = d._11;		blend._12 = d._12;		blend._13 = d._13;
-			blend._21 = d._21;		blend._22 = d._22;		blend._23 = d._23;
-			blend._31 = d._31;		blend._32 = d._32;		blend._33 = d._33;
+			// Apply destination's S and R
+			blend._11 = d._11;	blend._12 = d._12;	blend._13 = d._13;
+			blend._21 = d._21;	blend._22 = d._22;	blend._23 = d._23;
+			blend._31 = d._31;	blend._32 = d._32;	blend._33 = d._33;
+
 			// Blend the translations
 			blend._41 = Donya::Lerp( n._41, d._41, partData.rootTranslationBlendPercent.x );
 			blend._42 = Donya::Lerp( n._42, d._42, partData.rootTranslationBlendPercent.y );
 			blend._43 = Donya::Lerp( n._43, d._43, partData.rootTranslationBlendPercent.z );
-			
 			node.global = blend;
 		}
 		else
 		{
-			const Donya::Vector4x4 parentGlobal =
-			( node.bone.parentIndex != -1 )
-			? normalPose[node.bone.parentIndex].global
-			: Donya::Vector4x4::Identity();
-
-			node.global = dest.local * parentGlobal;
+			node.global = ( node.bone.parentIndex == -1 )
+						? dest.local
+						: dest.local * editNodes[node.bone.parentIndex].global;
 		}
 	}
 
-	model.pose.AssignSkeletal( normalPose );
+	refCurrentPose.AssignSkeletal( editNodes );
 }
 void Player::MotionManager::ExplorePartBone( std::vector<size_t> *pIndices, const std::vector<Donya::Model::Animation::Node> &skeletal, const std::string &searchName )
 {
@@ -914,6 +977,20 @@ void Player::MotionManager::AssignPose( MotionKind kind )
 		return;
 	}
 	// else
+
+	if ( kind != prevKind )
+	{
+		const auto &transSeconds = Parameter().Get().animeTransSeconds;
+		const bool indexIsSafe = ( 0 <= motionIndex && motionIndex < scast<int>( transSeconds.size() ) );
+		if ( indexIsSafe )
+		{
+			model.SetInterpolationSecond( transSeconds[motionIndex] );
+		}
+		else
+		{
+			model.SetInterpolationSecond( 0.0f );
+		}
+	}
 
 	model.AssignMotion( motionIndex );
 }
@@ -982,7 +1059,7 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 
 Player::ShotManager::~ShotManager()
 {
-	StopLoopSFXIfPlaying( /* forcely = */ true );
+	Uninit();
 }
 void Player::ShotManager::Init()
 {
@@ -995,10 +1072,15 @@ void Player::ShotManager::Init()
 
 	StopLoopSFXIfPlaying();
 }
+void Player::ShotManager::Uninit()
+{
+	StopLoopSFXIfPlaying( /* forcely = */ true );
+}
 void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 {
 	// Make do not release/charge when pausing
-	if ( IsZero( elapsedTime ) ) { return; }
+	if ( IsZero( elapsedTime )	) { return; }
+	if ( inst.NowMiss()			) { return; }
 	// else
 
 	const auto &input = inst.inputManager;
@@ -1024,6 +1106,7 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 		if ( chargeLevel == ShotLevel::Strong )
 		{
 			fxComplete = Effect::Handle::Generate( Effect::Kind::Charge_Complete, inst.GetPosition() );
+			AssignLoopFX( Effect::Kind::Charge_Loop_Charged );
 			Donya::Sound::Play( Music::Charge_Complete );
 		}
 	}
@@ -1050,8 +1133,7 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 		StopLoopSFXIfPlaying();
 	}
 
-	fxComplete.SetPosition( inst.GetPosition() );
-	fxLoop.SetPosition( inst.GetPosition() );
+	SetFXPosition( inst.GetPosition() );
 }
 void Player::ShotManager::ChargeFully()
 {
@@ -1059,6 +1141,11 @@ void Player::ShotManager::ChargeFully()
 
 	const auto &chargeParams = Parameter().Get().chargeParams;
 	currChargeSecond = chargeParams[maxLevelIndex].chargeSecond + 1.0f;
+}
+void Player::ShotManager::SetFXPosition( const Donya::Vector3 &wsPos )
+{
+	fxComplete	.SetPosition( wsPos );
+	fxLoop		.SetPosition( wsPos );
 }
 bool Player::ShotManager::IsShotRequested( const Player &inst ) const
 {
@@ -1160,16 +1247,23 @@ Donya::Vector3 Player::ShotManager::CalcEmissiveColor() const
 
 	return pParam->emissiveColor.Product( colorFactor );
 }
+void Player::ShotManager::AssignLoopFX( Effect::Kind kind )
+{
+	fxLoop.Stop();
+	fxLoop.Disable();
+
+	// Actual position will set at the end of Update()
+	constexpr Donya::Vector3 generatePos = Donya::Vector3::Zero();
+	fxLoop = Effect::Handle::Generate( kind, generatePos );
+}
 void Player::ShotManager::PlayLoopSFXIfStopping()
 {
 	if ( playingChargeSE					) { return; }
 	if ( chargeLevel == ShotLevel::Normal	) { return; }
 	// else
 
-	// Actual position will set at the end of Update()
-	constexpr Donya::Vector3 generatePos = Donya::Vector3::Zero();
+	AssignLoopFX( Effect::Kind::Charge_Loop );
 
-	fxLoop = Effect::Handle::Generate( Effect::Kind::Charge_Loop, generatePos );
 	playingChargeSE = true;
 	Donya::Sound::Play( Music::Charge_Loop );
 }
@@ -1198,7 +1292,11 @@ void Player::Flusher::Start( float flushingSeconds )
 void Player::Flusher::Update( const Player &inst, float elapsedTime )
 {
 	timer += elapsedTime;
-	fxHurt.SetPosition( inst.GetPosition() );
+	SetFXPosition( inst.GetPosition() );
+}
+void Player::Flusher::SetFXPosition( const Donya::Vector3 &wsPos )
+{
+	fxHurt.SetPosition( wsPos );
 }
 bool Player::Flusher::Drawable() const
 {
@@ -1307,6 +1405,8 @@ void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain
 
 	// Deformity of MoveVertical()
 	{
+		const bool useSlide = inst.inputManager.UseDash() && inst.onGround;
+
 		// Make to can not act if game time is pausing
 		if ( nowPausing )
 		{
@@ -1331,11 +1431,18 @@ void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain
 			else
 			{
 				inst.Jump( jumpInputIndex );
+
+				// Enable the inertial-like jump even if was inputted the "jump" and "slide" in same time
+				if ( useSlide )
+				{
+					inst.wasJumpedWhileSlide = true;
+					inst.GenerateSlideEffects();
+				}
 			}
 		}
 		else
 		{
-			if ( inst.inputManager.UseDash() && inst.onGround )
+			if ( useSlide )
 			{
 				gotoSlide = true;
 			}
@@ -1436,19 +1543,15 @@ void Player::Slide::Init( Player &inst )
 	nextStatus	= Destination::None;
 	timer		= 0.0f;
 
-	slideSign	= Donya::SignBitF( inst.orientation.LocalFront().x );
-	if ( IsZero( slideSign ) ) { slideSign = 1.0f; } // Fail safe
+	inst.lookingSign = Donya::SignBitF( inst.orientation.LocalFront().x );
+	if ( IsZero( inst.lookingSign ) ) { inst.lookingSign = 1.0f; } // Fail safe
 
-	inst.velocity.x = Parameter().Get().slideMoveSpeed * slideSign;
+	inst.velocity.x = Parameter().Get().slideMoveSpeed * inst.lookingSign;
 	inst.velocity.y = 0.0f;
 	inst.velocity.z = 0.0f;
-	inst.UpdateOrientation( /* lookingRight = */ ( slideSign < 0.0f ) ? false : true );
+	inst.UpdateOrientation( /* lookingRight = */ ( inst.lookingSign < 0.0f ) ? false : true );
 
-	Effect::Handle handle = Effect::Handle::Generate( Effect::Kind::Player_Slide_Begin, inst.GetPosition() );
-	handle.SetRotation( 0.0f, ToRadian( 90.0f ) * slideSign, 0.0f );
-	Effect::Admin::Get().AddCopy( handle ); // Leave the effect instance's management to admin
-	
-	Donya::Sound::Play( Music::Player_Dash );
+	inst.GenerateSlideEffects();
 }
 void Player::Slide::Uninit( Player &inst )
 {
@@ -1463,7 +1566,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 	const auto &input = inst.inputManager.Current();
 
 	const int  horizontalInputSign	= Donya::SignBit( input.moveVelocity.x );
-	const bool moveToBackward		=  ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( slideSign ) );
+	const bool moveToBackward		=  ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( inst.lookingSign ) );
 	const bool slideIsEnd			=  ( Parameter().Get().slideMoveSeconds <= timer )
 									|| ( moveToBackward )
 									|| ( !inst.onGround )
@@ -1478,8 +1581,8 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 			// I can not finish the sliding now, because I will be buried.
 			if ( moveToBackward )
 			{
-				inst.velocity.x	*= -1.0f;
-				slideSign		*= -1.0f;
+				inst.velocity.x		*= -1.0f;
+				inst.lookingSign	*= -1.0f;
 
 				const auto halfTurn = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( 180.0f ) );
 				inst.orientation.RotateBy( halfTurn );
@@ -1507,110 +1610,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 }
 void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
-#if 0 // Prevent to fall into a tight hole
-	// Horizontal move
-	{
-		const auto movement		= inst.velocity * elapsedTime;
-		const auto aroundTiles	= terrain.GetPlaceTiles( inst.GetHitBox(), movement );
-		const auto aroundSolids	= Map::ToAABB( aroundTiles );
-		const int  collideIndex = inst.Actor::MoveX( movement.x, aroundSolids );
-		inst.Actor::MoveZ( movement.z, aroundSolids );
-
-		// Prevent falling into a hole that size is almost the same as my body.
-		// e.g. If my body size is one tile, the sliding move is not fall into a space that one tile size.
-		// But if I was pushed back by some solid when above process, I should prioritize that resolution.
-		if ( collideIndex != -1 ) // If do not collided to any
-		{
-			// I will fall if the under tile is empty, and the left and right tiles is tile.
-			
-			const auto myBody = inst.GetHitBox(); // It is moved by above process
-			const Donya::Vector3 center = myBody.WorldPosition();
-
-			Donya::Vector3 search = center;
-			search.y -= myBody.size.y;
-
-			const auto underTile = terrain.GetPlaceTileOrNullptr( search );
-
-			if ( !underTile )
-			{
-				const float centerX = search.x;
-
-				search.x = centerX - myBody.size.x;
-				const auto leftIndex  = Map::ToTilePos( search );
-
-				search.x = centerX + myBody.size.x;
-				const auto rightIndex = Map::ToTilePos( search );
-
-				if ( leftIndex == rightIndex )
-				{
-					// Prevent falling by more move
-					float	gapLength		= 0.0f;
-					int		horizontalSign	= Donya::SignBit( movement.x );
-
-					// Calculate the "gapLength"
-					{
-						const auto baseIndex = leftIndex;
-
-						constexpr float halfTileSize = Tile::unitWholeSize * 0.5f;
-						auto CalcRightDiffLength = [&]()
-						{
-							const float rightWall = Map::ToWorldPos( 0, baseIndex.x + 1 ).x - halfTileSize;
-							const float rightBody = centerX + myBody.size.x;
-							return fabsf( rightWall - rightBody );
-						};
-						auto CalcLeftDiffLength  = [&]()
-						{
-							const float leftWall = Map::ToWorldPos( 0, baseIndex.x - 1 ).x + halfTileSize;
-							const float leftBody = centerX - myBody.size.x;
-							return fabsf( leftWall - leftBody );
-						};
-
-						if ( horizontalSign == 1 )
-						{
-							gapLength = CalcLeftDiffLength();
-						}
-						else
-						if ( horizontalSign == -1 )
-						{
-							gapLength = CalcRightDiffLength();
-						}
-						else
-						{
-							const float right = CalcRightDiffLength();
-							const float left  = CalcLeftDiffLength();
-							if ( left < right )
-							{
-								gapLength = left;
-								horizontalSign = -1;
-							}
-							else
-							{
-								gapLength = right;
-								horizontalSign = 1;
-							}
-						}
-					}
-
-					Donya::Vector3 extraMovement
-					{
-						gapLength * scast<float>( horizontalSign ),
-						0.0f,
-						0.0f
-					};
-					const auto exAroundTiles  = terrain.GetPlaceTiles( myBody, extraMovement );
-					const auto exAroundSolids = Map::ToAABB( exAroundTiles );
-					inst.Actor::MoveX( extraMovement.x, exAroundSolids );
-				}
-			}
-		}
-
-		// We must apply world position to hurt box also
-		inst.hurtBox.pos = inst.body.pos;
-	}
-#else
-	// TODO: Prevent to fall into a tight hole
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
-#endif // Prevent to fall into a tight hole
 
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 }
@@ -1648,7 +1648,9 @@ void Player::GrabLadder::Init( Player &inst )
 
 	inst.velocity	= 0.0f;
 	LookToFront( inst );
-	inst.onGround	= false;
+
+	inst.onGround				= false;
+	inst.wasJumpedWhileSlide	= false;
 
 	// Adjust the position into a ladder
 	{
@@ -1740,6 +1742,16 @@ void Player::GrabLadder::Uninit( Player &inst )
 
 	// Cancel the grab motion
 	MotionUpdate( inst, 0.0001f, /* stopAnimation = */ true );
+
+	// Shot pose's face looks to side.
+	// So I want to prevent the face looks here or back side when end the grab motion,
+	// by interpolate the motion as immediately.
+	if ( inst.motionManager.NowShotPoses() )
+	{
+		inst.motionManager.OverwriteLerpSecond( 0.0f );
+		// Then apply that overwrite
+		MotionUpdate( inst, 0.0001f, /* stopAnimation = */ true );
+	}
 }
 void Player::GrabLadder::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
@@ -1909,7 +1921,14 @@ void Player::KnockBack::Init( Player &inst )
 
 	const auto &data = Parameter().Get();
 
-	const bool knockedFromRight = ( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight );
+	const bool knockedFromRight =
+	#if 0 // CONSIDER_IMPACT_DIRECTION
+		( inst.pReceivedDamage && inst.pReceivedDamage->knockedFromRight )
+	#else
+		( inst.lookingSign < 0.0f ) ? false : true
+	#endif // CONSIDER_IMPACT_DIRECTION
+		;
+
 	inst.UpdateOrientation( knockedFromRight );
 
 	if ( !inst.prevSlidingStatus )
@@ -1966,6 +1985,12 @@ void Player::Miss::Init( Player &inst )
 	inst.velocity		= 0.0f;
 	inst.currentHP		= 0;
 	inst.onGround		= false;
+
+	// Release some bullet instance
+	if ( inst.pGun ) { inst.pGun->Uninit( inst ); }
+
+	// Stop charging Effect/Sound
+	inst.shotManager.Uninit();
 
 	Donya::Sound::Play( Music::Player_Miss );
 }
@@ -2365,6 +2390,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	currentHP			= data.maxHP;
 	prevSlidingStatus	= false;
 	onGround			= false;
+	wasJumpedWhileSlide	= false;
 
 	// Validate should I take a ground state
 	{
@@ -2413,6 +2439,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 }
 void Player::Uninit()
 {
+	shotManager.Uninit();
 	if ( pMover ) { pMover->Uninit( *this ); }
 	pTargetLadder.reset();
 }
@@ -2486,6 +2513,10 @@ void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeft
 	// else
 
 	pMover->Move( *this, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
+
+	const Donya::Vector3 movedPos = GetPosition();
+	shotManager		.SetFXPosition( movedPos );
+	invincibleTimer	.SetFXPosition( movedPos );
 }
 void Player::Draw( RenderingHelper *pRenderer ) const
 {
@@ -2848,8 +2879,8 @@ void Player::MoveHorizontal( float elapsedTime )
 	const auto &data = Parameter().Get();
 
 	const auto &input = inputManager.Current();
-	const float  movement = data.moveSpeed * input.moveVelocity.x;
-	velocity.x = movement;
+	const float  speed = ( wasJumpedWhileSlide ) ? data.inertialMoveSpeed : data.moveSpeed;
+	velocity.x = speed * input.moveVelocity.x;
 
 	if ( !IsZero( velocity.x * elapsedTime ) ) // The "elapsedTime" prevents to rotate when pauses a game time
 	{
@@ -2928,9 +2959,10 @@ void Player::Jump( int inputIndex )
 {
 	const auto &data = Parameter().Get();
 
-	onGround	= false;
-	velocity.y	= data.jumpStrength;
-	nowGravity	= data.gravityRising;
+	onGround			= false;
+	wasJumpedWhileSlide	= prevSlidingStatus;
+	velocity.y			= data.jumpStrength;
+	nowGravity			= data.gravityRising;
 	inputManager.KeepSecondJumpInput()[inputIndex]	= 0.0f;
 	inputManager.WasReleasedJumpInput()[inputIndex]	= false;
 	Donya::Sound::Play( Music::Player_Jump );
@@ -3019,10 +3051,12 @@ void Player::Landing()
 	}
 
 	velocity.y = 0.0f;
+	wasJumpedWhileSlide = false;
 }
 void Player::ShiftGunIfNeeded( float elapsedTime )
 {
-	if ( !pGun ) { return; }
+	if ( !pGun		) { return; }
+	if ( NowMiss()	) { return; }
 	// else
 
 	// Make can not shift by button when pausing
@@ -3056,6 +3090,14 @@ void Player::ShiftGunIfNeeded( float elapsedTime )
 		Donya::Sound::Play( Music::Player_ShiftGun );
 	}
 }
+void Player::GenerateSlideEffects() const
+{
+	Effect::Handle handle = Effect::Handle::Generate( Effect::Kind::Player_Slide_Begin, GetPosition() );
+	handle.SetRotation( 0.0f, ToRadian( 90.0f ) * lookingSign, 0.0f );
+	Effect::Admin::Get().AddCopy( handle ); // Leave management of the effect instance to admin
+	
+	Donya::Sound::Play( Music::Player_Dash );
+}
 Donya::Vector4x4 Player::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 {
 	Donya::Vector4x4 W{};
@@ -3085,9 +3127,18 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text			( u8"現在の重力：%5.3f", nowGravity );
 	availableWeapon.ShowImGuiNode( u8"現在使用可能な武器" );
 
+	ImGui::DragFloat3	( u8"ワールド座標",					&body.pos.x,	0.01f );
+	ImGui::DragFloat3	( u8"速度",							&velocity.x,	0.01f );
+
+	Donya::Vector3 front = orientation.LocalFront();
+	ImGui::SliderFloat3	( u8"前方向",						&front.x,		-1.0f, 1.0f );
+	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), front.Unit(), Donya::Quaternion::Freeze::Up );
+	ImGui::SliderFloat	( u8"向いているＸ方向",				&lookingSign,	-1.0f, 1.0f );
+
 	ImGui::Text			( u8"%d: チャージレベル",				scast<int>( shotManager.ChargeLevel() ) );
 	ImGui::Text			( u8"%04.2f: ショット長押し秒数",		shotManager.ChargeSecond() );
 	ImGui::Checkbox		( u8"地上にいるか",					&onGround );
+	ImGui::Checkbox		( u8"慣性ジャンプ中か",				&wasJumpedWhileSlide );
 
 	bool tmp{};
 	tmp = pMover->NowKnockBacking( *this );
@@ -3109,14 +3160,6 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	{
 		AssignMover<WinningPose>();
 	}
-
-	ImGui::DragFloat3	( u8"ワールド座標",					&body.pos.x,	0.01f );
-	ImGui::DragFloat3	( u8"速度",							&velocity.x,	0.01f );
-
-	Donya::Vector3 front = orientation.LocalFront();
-	ImGui::SliderFloat3	( u8"前方向",						&front.x,		-1.0f, 1.0f );
-	orientation = Donya::Quaternion::LookAt( Donya::Vector3::Front(), front.Unit(), Donya::Quaternion::Freeze::Up );
-	ImGui::SliderFloat	( u8"向いているＸ方向",				&lookingSign,	-1.0f, 1.0f );
 
 	ImGui::TreePop();
 }
