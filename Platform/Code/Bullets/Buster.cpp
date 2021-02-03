@@ -123,7 +123,7 @@ namespace Bullet
 			PointLightStorage::Get().RegisterIfThereSpace( lightSource );
 		}
 
-		if ( Player::IsFullyCharged( chargeLevel ) )
+		if ( Player::IsFullyCharged( chargeLevel ) && !WasProtected() )
 		{
 			generationTimer += elapsedTime;
 

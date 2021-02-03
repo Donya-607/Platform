@@ -1456,53 +1456,11 @@ void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain
 	// Try to grabbing ladder if the game time is not pausing
 	if ( !gotoSlide && !nowPausing )
 	{
-		auto IsLadder	= [&]( const std::shared_ptr<const Tile> &targetTile )
+		const auto pLadder = inst.FindGrabbingLadderOrNullptr( input.moveVelocity.y, terrain );
+		if ( pLadder )
 		{
-			return ( targetTile && targetTile->GetID() == StageFormat::Ladder ) ? true : false;
-		};
-		auto GotoLadder	= [&]( const std::shared_ptr<const Tile> &targetTile )
-		{
-			inst.pTargetLadder	= targetTile;
-			gotoLadder			= true;
-		};
-		auto GotoLadderIfSpecifyTileIsLadder	= [&]( const Donya::Vector3 &wsVerifyPosition )
-		{
-			const auto targetTile = terrain.GetPlaceTileOrNullptr( wsVerifyPosition );
-			if ( IsLadder( targetTile ) )
-			{
-				GotoLadder( targetTile );
-			}
-		};
-		auto GotoLadderIfSpecifyTilesAreLadder	= [&]( const Donya::Collision::Box3F &wsVerifyArea )
-		{
-			const auto targetTiles = terrain.GetPlaceTiles( wsVerifyArea );
-			for ( const auto &tile : targetTiles )
-			{
-				if ( IsLadder( tile ) )
-				{
-					GotoLadder( tile );
-					break;
-				}
-			}
-		};
-
-		const int verticalInputSign = Donya::SignBit( input.moveVelocity.y );
-		if ( verticalInputSign == 1 )
-		{
-			const auto grabArea = inst.GetLadderGrabArea();
-			GotoLadderIfSpecifyTilesAreLadder( grabArea );
-			if ( !gotoLadder ) // If still does not grabbing
-			{
-				const Donya::Vector3 headOffset{ 0.0f, inst.body.size.y, 0.0f };
-				GotoLadderIfSpecifyTileIsLadder( inst.GetPosition() + headOffset );
-			}
-		}
-		else
-		if ( verticalInputSign == -1 && inst.onGround )
-		{
-			constexpr Donya::Vector3 verticalOffset{ 0.0f, Tile::unitWholeSize, 0.0f };
-			const auto underPosition = inst.GetPosition() - verticalOffset;
-			GotoLadderIfSpecifyTileIsLadder( underPosition );
+			inst.pTargetLadder = pLadder;
+			gotoLadder = true;
 		}
 	}
 
@@ -1567,11 +1525,15 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 
 	const int  horizontalInputSign	= Donya::SignBit( input.moveVelocity.x );
 	const bool moveToBackward		=  ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( inst.lookingSign ) );
-	const bool slideIsEnd			=  ( Parameter().Get().slideMoveSeconds <= timer )
-									|| ( moveToBackward )
-									|| ( !inst.onGround )
-									|| ( inst.WillUseJump() )
-									;
+	const auto pGrabbingLadder		= inst.FindGrabbingLadderOrNullptr( input.moveVelocity.y, terrain );
+
+	const bool slideIsEnd	=  ( Parameter().Get().slideMoveSeconds <= timer )
+							|| ( moveToBackward )
+							|| ( inst.WillUseJump() )
+							|| ( pGrabbingLadder )
+							|| ( !inst.onGround )
+							;
+
 	if ( slideIsEnd && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 	{
 		const Donya::Collision::Box3F normalBody = inst.GetNormalBody( /* ofHurtBox = */ false );
@@ -1592,7 +1554,16 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 		else
 		{
 			// I can finish the sliding here.
-			nextStatus = Destination::Normal;
+
+			if ( pGrabbingLadder )
+			{
+				inst.pTargetLadder = pGrabbingLadder;
+				nextStatus = Destination::Ladder;
+			}
+			else
+			{
+				nextStatus = Destination::Normal;
+			}
 		}
 	}
 
@@ -1623,9 +1594,11 @@ std::function<void()> Player::Slide::GetChangeStateMethod( Player &inst ) const
 	switch ( nextStatus )
 	{
 	case Destination::Normal: return [&inst]() { inst.AssignMover<Normal>(); };
+	case Destination::Ladder: return [&inst]() { inst.AssignMover<GrabLadder>(); };
 	default: break;
 	}
 
+	// Fail safe
 	return [&inst]() { inst.AssignMover<Normal>(); };
 }
 void Player::Slide::AssignBodyParameter( Player &inst )
@@ -2836,6 +2809,60 @@ Donya::Collision::Box3F Player::GetLadderGrabArea() const
 	AssignCurrentBodyInfo( &tmp, /* useHurtBoxInfo = */ false );
 	tmp.offset = orientation.RotateVector( tmp.offset );
 	return tmp;
+}
+std::shared_ptr<const Tile> Player::FindGrabbingLadderOrNullptr( float verticalInput, const Map &terrain ) const
+{
+	const int inputSign = Donya::SignBit( verticalInput );
+	if ( inputSign == 0 ) { return nullptr; }
+	// else
+
+	auto IsLadder = [&]( const std::shared_ptr<const Tile> &targetTile )
+	{
+		return ( targetTile && targetTile->GetID() == StageFormat::Ladder ) ? true : false;
+	};
+	auto FindLadderOrNullptr = [&]( const Donya::Collision::Box3F &wsVerifyArea )->std::shared_ptr<const Tile>
+	{
+		const auto targetTiles = terrain.GetPlaceTiles( wsVerifyArea );
+		for ( const auto &tile : targetTiles )
+		{
+			if ( IsLadder( tile ) )
+			{
+				return tile;
+			}
+		}
+
+		return nullptr;
+	};
+
+	std::shared_ptr<const Tile> tile = nullptr;
+
+	if ( inputSign == 1 )
+	{
+		// Search around the my body
+		tile = FindLadderOrNullptr( GetLadderGrabArea() );
+		if ( tile ) { return tile; }
+		// else
+
+		// Search around above if still does not grabbing
+
+		const Donya::Vector3 headOffset{ 0.0f, body.size.y, 0.0f };
+		const Donya::Vector3 abovePosition = GetPosition() + headOffset;
+		tile = terrain.GetPlaceTileOrNullptr( abovePosition );
+		return ( IsLadder( tile ) ) ? tile : nullptr;
+	}
+	// else
+
+	// Search around the my foot if standing
+	if ( onGround )
+	{
+		constexpr Donya::Vector3 verticalOffset{ 0.0f, Tile::unitWholeSize, 0.0f };
+		const     Donya::Vector3 underPosition = GetPosition() - verticalOffset;
+		tile = terrain.GetPlaceTileOrNullptr( underPosition );
+		return ( IsLadder( tile ) ) ? tile : nullptr;
+	}
+	// else
+
+	return nullptr;
 }
 std::vector<Donya::Collision::Box3F> Player::FetchAroundSolids( const Donya::Collision::Box3F &body, const Donya::Vector3 &movement, const Map &terrain ) const
 {
