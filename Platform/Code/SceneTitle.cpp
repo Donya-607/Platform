@@ -2146,7 +2146,7 @@ void SceneTitle::UseImGui()
 
 			// These default value are my prefer
 			static int readStageNumber = Definition::StageNumber::Game();
-			static BufferType bufferDirectory	{ "./../../EdittedData/"	};
+			static BufferType bufferDirectory	{ "./../EdittedData/"	};
 			static BufferType bufferPrefix		{ "Stage"					};
 			static BufferType bufferEnemy		{ "Enemy"					};
 			static BufferType bufferItem		{ "Item"					};
