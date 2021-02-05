@@ -45,6 +45,11 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 	desc.windowCaption		= "Mimit";
 	desc.enableCaptionBar	= true;
 	desc.fullScreenMode		= false;
+#if ( defined( DEBUG ) || defined( _DEBUG ) ) // Except the FORCE_DEBUG macro
+	desc.isAppendFPS		= true;
+#else
+	desc.isAppendFPS		= false;
+#endif // DEBUG_MODE
 	initResult = Donya::Init( cmdShow, desc );
 	if ( !initResult )
 	{
