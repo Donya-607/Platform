@@ -167,6 +167,7 @@
     <ClCompile Include="Code\Bloom.cpp" />
     <ClCompile Include="Code\Boss.cpp" />
     <ClCompile Include="Code\Bosses\Skull.cpp" />
+    <ClCompile Include="Code\BufferedInput.cpp" />
     <ClCompile Include="Code\Bullet.cpp" />
     <ClCompile Include="Code\Bullets\Bone.cpp" />
     <ClCompile Include="Code\Bullets\Buster.cpp" />
@@ -265,6 +266,7 @@
     <ClInclude Include="Code\Bloom.h" />
     <ClInclude Include="Code\Boss.h" />
     <ClInclude Include="Code\Bosses\Skull.h" />
+    <ClInclude Include="Code\BufferedInput.h" />
     <ClInclude Include="Code\Bullet.h" />
     <ClInclude Include="Code\BulletParam.h" />
     <ClInclude Include="Code\Bullets\Bone.h" />

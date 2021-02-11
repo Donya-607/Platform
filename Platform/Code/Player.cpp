@@ -538,217 +538,6 @@ void PlayerParam::ShowImGuiNode()
 }
 #endif // USE_IMGUI
 
-void Player::BufferInput::Reset()
-{
-	buffer.clear();
-	lastAddedStatus = false;
-}
-void Player::BufferInput::Init( float maxRecordSecond )
-{
-	Reset();
-
-	// If set zero, it class does not work because it can not record anything
-	lifeSpanSecond = std::max( 0.001f, maxRecordSecond );
-}
-void Player::BufferInput::Update( float elapsedTime, bool pressed )
-{
-	for ( auto &it : buffer )
-	{
-		it.elapsedSecond += elapsedTime;
-	}
-	DiscardByLifeSpan();
-
-
-	AppendIfRecordable( pressed );
-
-
-	publicBuffer = buffer;
-}
-float Player::BufferInput::PressingSecond( float allowSecond, bool discardFoundInstance ) const
-{
-	constexpr float notFound = -1.0f;
-
-	const int count = scast<int>( publicBuffer.size() );
-	if ( !count ) { return notFound; }
-	// else
-
-
-	// There is no release record == Still pressing now
-	const Part &latest = publicBuffer[count - 1];
-	if ( latest.pressed && latest.elapsedSecond <= allowSecond )
-	{
-		if ( discardFoundInstance )
-		{
-			buffer.back().pickedUp = true;
-		}
-
-		return latest.elapsedSecond;
-
-		/*
-		return	( latest.elapsedSecond <= allowSecond )
-				? latest.elapsedSecond
-				: notFound ;
-		*/
-	}
-	// else
-
-
-	// Search long-pressed record pair
-
-	const Part *pPart = nullptr;
-	for ( int i = count - 1; 0 <= i; --i )
-	{
-		pPart = &publicBuffer[i];
-
-		// There is not possibility anymore
-		if ( allowSecond < pPart->elapsedSecond ) { return notFound; }
-		// else
-
-		if ( !pPart->pressed ) { continue; }
-		if ( pPart->pickedUp ) { continue; }
-		// else
-
-		// It records the press and the release alternately, so [i + 1] is release record.
-		const Part *pReleased   = &publicBuffer[i + 1];
-		const float pressSecond = pReleased->elapsedSecond - pPart->elapsedSecond;
-
-		if ( discardFoundInstance )
-		{
-			buffer[i].pickedUp = true;
-		}
-
-		return pressSecond;
-	}
-
-	return notFound;
-}
-bool Player::BufferInput::IsReleased( float allowSecond, bool discardFoundInstance ) const
-{
-	const Part *pPart = nullptr;
-
-	const int count = scast<int>( publicBuffer.size() );
-	for ( int i = count - 1; 0 <= i; --i )
-	{
-		pPart = &publicBuffer[i];
-
-		// There is not possibility anymore
-		if ( allowSecond < pPart->elapsedSecond ) { return false; }
-		// else
-
-		if ( pPart->pressed  ) { continue; }
-		if ( pPart->pickedUp ) { continue; }
-		// else
-
-		if ( discardFoundInstance )
-		{
-			buffer[i].pickedUp = true;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-bool Player::BufferInput::IsTriggered( float allowSecond, bool discardFoundInstance ) const
-{
-	const Part *pPart = nullptr;
-
-	const int count = scast<int>( publicBuffer.size() );
-	for ( int i = count - 1; 0 <= i; --i )
-	{
-		pPart = &publicBuffer[i];
-
-		// There is not possibility anymore
-		if ( allowSecond < pPart->elapsedSecond ) { return false; }
-		// else
-
-		if ( !pPart->pressed ) { continue; }
-		if ( pPart->pickedUp ) { continue; }
-		// else
-
-		if ( discardFoundInstance )
-		{
-			buffer[i].pickedUp = true;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-void Player::BufferInput::DiscardByLifeSpan()
-{
-	// Keep long press info
-	Part lastElement = ( buffer.empty() ) ? Part{} : buffer.back();
-
-	auto result = std::remove_if
-	(
-		buffer.begin(), buffer.end(),
-		[&]( const Part &element )
-		{
-			return ( lifeSpanSecond <= element.elapsedSecond );
-		}
-	);
-
-	buffer.erase( result, buffer.end() );
-
-	if ( lastAddedStatus == true && buffer.empty() )
-	{
-		buffer.emplace_back( lastElement );
-	}
-}
-void Player::BufferInput::AppendIfRecordable( bool pressed )
-{
-	// Records only toggle timing(trigger/release)
-	if ( pressed == lastAddedStatus ) { return; }
-	// else
-
-	lastAddedStatus = pressed;
-
-	Part tmp{};
-	tmp.pressed = pressed;
-	buffer.emplace_back( tmp );
-}
-#if USE_IMGUI
-void Player::BufferInput::ShowImGuiNode( const char *nodeCaption )
-{
-	if ( nodeCaption && !ImGui::TreeNode( nodeCaption ) ) { return; }
-	// else
-
-	ImGui::DragFloat( u8"寿命秒数", &lifeSpanSecond, 0.01f );
-
-	auto ShowPart = []( const char *caption, Part *p )
-	{
-		ImGui::Text( caption );
-		ImGui::SameLine();
-		ImGui::Checkbox( u8"押下", &p->pressed );
-		ImGui::SameLine();
-		ImGui::Text( u8":[%5.2f]経過:", p->elapsedSecond );
-		ImGui::SameLine();
-		ImGui::Checkbox( u8"中古", &p->pickedUp );
-	};
-
-	std::string caption;
-	const size_t count = buffer.size();
-	for ( size_t i = 0; i < count; ++i )
-	{
-		// Align two digits
-		if ( i < 10 )
-		{
-			caption = "_" + Donya::MakeArraySuffix( i );
-		}
-		else
-		{
-			caption = Donya::MakeArraySuffix( i );
-		}
-
-		ShowPart( caption.c_str(), &buffer[i] );
-	}
-
-	if ( nodeCaption ) { ImGui::TreePop(); }
-}
-#endif // USE_IMGUI
-
 void Player::InputManager::Init()
 {
 	constexpr float storeSecond = 1.0f;
@@ -912,7 +701,7 @@ void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
 
-	auto ShowBuffer = []( const char *columnId, std::array<BufferInput, Input::variationCount> *p )
+	auto ShowBuffer = []( const char *columnId, std::array<::Input::BufferedInput, Input::variationCount> *p )
 	{
 		std::string caption;
 
@@ -958,11 +747,6 @@ void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
 
 		ImGui::TreePop();
 	}
-	if ( ImGui::TreeNode( u8"銃きりかえ" ) )
-	{
-		ImGui::TreePop();
-	}
-
 
 	auto ShowInput = []( const std::string &nodeCaption, Input *p )
 	{
@@ -1872,12 +1656,13 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 	const bool moveToBackward		=  ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( inst.lookingSign ) );
 	const auto pGrabbingLadder		= inst.FindGrabbingLadderOrNullptr( input.moveVelocity.y, terrain );
 
-	const bool slideIsEnd	=  ( Parameter().Get().slideMoveSeconds <= timer )
-							|| ( moveToBackward )
-							|| ( inst.WillUseJump() )
-							|| ( pGrabbingLadder )
-							|| ( !inst.onGround )
-							;
+	const bool	slideIsEnd =
+					( Parameter().Get().slideMoveSeconds <= timer )
+				||	( moveToBackward  )
+				||	( inst.WillUseJump() )
+				||	( pGrabbingLadder )
+				||	( !inst.onGround  )
+				;
 
 	if ( slideIsEnd && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 	{
@@ -3293,31 +3078,6 @@ void Player::ShotIfRequested( float elapsedTime )
 	// else
 
 	pGun->Fire( *this, inputManager );
-
-	//const auto &data = Parameter().Get();
-
-	//const Donya::Quaternion lookingRotation = Donya::Quaternion::Make
-	//(
-	//	Donya::Vector3::Up(), ToRadian( 90.0f ) * lookingSign
-	//);
-
-	//Bullet::FireDesc desc = data.fireParam;
-	//desc.direction	=  ( lookingSign < 0.0f ) ? -Donya::Vector3::Right() : Donya::Vector3::Right();
-	//desc.position	=  lookingRotation.RotateVector( desc.position ); // Rotate the local space offset
-	//desc.position	+= GetPosition(); // Convert to world space
-	//desc.owner		=  hurtBox.id;
-
-	//const ShotLevel level = shotManager.ChargeLevel();
-	//if ( level != ShotLevel::Normal && level != ShotLevel::LevelCount )
-	//{
-	//	using Dmg = Definition::Damage;
-	//	desc.pAdditionalDamage			= std::make_shared<Dmg>();
-	//	desc.pAdditionalDamage->amount	= scast<int>( level );
-	//	desc.pAdditionalDamage->type	= Dmg::Type::Pierce;
-	//}
-	//	
-	//Bullet::Admin::Get().RequestFire( desc );
-	//Donya::Sound::Play( Music::Player_Shot );
 }
 void Player::UpdateOrientation( bool lookingRight )
 {
@@ -3500,6 +3260,8 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text			( u8"現在の重力：%5.3f", nowGravity );
 	availableWeapon.ShowImGuiNode( u8"現在使用可能な武器" );
 
+	inputManager.ShowImGuiNode( u8"入力状態" );
+
 	ImGui::DragFloat3	( u8"ワールド座標",					&body.pos.x,	0.01f );
 	ImGui::DragFloat3	( u8"速度",							&velocity.x,	0.01f );
 
@@ -3518,8 +3280,6 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Checkbox		( u8"のけぞり中か",					&tmp );
 	tmp = invincibleTimer.NowWorking();
 	ImGui::Checkbox		( u8"無敵中か",						&tmp );
-
-	inputManager.ShowImGuiNode( u8"入力状態" );
 
 	if ( ImGui::Button( u8"登場演出再生" ) )
 	{
