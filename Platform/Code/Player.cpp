@@ -3101,6 +3101,13 @@ void Player::Jump( int inputIndex )
 }
 bool Player::Jumpable( int inputIndex ) const
 {
+	if ( pMover && pMover->NowSliding( *this ) )
+	{
+		const bool pressDown = ( inputManager.Current().moveVelocity.y < 0.0f );
+		if ( pressDown ) { return false; }
+		// else
+	}
+
 	return ( onGround && inputManager.Jumpable( inputIndex ) ) ? true : false;
 }
 bool Player::WillUseJump() const
