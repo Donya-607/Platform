@@ -558,40 +558,75 @@ void Player::BufferInput::Update( float elapsedTime, bool pressed )
 	}
 	DiscardByLifeSpan();
 
-	// New record's "elapsedSecond" to be zero
-	if ( pressed )
-	{
-		Part tmp;
-		tmp.pressed = true;
-		buffer.emplace_back( tmp );
 
-		lastAddedStatus = true;
-	}
-	// Insert a not press record for able to consider the "release"
-	else if ( lastAddedStatus )
-	{
-		Part tmp;
-		tmp.pressed = false;
-		buffer.emplace_back( tmp );
+	AppendIfRecordable( pressed );
 
-		lastAddedStatus = false;
-	}
 
 	publicBuffer = buffer;
 }
-bool Player::BufferInput::IsPressed( float allowSecond, bool discardFoundInstance ) const
+float Player::BufferInput::PressingSecond( float allowSecond, bool discardFoundInstance ) const
 {
-	int i = -1;
-	for ( const auto &it : publicBuffer )
-	{
-		i++;
+	constexpr float notFound = -1.0f;
 
-		if ( !it.pressed ) { continue; }
-		if ( it.pickedUp ) { continue; }
-		// else
+	const int count = scast<int>( publicBuffer.size() );
+	if ( !count ) { return notFound; }
+	// else
+
+
+	// There is no release record == Still pressing now
+	const Part &latest = publicBuffer[count - 1];
+	if ( latest.pressed )
+	{
+		return	( latest.elapsedSecond <= allowSecond )
+				? latest.elapsedSecond
+				: notFound ;
+	}
+	// else
+
+
+	// Search long-pressed record pair
+
+	const Part *pPart = nullptr;
+	for ( int i = count - 1; 0 <= i; --i )
+	{
+		pPart = &publicBuffer[i];
 
 		// There is not possibility anymore
-		if ( allowSecond <= it.elapsedSecond ) { return false; }
+		if ( allowSecond < pPart->elapsedSecond ) { return notFound; }
+		// else
+
+		if ( !pPart->pressed ) { continue; }
+		if ( pPart->pickedUp ) { continue; }
+		// else
+
+		// It records the press and the release alternately, so [i + 1] is release record.
+		const Part *pReleased   = &publicBuffer[i + 1];
+		const float pressSecond = pReleased->elapsedSecond - pPart->elapsedSecond;
+
+		if ( discardFoundInstance )
+		{
+			buffer[i].pickedUp = true;
+		}
+
+		return pressSecond;
+	}
+
+	return notFound;
+}
+bool Player::BufferInput::IsPressed( float allowSecond, bool discardFoundInstance ) const
+{
+	const Part *pPart = nullptr;
+	const int count = scast<int>( publicBuffer.size() );
+	for ( int i = count - 1; 0 <= i; --i )
+	{
+		pPart = &publicBuffer[i];
+
+		// There is not possibility anymore
+		if ( allowSecond < pPart->elapsedSecond ) { return false; }
+		// else
+
+		if ( !pPart->pressed ) { continue; }
+		if ( pPart->pickedUp ) { continue; }
 		// else
 
 		if ( discardFoundInstance )
@@ -603,34 +638,32 @@ bool Player::BufferInput::IsPressed( float allowSecond, bool discardFoundInstanc
 	}
 
 	return false;
+
+	// return ( 0.0f <= PressingSecond( allowSecond, discardFoundInstance ) ) ? true : false;
 }
 bool Player::BufferInput::IsReleased( float allowSecond, bool discardFoundInstance ) const
 {
-	int i = -1;
-	bool searchPressed = false;
-	for ( const auto &it : publicBuffer )
+	const Part *pPart = nullptr;
+
+	const int count = scast<int>( publicBuffer.size() );
+	for ( int i = count - 1; 0 <= i; --i )
 	{
-		i++;
+		pPart = &publicBuffer[i];
 
-		if ( it.pressed != searchPressed ) { continue; }
+		// There is not possibility anymore
+		if ( allowSecond < pPart->elapsedSecond ) { return false; }
 		// else
 
-		// Releasing record
-		if ( !searchPressed )
-		{
-			// Ignore
-			if ( it.pickedUp ) { continue; }
-			// else
-
-			// There is not possibility anymore
-			if ( allowSecond <= it.elapsedSecond ) { return false; }
-			// else
-
-			// Clarify "it is release or nothing?"
-			searchPressed = true;
-			continue;
-		}
+		if ( pPart->pressed  ) { continue; }
+		if ( pPart->pickedUp ) { continue; }
 		// else
+
+		// // Regard as: "last release"
+		// const bool isOldest = i == 0;
+		// if ( isOldest ) { return true; }
+		// // else
+		// if ( !publicBuffer[i - 1].pressed ) { continue; }
+		// // else
 
 		if ( discardFoundInstance )
 		{
@@ -644,30 +677,24 @@ bool Player::BufferInput::IsReleased( float allowSecond, bool discardFoundInstan
 }
 bool Player::BufferInput::IsTriggered( float allowSecond, bool discardFoundInstance ) const
 {
-	auto IsTrigger = [&allowSecond]( size_t verifyIndex, const std::vector<Part> &buf )
+	const Part *pPart = nullptr;
+
+	const int count = scast<int>( publicBuffer.size() );
+	for ( int i = count - 1; 0 <= i; --i )
 	{
-		if ( !buf[verifyIndex].pressed  ) { return false; }
-		if ( !buf[verifyIndex].pickedUp ) { return false; }
+		pPart = &publicBuffer[i];
+
+		// There is not possibility anymore
+		if ( allowSecond < pPart->elapsedSecond ) { return false; }
 		// else
 
-		if ( allowSecond <= buf[verifyIndex].elapsedSecond ) { return false; }
+		if ( !pPart->pressed ) { continue; }
+		if ( pPart->pickedUp ) { continue; }
 		// else
 
-		// Regard as: "first press"
-		const bool isLastIndex = verifyIndex == buf.size() - 1;
-		if ( isLastIndex ) { return true; }
-		// else
-
-		if ( buf[verifyIndex + 1].pressed ) { return false; }
-		// else
-
-		return true;
-	};
-
-	const size_t count = publicBuffer.size();
-	for ( size_t i = 0; i < count; ++i )
-	{
-		if ( !IsTrigger( i, publicBuffer ) ) { continue; }
+		// Regard as: "the record of next by last is not pressed"
+		// const bool isLastIndex = i == 0;
+		// if ( !isLastIndex && publicBuffer[i - 1].pressed ) { return false; }
 		// else
 
 		if ( discardFoundInstance )
@@ -682,6 +709,9 @@ bool Player::BufferInput::IsTriggered( float allowSecond, bool discardFoundInsta
 }
 void Player::BufferInput::DiscardByLifeSpan()
 {
+	// Keep long press info
+	Part lastElement = ( buffer.empty() ) ? Part{} : buffer.back();
+
 	auto result = std::remove_if
 	(
 		buffer.begin(), buffer.end(),
@@ -692,6 +722,23 @@ void Player::BufferInput::DiscardByLifeSpan()
 	);
 
 	buffer.erase( result, buffer.end() );
+
+	if ( lastAddedStatus == true && buffer.empty() )
+	{
+		buffer.emplace_back( lastElement );
+	}
+}
+void Player::BufferInput::AppendIfRecordable( bool pressed )
+{
+	// Records only toggle timing(trigger/release)
+	if ( pressed == lastAddedStatus ) { return; }
+	// else
+
+	lastAddedStatus = pressed;
+
+	Part tmp{};
+	tmp.pressed = pressed;
+	buffer.emplace_back( tmp );
 }
 #if USE_IMGUI
 void Player::BufferInput::ShowImGuiNode( const char *nodeCaption )
@@ -707,14 +754,25 @@ void Player::BufferInput::ShowImGuiNode( const char *nodeCaption )
 		ImGui::SameLine();
 		ImGui::Checkbox( u8"‰Ÿ‰º", &p->pressed );
 		ImGui::SameLine();
-		ImGui::Text( u8":[%6.3f]-Œo‰ß•b”", p->elapsedSecond );
+		ImGui::Text( u8":[%5.2f]Œo‰ß:", p->elapsedSecond );
+		ImGui::SameLine();
+		ImGui::Checkbox( u8"’†ŒÃ", &p->pickedUp );
 	};
 
 	std::string caption;
 	const size_t count = buffer.size();
 	for ( size_t i = 0; i < count; ++i )
 	{
-		caption = Donya::MakeArraySuffix( i );
+		// Align two digits
+		if ( i < 10 )
+		{
+			caption = "_" + Donya::MakeArraySuffix( i );
+		}
+		else
+		{
+			caption = Donya::MakeArraySuffix( i );
+		}
+
 		ShowPart( caption.c_str(), &buffer[i] );
 	}
 
@@ -777,65 +835,31 @@ void Player::InputManager::Update( const Player &inst, float elapsedTime, const 
 		*/
 	}
 }
-int  Player::InputManager::UseJumpIndex( bool getCurrent ) const
+int  Player::InputManager::UseJumpIndex() const
 {
-	int		minIndex = -1;
-	float	minSecond = FLT_MAX;
+	int   minIndex  = -1;
+	float minSecond = FLT_MAX;
 	const auto &depth = Parameter().Get().jumpBufferSecond;
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		if ( !jumps[i].IsPressed( depth ) ) { continue; }
+		float second = jumps[i].PressingSecond( depth );
+		if ( second < 0.0f ) { continue; } // Did not pressed
 		// else
 
-		minIndex = i;
-
-		/*
-		const float &sec = keepJumpSeconds[i];
-		if ( sec <= minSecond )
+		if ( second < minSecond )
 		{
-			minIndex = i;
-			minSecond = sec;
+			minIndex  = i;
+			minSecond = second;
 		}
-		*/
 	}
+
 	return minIndex;
-
-	// ----------
-
-	const auto &input = ( getCurrent ) ? curr : prev;
-
-	int		minimumIndex	= -1;
-	float	minimumSecond	= FLT_MAX;
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		if ( !input.useJumps[i] ) { continue; }
-		// else
-
-		const float &sec	= keepJumpSeconds[i];
-		if ( sec <= minimumSecond )
-		{
-			minimumIndex	= i;
-			minimumSecond	= sec;
-		}
-	}
-
-	return minimumIndex;
 }
 int  Player::InputManager::UseShotIndex() const
 {
-	const auto &depth = Parameter().Get().jumpBufferSecond;
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		if ( shots[i].IsPressed( depth ) ) { return i; }
-	}
-
-	return -1;
-
-	// ----------
-
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		if ( curr.useShots[i] )
+		if ( 0.0f <= shots[i].PressingSecond( FLT_MAX ) )
 		{
 			return i;
 		}
@@ -852,24 +876,12 @@ int  Player::InputManager::UseDashIndex() const
 	}
 
 	return -1;
-
-	// ----------
-
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		if ( curr.useDashes[i] && !prev.useDashes[i] )
-		{
-			return i;
-		}
-	}
-
-	return -1;
 }
 int  Player::InputManager::ShiftGunIndex() const
 {
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		if ( curr.shiftGuns[i] && !prev.shiftGuns[i] )
+		if ( shiftGuns[i].first && !shiftGuns[i].second )
 		{
 			return i;
 		}
@@ -877,9 +889,9 @@ int  Player::InputManager::ShiftGunIndex() const
 
 	return -1;
 }
-bool Player::InputManager::UseJump( bool getCurrent ) const
+bool Player::InputManager::UseJump() const
 {
-	return ( 0 <= UseJumpIndex( getCurrent ) );
+	return ( 0 <= UseJumpIndex() );
 }
 bool Player::InputManager::UseShot() const
 {
@@ -892,18 +904,40 @@ bool Player::InputManager::UseDash() const
 int  Player::InputManager::ShiftGun() const
 {
 	const int index = ShiftGunIndex();
-	return (  index < 0 ) ? 0 : curr.shiftGuns[index];
+	return (  index < 0 ) ? 0 : shiftGuns[index].first;
+}
+bool Player::InputManager::ReleaseJump() const
+{
+	const auto &depth = Parameter().Get().jumpBufferSecond;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( jumps[i].IsReleased( depth ) )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 bool Player::InputManager::Jumpable( int jumpInputIndex ) const
 {
 	if ( jumpInputIndex < 0 || Input::variationCount <= jumpInputIndex ) { return false; }
 	// else
 
-	const auto &data = Parameter().Get();
-	if ( data.jumpBufferSecond < keepJumpSeconds[jumpInputIndex] ) { return false; }
-	// else
-
 	return wasReleasedJumps[jumpInputIndex];
+}
+bool Player::InputManager::TriggerShot() const
+{
+	const auto &depth = Parameter().Get().jumpBufferSecond;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( shots[i].IsTriggered( depth ) )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 void Player::InputManager::Overwrite( const Input &overwrite )
 {
@@ -1368,9 +1402,10 @@ Player::ShotManager::~ShotManager()
 void Player::ShotManager::Init()
 {
 	chargeLevel			= ShotLevel::Normal;
-	prevChargeSecond	= 0.0f;
 	currChargeSecond	= 0.0f;
-	nowTrigger			= false;
+	prevChargeSecond	= 0.0f;
+	currUseShot			= false;
+	prevUseShot			= false;
 	fxComplete.Disable();
 	fxLoop.Disable();
 
@@ -1387,18 +1422,12 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 	if ( inst.NowMiss()			) { return; }
 	// else
 
-	const auto &input = inst.inputManager;
-
-	prevChargeSecond = currChargeSecond;
-	nowTrigger = false;
-
 	const ShotLevel oldChargeLevel = chargeLevel;
-
 	// If calculate the charge level after update the "currChargeSecond",
 	// the level will be zero(ShotLevel::Normal) absolutely when fire timing, because that timing is the input was released.
 	// So I must calculate it before the update. It will not be late for one frame by this.
-	chargeLevel		= CalcChargeLevel();
-	destColor		= CalcEmissiveColor();
+	chargeLevel		= CalcChargeLevel  ( currChargeSecond );
+	destColor		= CalcEmissiveColor( currChargeSecond );
 	emissiveColor	= Donya::Lerp( emissiveColor, destColor, Parameter().Get().emissiveTransFactor );
 
 	if ( oldChargeLevel != chargeLevel )
@@ -1415,27 +1444,7 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 		}
 	}
 
-	nowTrigger = NowTriggered( input );
-
-	const bool chargeable = ( inst.pGun && inst.pGun->Chargeable() );
-	if ( chargeable && input.UseShot() )
-	{
-		if ( nowTrigger )
-		{
-			// Reset it, but do not set zero(below addition will prevent zero).
-			// If set zero, shot condition will regard as "triggered" in next loop
-			// because the "prevChargeSecond" will be zero by this.
-			currChargeSecond = 0.0f;
-		}
-
-		currChargeSecond += elapsedTime;
-		PlayLoopSFXIfStopping();
-	}
-	else
-	{
-		currChargeSecond = 0.0f;
-		StopLoopSFXIfPlaying();
-	}
+	ChargeUpdate( inst, elapsedTime );
 
 	SetFXPosition( inst.GetPosition() );
 }
@@ -1453,34 +1462,21 @@ void Player::ShotManager::SetFXPosition( const Donya::Vector3 &wsPos )
 }
 bool Player::ShotManager::IsShotRequested( const Player &inst ) const
 {
-	if ( nowTrigger ) { return true; }
+	if ( NowTriggered( inst ) ) { return true; }
 	// else
 
-	const bool prevIsZero	= IsZero( prevChargeSecond );
-	const bool currIsZero	= IsZero( currChargeSecond );
-	const bool triggered	= ( prevIsZero && !currIsZero );
-	const bool released		= ( !prevIsZero && currIsZero );
-
 	const bool allowReleaseFire = ( inst.pGun && inst.pGun->AllowFireByRelease( chargeLevel ) );
+	if ( !allowReleaseFire ) { return false; }
+	// else
 
-	return ( triggered )
-		|| ( allowReleaseFire && released );
+	const bool released = ( !currUseShot && prevUseShot );
+	return released;
 }
-bool Player::ShotManager::NowTriggered( const InputManager &input ) const
+bool Player::ShotManager::NowTriggered( const Player &inst ) const
 {
-	const auto &prev = input.Previous();
-	const auto &curr = input.Current();
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		if ( curr.useShots[i] && !prev.useShots[i] )
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return inst.inputManager.TriggerShot() || ( currUseShot && !prevUseShot );
 }
-Player::ShotLevel Player::ShotManager::CalcChargeLevel() const
+Player::ShotLevel Player::ShotManager::CalcChargeLevel( float chargingSecond ) const
 {
 	const auto &chargeParams = Parameter().Get().chargeParams;
 
@@ -1498,7 +1494,7 @@ Player::ShotLevel Player::ShotManager::CalcChargeLevel() const
 
 	for ( const auto &it : compareHighLevels )
 	{
-		if ( chargeParams[scast<int>( it )].chargeSecond <= currChargeSecond )
+		if ( chargeParams[scast<int>( it )].chargeSecond <= chargingSecond )
 		{
 			return it;
 		}
@@ -1506,7 +1502,7 @@ Player::ShotLevel Player::ShotManager::CalcChargeLevel() const
 
 	return ShotLevel::Normal;
 }
-Donya::Vector3 Player::ShotManager::CalcEmissiveColor() const
+Donya::Vector3 Player::ShotManager::CalcEmissiveColor( float chargingSecond ) const
 {
 	constexpr size_t paramCount = scast<size_t>( Player::ShotLevel::LevelCount );
 	constexpr Donya::Vector3 defaultColor = Donya::Vector3::Zero();
@@ -1522,7 +1518,7 @@ Donya::Vector3 Player::ShotManager::CalcEmissiveColor() const
 	const auto end = chargeParams.crend();
 	for ( auto itr = chargeParams.crbegin(); itr != end; ++itr )
 	{
-		if ( currChargeSecond < itr->chargeSecond ) { continue; }
+		if ( chargingSecond < itr->chargeSecond ) { continue; }
 		// else
 
 		pParam = &( *itr );
@@ -1542,7 +1538,7 @@ Donya::Vector3 Player::ShotManager::CalcEmissiveColor() const
 	}
 	// else
 
-	const float angle		= ToRadian( currChargeSecond * 360.0f );
+	const float angle		= ToRadian( chargingSecond * 360.0f );
 	const float cycleSpeed	= 1.0f / pParam->emissiveCycleSecond;
 	const float sin_01		= ( sinf( angle * cycleSpeed ) + 1.0f ) * 0.5f;
 	const float sinRange	= 1.0f - pParam->emissiveMinBias;
@@ -1559,6 +1555,33 @@ void Player::ShotManager::AssignLoopFX( Effect::Kind kind )
 	// Actual position will set at the end of Update()
 	constexpr Donya::Vector3 generatePos = Donya::Vector3::Zero();
 	fxLoop = Effect::Handle::Generate( kind, generatePos );
+}
+void Player::ShotManager::ChargeUpdate( const Player &inst, float elapsedTime )
+{
+	prevChargeSecond =  currChargeSecond;
+	currChargeSecond += elapsedTime;
+
+	prevUseShot = currUseShot;
+	currUseShot = inst.inputManager.UseShot();
+
+	if ( NowTriggered( inst ) )
+	{
+		// Reset it, but do not set zero.
+		// If set zero, shot condition will regard as "triggered" in next loop
+		// because the "prevChargeSecond" will be zero by this.
+		currChargeSecond = elapsedTime;
+	}
+
+	const bool chargeable = ( inst.pGun && inst.pGun->Chargeable() );
+	if ( chargeable && currUseShot )
+	{
+		PlayLoopSFXIfStopping();
+	}
+	else
+	{
+		currChargeSecond = 0.0f;
+		StopLoopSFXIfPlaying();
+	}
 }
 void Player::ShotManager::PlayLoopSFXIfStopping()
 {
@@ -3352,7 +3375,8 @@ void Player::Fall( float elapsedTime )
 	const float oldVSpeed = velocity.y;
 
 	// Control the Y velocity when the moment that jump input now released
-	const bool nowReleaseMoment = ( jumpInputIndex < 0 && 0 <= inputManager.UseJumpIndex( /* getCurrent = */ false ) ); // Current is off(index < 0), Previous is on(0 <= index)
+	// const bool nowReleaseMoment = ( jumpInputIndex < 0 && 0 <= inputManager.UseJumpIndex( /* getCurrent = */ false ) ); // Current is off(index < 0), Previous is on(0 <= index)
+	const bool nowReleaseMoment = inputManager.ReleaseJump();
 	if ( nowReleaseMoment && 0.0f < velocity.y ) // Enable only rising
 	{
 		velocity.y = std::min( velocity.y, data.jumpCancelledVSpeedMax );

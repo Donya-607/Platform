@@ -160,15 +160,15 @@ private:
 	private:
 		struct Part
 		{
-			float	elapsedSecond	= 0.0f;	// Elapsed second since to be current pressed status
+			float	elapsedSecond	= 0.0f;	// Elapsed second from pushed
 			bool	pressed			= false;
 			mutable	bool pickedUp	= false;
 		};
 	private:
 		float lifeSpanSecond  = 0.001f;
-		bool  lastAddedStatus = false; // "status" means "pressed"
-		std::vector<Part> buffer; // begin:Latest ~ end:Last
-		std::vector<Part> publicBuffer;
+		bool  lastAddedStatus = false;	// "status" means "pressed"
+		std::vector<Part> buffer;		// begin:Latest ~ end:Last
+		std::vector<Part> publicBuffer;	// Support multiple call of accessor in same frame
 	public:
 		/// <summary>
 		/// Clear records
@@ -183,11 +183,17 @@ private:
 		/// </summary>
 		void Update( float elapsedTime, bool currentFrameIsPressed );
 	public:
+		/// <summary>
+		/// It returns found part's "elapsedSecond" or negative value like -1.0f if not found.
+		/// </summary>
+		float PressingSecond( float allowSecond, bool discardFoundInstance = true ) const;
 		bool IsPressed( float allowSecond, bool discardFoundInstance = true ) const;
+	public:
 		bool IsReleased( float allowSecond, bool discardFoundInstance = true ) const;
 		bool IsTriggered( float allowSecond, bool discardFoundInstance = true ) const;
 	private:
 		void DiscardByLifeSpan();
+		void AppendIfRecordable( bool pressed );
 	public:
 	#if USE_IMGUI
 		void ShowImGuiNode( const char *nodeCaption );
@@ -209,15 +215,17 @@ private:
 		void Init();
 		void Update( const Player &instance, float elapsedTime, const Input &input );
 	public:
-		int  UseJumpIndex( bool getCurrent = true ) const; // Return -1 if not using
+		int  UseJumpIndex() const; // Return -1 if not using
 		int  UseShotIndex() const; // Return -1 if not using
 		int  UseDashIndex() const; // Return -1 if not using
 		int  ShiftGunIndex() const; // Return -1 if not using
-		bool UseJump( bool getCurrent = true ) const;
+		bool UseJump() const;
 		bool UseShot() const;
 		bool UseDash() const;
 		int  ShiftGun() const;
+		bool ReleaseJump() const;
 		bool Jumpable( int jumpInputIndex ) const;
+		bool TriggerShot() const;
 	public:
 		void Overwrite( const Input &overwrite );
 		void OverwritePrevious( const Input &overwrite );
@@ -276,9 +284,10 @@ private:
 	{
 	private:
 		ShotLevel		chargeLevel			= ShotLevel::Normal;
-		float			prevChargeSecond	= 0.0f;
 		float			currChargeSecond	= 0.0f;
-		bool			nowTrigger			= false;
+		float			prevChargeSecond	= 0.0f;
+		bool			currUseShot			= false;
+		bool			prevUseShot			= false;
 		Donya::Vector3	emissiveColor	{ 0.0f, 0.0f, 0.0f }; // By charge
 		Donya::Vector3	destColor		{ 0.0f, 0.0f, 0.0f }; // By charge
 		bool			playingChargeSE		= false;
@@ -299,10 +308,12 @@ private:
 		ShotLevel		ChargeLevel()		const { return chargeLevel;			}
 		Donya::Vector3	EmissiveColor()		const { return emissiveColor;		}
 	private:
-		bool NowTriggered( const InputManager &input ) const;
-		ShotLevel		CalcChargeLevel() const;
-		Donya::Vector3	CalcEmissiveColor() const;
+		bool			NowTriggered		( const Player &instance ) const;
+		ShotLevel		CalcChargeLevel		( float chargingSecond ) const;
+		Donya::Vector3	CalcEmissiveColor	( float chargingSecond ) const;
 		void AssignLoopFX( Effect::Kind kind );
+	private:
+		void ChargeUpdate( const Player &instance , float elapsedTime );
 		void PlayLoopSFXIfStopping();
 		void StopLoopSFXIfPlaying( bool forcely = false );
 	};
