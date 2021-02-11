@@ -3109,6 +3109,8 @@ void SceneGame::UseImGui( float elapsedTime )
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 
+	// ImGui::ShowDemoWindow();
+
 	ImGui::Checkbox( u8"[ALT+L]	光源の可視化",		&drawLightSources	);
 	ImGui::Checkbox( u8"[F4]	光視点にする",		&projectLightCamera	);
 	if ( ImGui::Button( u8"[F7]			全武器解放＆セーブ" ) ) { ChangeAvailableWeapon( /* unlock = */ true  ); }

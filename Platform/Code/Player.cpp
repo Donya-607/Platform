@@ -538,8 +538,198 @@ void PlayerParam::ShowImGuiNode()
 }
 #endif // USE_IMGUI
 
+void Player::BufferInput::Reset()
+{
+	buffer.clear();
+	lastAddedStatus = false;
+}
+void Player::BufferInput::Init( float maxRecordSecond )
+{
+	Reset();
+
+	// If set zero, it class does not work because it can not record anything
+	lifeSpanSecond = std::max( 0.001f, maxRecordSecond );
+}
+void Player::BufferInput::Update( float elapsedTime, bool pressed )
+{
+	for ( auto &it : buffer )
+	{
+		it.elapsedSecond += elapsedTime;
+	}
+	DiscardByLifeSpan();
+
+	// New record's "elapsedSecond" to be zero
+	if ( pressed )
+	{
+		Part tmp;
+		tmp.pressed = true;
+		buffer.emplace_back( tmp );
+
+		lastAddedStatus = true;
+	}
+	// Insert a not press record for able to consider the "release"
+	else if ( lastAddedStatus )
+	{
+		Part tmp;
+		tmp.pressed = false;
+		buffer.emplace_back( tmp );
+
+		lastAddedStatus = false;
+	}
+
+	publicBuffer = buffer;
+}
+bool Player::BufferInput::IsPressed( float allowSecond, bool discardFoundInstance ) const
+{
+	int i = -1;
+	for ( const auto &it : publicBuffer )
+	{
+		i++;
+
+		if ( !it.pressed ) { continue; }
+		if ( it.pickedUp ) { continue; }
+		// else
+
+		// There is not possibility anymore
+		if ( allowSecond <= it.elapsedSecond ) { return false; }
+		// else
+
+		if ( discardFoundInstance )
+		{
+			buffer[i].pickedUp = true;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+bool Player::BufferInput::IsReleased( float allowSecond, bool discardFoundInstance ) const
+{
+	int i = -1;
+	bool searchPressed = false;
+	for ( const auto &it : publicBuffer )
+	{
+		i++;
+
+		if ( it.pressed != searchPressed ) { continue; }
+		// else
+
+		// Releasing record
+		if ( !searchPressed )
+		{
+			// Ignore
+			if ( it.pickedUp ) { continue; }
+			// else
+
+			// There is not possibility anymore
+			if ( allowSecond <= it.elapsedSecond ) { return false; }
+			// else
+
+			// Clarify "it is release or nothing?"
+			searchPressed = true;
+			continue;
+		}
+		// else
+
+		if ( discardFoundInstance )
+		{
+			buffer[i].pickedUp = true;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+bool Player::BufferInput::IsTriggered( float allowSecond, bool discardFoundInstance ) const
+{
+	auto IsTrigger = [&allowSecond]( size_t verifyIndex, const std::vector<Part> &buf )
+	{
+		if ( !buf[verifyIndex].pressed  ) { return false; }
+		if ( !buf[verifyIndex].pickedUp ) { return false; }
+		// else
+
+		if ( allowSecond <= buf[verifyIndex].elapsedSecond ) { return false; }
+		// else
+
+		// Regard as: "first press"
+		const bool isLastIndex = verifyIndex == buf.size() - 1;
+		if ( isLastIndex ) { return true; }
+		// else
+
+		if ( buf[verifyIndex + 1].pressed ) { return false; }
+		// else
+
+		return true;
+	};
+
+	const size_t count = publicBuffer.size();
+	for ( size_t i = 0; i < count; ++i )
+	{
+		if ( !IsTrigger( i, publicBuffer ) ) { continue; }
+		// else
+
+		if ( discardFoundInstance )
+		{
+			buffer[i].pickedUp = true;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+void Player::BufferInput::DiscardByLifeSpan()
+{
+	auto result = std::remove_if
+	(
+		buffer.begin(), buffer.end(),
+		[&]( const Part &element )
+		{
+			return ( lifeSpanSecond <= element.elapsedSecond );
+		}
+	);
+
+	buffer.erase( result, buffer.end() );
+}
+#if USE_IMGUI
+void Player::BufferInput::ShowImGuiNode( const char *nodeCaption )
+{
+	if ( nodeCaption && !ImGui::TreeNode( nodeCaption ) ) { return; }
+	// else
+
+	ImGui::DragFloat( u8"寿命秒数", &lifeSpanSecond, 0.01f );
+
+	auto ShowPart = []( const char *caption, Part *p )
+	{
+		ImGui::Text( caption );
+		ImGui::SameLine();
+		ImGui::Checkbox( u8"押下", &p->pressed );
+		ImGui::SameLine();
+		ImGui::Text( u8":[%6.3f]-経過秒数", p->elapsedSecond );
+	};
+
+	std::string caption;
+	const size_t count = buffer.size();
+	for ( size_t i = 0; i < count; ++i )
+	{
+		caption = Donya::MakeArraySuffix( i );
+		ShowPart( caption.c_str(), &buffer[i] );
+	}
+
+	if ( nodeCaption ) { ImGui::TreePop(); }
+}
+#endif // USE_IMGUI
+
 void Player::InputManager::Init()
 {
+	constexpr float storeSecond = 1.0f;
+	for ( auto &it : jumps		) { it.Init( storeSecond ); }
+	for ( auto &it : shots		) { it.Init( storeSecond ); }
+	for ( auto &it : dashes		) { it.Init( storeSecond ); }
+	for ( auto &it : shiftGuns	) { it.first = it.second = 0; }
+
 	prev = Input::GenerateEmpty();
 	curr = Input::GenerateEmpty();
 	keepJumpSeconds.fill( 0.0f );
@@ -547,6 +737,17 @@ void Player::InputManager::Init()
 }
 void Player::InputManager::Update( const Player &inst, float elapsedTime, const Input &input )
 {
+	elapsedTime = Donya::GetElapsedTime();
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		jumps [i].Update( elapsedTime, input.useJumps [i] );
+		shots [i].Update( elapsedTime, input.useShots [i] );
+		dashes[i].Update( elapsedTime, input.useDashes[i] );
+
+		shiftGuns[i].second = shiftGuns[i].first;
+		shiftGuns[i].first  = input.shiftGuns[i];
+	}
+
 	prev = curr;
 	curr = input;
 
@@ -557,8 +758,15 @@ void Player::InputManager::Update( const Player &inst, float elapsedTime, const 
 		curr.moveVelocity.y = Donya::SignBitF( diff.y );
 	}
 
+	const auto &depth = Parameter().Get().jumpBufferSecond;
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
+		if ( !jumps[i].IsPressed( depth ) )
+		{
+			wasReleasedJumps[i] = true;
+		}
+
+		/*
 		float &sec = keepJumpSeconds[i];
 		sec = ( curr.useJumps[i] ) ? sec + elapsedTime : 0.0f;
 
@@ -566,10 +774,34 @@ void Player::InputManager::Update( const Player &inst, float elapsedTime, const 
 		{
 			wasReleasedJumps[i] = true;
 		}
+		*/
 	}
 }
 int  Player::InputManager::UseJumpIndex( bool getCurrent ) const
 {
+	int		minIndex = -1;
+	float	minSecond = FLT_MAX;
+	const auto &depth = Parameter().Get().jumpBufferSecond;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( !jumps[i].IsPressed( depth ) ) { continue; }
+		// else
+
+		minIndex = i;
+
+		/*
+		const float &sec = keepJumpSeconds[i];
+		if ( sec <= minSecond )
+		{
+			minIndex = i;
+			minSecond = sec;
+		}
+		*/
+	}
+	return minIndex;
+
+	// ----------
+
 	const auto &input = ( getCurrent ) ? curr : prev;
 
 	int		minimumIndex	= -1;
@@ -591,6 +823,16 @@ int  Player::InputManager::UseJumpIndex( bool getCurrent ) const
 }
 int  Player::InputManager::UseShotIndex() const
 {
+	const auto &depth = Parameter().Get().jumpBufferSecond;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( shots[i].IsPressed( depth ) ) { return i; }
+	}
+
+	return -1;
+
+	// ----------
+
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
 		if ( curr.useShots[i] )
@@ -603,6 +845,16 @@ int  Player::InputManager::UseShotIndex() const
 }
 int  Player::InputManager::UseDashIndex() const
 {
+	const auto &depth = Parameter().Get().jumpBufferSecond;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( dashes[i].IsTriggered( depth ) ) { return i; }
+	}
+
+	return -1;
+
+	// ----------
+
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
 		if ( curr.useDashes[i] && !prev.useDashes[i] )
@@ -666,6 +918,58 @@ void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
 {
 	if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 	// else
+
+	auto ShowBuffer = []( const char *columnId, std::array<BufferInput, Input::variationCount> *p )
+	{
+		std::string caption;
+
+		ImGui::Columns( Input::variationCount, columnId );
+		ImGui::Separator();
+
+		// Header
+		for ( int i = 0; i < Input::variationCount; ++i )
+		{
+			caption = "Key" + Donya::MakeArraySuffix( i );
+			ImGui::Text( caption.c_str() );
+
+			ImGui::NextColumn();
+		}
+		ImGui::Separator();
+
+		// Content
+		for ( int i = 0; i < Input::variationCount; ++i )
+		{
+			p->at( i ).ShowImGuiNode( nullptr );
+			ImGui::NextColumn();
+		}
+
+		ImGui::Columns( 1 );
+		ImGui::Separator();
+	};
+
+	if ( ImGui::TreeNode( u8"ジャンプ" ) )
+	{
+		ShowBuffer( "COL_Jump", &jumps );
+
+		ImGui::TreePop();
+	}
+	if ( ImGui::TreeNode( u8"ショット" ) )
+	{
+		ShowBuffer( "COL_Shot", &shots );
+
+		ImGui::TreePop();
+	}
+	if ( ImGui::TreeNode( u8"ダッシュ" ) )
+	{
+		ShowBuffer( "COL_Dash", &dashes );
+
+		ImGui::TreePop();
+	}
+	if ( ImGui::TreeNode( u8"銃きりかえ" ) )
+	{
+		ImGui::TreePop();
+	}
+
 
 	auto ShowInput = []( const std::string &nodeCaption, Input *p )
 	{

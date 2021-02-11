@@ -155,9 +155,52 @@ public:
 		return ( border <= intLevel );
 	}
 private:
+	class BufferInput
+	{
+	private:
+		struct Part
+		{
+			float	elapsedSecond	= 0.0f;	// Elapsed second since to be current pressed status
+			bool	pressed			= false;
+			mutable	bool pickedUp	= false;
+		};
+	private:
+		float lifeSpanSecond  = 0.001f;
+		bool  lastAddedStatus = false; // "status" means "pressed"
+		std::vector<Part> buffer; // begin:Latest ~ end:Last
+		std::vector<Part> publicBuffer;
+	public:
+		/// <summary>
+		/// Clear records
+		/// </summary>
+		void Reset();
+		/// <summary>
+		/// Clear records and set a life span of recorded inputs
+		/// </summary>
+		void Init( float maxRecordSecond );
+		/// <summary>
+		/// Update records' life span and record new input
+		/// </summary>
+		void Update( float elapsedTime, bool currentFrameIsPressed );
+	public:
+		bool IsPressed( float allowSecond, bool discardFoundInstance = true ) const;
+		bool IsReleased( float allowSecond, bool discardFoundInstance = true ) const;
+		bool IsTriggered( float allowSecond, bool discardFoundInstance = true ) const;
+	private:
+		void DiscardByLifeSpan();
+	public:
+	#if USE_IMGUI
+		void ShowImGuiNode( const char *nodeCaption );
+	#endif // USE_IMGUI
+	};
 	class InputManager
 	{
 	private:
+		std::array<BufferInput,			Input::variationCount> jumps;
+		std::array<BufferInput,			Input::variationCount> shots;
+		std::array<BufferInput,			Input::variationCount> dashes;
+		std::array<std::pair<int, int>,	Input::variationCount> shiftGuns; // first:curent, second:previous
+
 		Input prev;
 		Input curr;
 		std::array<float, Input::variationCount> keepJumpSeconds;
