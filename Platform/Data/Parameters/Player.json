@@ -211,10 +211,10 @@
             }
         ],
         "jumpCancelledVSpeedMax": 4.0,
-        "gravityRising": 45.0,
-        "gravityRisingAccel": 120.0,
-        "gravityFalling": 35.0,
-        "gravityFallingAccel": 90.0,
+        "gravityRising": 40.0,
+        "gravityRisingAccel": 90.0,
+        "gravityFalling": 30.0,
+        "gravityFallingAccel": 135.0,
         "gravityMax": 80.0,
         "inertialMoveSpeed": 5.0,
         "partMotions": [

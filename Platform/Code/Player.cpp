@@ -575,11 +575,20 @@ float Player::BufferInput::PressingSecond( float allowSecond, bool discardFoundI
 
 	// There is no release record == Still pressing now
 	const Part &latest = publicBuffer[count - 1];
-	if ( latest.pressed )
+	if ( latest.pressed && latest.elapsedSecond <= allowSecond )
 	{
+		if ( discardFoundInstance )
+		{
+			buffer.back().pickedUp = true;
+		}
+
+		return latest.elapsedSecond;
+
+		/*
 		return	( latest.elapsedSecond <= allowSecond )
 				? latest.elapsedSecond
 				: notFound ;
+		*/
 	}
 	// else
 
@@ -613,34 +622,6 @@ float Player::BufferInput::PressingSecond( float allowSecond, bool discardFoundI
 
 	return notFound;
 }
-bool Player::BufferInput::IsPressed( float allowSecond, bool discardFoundInstance ) const
-{
-	const Part *pPart = nullptr;
-	const int count = scast<int>( publicBuffer.size() );
-	for ( int i = count - 1; 0 <= i; --i )
-	{
-		pPart = &publicBuffer[i];
-
-		// There is not possibility anymore
-		if ( allowSecond < pPart->elapsedSecond ) { return false; }
-		// else
-
-		if ( !pPart->pressed ) { continue; }
-		if ( pPart->pickedUp ) { continue; }
-		// else
-
-		if ( discardFoundInstance )
-		{
-			buffer[i].pickedUp = true;
-		}
-
-		return true;
-	}
-
-	return false;
-
-	// return ( 0.0f <= PressingSecond( allowSecond, discardFoundInstance ) ) ? true : false;
-}
 bool Player::BufferInput::IsReleased( float allowSecond, bool discardFoundInstance ) const
 {
 	const Part *pPart = nullptr;
@@ -657,13 +638,6 @@ bool Player::BufferInput::IsReleased( float allowSecond, bool discardFoundInstan
 		if ( pPart->pressed  ) { continue; }
 		if ( pPart->pickedUp ) { continue; }
 		// else
-
-		// // Regard as: "last release"
-		// const bool isOldest = i == 0;
-		// if ( isOldest ) { return true; }
-		// // else
-		// if ( !publicBuffer[i - 1].pressed ) { continue; }
-		// // else
 
 		if ( discardFoundInstance )
 		{
@@ -690,11 +664,6 @@ bool Player::BufferInput::IsTriggered( float allowSecond, bool discardFoundInsta
 
 		if ( !pPart->pressed ) { continue; }
 		if ( pPart->pickedUp ) { continue; }
-		// else
-
-		// Regard as: "the record of next by last is not pressed"
-		// const bool isLastIndex = i == 0;
-		// if ( !isLastIndex && publicBuffer[i - 1].pressed ) { return false; }
 		// else
 
 		if ( discardFoundInstance )
@@ -819,20 +788,10 @@ void Player::InputManager::Update( const Player &inst, float elapsedTime, const 
 	const auto &depth = Parameter().Get().jumpBufferSecond;
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		if ( !jumps[i].IsPressed( depth ) )
+		if ( jumps[i].PressingSecond( depth ) < 0.0f )
 		{
 			wasReleasedJumps[i] = true;
 		}
-
-		/*
-		float &sec = keepJumpSeconds[i];
-		sec = ( curr.useJumps[i] ) ? sec + elapsedTime : 0.0f;
-
-		if ( !curr.useJumps[i] )
-		{
-			wasReleasedJumps[i] = true;
-		}
-		*/
 	}
 }
 int  Player::InputManager::UseJumpIndex() const
@@ -1732,7 +1691,7 @@ void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain
 
 	// Deformity of MoveVertical()
 	{
-		const bool useSlide = inst.inputManager.UseDash() && inst.onGround;
+		const bool useSlide = inst.onGround && inst.inputManager.UseDash();
 
 		// Make to can not act if game time is pausing
 		if ( nowPausing )
@@ -1819,6 +1778,65 @@ std::function<void()> Player::Normal::GetChangeStateMethod( Player &inst ) const
 	}
 	// else
 	return []() {}; // No op
+}
+void Player::Normal::MoveVertical( Player &inst, float elapsedTime, const Map &terrain )
+{
+	// Deformity of inst.MoveVertical()
+
+	// Make to can not act if game time is pausing
+	const bool nowPausing = IsZero( elapsedTime );
+	if ( nowPausing )
+	{
+		inst.Fall( elapsedTime );
+		return;
+	}
+	// else
+
+	// The buffer-input process of UseDash() will discards a recorded input.
+	// So if you evaluate the UseDash() when can not use the slide,
+	// the buffered input will be discarded wastefully.
+	const bool useSlide = inst.onGround && inst.inputManager.UseDash();
+
+	// Jump condition and resolve vs slide condition
+	if ( inst.WillUseJump() )
+	{
+		const int jumpInputIndex = inst.inputManager.UseJumpIndex();
+		assert( 0 <= jumpInputIndex && jumpInputIndex < Input::variationCount );
+
+		// Input to down
+		const auto &input = inst.inputManager.Current();
+		if ( Donya::SignBit( input.moveVelocity.y ) < 0 )
+		{
+			gotoSlide = true;
+
+			// Certainly doing Fall() if do not jump
+			inst.Fall( elapsedTime );
+			// But We must set the pressing flag because We wanna prevent to jump.
+			inst.inputManager.WasReleasedJumpInput()[jumpInputIndex] = false;
+
+			return;
+		}
+		// else
+
+		inst.Jump( jumpInputIndex );
+
+		// Enable the inertial-like jump even if was inputted the "jump" and "slide" in same time
+		if ( useSlide )
+		{
+			inst.wasJumpedWhileSlide = true;
+			inst.GenerateSlideEffects();
+		}
+
+		return;
+	}
+	// else
+
+	if ( useSlide )
+	{
+		gotoSlide = true;
+	}
+
+	inst.Fall( elapsedTime );
 }
 
 void Player::Slide::Init( Player &inst )
@@ -3356,7 +3374,7 @@ void Player::Fall( float elapsedTime )
 	}
 	else
 	{
-		inputManager.WasReleasedJumpInput().fill( true );
+		//inputManager.WasReleasedJumpInput().fill( true );
 	}
 
 
@@ -3364,7 +3382,7 @@ void Player::Fall( float elapsedTime )
 	{
 		nowGravity = data.gravityRising;
 	}
-	else if ( !nowResisting )
+	else// if ( !nowResisting )
 	{
 		const float  &acceleration = ( 0.0f <= velocity.y ) ? data.gravityRisingAccel : data.gravityFallingAccel;
 		nowGravity += acceleration * elapsedTime;

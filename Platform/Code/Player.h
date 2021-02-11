@@ -187,7 +187,6 @@ private:
 		/// It returns found part's "elapsedSecond" or negative value like -1.0f if not found.
 		/// </summary>
 		float PressingSecond( float allowSecond, bool discardFoundInstance = true ) const;
-		bool IsPressed( float allowSecond, bool discardFoundInstance = true ) const;
 	public:
 		bool IsReleased( float allowSecond, bool discardFoundInstance = true ) const;
 		bool IsTriggered( float allowSecond, bool discardFoundInstance = true ) const;
@@ -377,6 +376,9 @@ private:
 		bool NowBracing( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	private:
+		void MoveVertical( Player &instance, float elapsedTime, const Map &terrain );
+	public:
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"í èÌ"; }
 	#endif // USE_IMGUI
