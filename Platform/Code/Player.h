@@ -99,7 +99,7 @@ public:
 	{
 		static constexpr int variationCount = 2;
 	public:
-		Donya::Vector2	moveVelocity;	// Unit velocity
+		Donya::Vector2	moveVelocity;	// -1.0f ~ +1.0f
 		std::array<bool, variationCount> useJumps  = { false, false };
 		std::array<bool, variationCount> useShots  = { false, false };
 		std::array<bool, variationCount> useDashes = { false, false };
@@ -166,7 +166,6 @@ private:
 
 		Input prev;
 		Input curr;
-		std::array<float, Input::variationCount> keepJumpSeconds;
 		std::array<bool,  Input::variationCount> wasReleasedJumps;
 	public:
 		void Init();
@@ -184,17 +183,10 @@ private:
 		bool Jumpable( int jumpInputIndex ) const;
 		bool TriggerShot() const;
 	public:
-		void Overwrite( const Input &overwrite );
-		void OverwritePrevious( const Input &overwrite );
-	public:
 		const Input &Previous() const
 		{ return prev; }
 		const Input &Current() const
 		{ return curr; }
-		std::array<float, Input::variationCount> &KeepSecondJumpInput()
-		{ return keepJumpSeconds; }
-		const std::array<float, Input::variationCount> &KeepSecondJumpInput()  const
-		{ return keepJumpSeconds; }
 		std::array<bool,  Input::variationCount> &WasReleasedJumpInput()
 		{ return wasReleasedJumps; }
 		const std::array<bool,  Input::variationCount> &WasReleasedJumpInput() const

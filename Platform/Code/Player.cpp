@@ -548,7 +548,7 @@ void Player::InputManager::Init()
 
 	prev = Input::GenerateEmpty();
 	curr = Input::GenerateEmpty();
-	keepJumpSeconds.fill( 0.0f );
+	// keepJumpSeconds.fill( 0.0f );
 	wasReleasedJumps.fill( false );
 }
 void Player::InputManager::Update( const Player &inst, float elapsedTime, const Input &input )
@@ -687,14 +687,6 @@ bool Player::InputManager::TriggerShot() const
 
 	return false;
 }
-void Player::InputManager::Overwrite( const Input &overwrite )
-{
-	curr = overwrite;
-}
-void Player::InputManager::OverwritePrevious( const Input &overwrite )
-{
-	prev = overwrite;
-}
 #if USE_IMGUI
 void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
 {
@@ -784,6 +776,7 @@ void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
 	ShowInput( u8"前回のフレーム", &prev );
 	ShowInput( u8"現在のフレーム", &curr );
 
+	/*
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
 		const std::string caption = u8"ジャンプ長押し秒数" + Donya::MakeArraySuffix( i ) + u8":%5.3f";
@@ -795,6 +788,7 @@ void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
 		std::string caption = u8"ジャンプ入力を離したか" + Donya::MakeArraySuffix( i );
 		ImGui::Checkbox( caption.c_str(), &wasReleasedJumps[i] );
 	}
+	*/
 
 	ImGui::TreePop();
 }
@@ -1473,53 +1467,7 @@ void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain
 	const auto &input = inst.inputManager.Current();
 	const bool nowPausing = IsZero( elapsedTime );
 
-	// Deformity of MoveVertical()
-	{
-		const bool useSlide = inst.onGround && inst.inputManager.UseDash();
-
-		// Make to can not act if game time is pausing
-		if ( nowPausing )
-		{
-			inst.Fall( elapsedTime );
-		}
-		else
-		// Jump condition and resolve vs slide condition
-		if ( inst.WillUseJump() )
-		{
-			const int jumpInputIndex = inst.inputManager.UseJumpIndex();
-			assert( 0 <= jumpInputIndex && jumpInputIndex < Input::variationCount );
-
-			if ( Donya::SignBit( input.moveVelocity.y ) < 0 )
-			{
-				gotoSlide = true;
-
-				// Certainly doing Fall() if do not jump
-				inst.Fall( elapsedTime );
-				// But We must set the pressing flag because We wanna prevent to jump.
-				inst.inputManager.WasReleasedJumpInput()[jumpInputIndex] = false;
-			}
-			else
-			{
-				inst.Jump( jumpInputIndex );
-
-				// Enable the inertial-like jump even if was inputted the "jump" and "slide" in same time
-				if ( useSlide )
-				{
-					inst.wasJumpedWhileSlide = true;
-					inst.GenerateSlideEffects();
-				}
-			}
-		}
-		else
-		{
-			if ( useSlide )
-			{
-				gotoSlide = true;
-			}
-
-			inst.Fall( elapsedTime );
-		}
-	}
+	MoveVertical( inst, elapsedTime, terrain ); // My method
 
 	inst.ShotIfRequested( elapsedTime );
 
@@ -1974,7 +1922,7 @@ Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player
 		// Prevent the grab-release loop by press keeping the jump and the up input
 		wasReleasedJumpInputs[jumpInputIndex] = false;
 		// Disallow gravity resistance
-		inst.inputManager.KeepSecondJumpInput()[jumpInputIndex] = Parameter().Get().resistableSeconds;
+		//inst.inputManager.KeepSecondJumpInput()[jumpInputIndex] = Parameter().Get().resistableSeconds;
 		return ReleaseWay::Release;
 	}
 	// else
@@ -3095,7 +3043,6 @@ void Player::Jump( int inputIndex )
 	wasJumpedWhileSlide	= prevSlidingStatus;
 	velocity.y			= data.jumpStrength;
 	nowGravity			= data.gravityRising;
-	inputManager.KeepSecondJumpInput()[inputIndex]	= 0.0f;
 	inputManager.WasReleasedJumpInput()[inputIndex]	= false;
 	Donya::Sound::Play( Music::Player_Jump );
 }
@@ -3124,32 +3071,12 @@ void Player::Fall( float elapsedTime )
 {
 	const auto &data = Parameter().Get();
 
-	float gravityFactor = 1.0f;
-	bool  nowResisting  = false;
-	const bool canResist = !( pMover && pMover->NowKnockBacking( *this ) );
-	const int jumpInputIndex = inputManager.UseJumpIndex();
-	if ( 0 <= jumpInputIndex && canResist )
-	{
-		if ( !inputManager.WasReleasedJumpInput()[jumpInputIndex] )
-		{
-			if ( inputManager.KeepSecondJumpInput()[jumpInputIndex] < data.resistableSeconds )
-			{
-				nowResisting  = true;
-				gravityFactor = data.gravityResistance;
-			}
-		}
-	}
-	else
-	{
-		//inputManager.WasReleasedJumpInput().fill( true );
-	}
-
 
 	if ( onGround )
 	{
 		nowGravity = data.gravityRising;
 	}
-	else// if ( !nowResisting )
+	else
 	{
 		const float  &acceleration = ( 0.0f <= velocity.y ) ? data.gravityRisingAccel : data.gravityFallingAccel;
 		nowGravity += acceleration * elapsedTime;
@@ -3157,19 +3084,18 @@ void Player::Fall( float elapsedTime )
 
 	nowGravity = std::max( -data.gravityMax, nowGravity );
 
+
 	const float oldVSpeed = velocity.y;
 
 	// Control the Y velocity when the moment that jump input now released
-	// const bool nowReleaseMoment = ( jumpInputIndex < 0 && 0 <= inputManager.UseJumpIndex( /* getCurrent = */ false ) ); // Current is off(index < 0), Previous is on(0 <= index)
 	const bool nowReleaseMoment = inputManager.ReleaseJump();
 	if ( nowReleaseMoment && 0.0f < velocity.y ) // Enable only rising
 	{
 		velocity.y = std::min( velocity.y, data.jumpCancelledVSpeedMax );
 	}
-	// Apply the gravity as usually
-	else
+	else // Apply the gravity as usually
 	{
-		velocity.y -= nowGravity * gravityFactor * elapsedTime;
+		velocity.y -= nowGravity * elapsedTime;
 	}
 	velocity.y = std::max( -data.maxFallSpeed, velocity.y );
 
