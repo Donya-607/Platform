@@ -3,8 +3,6 @@
         "cereal_class_version": 19,
         "moveSpeed": 5.0,
         "jumpStrength": 18.5,
-        "gravityResistance": 1.0,
-        "resistableSeconds": 0.07999999821186066,
         "maxFallSpeed": 20.0,
         "hitBox": {
             "cereal_class_version": 0,
@@ -66,12 +64,12 @@
         },
         "maxBusterCount": 3,
         "maxHP": 28,
-        "knockBackSeconds": 0.5,
+        "knockBackSecond": 0.5,
         "knockBackSpeed": 2.0,
-        "invincibleSeconds": 1.7000000476837159,
+        "invincibleSecond": 1.7000000476837159,
         "flushingInterval": 0.10000000149011612,
         "slideMoveSpeed": 11.32349967956543,
-        "slideMoveSeconds": 0.3400000035762787,
+        "slideMoveSecond": 0.3400000035762787,
         "slideHitBox": {
             "pos": {
                 "x": 0.0,

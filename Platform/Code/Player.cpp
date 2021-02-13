@@ -337,7 +337,7 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::DragFloat( u8"移動速度",					&moveSpeed,				0.01f	);
 		ImGui::DragFloat( u8"慣性ジャンプの移動速度",		&inertialMoveSpeed,		0.01f	);
 		ImGui::DragFloat( u8"スライディング速度",			&slideMoveSpeed,		0.01f	);
-		ImGui::DragFloat( u8"スライディング秒数",			&slideMoveSeconds,		0.01f	);
+		ImGui::DragFloat( u8"スライディング秒数",			&slideMoveSecond,		0.01f	);
 		ImGui::DragFloat( u8"ジャンプ力",				&jumpStrength,			0.01f	);
 		ImGui::DragFloat( u8"ジャンプの先行入力受付秒数",	&jumpBufferSecond,		0.01f	);
 		ImGui::DragFloat( u8"ジャンプ解除時のＹ速度",		&jumpCancelledVSpeedMax,0.01f	);
@@ -346,13 +346,11 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::DragFloat( u8"重力・下降中",				&gravityFalling,		0.01f	);
 		ImGui::DragFloat( u8"重力加速・下降中",			&gravityFallingAccel,	0.01f	);
 		ImGui::DragFloat( u8"最大重力",					&gravityMax,			0.01f	);
-		ImGui::SliderFloat( u8"重力抵抗力",				&gravityResistance,		0.0f, 1.0f );
-		ImGui::DragFloat( u8"重力抵抗可能秒数",			&resistableSeconds,		0.01f	);
 		ImGui::DragFloat( u8"最高落下速度",				&maxFallSpeed,			0.01f	);
-		ImGui::DragFloat( u8"のけぞる秒数",				&knockBackSeconds,		0.01f	);
+		ImGui::DragFloat( u8"のけぞる秒数",				&knockBackSecond,		0.01f	);
 		ImGui::DragFloat( u8"のけぞり速度",				&knockBackSpeed,		0.01f	);
 		ImGui::DragFloat( u8"のけぞり抵抗時の短縮倍率",	&braceStandFactor,		0.01f	);
-		ImGui::DragFloat( u8"無敵秒数",					&invincibleSeconds,		0.01f	);
+		ImGui::DragFloat( u8"無敵秒数",					&invincibleSecond,		0.01f	);
 		ImGui::DragFloat( u8"無敵中点滅間隔（秒）",		&flushingInterval,		0.01f	);
 
 		auto MakePositive	= []( float *v )
@@ -365,17 +363,16 @@ void PlayerParam::ShowImGuiNode()
 		MakePositive( &moveSpeed			);
 		MakePositive( &inertialMoveSpeed	);
 		MakePositive( &slideMoveSpeed		);
-		MakePositive( &slideMoveSeconds		);
+		MakePositive( &slideMoveSecond		);
 		MakePositive( &jumpStrength			);
 		MakePositive( &jumpBufferSecond		);
 		MakePositive( &gravityRising		);
 		MakePositive( &gravityFalling		);
 		MakePositive( &gravityMax			);
-		MakePositive( &resistableSeconds	);
 		MakePositive( &maxFallSpeed			);
-		MakePositive( &knockBackSeconds		);
+		MakePositive( &knockBackSecond		);
 		MakePositive( &knockBackSpeed		);
-		MakePositive( &invincibleSeconds	);
+		MakePositive( &invincibleSecond	);
 		MakePositive( &flushingInterval		);
 		
 		ImGui::TreePop();
@@ -1331,9 +1328,9 @@ Player::Flusher::~Flusher()
 	fxHurt.Stop();
 	fxHurt.Disable();
 }
-void Player::Flusher::Start( float flushingSeconds )
+void Player::Flusher::Start( float flushingSecond )
 {
-	workingSeconds	= flushingSeconds;
+	workingSecond	= flushingSecond;
 	timer			= 0.0f;
 	fxHurt			= Effect::Handle::Generate( Effect::Kind::HurtDamage, {} );
 }
@@ -1365,7 +1362,7 @@ bool Player::Flusher::Drawable() const
 }
 bool Player::Flusher::NowWorking() const
 {
-	return ( timer < workingSeconds ) ? true : false;
+	return ( timer < workingSecond ) ? true : false;
 }
 
 #pragma region Mover
@@ -1588,7 +1585,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 	const auto pGrabbingLadder		= inst.FindGrabbingLadderOrNullptr( inputDir.y, terrain );
 
 	const bool slideIsEnd =
-					( Parameter().Get().slideMoveSeconds <= timer )
+					( Parameter().Get().slideMoveSecond <= timer )
 				||	( moveToBackward	)
 				||	( useJump			)
 				||	( pGrabbingLadder	)
@@ -2007,7 +2004,7 @@ void Player::KnockBack::Move( Player &inst, float elapsedTime, const Map &terrai
 }
 bool Player::KnockBack::ShouldChangeMover( const Player &inst ) const
 {
-	const auto &knockBackSecoonds = Parameter().Get().knockBackSeconds;
+	const auto &knockBackSecoonds = Parameter().Get().knockBackSecond;
 	return ( knockBackSecoonds <= timer );
 }
 std::function<void()> Player::KnockBack::GetChangeStateMethod( Player &inst ) const
@@ -2802,7 +2799,7 @@ void Player::ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain )
 	}
 	else
 	{
-		invincibleTimer.Start( Parameter().Get().invincibleSeconds );
+		invincibleTimer.Start( Parameter().Get().invincibleSecond );
 
 		if ( prevSlidingStatus )
 		{

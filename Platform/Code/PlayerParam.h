@@ -27,7 +27,7 @@ public:
 	float	moveSpeed				= 1.0f;
 	float	inertialMoveSpeed		= 1.0f;
 	float	slideMoveSpeed			= 1.0f;
-	float	slideMoveSeconds		= 1.0f;
+	float	slideMoveSecond			= 1.0f;
 	float	ladderMoveSpeed			= 1.0f;
 	float	ladderShotLagSecond		= 0.5f;
 	float	jumpStrength			= 1.0f;
@@ -38,17 +38,15 @@ public:
 	float	gravityFalling			= 1.0f;
 	float	gravityFallingAccel		= 1.0f;
 	float	gravityMax				= 1.0f;
-	float	gravityResistance		= 0.5f;			// Multiply to gravity if while pressing a jump key
-	float	resistableSeconds		= 0.5f;
 	float	maxFallSpeed			= 1.0f;
-	float	knockBackSeconds		= 0.5f;
+	float	knockBackSecond			= 0.5f;
 	float	knockBackSpeed			= 1.0f;			// X speed
 	float	braceStandFactor		= 2.0f;
-	float	invincibleSeconds		= 2.0f;
+	float	invincibleSecond		= 2.0f;
 	float	flushingInterval		= 0.1f;			// Seconds
 	float	emissiveTransFactor		= 0.3f;
-	float	appearDelaySecond		= 0.5f;			// Seconds
-	float	leaveDelaySecond		= 0.5f;			// Seconds
+	float	appearDelaySecond		= 0.5f;
+	float	leaveDelaySecond		= 0.5f;
 	Donya::Collision::Box3F			hitBox;			// VS a terrain
 	Donya::Collision::Box3F			hurtBox;		// VS an attack(e.g. enemy)
 	Donya::Collision::Box3F			slideHitBox;	// VS a terrain when sliding
@@ -104,8 +102,6 @@ private:
 		(
 			CEREAL_NVP( moveSpeed			),
 			CEREAL_NVP( jumpStrength		),
-			CEREAL_NVP( gravityResistance	),
-			CEREAL_NVP( resistableSeconds	),
 			CEREAL_NVP( maxFallSpeed		),
 			CEREAL_NVP( hitBox				),
 			CEREAL_NVP( hurtBox				)
@@ -124,9 +120,9 @@ private:
 			archive
 			(
 				CEREAL_NVP( maxHP				),
-				CEREAL_NVP( knockBackSeconds	),
+				CEREAL_NVP( knockBackSecond		),
 				CEREAL_NVP( knockBackSpeed		),
-				CEREAL_NVP( invincibleSeconds	),
+				CEREAL_NVP( invincibleSecond	),
 				CEREAL_NVP( flushingInterval	)
 			);
 		}
@@ -134,10 +130,10 @@ private:
 		{
 			archive
 			(
-				CEREAL_NVP( slideMoveSpeed		),
-				CEREAL_NVP( slideMoveSeconds	),
-				CEREAL_NVP( slideHitBox			),
-				CEREAL_NVP( slideHurtBox		)
+				CEREAL_NVP( slideMoveSpeed	),
+				CEREAL_NVP( slideMoveSecond	),
+				CEREAL_NVP( slideHitBox		),
+				CEREAL_NVP( slideHurtBox	)
 			);
 		}
 		if ( 5 <= version )

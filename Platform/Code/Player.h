@@ -276,7 +276,7 @@ private:
 	class Flusher
 	{
 	private:
-		float			workingSeconds	= 0.0f;
+		float			workingSecond	= 0.0f;
 		float			timer			= 0.0f;
 		Effect::Handle	fxHurt;
 	public:
