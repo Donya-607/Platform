@@ -1211,10 +1211,16 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 }
 void Player::ShotManager::ChargeFully()
 {
-	constexpr int maxLevelIndex = scast<int>( ShotLevel::Strong );
+	constexpr ShotLevel	maxLevel		= ShotLevel::Strong;
+	constexpr int		maxLevelIndex	= scast<int>( maxLevel );
+
+	chargeLevel  = maxLevel;
 
 	const auto &chargeParams = Parameter().Get().chargeParams;
 	chargeSecond = chargeParams[maxLevelIndex].chargeSecond + 1.0f;
+
+	// Call for able to end by StopLoopSFXIfPlaying()
+	PlayLoopSFXIfStopping();
 }
 void Player::ShotManager::SetFXPosition( const Donya::Vector3 &wsPos )
 {

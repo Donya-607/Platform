@@ -1,5 +1,7 @@
 #include "BufferedInput.h"
 
+#include <algorithm> // Use std::remove_if()
+
 namespace Input
 {
 	void BufferedInput::Reset()
