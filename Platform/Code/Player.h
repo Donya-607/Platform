@@ -172,17 +172,13 @@ private:
 		void Init();
 		void Update( const Player &instance, float elapsedTime, const Input &input );
 	public:
-		int  UseJumpIndex() const; // Return -1 if not using
-		int  UseShotIndex() const; // Return -1 if not using
-		int  UseDashIndex() const; // Return -1 if not using
-		int  ShiftGunIndex() const; // Return -1 if not using
-		bool UseJump() const;
-		bool UseShot() const;
-		bool UseDash() const;
-		int  ShiftGun() const;
-		bool ReleaseJump() const;
-		bool Jumpable( int jumpInputIndex ) const;
-		bool TriggerShot() const;
+		bool NowJumpable()		const;
+		bool NowUseJump()		const;	// Returns just is there a jump input
+		bool NowReleaseJump()	const;
+		bool NowUseShot()		const;
+		bool NowTriggerShot()	const;
+		bool NowUseDash()		const;
+		int  NowShiftGun()		const;
 	public:
 		void DetainNowJumpInput();
 	public:
@@ -197,6 +193,12 @@ private:
 		Donya::Vector3 HeadingDestinationOrOrigin() const;
 	private:
 		void RegisterCurrentInputs( float elapsedTime, const Input &input );
+		int  IndexOfUsingJump()			const; // Return -1 if not using
+		int  IndexOfReleasingJump()		const; // Return -1 if not using
+		int  IndexOfUsingShot()			const; // Return -1 if not using
+		int  IndexOfTriggeringShot()	const; // Return -1 if not using
+		int  IndexOfUsingDash()			const; // Return -1 if not using
+		int  IndexOfShiftingGun()		const; // Return -1 if not using
 	public:
 	#if USE_IMGUI
 		void ShowImGuiNode( const std::string &nodeCaption );
@@ -667,9 +669,9 @@ private:
 	bool NowShotable( float elapsedTime ) const;
 	void ShotIfRequested( float elapsedTime );
 	void UpdateOrientation( bool lookingRight );
-	void Jump( int inputIndex );
-	bool Jumpable( int inputIndex ) const;
-	bool WillUseJump() const;
+	void Jump();
+	bool Jumpable() const;
+	bool WillUseJump() const; // Returns comprehensively judge of the player will jumps
 	void Fall( float elapsedTime );
 	void Landing();
 	void ShiftGunIfNeeded( float elapsedTime );

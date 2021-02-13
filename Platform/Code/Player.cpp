@@ -571,105 +571,38 @@ void Player::InputManager::Update( const Player &inst, float elapsedTime, const 
 		}
 	}
 }
-int  Player::InputManager::UseJumpIndex() const
+bool Player::InputManager::NowJumpable() const
 {
-	const auto &depth = Parameter().Get().jumpBufferSecond;
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		if ( !jumpWasReleased_es[i] ) { continue; }
-		// else
-
-		if ( 0.0f <= jumps[i].PressingSecond( depth ) )
-		{
-			return i;
-		}
-	}
-
-	return -1;
-}
-int  Player::InputManager::UseShotIndex() const
-{
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		if ( 0.0f <= shots[i].PressingSecond( FLT_MAX ) )
-		{
-			return i;
-		}
-	}
-
-	return -1;
-}
-int  Player::InputManager::UseDashIndex() const
-{
-	const auto &depth = Parameter().Get().jumpBufferSecond;
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		if ( dashes[i].IsTriggered( depth ) ) { return i; }
-	}
-
-	return -1;
-}
-int  Player::InputManager::ShiftGunIndex() const
-{
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		if ( shiftGuns[i].first && !shiftGuns[i].second )
-		{
-			return i;
-		}
-	}
-
-	return -1;
-}
-bool Player::InputManager::UseJump() const
-{
-	return ( 0 <= UseJumpIndex() );
-}
-bool Player::InputManager::UseShot() const
-{
-	return ( 0 <= UseShotIndex() );
-}
-bool Player::InputManager::UseDash() const
-{
-	return ( 0 <= UseDashIndex() );
-}
-int  Player::InputManager::ShiftGun() const
-{
-	const int index = ShiftGunIndex();
-	return (  index < 0 ) ? 0 : shiftGuns[index].first;
-}
-bool Player::InputManager::ReleaseJump() const
-{
-	const auto &depth = Parameter().Get().jumpBufferSecond;
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		if ( jumps[i].IsReleased( depth ) )
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-bool Player::InputManager::Jumpable( int jumpInputIndex ) const
-{
-	if ( jumpInputIndex < 0 || Input::variationCount <= jumpInputIndex ) { return false; }
+	const int index = IndexOfUsingJump();
+	if ( index < 0 ) { return false; }
 	// else
 
-	return jumpWasReleased_es[jumpInputIndex];
+	return jumpWasReleased_es[index];
 }
-bool Player::InputManager::TriggerShot() const
+bool Player::InputManager::NowUseJump() const
 {
-	const auto &depth = Parameter().Get().jumpBufferSecond;
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		if ( shots[i].IsTriggered( depth ) )
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return ( 0 <= IndexOfUsingJump() );
+}
+bool Player::InputManager::NowReleaseJump() const
+{
+	return ( 0 <= IndexOfReleasingJump() );
+}
+bool Player::InputManager::NowUseShot() const
+{
+	return ( 0 <= IndexOfUsingShot() );
+}
+bool Player::InputManager::NowTriggerShot() const
+{
+	return ( 0 <= IndexOfTriggeringShot() );
+}
+bool Player::InputManager::NowUseDash() const
+{
+	return ( 0 <= IndexOfUsingDash() );
+}
+int  Player::InputManager::NowShiftGun() const
+{
+	const int index = IndexOfShiftingGun();
+	return (  index < 0 ) ? 0 : shiftGuns[index].first;
 }
 void Player::InputManager::DetainNowJumpInput()
 {
@@ -709,6 +642,82 @@ void Player::InputManager::RegisterCurrentInputs( float elapsedTime, const Input
 	moveVelocity		= input.moveVelocity;
 	headToDestination	= input.headToDestination;
 	wsDestination		= input.wsDestination;
+}
+int  Player::InputManager::IndexOfUsingJump() const
+{
+	const auto &depth = Parameter().Get().jumpBufferSecond;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( !jumpWasReleased_es[i] ) { continue; }
+		// else
+
+		if ( 0.0f <= jumps[i].PressingSecond( depth ) )
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+int  Player::InputManager::IndexOfReleasingJump() const
+{
+	const auto &depth = Parameter().Get().jumpBufferSecond;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( jumps[i].IsReleased( depth ) )
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+int  Player::InputManager::IndexOfUsingShot() const
+{
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( 0.0f <= shots[i].PressingSecond( FLT_MAX ) )
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+int  Player::InputManager::IndexOfTriggeringShot() const
+{
+	const auto &depth = Parameter().Get().jumpBufferSecond;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( shots[i].IsTriggered( depth ) )
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+int  Player::InputManager::IndexOfUsingDash() const
+{
+	const auto &depth = Parameter().Get().jumpBufferSecond;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( dashes[i].IsTriggered( depth ) ) { return i; }
+	}
+
+	return -1;
+}
+int  Player::InputManager::IndexOfShiftingGun() const
+{
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( shiftGuns[i].first && !shiftGuns[i].second )
+		{
+			return i;
+		}
+	}
+
+	return -1;
 }
 #if USE_IMGUI
 void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
@@ -1183,7 +1192,7 @@ bool Player::ShotManager::IsShotRequested( const Player &inst ) const
 }
 bool Player::ShotManager::NowTriggered( const Player &inst ) const
 {
-	return inst.inputManager.TriggerShot() || ( currUseShot && !prevUseShot );
+	return inst.inputManager.NowTriggerShot() || ( currUseShot && !prevUseShot );
 }
 Player::ShotLevel Player::ShotManager::CalcChargeLevel( float chargingSecond ) const
 {
@@ -1271,7 +1280,7 @@ void Player::ShotManager::ChargeUpdate( const Player &inst, float elapsedTime )
 	currChargeSecond += elapsedTime;
 
 	prevUseShot = currUseShot;
-	currUseShot = inst.inputManager.UseShot();
+	currUseShot = inst.inputManager.NowUseShot();
 
 	if ( NowTriggered( inst ) )
 	{
@@ -1495,18 +1504,17 @@ void Player::Normal::MoveVertical( Player &inst, float elapsedTime, const Map &t
 	}
 	// else
 
-	// The buffer-input process of UseDash() will discards a recorded input.
-	// So if you evaluate the UseDash() when can not use the slide,
+	const auto &input = inst.inputManager;
+
+	// The buffer-input process of NowUseDash() will discards a recorded input.
+	// So if you evaluate the NowUseDash() when can not use the slide,
 	// the buffered input will be discarded wastefully.
-	const bool useSlide = inst.onGround && inst.inputManager.UseDash();
+	const bool useSlide = inst.onGround && input.NowUseDash();
 
 	// Jump condition and resolve vs slide condition
 	if ( inst.WillUseJump() )
 	{
-		const int jumpInputIndex = inst.inputManager.UseJumpIndex();
-		assert( 0 <= jumpInputIndex && jumpInputIndex < Input::variationCount );
-
-		const bool pressDown = inst.inputManager.CurrentMoveDirection().y < 0.0f;
+		const bool pressDown = input.CurrentMoveDirection().y < 0.0f;
 		if ( pressDown )
 		{
 			gotoSlide = true;
@@ -1521,7 +1529,7 @@ void Player::Normal::MoveVertical( Player &inst, float elapsedTime, const Map &t
 		}
 		// else
 
-		inst.Jump( jumpInputIndex );
+		inst.Jump();
 
 		// Enable the inertial-like jump even if was inputted the "jump" and "slide" in same time
 		if ( useSlide )
@@ -1598,7 +1606,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 				inst.inputManager.DetainNowJumpInput();
 
 				// But the input must reflect to action. The player will jump while slide.
-				inst.Jump( NULL );
+				inst.Jump();
 			}
 
 			if ( moveToBackward )
@@ -1892,7 +1900,7 @@ Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player
 	// Condition of releasing by jump input
 	const bool releasible =	( input.CurrentMoveDirection().y <= 0.0f )	// Prevent a grab-release loop by press keeping the jump and the up input
 							&& !IsZero( elapsedTime );					// Make to can not act if game time is pausing
-	if ( input.UseJump() && releasible )
+	if ( input.NowUseJump() && releasible )
 	{
 		// Make do not take this jump input in next status.
 		inst.inputManager.DetainNowJumpInput();
@@ -2975,7 +2983,7 @@ void Player::MoveVertical  ( float elapsedTime )
 {
 	if ( WillUseJump() && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
 	{
-		Jump( inputManager.UseJumpIndex() );
+		Jump();
 	}
 	else
 	{
@@ -3012,7 +3020,7 @@ void Player::UpdateOrientation( bool lookingRight )
 		Donya::Vector3::Up(), ToRadian( 90.0f ) * rotateSign
 	);
 }
-void Player::Jump( int inputIndex )
+void Player::Jump()
 {
 	const auto &data = Parameter().Get();
 
@@ -3020,9 +3028,10 @@ void Player::Jump( int inputIndex )
 	wasJumpedWhileSlide	= prevSlidingStatus;
 	velocity.y			= data.jumpStrength;
 	nowGravity			= data.gravityRising;
+
 	Donya::Sound::Play( Music::Player_Jump );
 }
-bool Player::Jumpable( int inputIndex ) const
+bool Player::Jumpable() const
 {
 	if ( pMover && pMover->NowSliding( *this ) )
 	{
@@ -3031,17 +3040,11 @@ bool Player::Jumpable( int inputIndex ) const
 		// else
 	}
 
-	return ( onGround && inputManager.Jumpable( inputIndex ) ) ? true : false;
+	return ( onGround && inputManager.NowJumpable() ) ? true : false;
 }
 bool Player::WillUseJump() const
 {
-	const int jumpInputIndex = inputManager.UseJumpIndex();
-	if ( 0 <= jumpInputIndex && Jumpable( jumpInputIndex ) )
-	{
-		return true;
-	}
-	// else
-	return false;
+	return ( Jumpable() && inputManager.NowUseJump() );
 }
 void Player::Fall( float elapsedTime )
 {
@@ -3064,7 +3067,7 @@ void Player::Fall( float elapsedTime )
 	const float oldVSpeed = velocity.y;
 
 	// Control the Y velocity when the moment that jump input now released
-	const bool nowReleaseMoment = inputManager.ReleaseJump();
+	const bool nowReleaseMoment = inputManager.NowReleaseJump();
 	if ( nowReleaseMoment && 0.0f < velocity.y ) // Enable only rising
 	{
 		velocity.y = std::min( velocity.y, data.jumpCancelledVSpeedMax );
@@ -3105,7 +3108,7 @@ void Player::ShiftGunIfNeeded( float elapsedTime )
 	if ( IsZero( elapsedTime ) ) { return; }
 	// else
 
-	const int shiftSign = inputManager.ShiftGun();
+	const int shiftSign = inputManager.NowShiftGun();
 	if ( !shiftSign ) { return; }
 	// else
 
