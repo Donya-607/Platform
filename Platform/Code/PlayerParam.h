@@ -26,8 +26,10 @@ public:
 	int		initialRemainCount		= 2;
 	float	moveSpeed				= 1.0f;
 	float	inertialMoveSpeed		= 1.0f;
+	float	shotBufferSecond		= 0.2f;			// Allow second of pre-input
 	float	slideMoveSpeed			= 1.0f;
 	float	slideMoveSecond			= 1.0f;
+	float	slideBufferSecond		= 0.2f;			// Allow second of pre-input
 	float	ladderMoveSpeed			= 1.0f;
 	float	ladderShotLagSecond		= 0.5f;
 	float	jumpStrength			= 1.0f;
@@ -218,6 +220,14 @@ private:
 		}
 		if ( 20 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( shotBufferSecond  ),
+				CEREAL_NVP( slideBufferSecond )
+			);
+		}
+		if ( 21 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -226,4 +236,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 19 )
+CEREAL_CLASS_VERSION( PlayerParam, 20 )

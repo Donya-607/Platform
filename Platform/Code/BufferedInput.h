@@ -16,7 +16,7 @@ namespace Input
 			mutable	bool pickedUp	= false;
 		};
 	private:
-		float lifeSpanSecond  = 0.001f;
+		float lifeSpanSecond  = 1.0f;
 		bool  lastAddedStatus = false;	// "status" means "pressed"
 		std::vector<Part> buffer;		// begin:Last ~ end:Latest
 		std::vector<Part> publicBuffer;	// Support multiple call of accessor in same frame
@@ -28,7 +28,7 @@ namespace Input
 		/// <summary>
 		/// Clear records and set a life span of recorded inputs
 		/// </summary>
-		void Init( float maxRecordSecond );
+		void Init( float maxRecordSecond = 1.0f );
 		/// <summary>
 		/// Update records' life span and record new input
 		/// </summary>
@@ -41,6 +41,12 @@ namespace Input
 	public:
 		bool IsReleased( float allowSecond, bool discardFoundInstance = true ) const;
 		bool IsTriggered( float allowSecond, bool discardFoundInstance = true ) const;
+	public:
+		/// <summary>
+		/// Second
+		/// </summary>
+		float GetLifeSpan() const;
+		void  SetLifeSpan( float newMaxRecordSecond );
 	private:
 		void DiscardByLifeSpan();
 		void AppendIfRecordable( bool pressed );

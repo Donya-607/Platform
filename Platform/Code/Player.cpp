@@ -339,7 +339,6 @@ void PlayerParam::ShowImGuiNode()
 		ImGui::DragFloat( u8"スライディング速度",			&slideMoveSpeed,		0.01f	);
 		ImGui::DragFloat( u8"スライディング秒数",			&slideMoveSecond,		0.01f	);
 		ImGui::DragFloat( u8"ジャンプ力",				&jumpStrength,			0.01f	);
-		ImGui::DragFloat( u8"ジャンプの先行入力受付秒数",	&jumpBufferSecond,		0.01f	);
 		ImGui::DragFloat( u8"ジャンプ解除時のＹ速度",		&jumpCancelledVSpeedMax,0.01f	);
 		ImGui::DragFloat( u8"重力・上昇中",				&gravityRising,			0.01f	);
 		ImGui::DragFloat( u8"重力加速・上昇中",			&gravityRisingAccel,	0.01f	);
@@ -365,16 +364,27 @@ void PlayerParam::ShowImGuiNode()
 		MakePositive( &slideMoveSpeed		);
 		MakePositive( &slideMoveSecond		);
 		MakePositive( &jumpStrength			);
-		MakePositive( &jumpBufferSecond		);
 		MakePositive( &gravityRising		);
 		MakePositive( &gravityFalling		);
 		MakePositive( &gravityMax			);
 		MakePositive( &maxFallSpeed			);
 		MakePositive( &knockBackSecond		);
 		MakePositive( &knockBackSpeed		);
-		MakePositive( &invincibleSecond	);
+		MakePositive( &invincibleSecond		);
 		MakePositive( &flushingInterval		);
 		
+		ImGui::TreePop();
+	}
+	if ( ImGui::TreeNode( u8"先行入力の受付秒数" ) )
+	{
+		ImGui::DragFloat( u8"ジャンプ",			&jumpBufferSecond,	0.01f );
+		ImGui::DragFloat( u8"ショット",			&shotBufferSecond,	0.01f );
+		ImGui::DragFloat( u8"スライディング",		&slideBufferSecond,	0.01f );
+
+		shotBufferSecond  = std::max( 0.0f, shotBufferSecond  );
+		slideBufferSecond = std::max( 0.0f, slideBufferSecond );
+		jumpBufferSecond  = std::max( 0.0f, jumpBufferSecond  );
+
 		ImGui::TreePop();
 	}
 
@@ -537,11 +547,13 @@ void PlayerParam::ShowImGuiNode()
 
 void Player::InputManager::Init()
 {
-	constexpr float storeSecond = 1.0f;
-	for ( auto &it : jumps		) { it.Init( storeSecond ); }
+	constexpr float margin = 2.0f;
+	const auto &data = Parameter().Get();
+
 	jumpWasReleased_es.fill( false );
-	for ( auto &it : shots		) { it.Init( storeSecond ); }
-	for ( auto &it : dashes		) { it.Init( storeSecond ); }
+	for ( auto &it : jumps		) { it.Init( data.jumpBufferSecond  * margin ); }
+	for ( auto &it : shots		) { it.Init( data.shotBufferSecond  * margin ); }
+	for ( auto &it : dashes		) { it.Init( data.slideBufferSecond * margin ); }
 	for ( auto &it : shiftGuns	) { it.first = it.second = 0; }
 
 	moveVelocity		= Donya::Vector2::Zero();
@@ -550,6 +562,41 @@ void Player::InputManager::Init()
 }
 void Player::InputManager::Update( const Player &inst, float elapsedTime, const Input &input )
 {
+#if USE_IMGUI
+	{
+		constexpr float margin = 2.0f;
+		const auto &data = Parameter().Get();
+
+		constexpr size_t bufferCount = 3;
+		using BufferT = std::array<::Input::BufferedInput, Input::variationCount>;
+		std::array<BufferT *, bufferCount> bufferPtrs
+		{
+			&jumps,
+			&shots,
+			&dashes,
+		};
+		std::array<float, bufferCount> bufferSeconds
+		{
+			data.jumpBufferSecond  * margin,
+			data.shotBufferSecond  * margin,
+			data.slideBufferSecond * margin,
+		};
+
+		for ( size_t i = 0; i < bufferCount; ++i )
+		{
+			for ( int buf = 0; buf < Input::variationCount; ++buf )
+			{
+				auto &buffer = bufferPtrs[i]->at( buf );
+				if (  buffer.GetLifeSpan() < bufferSeconds[i] )
+				{
+					buffer.SetLifeSpan( bufferSeconds[i] );
+				}
+			}
+		}
+	}
+#endif // USE_IMGUI
+
+
 	RegisterCurrentInputs( Donya::GetElapsedTime(), input );
 
 	if ( headToDestination )
@@ -683,7 +730,7 @@ int  Player::InputManager::IndexOfUsingShot() const
 }
 int  Player::InputManager::IndexOfTriggeringShot() const
 {
-	const auto &depth = Parameter().Get().jumpBufferSecond;
+	const auto &depth = Parameter().Get().shotBufferSecond;
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
 		if ( shots[i].IsTriggered( depth ) )
@@ -696,7 +743,7 @@ int  Player::InputManager::IndexOfTriggeringShot() const
 }
 int  Player::InputManager::IndexOfUsingDash() const
 {
-	const auto &depth = Parameter().Get().jumpBufferSecond;
+	const auto &depth = Parameter().Get().slideBufferSecond;
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
 		if ( dashes[i].IsTriggered( depth ) ) { return i; }

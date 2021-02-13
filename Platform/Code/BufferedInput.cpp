@@ -11,8 +11,7 @@ namespace Input
 	{
 		Reset();
 
-		// If set zero, it class does not work because it can not record anything
-		lifeSpanSecond = std::max( 0.001f, maxRecordSecond );
+		SetLifeSpan( maxRecordSecond );
 	}
 	void BufferedInput::Update( float elapsedTime, bool pressed )
 	{
@@ -139,6 +138,16 @@ namespace Input
 		return false;
 	}
 	
+	float BufferedInput::GetLifeSpan() const
+	{
+		return lifeSpanSecond;
+	}
+	void BufferedInput::SetLifeSpan( float maxRecordSecond )
+	{
+		// If set zero, it class does not work because it can not record anything
+		lifeSpanSecond = std::max( 0.001f, maxRecordSecond );
+	}
+
 	void BufferedInput::DiscardByLifeSpan()
 	{
 		// Keep long press info

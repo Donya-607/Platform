@@ -1,6 +1,6 @@
 {
     "Player": {
-        "cereal_class_version": 19,
+        "cereal_class_version": 20,
         "moveSpeed": 5.0,
         "jumpStrength": 18.5,
         "maxFallSpeed": 20.0,
@@ -191,7 +191,7 @@
             "y": 0.0,
             "z": 0.0
         },
-        "jumpBufferSecond": 0.20000000298023225,
+        "jumpBufferSecond": 0.10000000149011612,
         "appearDelaySecond": 0.5,
         "braceStandFactor": 2.0,
         "emissiveTransFactor": 0.30000001192092898,
@@ -325,6 +325,8 @@
             0.08299999684095383,
             0.08299999684095383,
             0.08299999684095383
-        ]
+        ],
+        "shotBufferSecond": 0.20000000298023225,
+        "slideBufferSecond": 0.20000000298023225
     }
 }
