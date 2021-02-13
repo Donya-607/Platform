@@ -542,36 +542,24 @@ void Player::InputManager::Init()
 {
 	constexpr float storeSecond = 1.0f;
 	for ( auto &it : jumps		) { it.Init( storeSecond ); }
+	jumpWasReleased_es.fill( false );
 	for ( auto &it : shots		) { it.Init( storeSecond ); }
 	for ( auto &it : dashes		) { it.Init( storeSecond ); }
 	for ( auto &it : shiftGuns	) { it.first = it.second = 0; }
 
-	prev = Input::GenerateEmpty();
-	curr = Input::GenerateEmpty();
-	// keepJumpSeconds.fill( 0.0f );
-	wasReleasedJumps.fill( false );
+	moveVelocity		= Donya::Vector2::Zero();
+	headToDestination	= false;
+	wsDestination		= Donya::Vector3::Zero();
 }
 void Player::InputManager::Update( const Player &inst, float elapsedTime, const Input &input )
 {
-	elapsedTime = Donya::GetElapsedTime();
-	for ( int i = 0; i < Input::variationCount; ++i )
+	RegisterCurrentInputs( Donya::GetElapsedTime(), input );
+
+	if ( headToDestination )
 	{
-		jumps [i].Update( elapsedTime, input.useJumps [i] );
-		shots [i].Update( elapsedTime, input.useShots [i] );
-		dashes[i].Update( elapsedTime, input.useDashes[i] );
-
-		shiftGuns[i].second = shiftGuns[i].first;
-		shiftGuns[i].first  = input.shiftGuns[i];
-	}
-
-	prev = curr;
-	curr = input;
-
-	if ( curr.headToDestination )
-	{
-		const Donya::Vector3 diff = curr.wsDestination - inst.GetPosition();
-		curr.moveVelocity.x = Donya::SignBitF( diff.x );
-		curr.moveVelocity.y = Donya::SignBitF( diff.y );
+		const Donya::Vector3 diff = wsDestination - inst.GetPosition();
+		moveVelocity.x = Donya::SignBitF( diff.x );
+		moveVelocity.y = Donya::SignBitF( diff.y );
 	}
 
 	const auto &depth = Parameter().Get().jumpBufferSecond;
@@ -579,29 +567,25 @@ void Player::InputManager::Update( const Player &inst, float elapsedTime, const 
 	{
 		if ( jumps[i].PressingSecond( depth ) < 0.0f )
 		{
-			wasReleasedJumps[i] = true;
+			jumpWasReleased_es[i] = true;
 		}
 	}
 }
 int  Player::InputManager::UseJumpIndex() const
 {
-	int   minIndex  = -1;
-	float minSecond = FLT_MAX;
 	const auto &depth = Parameter().Get().jumpBufferSecond;
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		float second = jumps[i].PressingSecond( depth );
-		if ( second < 0.0f ) { continue; } // Did not pressed
+		if ( !jumpWasReleased_es[i] ) { continue; }
 		// else
 
-		if ( second < minSecond )
+		if ( 0.0f <= jumps[i].PressingSecond( depth ) )
 		{
-			minIndex  = i;
-			minSecond = second;
+			return i;
 		}
 	}
 
-	return minIndex;
+	return -1;
 }
 int  Player::InputManager::UseShotIndex() const
 {
@@ -672,7 +656,7 @@ bool Player::InputManager::Jumpable( int jumpInputIndex ) const
 	if ( jumpInputIndex < 0 || Input::variationCount <= jumpInputIndex ) { return false; }
 	// else
 
-	return wasReleasedJumps[jumpInputIndex];
+	return jumpWasReleased_es[jumpInputIndex];
 }
 bool Player::InputManager::TriggerShot() const
 {
@@ -686,6 +670,45 @@ bool Player::InputManager::TriggerShot() const
 	}
 
 	return false;
+}
+void Player::InputManager::DetainNowJumpInput()
+{
+	const auto &depth = Parameter().Get().jumpBufferSecond;
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		if ( 0.0f <= jumps[i].PressingSecond( depth ) )
+		{
+			jumpWasReleased_es[i] = false;
+		}
+	}
+}
+const Donya::Vector2 &Player::InputManager::CurrentMoveDirection() const
+{
+	return moveVelocity;
+}
+bool Player::InputManager::NowHeading() const
+{
+	return headToDestination;
+}
+Donya::Vector3 Player::InputManager::HeadingDestinationOrOrigin() const
+{
+	return ( NowHeading() ) ? wsDestination : Donya::Vector3::Zero();
+}
+void Player::InputManager::RegisterCurrentInputs( float elapsedTime, const Input &input )
+{
+	for ( int i = 0; i < Input::variationCount; ++i )
+	{
+		jumps [i].Update( elapsedTime, input.useJumps [i] );
+		shots [i].Update( elapsedTime, input.useShots [i] );
+		dashes[i].Update( elapsedTime, input.useDashes[i] );
+
+		shiftGuns[i].second = shiftGuns[i].first;
+		shiftGuns[i].first  = input.shiftGuns[i];
+	}
+
+	moveVelocity		= input.moveVelocity;
+	headToDestination	= input.headToDestination;
+	wsDestination		= input.wsDestination;
 }
 #if USE_IMGUI
 void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
@@ -739,56 +762,6 @@ void Player::InputManager::ShowImGuiNode( const std::string &nodeCaption )
 
 		ImGui::TreePop();
 	}
-
-	auto ShowInput = []( const std::string &nodeCaption, Input *p )
-	{
-		if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
-		// else
-
-		ImGui::SliderFloat2( u8"スティック", &p->moveVelocity.x, -1.0f, 1.0f );
-
-		for ( int i = 0; i < Input::variationCount; ++i )
-		{
-			const std::string caption = u8"useJumps" + Donya::MakeArraySuffix( i );
-			ImGui::Checkbox(  caption.c_str(), &p->useJumps[i] );
-			ImGui::SameLine();
-		}
-		ImGui::Text( u8"" );
-
-		for ( int i = 0; i < Input::variationCount; ++i )
-		{
-			const std::string caption = u8"useShots" + Donya::MakeArraySuffix( i );
-			ImGui::Checkbox(  caption.c_str(), &p->useShots[i] );
-			ImGui::SameLine();
-		}
-		ImGui::Text( u8"" );
-		
-		for ( int i = 0; i < Input::variationCount; ++i )
-		{
-			const std::string caption = u8"useDashes" + Donya::MakeArraySuffix( i );
-			ImGui::Checkbox(  caption.c_str(), &p->useDashes[i] );
-			ImGui::SameLine();
-		}
-		ImGui::Text( u8"" );
-
-		ImGui::TreePop();
-	};
-	ShowInput( u8"前回のフレーム", &prev );
-	ShowInput( u8"現在のフレーム", &curr );
-
-	/*
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		const std::string caption = u8"ジャンプ長押し秒数" + Donya::MakeArraySuffix( i ) + u8":%5.3f";
-		ImGui::Text( caption.c_str(), keepJumpSeconds[i] );
-	}
-	
-	for ( int i = 0; i < Input::variationCount; ++i )
-	{
-		std::string caption = u8"ジャンプ入力を離したか" + Donya::MakeArraySuffix( i );
-		ImGui::Checkbox( caption.c_str(), &wasReleasedJumps[i] );
-	}
-	*/
 
 	ImGui::TreePop();
 }
@@ -1126,8 +1099,7 @@ Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elaps
 	// else
 	if ( nowMoving ) { return MotionKind::Run;	}
 	// else
-	const auto &input = inst.inputManager.Current();
-	if ( input.moveVelocity.y < 0.0f ) { return MotionKind::Brace; }
+	if ( inst.inputManager.CurrentMoveDirection().y < 0.0f ) { return MotionKind::Brace; }
 	// else
 	return MotionKind::Idle;
 }
@@ -1404,15 +1376,17 @@ void Player::MoverBase::MoveOnlyHorizontal( Player &inst, float elapsedTime, con
 	inst.Actor::MoveZ( movement.z, aroundSolids );
 
 	const auto currPos = inst.GetPosition();
-	const auto &currentInput = inst.inputManager.Current();
-	if ( currentInput.headToDestination )
+	const auto &input = inst.inputManager;
+	if ( input.NowHeading() )
 	{
-		const auto prevDiff		= currentInput.wsDestination - prevPos;
-		const auto currDiff		= currentInput.wsDestination - currPos;
-		const auto nowOveredX	= Donya::SignBit( currDiff.x ) != Donya::SignBit( prevDiff.x ) || IsZero( currDiff.x );
-		const auto nowOveredZ	= Donya::SignBit( currDiff.z ) != Donya::SignBit( prevDiff.z ) || IsZero( currDiff.z );
-		if ( nowOveredX ) { inst.body.pos.x = currentInput.wsDestination.x; }
-		if ( nowOveredZ ) { inst.body.pos.z = currentInput.wsDestination.z; }
+		const Donya::Vector3 dest = input.HeadingDestinationOrOrigin();
+
+		const auto prevDiff		= dest - prevPos;
+		const auto currDiff		= dest - currPos;
+		const auto nowOveredX	= ( Donya::SignBit( currDiff.x ) != Donya::SignBit( prevDiff.x ) ) || IsZero( currDiff.x );
+		const auto nowOveredZ	= ( Donya::SignBit( currDiff.z ) != Donya::SignBit( prevDiff.z ) ) || IsZero( currDiff.z );
+		if ( nowOveredX ) { inst.body.pos.x = dest.x; }
+		if ( nowOveredZ ) { inst.body.pos.z = dest.z; }
 	}
 
 	// Clamp into room
@@ -1463,18 +1437,16 @@ void Player::MoverBase::AssignBodyParameter( Player &inst )
 void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
 	inst.MoveHorizontal( elapsedTime );
-
-	const auto &input = inst.inputManager.Current();
-	const bool nowPausing = IsZero( elapsedTime );
-
 	MoveVertical( inst, elapsedTime, terrain ); // My method
 
 	inst.ShotIfRequested( elapsedTime );
 
+	const Donya::Vector2 &moveDir = inst.inputManager.CurrentMoveDirection();
+
 	// Try to grabbing ladder if the game time is not pausing
-	if ( !gotoSlide && !nowPausing )
+	if ( !gotoSlide && !IsZero( elapsedTime ) )
 	{
-		const auto pLadder = inst.FindGrabbingLadderOrNullptr( input.moveVelocity.y, terrain );
+		const auto pLadder = inst.FindGrabbingLadderOrNullptr( moveDir.y, terrain );
 		if ( pLadder )
 		{
 			inst.pTargetLadder = pLadder;
@@ -1482,7 +1454,7 @@ void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain
 		}
 	}
 
-	braceOneself = ( input.moveVelocity.y < 0.0f && inst.onGround && IsZero( inst.velocity.x ) );
+	braceOneself = ( moveDir.y < 0.0f && inst.onGround && IsZero( inst.velocity.x ) );
 	MotionUpdate( inst, elapsedTime );
 }
 void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
@@ -1516,8 +1488,7 @@ void Player::Normal::MoveVertical( Player &inst, float elapsedTime, const Map &t
 	// Deformity of inst.MoveVertical()
 
 	// Make to can not act if game time is pausing
-	const bool nowPausing = IsZero( elapsedTime );
-	if ( nowPausing )
+	if ( IsZero( elapsedTime ) )
 	{
 		inst.Fall( elapsedTime );
 		return;
@@ -1535,16 +1506,16 @@ void Player::Normal::MoveVertical( Player &inst, float elapsedTime, const Map &t
 		const int jumpInputIndex = inst.inputManager.UseJumpIndex();
 		assert( 0 <= jumpInputIndex && jumpInputIndex < Input::variationCount );
 
-		// Input to down
-		const auto &input = inst.inputManager.Current();
-		if ( Donya::SignBit( input.moveVelocity.y ) < 0 )
+		const bool pressDown = inst.inputManager.CurrentMoveDirection().y < 0.0f;
+		if ( pressDown )
 		{
 			gotoSlide = true;
 
 			// Certainly doing Fall() if do not jump
 			inst.Fall( elapsedTime );
-			// But We must set the pressing flag because We wanna prevent to jump.
-			inst.inputManager.WasReleasedJumpInput()[jumpInputIndex] = false;
+
+			// Make do not take this jump input in next status
+			inst.inputManager.DetainNowJumpInput();
 
 			return;
 		}
@@ -1598,18 +1569,19 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 {
 	timer += elapsedTime;
 
-	const auto &input = inst.inputManager.Current();
+	const Donya::Vector2 &inputDir = inst.inputManager.CurrentMoveDirection();
 
-	const int  horizontalInputSign	= Donya::SignBit( input.moveVelocity.x );
-	const bool moveToBackward		=  ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( inst.lookingSign ) );
-	const auto pGrabbingLadder		= inst.FindGrabbingLadderOrNullptr( input.moveVelocity.y, terrain );
+	const int  horizontalInputSign	= Donya::SignBit( inputDir.x );
+	const bool moveToBackward		= ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( inst.lookingSign ) );
+	const bool useJump				= inst.WillUseJump();
+	const auto pGrabbingLadder		= inst.FindGrabbingLadderOrNullptr( inputDir.y, terrain );
 
-	const bool	slideIsEnd =
+	const bool slideIsEnd =
 					( Parameter().Get().slideMoveSeconds <= timer )
-				||	( moveToBackward  )
-				||	( inst.WillUseJump() )
-				||	( pGrabbingLadder )
-				||	( !inst.onGround  )
+				||	( moveToBackward	)
+				||	( useJump			)
+				||	( pGrabbingLadder	)
+				||	( !inst.onGround	)
 				;
 
 	if ( slideIsEnd && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
@@ -1619,6 +1591,16 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 		if ( inst.WillCollideToAroundTiles( normalBody, inst.velocity * elapsedTime, terrain ) )
 		{
 			// I can not finish the sliding now, because I will be buried.
+			
+			// And discard the jump input for prevent the continuously trying jump.
+			if ( useJump )
+			{
+				inst.inputManager.DetainNowJumpInput();
+
+				// But the input must reflect to action. The player will jump while slide.
+				inst.Jump( NULL );
+			}
+
 			if ( moveToBackward )
 			{
 				inst.velocity.x		*= -1.0f;
@@ -1650,7 +1632,7 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 		inst.lookingSign = Donya::SignBitF( inst.velocity.x );
 	}
 
-	// If the jump was triggered in here, the "slideIsEnd" is also true.
+	// If the "slideIsEnd" to be true by jump input, the jump will be fired in here.
 	inst.MoveVertical( elapsedTime );
 
 	inst.ShotIfRequested( elapsedTime );
@@ -1660,7 +1642,6 @@ void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain 
 void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
-
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 }
 bool Player::Slide::ShouldChangeMover( const Player &inst ) const
@@ -1815,11 +1796,12 @@ void Player::GrabLadder::Update( Player &inst, float elapsedTime, const Map &ter
 	}
 
 	const auto &data  = Parameter().Get();
-	const auto &input = inst.inputManager.Current();
 
+	// The NowUnderShotLag() result may different from above condition because the "shotLagSecond" is changed.
 	if ( !NowUnderShotLag() )
 	{
-		inst.velocity.y = data.ladderMoveSpeed * input.moveVelocity.y;
+		const Donya::Vector2 &inputDir = inst.inputManager.CurrentMoveDirection();
+		inst.velocity.y = data.ladderMoveSpeed * inputDir.y;
 	}
 
 	ShotProcess( inst, elapsedTime );
@@ -1887,10 +1869,9 @@ void Player::GrabLadder::ShotProcess( Player &inst, float elapsedTime )
 	// else
 
 	const auto &data  = Parameter().Get();
-	const auto &input = inst.inputManager.Current();
 	shotLagSecond = data.ladderShotLagSecond;
 
-	const int sideInputSign = Donya::SignBit( input.moveVelocity.x );
+	const int sideInputSign = Donya::SignBit( inst.inputManager.CurrentMoveDirection().x );
 	if ( sideInputSign != 0 )
 	{
 		inst.lookingSign = scast<float>( sideInputSign );
@@ -1903,29 +1884,23 @@ Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player
 	if ( releaseWay != ReleaseWay::None ) { return releaseWay; }
 	// else
 
-	if ( inst.onGround )
-	{
-		return ReleaseWay::Dismount;
-	}
+	if ( inst.onGround ) { return ReleaseWay::Dismount; }
 	// else
 
-	const int jumpInputIndex = inst.inputManager.UseJumpIndex();
-	const auto &currentInput = inst.inputManager.Current();
-	auto &wasReleasedJumpInputs = inst.inputManager.WasReleasedJumpInput();
-	if ( !inst.inputManager.UseJump() )
+	const auto &input = inst.inputManager;
+	
+	// Condition of releasing by jump input
+	const bool releasible =	( input.CurrentMoveDirection().y <= 0.0f )	// Prevent a grab-release loop by press keeping the jump and the up input
+							&& !IsZero( elapsedTime );					// Make to can not act if game time is pausing
+	if ( input.UseJump() && releasible )
 	{
-		wasReleasedJumpInputs.fill( true );
-	}
-	else // Condition of releasing by jump input
-	if ( wasReleasedJumpInputs[jumpInputIndex] && inst.velocity.y <= 0.0f && !IsZero( elapsedTime ) )
-	{
-		// Prevent the grab-release loop by press keeping the jump and the up input
-		wasReleasedJumpInputs[jumpInputIndex] = false;
-		// Disallow gravity resistance
-		//inst.inputManager.KeepSecondJumpInput()[jumpInputIndex] = Parameter().Get().resistableSeconds;
+		// Make do not take this jump input in next status.
+		inst.inputManager.DetainNowJumpInput();
+
 		return ReleaseWay::Release;
 	}
 	// else
+
 
 	bool onNotLadder = false;
 	const auto grabbingTiles = terrain.GetPlaceTiles( grabArea );
@@ -1953,10 +1928,12 @@ Player::GrabLadder::ReleaseWay Player::GrabLadder::JudgeWhetherToRelease( Player
 		// else
 		return ReleaseWay::Release;
 	}
+	// else
 
-	if ( currentInput.headToDestination )
+
+	if ( input.NowHeading() )
 	{
-		const Donya::Vector3 diff = currentInput.wsDestination - inst.GetPosition();
+		const Donya::Vector3 diff = input.HeadingDestinationOrOrigin() - inst.GetPosition();
 		if ( !Donya::SignBit( diff.y ) )
 		{
 			return ReleaseWay::Release;
@@ -2329,7 +2306,7 @@ void Player::ShieldGun::ReleaseShieldHandle( Player &inst )
 }
 Donya::Vector3 Player::ShieldGun::CalcThrowDirection( const Player &inst, const InputManager &input ) const
 {
-	const Donya::Vector2 stick = input.Current().moveVelocity.Unit();
+	const Donya::Vector2 stick = input.CurrentMoveDirection().Unit();
 	if ( stick.IsZero() )
 	{
 		return	( inst.lookingSign < 0.0f ) // Except the front
@@ -2983,9 +2960,9 @@ void Player::MoveHorizontal( float elapsedTime )
 {
 	const auto &data = Parameter().Get();
 
-	const auto &input = inputManager.Current();
+	const Donya::Vector2 &inputDir = inputManager.CurrentMoveDirection();
 	const float  speed = ( wasJumpedWhileSlide ) ? data.inertialMoveSpeed : data.moveSpeed;
-	velocity.x = speed * input.moveVelocity.x;
+	velocity.x = speed * inputDir.x;
 
 	if ( !IsZero( velocity.x * elapsedTime ) ) // The "elapsedTime" prevents to rotate when pauses a game time
 	{
@@ -3007,12 +2984,12 @@ void Player::MoveVertical  ( float elapsedTime )
 }
 bool Player::NowShotable( float elapsedTime ) const
 {
-	if ( IsZero( elapsedTime )						) { return false; } // If game time is pausing
-	if ( !pMover									) { return false; }
-	if ( pMover->NowKnockBacking( *this )			) { return false; }
-	if ( pMover->NowAppearing	( *this )			) { return false; }
-	if ( pMover->NowWinning		( *this )			) { return false; }
-	if ( inputManager.Current().headToDestination	) { return false; } // It will be true when such as performance. Charge is allowed, but Shot is not allowed.
+	if ( IsZero( elapsedTime )				) { return false; } // If game time is pausing
+	if ( !pMover							) { return false; }
+	if ( pMover->NowKnockBacking( *this )	) { return false; }
+	if ( pMover->NowAppearing	( *this )	) { return false; }
+	if ( pMover->NowWinning		( *this )	) { return false; }
+	if ( inputManager.NowHeading()			) { return false; } // It will be true when such as performance. Charge is allowed, but Shot is not allowed.
 	// else
 
 	const bool generatable = ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
@@ -3043,14 +3020,13 @@ void Player::Jump( int inputIndex )
 	wasJumpedWhileSlide	= prevSlidingStatus;
 	velocity.y			= data.jumpStrength;
 	nowGravity			= data.gravityRising;
-	inputManager.WasReleasedJumpInput()[inputIndex]	= false;
 	Donya::Sound::Play( Music::Player_Jump );
 }
 bool Player::Jumpable( int inputIndex ) const
 {
 	if ( pMover && pMover->NowSliding( *this ) )
 	{
-		const bool pressDown = ( inputManager.Current().moveVelocity.y < 0.0f );
+		const bool pressDown = ( inputManager.CurrentMoveDirection().y < 0.0f );
 		if ( pressDown ) { return false; }
 		// else
 	}

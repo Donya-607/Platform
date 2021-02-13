@@ -160,13 +160,14 @@ private:
 	{
 	private:
 		std::array<::Input::BufferedInput,	Input::variationCount> jumps;
+		std::array<bool,					Input::variationCount> jumpWasReleased_es; // On when the "jumps" records the press, Off when the "jumps" records the release.
 		std::array<::Input::BufferedInput,	Input::variationCount> shots;
 		std::array<::Input::BufferedInput,	Input::variationCount> dashes;
 		std::array<std::pair<int, int>,		Input::variationCount> shiftGuns; // first:curent, second:previous
 
-		Input prev;
-		Input curr;
-		std::array<bool,  Input::variationCount> wasReleasedJumps;
+		Donya::Vector2	moveVelocity;				// -1.0f ~ +1.0f
+		bool			headToDestination = false;	// It priority is greater than the moveVelocity
+		Donya::Vector3	wsDestination;				// World space. It is valid when the headToDestination is true
 	public:
 		void Init();
 		void Update( const Player &instance, float elapsedTime, const Input &input );
@@ -183,14 +184,19 @@ private:
 		bool Jumpable( int jumpInputIndex ) const;
 		bool TriggerShot() const;
 	public:
-		const Input &Previous() const
-		{ return prev; }
-		const Input &Current() const
-		{ return curr; }
-		std::array<bool,  Input::variationCount> &WasReleasedJumpInput()
-		{ return wasReleasedJumps; }
-		const std::array<bool,  Input::variationCount> &WasReleasedJumpInput() const
-		{ return wasReleasedJumps; }
+		void DetainNowJumpInput();
+	public:
+		/// <summary>
+		/// Each element is in range of [-1.0f ~ +1.0f]
+		/// </summary>
+		const Donya::Vector2 &CurrentMoveDirection() const;
+		bool NowHeading() const;
+		/// <summary>
+		/// It returns the destination of now heading, or origin(0,0,0) if NowHeading() is false.
+		/// </summary>
+		Donya::Vector3 HeadingDestinationOrOrigin() const;
+	private:
+		void RegisterCurrentInputs( float elapsedTime, const Input &input );
 	public:
 	#if USE_IMGUI
 		void ShowImGuiNode( const std::string &nodeCaption );
