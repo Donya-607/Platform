@@ -550,7 +550,7 @@ void Player::InputManager::Init()
 	constexpr float margin = 2.0f;
 	const auto &data = Parameter().Get();
 
-	jumpWasReleased_es.fill( false );
+	jumpWasReleased_es.fill( true );
 	for ( auto &it : jumps		) { it.Init( data.jumpBufferSecond  * margin ); }
 	for ( auto &it : shots		) { it.Init( data.shotBufferSecond  * margin ); }
 	for ( auto &it : dashes		) { it.Init( data.slideBufferSecond * margin ); }
@@ -609,23 +609,27 @@ void Player::InputManager::Update( const Player &inst, float elapsedTime, const 
 	const auto &depth = Parameter().Get().jumpBufferSecond;
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		if ( jumps[i].PressingSecond( depth ) < 0.0f )
+		if ( jumpWasReleased_es[i] ) { continue; }
+		// else
+
+		// if ( jumps[i].PressingSecond( depth ) < 0.0f )
+		if ( jumps[i].IsReleased( depth ) )
 		{
 			jumpWasReleased_es[i] = true;
 		}
 	}
 }
-bool Player::InputManager::NowJumpable() const
+bool Player::InputManager::NowJumpable( bool useSlideParam ) const
 {
-	const int index = IndexOfUsingJump();
+	const int index = IndexOfUsingJump( useSlideParam );
 	if ( index < 0 ) { return false; }
 	// else
 
 	return jumpWasReleased_es[index];
 }
-bool Player::InputManager::NowUseJump() const
+bool Player::InputManager::NowUseJump( bool useSlideParam ) const
 {
-	return ( 0 <= IndexOfUsingJump() );
+	return ( 0 <= IndexOfUsingJump( useSlideParam ) );
 }
 bool Player::InputManager::NowReleaseJump() const
 {
@@ -650,10 +654,9 @@ int  Player::InputManager::NowShiftGun() const
 }
 void Player::InputManager::DetainNowJumpInput()
 {
-	const auto &depth = Parameter().Get().jumpBufferSecond;
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
-		if ( 0.0f <= jumps[i].PressingSecond( depth ) )
+		if ( 0.0f <= jumps[i].PressingSecond( FLT_MAX ) )
 		{
 			jumpWasReleased_es[i] = false;
 		}
@@ -687,9 +690,12 @@ void Player::InputManager::RegisterCurrentInputs( float elapsedTime, const Input
 	headToDestination	= input.headToDestination;
 	wsDestination		= input.wsDestination;
 }
-int  Player::InputManager::IndexOfUsingJump() const
+int  Player::InputManager::IndexOfUsingJump( bool useSlideParam ) const
 {
-	const auto &depth = Parameter().Get().jumpBufferSecond;
+	const auto &depth =	( useSlideParam )
+						? Parameter().Get().slideBufferSecond
+						: Parameter().Get().jumpBufferSecond;
+
 	for ( int i = 0; i < Input::variationCount; ++i )
 	{
 		if ( !jumpWasReleased_es[i] ) { continue; }
@@ -1499,7 +1505,7 @@ void Player::MoverBase::AssignBodyParameter( Player &inst )
 void Player::Normal::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
 	inst.MoveHorizontal( elapsedTime );
-	MoveVertical( inst, elapsedTime, terrain ); // My method
+	UpdateVertical( inst, elapsedTime, terrain );
 
 	inst.ShotIfRequested( elapsedTime );
 
@@ -1545,7 +1551,7 @@ std::function<void()> Player::Normal::GetChangeStateMethod( Player &inst ) const
 	// else
 	return []() {}; // No op
 }
-void Player::Normal::MoveVertical( Player &inst, float elapsedTime, const Map &terrain )
+void Player::Normal::UpdateVertical( Player &inst, float elapsedTime, const Map &terrain )
 {
 	// Deformity of inst.MoveVertical()
 
@@ -1595,6 +1601,8 @@ void Player::Normal::MoveVertical( Player &inst, float elapsedTime, const Map &t
 	}
 	// else
 
+	inst.pressJumpSinceSlide = false;
+
 	if ( useSlide )
 	{
 		gotoSlide = true;
@@ -1607,8 +1615,10 @@ void Player::Slide::Init( Player &inst )
 {
 	MoverBase::Init( inst );
 
-	nextStatus	= Destination::None;
-	timer		= 0.0f;
+	nextStatus		= Destination::None;
+	timer			= 0.0f;
+	takeOverInput	= false;
+	finishByJump	= false;
 
 	inst.lookingSign = Donya::SignBitF( inst.orientation.LocalFront().x );
 	if ( IsZero( inst.lookingSign ) ) { inst.lookingSign = 1.0f; } // Fail safe
@@ -1625,76 +1635,21 @@ void Player::Slide::Uninit( Player &inst )
 	MoverBase::Uninit( inst );
 
 	inst.velocity.x = 0.0f;
+
+	inst.pressJumpSinceSlide = takeOverInput;
 }
 void Player::Slide::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
 	timer += elapsedTime;
 
-	const Donya::Vector2 &inputDir = inst.inputManager.CurrentMoveDirection();
-
-	const int  horizontalInputSign	= Donya::SignBit( inputDir.x );
-	const bool moveToBackward		= ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( inst.lookingSign ) );
-	const bool useJump				= inst.WillUseJump();
-	const auto pGrabbingLadder		= inst.FindGrabbingLadderOrNullptr( inputDir.y, terrain );
-
-	const bool slideIsEnd =
-					( Parameter().Get().slideMoveSecond <= timer )
-				||	( moveToBackward	)
-				||	( useJump			)
-				||	( pGrabbingLadder	)
-				||	( !inst.onGround	)
-				;
-
-	if ( slideIsEnd && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
-	{
-		const Donya::Collision::Box3F normalBody = inst.GetNormalBody( /* ofHurtBox = */ false );
-		
-		if ( inst.WillCollideToAroundTiles( normalBody, inst.velocity * elapsedTime, terrain ) )
-		{
-			// I can not finish the sliding now, because I will be buried.
-			
-			// And discard the jump input for prevent the continuously trying jump.
-			if ( useJump )
-			{
-				inst.inputManager.DetainNowJumpInput();
-
-				// But the input must reflect to action. The player will jump while slide.
-				inst.Jump();
-			}
-
-			if ( moveToBackward )
-			{
-				inst.velocity.x		*= -1.0f;
-				inst.lookingSign	*= -1.0f;
-
-				const auto halfTurn = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( 180.0f ) );
-				inst.orientation.RotateBy( halfTurn );
-				inst.orientation.Normalize();
-			}
-		}
-		else
-		{
-			// I can finish the sliding here.
-
-			if ( pGrabbingLadder )
-			{
-				inst.pTargetLadder = pGrabbingLadder;
-				nextStatus = Destination::Ladder;
-			}
-			else
-			{
-				nextStatus = Destination::Normal;
-			}
-		}
-	}
+	UpdateStatus( inst, elapsedTime, terrain );
 
 	if ( !IsZero( inst.velocity.x ) )
 	{
 		inst.lookingSign = Donya::SignBitF( inst.velocity.x );
 	}
 
-	// If the "slideIsEnd" to be true by jump input, the jump will be fired in here.
-	inst.MoveVertical( elapsedTime );
+	UpdateVertical( inst, elapsedTime );
 
 	inst.ShotIfRequested( elapsedTime );
 
@@ -1725,6 +1680,106 @@ void Player::Slide::AssignBodyParameter( Player &inst )
 {
 	inst.body		= inst.GetSlidingBody( /* ofHurtBox = */ false );
 	inst.hurtBox	= inst.GetSlidingBody( /* ofHurtBox = */ true  );
+}
+void Player::Slide::UpdateStatus( Player &inst, float elapsedTime, const Map &terrain )
+{
+	// Make to can not act if game time is pausing
+	if ( IsZero( elapsedTime ) ) { return; }
+	// else
+
+	const auto &input				= inst.inputManager;
+	const Donya::Vector2 &inputDir	= input.CurrentMoveDirection();
+
+	const int  horizontalInputSign	= Donya::SignBit( inputDir.x );
+	const bool moveToBackward		= ( horizontalInputSign != 0 ) && ( horizontalInputSign != Donya::SignBit( inst.lookingSign ) );
+	const auto pGrabbingLadder		= inst.FindGrabbingLadderOrNullptr( inputDir.y, terrain );
+	
+	const bool pressJump	= inst.WillUseJump();
+	const bool pressDown	= ( input.CurrentMoveDirection().y < 0.0f );
+	UpdateTakeOverInput( pressJump, pressDown );
+	finishByJump = ( pressJump && !pressDown );
+
+	const bool slideIsEnd =
+					( Parameter().Get().slideMoveSecond <= timer )
+				||	( moveToBackward	)
+				||	( finishByJump		)
+				||	( pGrabbingLadder	)
+				||	( !inst.onGround	)
+				;
+	if ( !slideIsEnd ) { return; }
+	// else
+
+	const Donya::Collision::Box3F normalBody = inst.GetNormalBody( /* ofHurtBox = */ false );
+		
+	if ( inst.WillCollideToAroundTiles( normalBody, inst.velocity * elapsedTime, terrain ) )
+	{
+		// I can not finish the sliding now, because I will be buried.
+
+		// And discard the jump input for prevent the continuously trying jump.
+		if ( finishByJump )
+		{
+			inst.inputManager.DetainNowJumpInput();
+			finishByJump = false;
+
+			// But the input must reflect to action. The player will jump while slide.
+			inst.Jump();
+		}
+
+		if ( moveToBackward )
+		{
+			inst.velocity.x		*= -1.0f;
+			inst.lookingSign	*= -1.0f;
+
+			const auto halfTurn = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( 180.0f ) );
+			inst.orientation.RotateBy( halfTurn );
+			inst.orientation.Normalize();
+		}
+
+		return;
+	}
+	// else
+
+	// I can finish the sliding here.
+	// The Jump() will fired in UpdateVertical() if finish by jump.
+
+	if ( pGrabbingLadder )
+	{
+		inst.pTargetLadder = pGrabbingLadder;
+		nextStatus = Destination::Ladder;
+	}
+	else
+	{
+		nextStatus = Destination::Normal;
+	}
+}
+void Player::Slide::UpdateVertical( Player &inst, float elapsedTime )
+{
+	// Deformity of inst.MoveVertical()
+
+	if ( finishByJump && !IsZero( elapsedTime ) ) // Make to can not act if game time is pausing
+	{
+		inst.Jump();
+		nextStatus = Destination::Normal;
+		return;
+	}
+	// else
+	
+	inst.Fall( elapsedTime );
+}
+void Player::Slide::UpdateTakeOverInput( bool pressJump, bool pressDown )
+{
+	/*
+	First, You need to input the slide, i.e. down and press.
+	Then, You need to keep pressing jump. down is unnecessary.
+	*/
+
+	if ( takeOverInput )
+	{
+		takeOverInput = pressJump;
+	}
+	// else
+
+	takeOverInput = ( pressJump && pressDown );
 }
 
 void Player::GrabLadder::Init( Player &inst )
@@ -2480,6 +2535,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	prevSlidingStatus	= false;
 	onGround			= false;
 	wasJumpedWhileSlide	= false;
+	pressJumpSinceSlide = false;
 
 	// Validate should I take a ground state
 	{
@@ -2576,7 +2632,6 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 
 	invincibleTimer.Update( *this, elapsedTime );
 	ApplyReceivedDamageIfHas( elapsedTime, terrain );
-
 	hurtBox.exist = ( invincibleTimer.NowWorking() ) ? false : true;
 
 	pMover->Update( *this, elapsedTime, terrain );
@@ -2586,11 +2641,13 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 		ChangeMethod();
 	}
 
-	ShiftGunIfNeeded( elapsedTime );
-	pGun->Update( *this, elapsedTime );
-
+	// These are mainly used in ApplyReceivedDamageIfHas(),
+	// So storing status is here(last call of ApplyReceivedDamageIfHas() ~ next call that).
 	prevSlidingStatus = pMover->NowSliding( *this );
 	prevBracingStatus = pMover->NowBracing( *this );
+
+	ShiftGunIfNeeded( elapsedTime );
+	pGun->Update( *this, elapsedTime );
 }
 void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -3086,18 +3143,13 @@ void Player::Jump()
 }
 bool Player::Jumpable() const
 {
-	if ( pMover && pMover->NowSliding( *this ) )
-	{
-		const bool pressDown = ( inputManager.CurrentMoveDirection().y < 0.0f );
-		if ( pressDown ) { return false; }
-		// else
-	}
-
-	return ( onGround && inputManager.NowJumpable() ) ? true : false;
+	const bool useInSlide = pressJumpSinceSlide || ( pMover && pMover->NowSliding( *this ) );
+	return ( onGround && inputManager.NowJumpable( useInSlide ) );
 }
 bool Player::WillUseJump() const
 {
-	return ( Jumpable() && inputManager.NowUseJump() );
+	const bool useInSlide = pressJumpSinceSlide || ( pMover && pMover->NowSliding( *this ) );
+	return ( Jumpable() && inputManager.NowUseJump( useInSlide ) );
 }
 void Player::Fall( float elapsedTime )
 {

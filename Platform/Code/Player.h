@@ -172,8 +172,8 @@ private:
 		void Init();
 		void Update( const Player &instance, float elapsedTime, const Input &input );
 	public:
-		bool NowJumpable()		const;
-		bool NowUseJump()		const;	// Returns just is there a jump input
+		bool NowJumpable( bool useSlideParam = false )	const;
+		bool NowUseJump( bool useSlideParam = false )	const;	// Returns just is there a jump input
 		bool NowReleaseJump()	const;
 		bool NowUseShot()		const;
 		bool NowTriggerShot()	const;
@@ -193,7 +193,7 @@ private:
 		Donya::Vector3 HeadingDestinationOrOrigin() const;
 	private:
 		void RegisterCurrentInputs( float elapsedTime, const Input &input );
-		int  IndexOfUsingJump()			const; // Return -1 if not using
+		int  IndexOfUsingJump( bool useSlideParam = false ) const; // Return -1 if not using
 		int  IndexOfReleasingJump()		const; // Return -1 if not using
 		int  IndexOfUsingShot()			const; // Return -1 if not using
 		int  IndexOfTriggeringShot()	const; // Return -1 if not using
@@ -334,7 +334,7 @@ private:
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	private:
-		void MoveVertical( Player &instance, float elapsedTime, const Map &terrain );
+		void UpdateVertical( Player &instance, float elapsedTime, const Map &terrain );
 	public:
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"通常"; }
@@ -350,8 +350,10 @@ private:
 			Ladder,
 		};
 	private:
-		Destination	nextStatus	= Destination::None;
-		float		timer		= 0.0f;
+		Destination	nextStatus		= Destination::None;
+		float		timer			= 0.0f;
+		bool		takeOverInput	= false; // Take-over the down+jump input to next state
+		bool		finishByJump	= false;
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
@@ -360,6 +362,11 @@ private:
 		bool NowSliding( const Player &instance ) const override { return true; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	private:
+		void UpdateStatus( Player &instance, float elapsedTime, const Map &terrain );
+		void UpdateVertical( Player &instance, float elapsedTime );
+		void UpdateTakeOverInput( bool pressJump, bool pressDown );
+	public:
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"スライディング"; }
 	#endif // USE_IMGUI
@@ -567,6 +574,7 @@ private:
 	float								lookingSign			= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
 	bool								onGround			= false;
 	bool								wasJumpedWhileSlide	= false;
+	bool								pressJumpSinceSlide	= false;// Information from: Slide state, to: Normal state
 	// TODO: These status variables can be combine by replace to MotionKind value
 	bool								prevSlidingStatus	= false;
 	bool								prevBracingStatus	= false;
