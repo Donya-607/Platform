@@ -240,14 +240,13 @@ private:
 	class ShotManager
 	{
 	private:
-		ShotLevel		chargeLevel			= ShotLevel::Normal;
-		float			currChargeSecond	= 0.0f;
-		float			prevChargeSecond	= 0.0f;
-		bool			currUseShot			= false;
-		bool			prevUseShot			= false;
+		ShotLevel		chargeLevel		= ShotLevel::Normal;
+		float			chargeSecond	= 0.0f;
+		bool			currUseShot		= false;
+		bool			prevUseShot		= false;
 		Donya::Vector3	emissiveColor	{ 0.0f, 0.0f, 0.0f }; // By charge
 		Donya::Vector3	destColor		{ 0.0f, 0.0f, 0.0f }; // By charge
-		bool			playingChargeSE		= false;
+		bool			playingChargeSE	= false;
 		Effect::Handle	fxComplete;
 		Effect::Handle	fxLoop;
 	public:
@@ -261,9 +260,9 @@ private:
 		void SetFXPosition( const Donya::Vector3 &wsPosition );
 	public:
 		bool			IsShotRequested( const Player &instance ) const;
-		float			ChargeSecond()		const { return currChargeSecond;	}
-		ShotLevel		ChargeLevel()		const { return chargeLevel;			}
-		Donya::Vector3	EmissiveColor()		const { return emissiveColor;		}
+		float			ChargeSecond()		const { return chargeSecond;	}
+		ShotLevel		ChargeLevel()		const { return chargeLevel;		}
+		Donya::Vector3	EmissiveColor()		const { return emissiveColor;	}
 	private:
 		bool			NowTriggered		( const Player &instance ) const;
 		ShotLevel		CalcChargeLevel		( float chargingSecond ) const;

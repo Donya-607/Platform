@@ -1119,11 +1119,10 @@ Player::ShotManager::~ShotManager()
 }
 void Player::ShotManager::Init()
 {
-	chargeLevel			= ShotLevel::Normal;
-	currChargeSecond	= 0.0f;
-	prevChargeSecond	= 0.0f;
-	currUseShot			= false;
-	prevUseShot			= false;
+	chargeLevel		= ShotLevel::Normal;
+	chargeSecond	= 0.0f;
+	currUseShot		= false;
+	prevUseShot		= false;
 	fxComplete.Disable();
 	fxLoop.Disable();
 
@@ -1141,11 +1140,11 @@ void Player::ShotManager::Update( const Player &inst, float elapsedTime )
 	// else
 
 	const ShotLevel oldChargeLevel = chargeLevel;
-	// If calculate the charge level after update the "currChargeSecond",
+	// If calculate the "chargeLevel" after ChargeUpdate(),
 	// the level will be zero(ShotLevel::Normal) absolutely when fire timing, because that timing is the input was released.
 	// So I must calculate it before the update. It will not be late for one frame by this.
-	chargeLevel		= CalcChargeLevel  ( currChargeSecond );
-	destColor		= CalcEmissiveColor( currChargeSecond );
+	chargeLevel		= CalcChargeLevel  ( chargeSecond );
+	destColor		= CalcEmissiveColor( chargeSecond );
 	emissiveColor	= Donya::Lerp( emissiveColor, destColor, Parameter().Get().emissiveTransFactor );
 
 	if ( oldChargeLevel != chargeLevel )
@@ -1171,7 +1170,7 @@ void Player::ShotManager::ChargeFully()
 	constexpr int maxLevelIndex = scast<int>( ShotLevel::Strong );
 
 	const auto &chargeParams = Parameter().Get().chargeParams;
-	currChargeSecond = chargeParams[maxLevelIndex].chargeSecond + 1.0f;
+	chargeSecond = chargeParams[maxLevelIndex].chargeSecond + 1.0f;
 }
 void Player::ShotManager::SetFXPosition( const Donya::Vector3 &wsPos )
 {
@@ -1276,30 +1275,34 @@ void Player::ShotManager::AssignLoopFX( Effect::Kind kind )
 }
 void Player::ShotManager::ChargeUpdate( const Player &inst, float elapsedTime )
 {
-	prevChargeSecond =  currChargeSecond;
-	currChargeSecond += elapsedTime;
-
 	prevUseShot = currUseShot;
 	currUseShot = inst.inputManager.NowUseShot();
 
 	if ( NowTriggered( inst ) )
 	{
-		// Reset it, but do not set zero.
-		// If set zero, shot condition will regard as "triggered" in next loop
-		// because the "prevChargeSecond" will be zero by this.
-		currChargeSecond = elapsedTime;
+		chargeSecond = 0.0f;
+		StopLoopSFXIfPlaying();
+		return;
 	}
+	// else
 
 	const bool chargeable = ( inst.pGun && inst.pGun->Chargeable() );
 	if ( chargeable && currUseShot )
 	{
-		PlayLoopSFXIfStopping();
+		chargeSecond += elapsedTime;
+
+		const bool shouldShow = ( CalcChargeLevel( chargeSecond ) != ShotLevel::Normal );
+		if ( shouldShow )
+		{
+			PlayLoopSFXIfStopping();
+		}
+
+		return;
 	}
-	else
-	{
-		currChargeSecond = 0.0f;
-		StopLoopSFXIfPlaying();
-	}
+	// else
+
+	chargeSecond = 0.0f;
+	StopLoopSFXIfPlaying();
 }
 void Player::ShotManager::PlayLoopSFXIfStopping()
 {

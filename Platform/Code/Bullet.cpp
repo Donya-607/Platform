@@ -260,6 +260,9 @@ namespace Bullet
 		model.Initialize( GetModelPtrOrNullptr( GetKind() ) );
 		model.AssignMotion( 0 );
 		
+		// The orientation is not assigned,
+		// but the below UpdateOrientation() also updates the body,
+		// so the assignment of correct parameter is entrusted to that.
 		InitBody( parameter );
 
 		velocity	= parameter.direction * parameter.initialSpeed;

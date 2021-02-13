@@ -163,7 +163,7 @@
                 }
             },
             {
-                "chargeSecond": 0.4000000059604645,
+                "chargeSecond": 0.382999986410141,
                 "emissiveCycleSecond": 0.5,
                 "emissiveMinBias": 0.4000000059604645,
                 "emissiveEaseKind": 10,
@@ -175,7 +175,7 @@
                 }
             },
             {
-                "chargeSecond": 1.2999999523162842,
+                "chargeSecond": 1.2649999856948853,
                 "emissiveCycleSecond": 0.4000000059604645,
                 "emissiveMinBias": 0.5,
                 "emissiveEaseKind": 10,
