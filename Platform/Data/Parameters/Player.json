@@ -191,7 +191,7 @@
             "y": 0.0,
             "z": 0.0
         },
-        "jumpBufferSecond": 0.10000000149011612,
+        "jumpBufferSecond": 0.11999999731779099,
         "appearDelaySecond": 0.5,
         "braceStandFactor": 2.0,
         "emissiveTransFactor": 0.30000001192092898,
