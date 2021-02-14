@@ -30,7 +30,7 @@ namespace Input
 		publicBuffer = buffer;
 	}
 	
-	float BufferedInput::PressingSecond( float allowSecond, bool discardFoundInstance ) const
+	float BufferedInput::PressingSecond( float allowSecond, bool ignorePickedUpInstance, bool discardFoundInstance ) const
 	{
 		constexpr float notFound = -1.0f;
 
@@ -65,7 +65,7 @@ namespace Input
 			// else
 
 			if ( !pPart->pressed ) { continue; }
-			if ( pPart->pickedUp ) { continue; }
+			if ( pPart->pickedUp && ignorePickedUpInstance ) { continue; }
 			// else
 
 			// It records the press and the release alternately, so [i + 1] is release record.
@@ -85,7 +85,7 @@ namespace Input
 	
 	// HACK: IsReleased() and IsTriggered() are very similar code, we can write these more smart
 
-	bool BufferedInput::IsReleased( float allowSecond, bool discardFoundInstance ) const
+	bool BufferedInput::IsReleased( float allowSecond, bool ignorePickedUpInstance, bool discardFoundInstance ) const
 	{
 		const Part *pPart = nullptr;
 
@@ -98,8 +98,8 @@ namespace Input
 			if ( allowSecond < pPart->elapsedSecond ) { return false; }
 			// else
 
-			if ( pPart->pressed  ) { continue; }
-			if ( pPart->pickedUp ) { continue; }
+			if ( pPart->pressed ) { continue; }
+			if ( pPart->pickedUp && ignorePickedUpInstance ) { continue; }
 			// else
 
 			if ( discardFoundInstance )
@@ -112,7 +112,7 @@ namespace Input
 
 		return false;
 	}
-	bool BufferedInput::IsTriggered( float allowSecond, bool discardFoundInstance ) const
+	bool BufferedInput::IsTriggered( float allowSecond, bool ignorePickedUpInstance, bool discardFoundInstance ) const
 	{
 		const Part *pPart = nullptr;
 
@@ -126,7 +126,7 @@ namespace Input
 			// else
 
 			if ( !pPart->pressed ) { continue; }
-			if ( pPart->pickedUp ) { continue; }
+			if ( pPart->pickedUp && ignorePickedUpInstance ) { continue; }
 			// else
 
 			if ( discardFoundInstance )

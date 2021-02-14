@@ -176,6 +176,7 @@
     <ClCompile Include="Code\Bullets\TogeheroBody.cpp" />
     <ClCompile Include="Code\CheckPoint.cpp" />
     <ClCompile Include="Code\ClearEvent.cpp" />
+    <ClCompile Include="Code\Command.cpp" />
     <ClCompile Include="Code\Common.cpp" />
     <ClCompile Include="Code\CSVLoader.cpp" />
     <ClCompile Include="Code\Damage.cpp" />
@@ -276,6 +277,7 @@
     <ClInclude Include="Code\Bullets\TogeheroBody.h" />
     <ClInclude Include="Code\CheckPoint.h" />
     <ClInclude Include="Code\ClearEvent.h" />
+    <ClInclude Include="Code\Command.h" />
     <ClInclude Include="Code\Common.h" />
     <ClInclude Include="Code\CSVLoader.h" />
     <ClInclude Include="Code\Damage.h" />
@@ -350,6 +352,7 @@
     <ClInclude Include="Code\MeterParam.h" />
     <ClInclude Include="Code\ModelHelper.h" />
     <ClInclude Include="Code\Music.h" />
+    <ClInclude Include="Code\NumPad.h" />
     <ClInclude Include="Code\ObjectBase.h" />
     <ClInclude Include="Code\Parameter.h" />
     <ClInclude Include="Code\PauseParam.h" />

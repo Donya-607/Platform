@@ -37,10 +37,10 @@ namespace Input
 		/// <summary>
 		/// It returns found part's "elapsedSecond" or negative value like -1.0f if not found.
 		/// </summary>
-		float PressingSecond( float allowSecond, bool discardFoundInstance = true ) const;
+		float PressingSecond( float allowSecond, bool ignorePickedUpInstance = true, bool discardFoundInstance = true ) const;
 	public:
-		bool IsReleased( float allowSecond, bool discardFoundInstance = true ) const;
-		bool IsTriggered( float allowSecond, bool discardFoundInstance = true ) const;
+		bool IsReleased( float allowSecond, bool ignorePickedUpInstance = true, bool discardFoundInstance = true ) const;
+		bool IsTriggered( float allowSecond, bool ignorePickedUpInstance = true, bool discardFoundInstance = true ) const;
 	public:
 		/// <summary>
 		/// Second

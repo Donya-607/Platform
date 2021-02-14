@@ -387,6 +387,22 @@ void PlayerParam::ShowImGuiNode()
 
 		ImGui::TreePop();
 	}
+	if ( ImGui::TreeNode( u8"コマンド入力関連" ) )
+	{
+		ImGui::SliderFloat( u8"スティック角度の猶予(degree)", &commandStickDegreeMargin, 0.0f, 45.0f );
+
+		ImGui::Text( u8"-- コマンド一覧 --" );
+		ImGui::Helper::ResizeByButton( &commands );
+		
+		const size_t count = commands.size();
+		for ( size_t i = 0; i < count; ++i )
+		{
+			commands[i].ShowImGuiNode( Donya::MakeArraySuffix( i ).c_str() );
+		}
+
+
+		ImGui::TreePop();
+	}
 
 	constexpr size_t motionCount = scast<size_t>( Player::MotionKind::MotionCount );
 	if ( animePlaySpeeds.size() != motionCount )
@@ -612,7 +628,6 @@ void Player::InputManager::Update( const Player &inst, float elapsedTime, const 
 		if ( jumpWasReleased_es[i] ) { continue; }
 		// else
 
-		// if ( jumps[i].PressingSecond( depth ) < 0.0f )
 		if ( jumps[i].IsReleased( depth ) )
 		{
 			jumpWasReleased_es[i] = true;
@@ -1382,6 +1397,157 @@ void Player::ShotManager::StopLoopSFXIfPlaying( bool forcely )
 	Donya::Sound::Stop( Music::Charge_Loop, /* isEnableForAll = */ true );
 }
 
+
+#pragma region Command
+
+void Player::CommandManager::Processor::Init( const Command::Part &chargeCommand )
+{
+	arraySize			= scast<int>( chargeCommand.sticks.size() );
+	progressIndex		= 0;
+	lastElapsedSecond	= 0.0f;
+	cmd = chargeCommand;
+}
+void Player::CommandManager::Processor::Update( const SticksType &inputs, float elapsedTime )
+{
+	lastElapsedSecond += elapsedTime;
+
+	if ( !Accepted() )
+	{
+		constexpr bool considerAllInput = false;
+
+		const NumPad::Value &target = cmd.sticks[progressIndex];
+		if ( inputs[target].PressingSecond( cmd.marginSecond, !considerAllInput ) )
+		{
+			progressIndex++;
+			lastElapsedSecond = 0.0f;
+		}
+	}
+
+	if ( cmd.marginSecond < lastElapsedSecond )
+	{
+		progressIndex = 0;
+		lastElapsedSecond = 0.0f;
+	}
+}
+bool Player::CommandManager::Processor::Accepted() const
+{
+	return ( arraySize <= progressIndex ) ? true : false;
+}
+#if USE_IMGUI
+bool Player::CommandManager::Processor::EqualTo( const Command::Part &v ) const
+{
+	if ( arraySize != scast<int>( v.sticks.size() ) ) { return false; }
+	for ( int i = 0; i < arraySize; ++i )
+	{
+		if ( cmd.sticks[i] != v.sticks[i] )
+		{
+			return false;
+		}
+	}
+
+	if ( !IsZero( cmd.marginSecond - v.marginSecond ) ) { return false; }
+
+	return true;
+}
+#endif // USE_IMGUI
+
+void Player::CommandManager::Init()
+{
+	const auto &commands = Parameter().Get().commands;
+	const size_t commandCount = commands.size();
+
+	float sumMarginSecond = 0.0f;
+	processors.resize( commandCount );
+	for ( size_t i = 0; i < commandCount; ++i )
+	{
+		processors[i].Init( commands[i] );
+
+		sumMarginSecond = commands[i].marginSecond;
+	}
+
+	for ( auto &it : sticks )
+	{
+		it.Init( sumMarginSecond );
+	}
+
+	currTrigger	= false;
+	prevTrigger	= false;
+	wantFire	= false;
+}
+void Player::CommandManager::Update( Player &inst, float elapsedTime )
+{
+#if USE_IMGUI
+	if ( ParametersAreUpdated() )
+	{
+		Init();
+	}
+#endif // USE_IMGUI
+
+
+	const auto &data = Parameter().Get();
+	const auto &input = inst.inputManager;
+
+
+	const float &degreeMargin = data.commandStickDegreeMargin;
+	const Donya::Vector2 inputDir = input.CurrentMoveDirection().Unit();
+	for ( unsigned int i = 0; i < NumPad::keyCount; ++i )
+	{
+		const Donya::Vector2 padDir = NumPad::ToDirection( scast<NumPad::Value>( i ) );
+
+		const float dot = Donya::Clamp( Dot( inputDir, padDir ), -1.0f, 1.0f );
+		const float degree = ToDegree( acosf( dot ) );
+
+		sticks[i].Update( elapsedTime, ( degree <= degreeMargin ) );
+	}
+
+
+	prevTrigger = currTrigger;
+	currTrigger = input.NowTriggerShot();
+
+
+	bool accepted = false;
+	for ( auto &proccessor : processors )
+	{
+		proccessor.Update( sticks, elapsedTime );
+		if ( proccessor.Accepted() )
+		{
+			accepted = true;
+		}
+	}
+	if ( accepted )
+	{
+		const bool triggerOrRelease = ( currTrigger != prevTrigger );
+		wantFire = triggerOrRelease;
+	}
+	else
+	{
+		wantFire = false;
+	}
+}
+#if USE_IMGUI
+bool Player::CommandManager::ParametersAreUpdated() const
+{
+	const auto &data = Parameter().Get();
+
+	const size_t count = processors.size();
+	if ( data.commands.size() != count ) { return true; }
+	// else
+
+	for ( size_t i = 0; i < count; ++i )
+	{
+		if ( !processors[i].EqualTo( data.commands[i] ) )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif // USE_IMGUI
+
+#pragma endregion
+
+
 Player::Flusher::~Flusher()
 {
 	fxHurt.Stop();
@@ -1423,6 +1589,7 @@ bool Player::Flusher::NowWorking() const
 {
 	return ( timer < workingSecond ) ? true : false;
 }
+
 
 #pragma region Mover
 
@@ -2513,6 +2680,7 @@ void Player::ShieldGun::ThrowShield( Player &inst, const InputManager &input )
 // Gun
 #pragma endregion
 
+
 void Player::Init( const PlayerInitializer &initializer, const Map &terrain, bool withAppearPerformance )
 {
 	const bool shouldLookingToRight = initializer.ShouldLookingRight();
@@ -2528,9 +2696,10 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	body.pos			= initializer.GetWorldInitialPos(); // The "body.pos" will be used as foot position.
 	hurtBox.pos			= body.pos;
 	velocity			= 0.0f;
-	inputManager.Init();
-	motionManager.Init();
-	shotManager.Init();
+	inputManager	.Init();
+	motionManager	.Init();
+	shotManager		.Init();
+	commandManager	.Init();
 	currentHP			= data.maxHP;
 	prevSlidingStatus	= false;
 	onGround			= false;
@@ -2617,11 +2786,12 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 	}
 #endif // USE_IMGUI
 
-	inputManager.Update( *this, elapsedTime, input );
+	inputManager	.Update( *this, elapsedTime, input );
+	commandManager	.Update( *this, elapsedTime );
+	shotManager		.Update( *this, elapsedTime );
 
 	hurtBox.UpdateIgnoreList( elapsedTime );
 
-	shotManager.Update( *this, elapsedTime );
 
 	if ( !pMover )
 	{
@@ -2630,9 +2800,11 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 	}
 	// else
 
+
 	invincibleTimer.Update( *this, elapsedTime );
 	ApplyReceivedDamageIfHas( elapsedTime, terrain );
 	hurtBox.exist = ( invincibleTimer.NowWorking() ) ? false : true;
+
 
 	pMover->Update( *this, elapsedTime, terrain );
 	if ( pMover->ShouldChangeMover( *this ) )
@@ -2646,8 +2818,21 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 	prevSlidingStatus = pMover->NowSliding( *this );
 	prevBracingStatus = pMover->NowBracing( *this );
 
+
 	ShiftGunIfNeeded( elapsedTime );
 	pGun->Update( *this, elapsedTime );
+
+
+#if DEBUG_MODE
+	if ( commandManager.WantFire() )
+	{
+		Effect::Admin::Get().GenerateInstance
+		(
+			Effect::Kind::Charge_Complete, GetPosition()
+		);
+		Donya::Sound::Play( Music::Charge_Complete );
+	}
+#endif // DEBUG_MODE
 }
 void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {

@@ -12,9 +12,10 @@
 #include "Donya/Collision.h"
 #include "Donya/Easing.h"
 #include "Donya/Serializer.h"
-#include "Donya/UseImGui.h"		// use US_IMGUI macro
+#include "Donya/UseImGui.h"		// Use US_IMGUI macro
 
 #include "Bullet.h"				// Use Bullet::FireDesc
+#include "Command.h"
 #include "ModelHelper.h"		// Use PartApply
 
 struct PlayerParam
@@ -54,7 +55,12 @@ public:
 	Donya::Collision::Box3F			slideHitBox;	// VS a terrain when sliding
 	Donya::Collision::Box3F			slideHurtBox;	// VS an attack(e.g. enemy) when sliding
 	Donya::Collision::Box3F			ladderGrabArea;	// It using for considering to continue to grab the ladder
+	
 	Bullet::FireDesc				fireParam;
+
+	float	commandStickDegreeMargin	= 15.0f;
+	std::vector<Command::Part>		commands;
+
 	std::vector<float>				animePlaySpeeds;	// It size() == Player::MotionKind::MotionCount
 	std::vector<float>				animeTransSeconds;	// It interest only destination motion kind. It size() == Player::MotionKind::MotionCount
 
@@ -228,6 +234,14 @@ private:
 		}
 		if ( 21 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( commandStickDegreeMargin	),
+				CEREAL_NVP( commands					)
+			);
+		}
+		if ( 22 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -236,4 +250,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 20 )
+CEREAL_CLASS_VERSION( PlayerParam, 21 )

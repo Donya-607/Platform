@@ -13,6 +13,7 @@
 
 #include "BufferedInput.h"
 #include "Bullet.h"
+#include "Command.h"
 #include "CSVLoader.h"
 #include "Damage.h"
 #include "Effect/Effect.h"
@@ -20,6 +21,7 @@
 #include "Map.h"
 #include "Meter.h"
 #include "ModelHelper.h"
+#include "NumPad.h"
 #include "ObjectBase.h"
 #include "Parameter.h"
 #include "Renderer.h"
@@ -272,6 +274,42 @@ private:
 		void ChargeUpdate( const Player &instance , float elapsedTime );
 		void PlayLoopSFXIfStopping();
 		void StopLoopSFXIfPlaying( bool forcely = false );
+	};
+	class CommandManager
+	{
+	private:
+		using SticksType = std::array<::Input::BufferedInput, NumPad::keyCount>;
+	private:
+		class Processor
+		{
+		private:
+			int		arraySize			= 0;
+			int		progressIndex		= 0;	// It indicates the you should achieve of next
+			float	lastElapsedSecond	= 0.0f;	// The elapsed second since last achievement
+			Command::Part cmd;
+		public:
+			void Init( const Command::Part &chargeCommand );
+			void Update( const SticksType &inputs, float elapsedTime );
+			bool Accepted() const;
+		public:
+		#if USE_IMGUI
+			bool EqualTo( const Command::Part &verify ) const;
+		#endif // USE_IMGUI
+		};
+	private:
+		bool					currTrigger	= false;
+		bool					prevTrigger	= false;
+		bool					wantFire	= false;
+		SticksType				sticks;
+		std::vector<Processor>	processors;
+	public:
+		void Init();
+		void Update( Player &instance, float elapsedTime );
+		bool WantFire() const { return wantFire; }
+	public:
+	#if USE_IMGUI
+		bool ParametersAreUpdated() const;
+	#endif // USE_IMGUI
 	};
 	class Flusher
 	{
@@ -563,6 +601,7 @@ private:
 	InputManager						inputManager;
 	MotionManager						motionManager;
 	ShotManager							shotManager;
+	CommandManager						commandManager;
 	Flusher								invincibleTimer;
 	std::unique_ptr<MoverBase>			pMover				= nullptr;
 	std::unique_ptr<GunBase>			pGun				= nullptr;
