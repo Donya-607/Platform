@@ -1416,7 +1416,7 @@ void Player::CommandManager::Processor::Update( const SticksType &inputs, float 
 		constexpr bool considerAllInput = false;
 
 		const NumPad::Value &target = cmd.sticks[progressIndex];
-		if ( inputs[target].PressingSecond( cmd.marginSecond, !considerAllInput ) )
+		if ( 0.0f <= inputs[target].PressingSecond( cmd.marginSecond, !considerAllInput ) )
 		{
 			progressIndex++;
 			lastElapsedSecond = 0.0f;
@@ -1448,6 +1448,16 @@ bool Player::CommandManager::Processor::EqualTo( const Command::Part &v ) const
 	if ( !IsZero( cmd.marginSecond - v.marginSecond ) ) { return false; }
 
 	return true;
+}
+void Player::CommandManager::Processor::ShowImGuiNode( const char *nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption ) ) { return; }
+	// else
+
+	ImGui::Text( u8"%02d/%02d：進捗", progressIndex, arraySize );
+	ImGui::Text( u8"%5.3f：成功からの経過秒数", lastElapsedSecond );
+
+	ImGui::TreePop();
 }
 #endif // USE_IMGUI
 
@@ -1492,7 +1502,8 @@ void Player::CommandManager::Update( Player &inst, float elapsedTime )
 	const Donya::Vector2 inputDir = input.CurrentMoveDirection().Unit();
 	for ( unsigned int i = 0; i < NumPad::keyCount; ++i )
 	{
-		const Donya::Vector2 padDir = NumPad::ToDirection( scast<NumPad::Value>( i ) );
+		Donya::Vector2 padDir = NumPad::ToDirection( scast<NumPad::Value>( i ) );
+		padDir.x *= inst.lookingSign;
 
 		const float dot = Donya::Clamp( Dot( inputDir, padDir ), -1.0f, 1.0f );
 		const float degree = ToDegree( acosf( dot ) );
@@ -1542,6 +1553,72 @@ bool Player::CommandManager::ParametersAreUpdated() const
 	}
 
 	return false;
+}
+void Player::CommandManager::ShowImGuiNode( const char *nodeCaption )
+{
+	if ( !ImGui::TreeNode( nodeCaption ) ) { return; }
+	// else
+
+	if ( ImGui::TreeNode( u8"スティックの状態" ) )
+	{
+		std::string caption;
+
+		auto ShowHeader  = [&]( NumPad::Value base )
+		{
+			int intBase = scast<int>( base );
+			for ( int i = 0; i < 3; ++i )
+			{
+				caption = "NumPad" + Donya::MakeArraySuffix( intBase + i + 1 );
+				ImGui::Text( caption.c_str() );
+
+				ImGui::NextColumn();
+			}
+
+			ImGui::Separator();
+		};
+		auto ShowContent = [&]( NumPad::Value base )
+		{
+			int intBase = scast<int>( base );
+			for ( int i = 0; i < 3; ++i )
+			{
+				sticks[intBase + i].ShowImGuiNode( nullptr );
+
+				ImGui::NextColumn();
+			}
+
+			ImGui::Separator();
+		};
+
+		ImGui::Columns( 3 );
+		ImGui::Separator();
+
+		ShowHeader ( NumPad::Value::_7 );
+		ShowContent( NumPad::Value::_7 );
+
+		ShowHeader ( NumPad::Value::_4 );
+		ShowContent( NumPad::Value::_4 );
+
+		ShowHeader ( NumPad::Value::_1 );
+		ShowContent( NumPad::Value::_1 );
+
+		ImGui::Columns( 1 );
+		ImGui::Separator();
+
+		ImGui::TreePop();
+	}
+
+	if ( ImGui::TreeNode( u8"見張っているコマンド一覧" ) )
+	{
+		const size_t count = processors.size();
+		for ( size_t i = 0; i < count; ++i )
+		{
+			processors[i].ShowImGuiNode( Donya::MakeArraySuffix( i ).c_str() );
+		}
+
+		ImGui::TreePop();
+	}
+
+	ImGui::TreePop();
 }
 #endif // USE_IMGUI
 
@@ -3462,7 +3539,8 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Text			( u8"現在の重力：%5.3f", nowGravity );
 	availableWeapon.ShowImGuiNode( u8"現在使用可能な武器" );
 
-	inputManager.ShowImGuiNode( u8"入力状態" );
+	inputManager	.ShowImGuiNode( u8"入力状態" );
+	commandManager	.ShowImGuiNode( u8"コマンド入力" );
 
 	ImGui::DragFloat3	( u8"ワールド座標",					&body.pos.x,	0.01f );
 	ImGui::DragFloat3	( u8"速度",							&velocity.x,	0.01f );

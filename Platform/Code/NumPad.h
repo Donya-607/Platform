@@ -23,9 +23,12 @@ namespace NumPad
 		constexpr float h = 0.70710678118f; // Half
 		constexpr std::array<Dir, keyCount> directions
 		{
-			Dir{-h, +h},	Dir{+0, +1},	Dir{+h, +h},
-			Dir{-1, +0},	Dir{+0, +0},	Dir{+1, +0},
+		//	_1				_2				_3
 			Dir{-h, -h},	Dir{+0, -1},	Dir{+h, -h},
+		//	_4				_5				_6
+			Dir{-1, +0},	Dir{+0, +0},	Dir{+1, +0},
+		//	_7				_8				_9
+			Dir{-h, +h},	Dir{+0, +1},	Dir{+h, +h},
 		};
 	}
 

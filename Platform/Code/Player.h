@@ -294,6 +294,7 @@ private:
 		public:
 		#if USE_IMGUI
 			bool EqualTo( const Command::Part &verify ) const;
+			void ShowImGuiNode( const char *nodeCaption );
 		#endif // USE_IMGUI
 		};
 	private:
@@ -309,6 +310,7 @@ private:
 	public:
 	#if USE_IMGUI
 		bool ParametersAreUpdated() const;
+		void ShowImGuiNode( const char *nodeCaption );
 	#endif // USE_IMGUI
 	};
 	class Flusher

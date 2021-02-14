@@ -52,7 +52,7 @@ namespace Input
 		void AppendIfRecordable( bool pressed );
 	public:
 	#if USE_IMGUI
-		void ShowImGuiNode( const char *nodeCaption );
+		void ShowImGuiNode( const char *nodeCaption, size_t lowestContentCount = 3 );
 	#endif // USE_IMGUI
 	};
 }

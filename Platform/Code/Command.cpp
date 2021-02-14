@@ -28,25 +28,31 @@ namespace Command
 			{
 				caption = "##" + Donya::MakeArraySuffix( i );
 			
-				int intValue = scast<int>( sticks[i] );
+				// 1-based
+				int intValue = scast<int>( sticks[i] ) + 1;
 				ImGui::InputInt( caption.c_str(), &intValue, disallowButton );
-				sticks[i] = scast<NumPad::Value>( intValue );
+				// to 0-based
+				sticks[i] = scast<NumPad::Value>( intValue - 1 );
 
 				ImGui::NextColumn();
 			}
 
 			// 1-based. I expect it to be [1 ~ 9]
-			char buf = -1;
-			const bool changed = ImGui::InputTextWithHint( "##_ToEasilyAddNewElement", u8"’Ç‰Á", &buf, 1U );
-			if ( changed )
+			constexpr std::array<char, 2U> initialStatus{ '\0', '\0' };
+			static std::array<char, 2U> buf = initialStatus;
+			ImGui::InputTextWithHint( "##_ToEasilyAddNewElement", u8"’Ç‰Á", buf.data(), 2U, ImGuiInputTextFlags_AutoSelectAll );
+			if ( ImGui::IsItemDeactivatedAfterEdit() )
 			{
-				const bool addable = ( 0 < buf && buf <= scast<char>( NumPad::keyCount ) );
+				const unsigned int num = scast<unsigned int>( buf[0] - '0' );
+				const bool addable = ( 0 < num && num <= NumPad::keyCount );
 				if ( addable )
 				{
-					// 0-based
-					const NumPad::Value addition = scast<NumPad::Value>( buf - 1 );
+					// to 0-based
+					const NumPad::Value addition = scast<NumPad::Value>( num - 1 );
 					sticks.emplace_back( addition );
 				}
+
+				buf = initialStatus;
 			}
 
 			ImGui::NextColumn();
@@ -57,11 +63,10 @@ namespace Command
 		// Erase buttons
 		{
 			size_t eraseIndex = count;
-			const ImVec2 buttonSize{ 32.0f, 32.0f };
 			for ( size_t i = 0; i < count; ++i )
 			{
 				caption = u8"Á‹Ž" + ( "##" + Donya::MakeArraySuffix( i ) );
-				if ( ImGui::Button( caption.c_str(), buttonSize ) )
+				if ( ImGui::Button( caption.c_str() ) )
 				{
 					eraseIndex = i;
 				}

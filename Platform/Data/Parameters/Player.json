@@ -1,6 +1,6 @@
 {
     "Player": {
-        "cereal_class_version": 20,
+        "cereal_class_version": 21,
         "moveSpeed": 5.0,
         "jumpStrength": 18.5,
         "maxFallSpeed": 20.0,
@@ -327,6 +327,26 @@
             0.08299999684095383
         ],
         "shotBufferSecond": 0.20000000298023225,
-        "slideBufferSecond": 0.20000000298023225
+        "slideBufferSecond": 0.20000000298023225,
+        "commandStickDegreeMargin": 15.0,
+        "commands": [
+            {
+                "cereal_class_version": 0,
+                "marginSecond": 0.10000000149011612,
+                "sticks": [
+                    5,
+                    1,
+                    2
+                ]
+            },
+            {
+                "marginSecond": 0.10000000149011612,
+                "sticks": [
+                    2,
+                    1,
+                    2
+                ]
+            }
+        ]
     }
 }

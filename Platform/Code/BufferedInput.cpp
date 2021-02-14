@@ -185,7 +185,7 @@ namespace Input
 	}
 
 #if USE_IMGUI
-	void BufferedInput::ShowImGuiNode( const char *nodeCaption )
+	void BufferedInput::ShowImGuiNode( const char *nodeCaption, size_t lowestContentCount )
 	{
 		if ( nodeCaption && !ImGui::TreeNode( nodeCaption ) ) { return; }
 		// else
@@ -204,9 +204,17 @@ namespace Input
 		};
 
 		std::string caption;
-		const size_t count = buffer.size();
+		const size_t size  = buffer.size();
+		const size_t count = std::max( lowestContentCount, size );
 		for ( size_t i = 0; i < count; ++i )
 		{
+			if ( size <= i )
+			{
+				ImGui::Text( u8"" );
+				continue;
+			}
+			// else
+
 			// Align two digits
 			if ( i < 10 )
 			{
