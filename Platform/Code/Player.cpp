@@ -1404,34 +1404,67 @@ void Player::CommandManager::Processor::Init( const Command::Part &chargeCommand
 {
 	arraySize			= scast<int>( chargeCommand.sticks.size() );
 	progressIndex		= 0;
+	backGroundProgress	= 0;
 	lastElapsedSecond	= 0.0f;
+	BGElapsedSecond		= 0.0f;
 	cmd = chargeCommand;
 }
 void Player::CommandManager::Processor::Update( const SticksType &inputs, float elapsedTime )
 {
 	lastElapsedSecond += elapsedTime;
+	BGElapsedSecond   += elapsedTime;
 
-	if ( !Accepted() )
-	{
-		constexpr bool considerAllInput = false;
-
-		const NumPad::Value &target = cmd.sticks[progressIndex];
-		if ( 0.0f <= inputs[target].PressingSecond( cmd.marginSecond, !considerAllInput ) )
-		{
-			progressIndex++;
-			lastElapsedSecond = 0.0f;
-		}
-	}
+	AdvanceProgressIfPressed( inputs );
 
 	if ( cmd.marginSecond < lastElapsedSecond )
 	{
-		progressIndex = 0;
-		lastElapsedSecond = 0.0f;
+		progressIndex		= 0;
+		backGroundProgress	= 0;
+		lastElapsedSecond	= 0.0f;
+
+		// Apply the first achievement immediately
+		AdvanceProgressIfPressed( inputs );
+	}
+	else
+	if ( cmd.marginSecond < BGElapsedSecond )
+	{
+		backGroundProgress	= 0;
+		BGElapsedSecond		= 0.0f;
+
+		// Apply the first achievement immediately
+		AdvanceProgressIfPressed( inputs );
 	}
 }
 bool Player::CommandManager::Processor::Accepted() const
 {
 	return ( arraySize <= progressIndex ) ? true : false;
+}
+void Player::CommandManager::Processor::AdvanceProgressIfPressed( const SticksType &inputs )
+{
+	const float allowSecond = ( backGroundProgress == 0 ) ? FLT_MAX : cmd.marginSecond;
+
+	const NumPad::Value &target = cmd.sticks[backGroundProgress];
+	if ( inputs[target].PressingSecond( allowSecond ) < 0.0f ) { return; }
+	// else
+
+	backGroundProgress++;
+
+	// Update the main if the BG greater than main
+	const int border = std::min( progressIndex, arraySize - 1 ); // main can be same as arraySize
+	if ( border < backGroundProgress )
+	{
+		progressIndex = backGroundProgress;
+		lastElapsedSecond = 0.0f;
+
+		// Update the BG together until the main achieves the entire command
+		const bool inBackGround = ( arraySize <= progressIndex );
+		if ( inBackGround )
+		{
+			backGroundProgress = 0;
+		}
+	}
+
+	BGElapsedSecond = 0.0f;
 }
 #if USE_IMGUI
 bool Player::CommandManager::Processor::EqualTo( const Command::Part &v ) const
@@ -1454,8 +1487,11 @@ void Player::CommandManager::Processor::ShowImGuiNode( const char *nodeCaption )
 	if ( !ImGui::TreeNode( nodeCaption ) ) { return; }
 	// else
 
-	ImGui::Text( u8"%02d/%02d：進捗", progressIndex, arraySize );
-	ImGui::Text( u8"%5.3f：成功からの経過秒数", lastElapsedSecond );
+	ImGui::Text( u8"[%02d/%02d]：進捗", progressIndex, arraySize );
+	ImGui::Text( u8"[%5.3f/%5.3f]：経過秒数", lastElapsedSecond, cmd.marginSecond );
+	
+	ImGui::Text( u8"[%02d/%02d]：監視", backGroundProgress, arraySize );
+	ImGui::Text( u8"[%5.3f/%5.3f]：監視経過秒数", BGElapsedSecond, cmd.marginSecond );
 
 	ImGui::TreePop();
 }
@@ -1499,11 +1535,11 @@ void Player::CommandManager::Update( Player &inst, float elapsedTime )
 
 
 	const float &degreeMargin = data.commandStickDegreeMargin;
-	const Donya::Vector2 inputDir = input.CurrentMoveDirection().Unit();
+	Donya::Vector2 inputDir = input.CurrentMoveDirection().Unit();
+	inputDir.x *= inst.lookingSign;
 	for ( unsigned int i = 0; i < NumPad::keyCount; ++i )
 	{
-		Donya::Vector2 padDir = NumPad::ToDirection( scast<NumPad::Value>( i ) );
-		padDir.x *= inst.lookingSign;
+		const Donya::Vector2 padDir = NumPad::ToDirection( scast<NumPad::Value>( i ) );
 
 		const float dot = Donya::Clamp( Dot( inputDir, padDir ), -1.0f, 1.0f );
 		const float degree = ToDegree( acosf( dot ) );

@@ -285,12 +285,16 @@ private:
 		private:
 			int		arraySize			= 0;
 			int		progressIndex		= 0;	// It indicates the you should achieve of next
+			int		backGroundProgress	= 0;	// It always monitors achievements for update the succeed time
 			float	lastElapsedSecond	= 0.0f;	// The elapsed second since last achievement
+			float	BGElapsedSecond		= 0.0f;	// The elapsed second of back-ground's
 			Command::Part cmd;
 		public:
 			void Init( const Command::Part &chargeCommand );
 			void Update( const SticksType &inputs, float elapsedTime );
 			bool Accepted() const;
+		private:
+			void AdvanceProgressIfPressed( const SticksType &inputs );
 		public:
 		#if USE_IMGUI
 			bool EqualTo( const Command::Part &verify ) const;
