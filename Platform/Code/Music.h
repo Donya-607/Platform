@@ -43,6 +43,7 @@ namespace Music
 		Player_Leave,
 		Player_Miss,
 		Player_ShiftGun,
+		Player_Shoryuken,
 		
 		RecoverHP,
 

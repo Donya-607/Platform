@@ -140,6 +140,9 @@ public:
 		Brace,
 		Appear,
 		Winning,
+		Shoryuken_Fire,
+		Shoryuken_Lag,
+		Shoryuken_Landing,
 
 		MotionCount
 	};
@@ -237,7 +240,7 @@ private:
 		int  ToMotionIndex( MotionKind kind ) const;
 		void AssignPose( MotionKind kind );
 		bool ShouldEnableLoop( MotionKind kind ) const;
-		MotionKind CalcNowKind( Player &instance, float elapsedTime ) const;
+		MotionKind GetNowKind( Player &instance, float elapsedTime ) const;
 	};
 	class ShotManager
 	{
@@ -345,14 +348,11 @@ private:
 		virtual void Uninit( Player &instance ) {}
 		virtual void Update( Player &instance, float elapsedTime, const Map &terrain ) = 0;
 		virtual void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) = 0;
-		virtual bool NowSliding( const Player &instance ) const { return false; }
-		virtual bool NowKnockBacking( const Player &instance ) const { return false; }
-		virtual bool NowGrabbingLadder( const Player &instance ) const { return false; }
-		virtual bool NowBracing( const Player &instance ) const { return false; }
+	public:
+		virtual MotionKind GetNowMotionKind( const Player &instance ) const = 0;
 		virtual bool NowMiss( const Player &instance ) const { return false; }
-		virtual bool NowAppearing( const Player &instance ) const { return false; }
-		virtual bool NowWinning( const Player &instance ) const { return false; }
 		virtual bool Drawable( const Player &instance ) const { return true; }
+		virtual bool CanShoryuken( const Player &instance ) const { return true; }
 		virtual bool ShouldChangeMover( const Player &instance ) const = 0;
 		virtual std::function<void()> GetChangeStateMethod( Player &instance ) const = 0;
 	#if USE_IMGUI
@@ -374,7 +374,8 @@ private:
 	public:
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowBracing( const Player &instance ) const override;
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	private:
@@ -403,7 +404,8 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowSliding( const Player &instance ) const override { return true; }
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	private:
@@ -436,7 +438,8 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowGrabbingLadder( const Player &instance ) const override;
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -461,7 +464,9 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowKnockBacking( const Player &instance ) const override { return true; }
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -474,8 +479,11 @@ private:
 		void Init( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool NowMiss( const Player &instance ) const override { return true; }
 		bool Drawable( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -491,8 +499,10 @@ private:
 		void Init( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowAppearing( const Player &instance ) const override { return true; }
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool Drawable( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -508,7 +518,10 @@ private:
 		void Init( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool Drawable( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -522,11 +535,38 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowWinning( const Player &instance ) const override { return true; }
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"ガッツポーズ"; }
+	#endif // USE_IMGUI
+	};
+	class Shoryuken : public MoverBase
+	{
+	private:
+		float	timer			= 0.0f;
+		float	riseHSpeedAdjust= 0.0f;
+		bool	nowRising		= true;
+		bool	wasLanded		= false; // After ended the attack
+	public:
+		void Init( Player &instance ) override;
+		void Uninit( Player &instance ) override;
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
+		bool ShouldChangeMover( const Player &instance ) const override;
+		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	private:
+		void UpdateHSpeed( Player &instance, float elapsedTime );
+		void UpdateVSpeed( Player &instance, float elapsedTime );
+	public:
+	#if USE_IMGUI
+		std::string GetMoverName() const override { return u8"昇龍拳"; }
 	#endif // USE_IMGUI
 	};
 // Mover
@@ -620,9 +660,7 @@ private:
 	bool								onGround			= false;
 	bool								wasJumpedWhileSlide	= false;
 	bool								pressJumpSinceSlide	= false;// Information from: Slide state, to: Normal state
-	// TODO: These status variables can be combine by replace to MotionKind value
-	bool								prevSlidingStatus	= false;
-	bool								prevBracingStatus	= false;
+	MotionKind							currMotionKind		= MotionKind::Idle;
 
 	struct DamageDesc
 	{
@@ -704,6 +742,7 @@ private:
 	}
 	void AssignGunByKind( Definition::WeaponKind kind );
 private:
+	bool NowShoryuken() const;
 	void AssignCurrentBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
 	Donya::Collision::Box3F GetNormalBody ( bool ofHurtBox ) const;
 	Donya::Collision::Box3F GetSlidingBody( bool ofHurtBox ) const;

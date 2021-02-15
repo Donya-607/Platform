@@ -71,7 +71,9 @@ namespace ImGui
 		
 		void ShowFrontNode	( const std::string &nodeCaption, Donya::Quaternion *pOrientation, bool freezeUpAxis = true, bool useTreeNode = false );
 
-		void ShowBezier2DNode( const std::string &nodeCaption, std::vector<Donya::Vector2> *pCtrlPoints, float rangeMin, float rangeMax );
+		void ShowBezier1DNode( const std::string &nodeCaption, std::vector<float>			*pCtrlPoints, float rangeMin, float rangeMax );
+		void ShowBezier2DNode( const std::string &nodeCaption, std::vector<Donya::Vector2>	*pCtrlPoints, float rangeMin, float rangeMax );
+		void ShowBezier3DNode( const std::string &nodeCaption, std::vector<Donya::Vector3>	*pCtrlPoints, float rangeMin, float rangeMax );
 
 		template<class T>
 		void ResizeByButton( std::vector<T> *p, const T &initializeValue = T{}, const char *captionAppend = u8"í«â¡", const char *captionPop = u8"ññîˆÇçÌèú" )

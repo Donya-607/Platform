@@ -1,6 +1,6 @@
 {
     "Player": {
-        "cereal_class_version": 21,
+        "cereal_class_version": 22,
         "moveSpeed": 5.0,
         "jumpStrength": 18.5,
         "maxFallSpeed": 20.0,
@@ -144,6 +144,9 @@
             0.8999999761581421,
             1.5,
             1.2000000476837159,
+            1.0,
+            1.0,
+            1.0,
             1.0
         ],
         "chargeParams": [
@@ -214,7 +217,7 @@
         "gravityFalling": 30.0,
         "gravityFallingAccel": 135.0,
         "gravityMax": 80.0,
-        "inertialMoveSpeed": 5.0,
+        "inertialMoveSpeed": 7.0,
         "partMotions": [
             {
                 "key": 7,
@@ -324,7 +327,10 @@
             0.08299999684095383,
             0.08299999684095383,
             0.08299999684095383,
-            0.08299999684095383
+            0.08299999684095383,
+            0.0,
+            0.0,
+            0.0
         ],
         "shotBufferSecond": 0.20000000298023225,
         "slideBufferSecond": 0.20000000298023225,
@@ -347,6 +353,16 @@
                     2
                 ]
             }
+        ],
+        "shoryuEntireTakeSecond": 1.5,
+        "shoryuRiseHSpeedBase": 3.0,
+        "shoryuRiseHSpeedRangeL": 2.0,
+        "shoryuRiseHSpeedRangeR": 5.0,
+        "shoryuRiseHSpeedAdjust": 20.0,
+        "shoryuFallHSpeed": 2.0,
+        "shoryuEntireVSpeeds": [
+            22.0,
+            -15.0
         ]
     }
 }

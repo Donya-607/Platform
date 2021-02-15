@@ -3109,7 +3109,7 @@ void SceneGame::UseImGui( float elapsedTime )
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 
-	//ImGui::ShowDemoWindow();
+	// ImGui::ShowDemoWindow();
 
 	ImGui::Checkbox( u8"[ALT+L]	ŒõŒ¹‚Ì‰ÂŽ‹‰»",		&drawLightSources	);
 	ImGui::Checkbox( u8"[F4]	ŒõŽ‹“_‚É‚·‚é",		&projectLightCamera	);

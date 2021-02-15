@@ -18,6 +18,7 @@
 #include "Common.h"
 #include "FilePath.h"
 #include "Map.h"					// Use Map::ToWorldPos()
+#include "Math.h"
 #include "Music.h"
 #include "Parameter.h"
 #include "PlayerParam.h"
@@ -46,6 +47,9 @@ namespace
 		"Brace",
 		"Appear",
 		"Winning",
+		"Shoryuken_Fire",
+		"Shoryuken_Lag",
+		"Shoryuken_Landing",
 	};
 
 	static std::shared_ptr<ModelHelper::SkinningSet> pModel{};
@@ -400,6 +404,30 @@ void PlayerParam::ShowImGuiNode()
 			commands[i].ShowImGuiNode( Donya::MakeArraySuffix( i ).c_str() );
 		}
 
+
+		ImGui::TreePop();
+	}
+	if ( ImGui::TreeNode( u8"昇龍拳関連" ) )
+	{
+		ImGui::Text( u8"[縦移動速度]" );
+		ImGui::DragFloat( u8"更新にかける秒数", &shoryuEntireTakeSecond, 0.01f );
+		constexpr Donya::Vector2 range{ -128.0f, 128.0f };
+		ImGui::Helper::ShowBezier1DNode( u8"ベジェの各制御点", &shoryuEntireVSpeeds, range.x, range.y );
+		
+		ImGui::Text( u8"[横移動速度・上昇中]" );
+		ImGui::DragFloat( u8"中心",		&shoryuRiseHSpeedBase,		0.1f );
+		ImGui::DragFloat( u8"振幅 ー",	&shoryuRiseHSpeedRangeL,	0.1f );
+		ImGui::DragFloat( u8"振幅 ＋",	&shoryuRiseHSpeedRangeR,	0.1f );
+		ImGui::DragFloat( u8"変更量ps",	&shoryuRiseHSpeedAdjust,	0.1f );
+		ImGui::Text( u8"[横移動速度・下降中]" );
+		ImGui::DragFloat( u8"変更量",	&shoryuFallHSpeed,			0.1f );
+
+		shoryuEntireTakeSecond	= std::max( 0.001f,	shoryuEntireTakeSecond	);
+		shoryuRiseHSpeedBase	= std::max( 0.0f,	shoryuRiseHSpeedBase	);
+		shoryuRiseHSpeedRangeL	= std::max( 0.0f,	shoryuRiseHSpeedRangeL	);
+		shoryuRiseHSpeedRangeR	= std::max( 0.0f,	shoryuRiseHSpeedRangeR	);
+		shoryuRiseHSpeedAdjust	= std::max( 0.0f,	shoryuRiseHSpeedAdjust	);
+		shoryuFallHSpeed		= std::max( 0.0f,	shoryuFallHSpeed		);
 
 		ImGui::TreePop();
 	}
@@ -858,7 +886,7 @@ void Player::MotionManager::Init()
 void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAnimation )
 {
 	prevKind = currKind;
-	currKind = CalcNowKind( inst, elapsedTime );
+	currKind = GetNowKind( inst, elapsedTime );
 	if ( currKind != prevKind )
 	{
 		ResetMotionFrame();
@@ -918,6 +946,7 @@ void Player::MotionManager::QuitShotMotion()
 {
 	shouldPoseShot = false;
 	shotAnimator.ResetTimer();
+	AssignPose( currKind ); // Cancel the part of shot motion
 }
 void Player::MotionManager::OverwriteLerpSecond( float newSecond )
 {
@@ -943,7 +972,7 @@ void Player::MotionManager::UpdateShotMotion( Player &inst, float elapsedTime )
 	const auto &data = Parameter().Get();
 
 	MotionKind applyKind = MotionKind::Shot;
-	if ( inst.pMover && inst.pMover->NowGrabbingLadder( inst ) )
+	if ( GetNowKind( inst, elapsedTime ) == MotionKind::GrabLadder )
 	{
 		applyKind	= ( inst.lookingSign < 0.0f )
 					? MotionKind::LadderShotLeft
@@ -1133,49 +1162,24 @@ bool Player::MotionManager::ShouldEnableLoop( MotionKind kind ) const
 	case MotionKind::Brace:				return true;
 	case MotionKind::Appear:			return false;
 	case MotionKind::Winning:			return false;
+	case MotionKind::Shoryuken_Fire:	return false;
+	case MotionKind::Shoryuken_Lag:		return false;
+	case MotionKind::Shoryuken_Landing:	return false;
 	default: break;
 	}
 
 	_ASSERT_EXPR( 0, L"Error: Unexpected kind!" );
 	return false;
 }
-Player::MotionKind Player::MotionManager::CalcNowKind( Player &inst, float elapsedTime ) const
+Player::MotionKind Player::MotionManager::GetNowKind( Player &inst, float elapsedTime ) const
 {
 	// Continue same motion if the game time is pausing
 	if ( IsZero( elapsedTime ) ) { return currKind; }
 	// else
 
-	if ( inst.pMover && inst.pMover->NowWinning( inst ) )
-	{
-		return MotionKind::Winning;
-	}
-	if ( inst.pMover && inst.pMover->NowAppearing( inst ) )
-	{
-		return MotionKind::Appear;
-	}
-	if ( inst.pMover && inst.pMover->NowGrabbingLadder( inst ) )
-	{ return MotionKind::GrabLadder; }
-	if ( inst.pMover && inst.pMover->NowKnockBacking( inst ) )
-	{ return MotionKind::KnockBack; }
-	if ( inst.pMover && inst.pMover->NowSliding( inst ) )
-	{ return MotionKind::Slide; }
+	if ( !inst.pMover ) { return currKind; }
 	// else
-
-	const bool nowMoving = IsZero( inst.velocity.x ) ? false : true;
-	const bool onGround  = inst.onGround;
-	
-	if ( !onGround )
-	{
-		return	( Donya::SignBit( inst.velocity.y ) == 1 )
-				? MotionKind::Jump_Rise
-				: MotionKind::Jump_Fall;
-	}
-	// else
-	if ( nowMoving ) { return MotionKind::Run;	}
-	// else
-	if ( inst.inputManager.CurrentMoveDirection().y < 0.0f ) { return MotionKind::Brace; }
-	// else
-	return MotionKind::Idle;
+	return inst.pMover->GetNowMotionKind( inst );
 }
 
 Player::ShotManager::~ShotManager()
@@ -1810,9 +1814,26 @@ void Player::Normal::Move( Player &inst, float elapsedTime, const Map &terrain, 
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
 }
-bool Player::Normal::NowBracing( const Player &inst ) const
+Player::MotionKind Player::Normal::GetNowMotionKind( const Player &inst ) const
 {
-	return braceOneself;
+	const bool nowMoving = IsZero( inst.velocity.x ) ? false : true;
+	const bool &onGround = inst.onGround;
+	
+	if ( !onGround )
+	{
+		return	( Donya::SignBit( inst.velocity.y ) == 1 )
+				? MotionKind::Jump_Rise
+				: MotionKind::Jump_Fall;
+	}
+	// else
+
+	if ( nowMoving ) { return MotionKind::Run;	}
+	// else
+
+	if ( braceOneself ) { return MotionKind::Brace; }
+	// else
+
+	return MotionKind::Idle;
 }
 bool Player::Normal::ShouldChangeMover( const Player &inst ) const
 {
@@ -1939,6 +1960,10 @@ void Player::Slide::Move( Player &inst, float elapsedTime, const Map &terrain, f
 {
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
+}
+Player::MotionKind Player::Slide::GetNowMotionKind( const Player &inst ) const
+{
+	return MotionKind::Slide;
 }
 bool Player::Slide::ShouldChangeMover( const Player &inst ) const
 {
@@ -2228,12 +2253,13 @@ void Player::GrabLadder::Move( Player &inst, float elapsedTime, const Map &terra
 	inst.hurtBox.pos	= inst.body.pos;
 	grabArea.pos		= inst.body.pos;
 }
-bool Player::GrabLadder::NowGrabbingLadder( const Player &inst ) const
+Player::MotionKind Player::GrabLadder::GetNowMotionKind( const Player &inst ) const
 {
-	// Prioritize an other motion if now releasing
-	if ( ShouldChangeMover( inst ) ) { return false; }
+	// Prioritize the next motion than grabbing if now releasing.
+	// It prevent to take the grab motion in next(i.e. The player do not grab a ladder, but the motion still grabs a ladder)
+	if ( ShouldChangeMover( inst ) ) { return MotionKind::Idle; }
 	// else
-	return true;
+	return MotionKind::GrabLadder;
 }
 bool Player::GrabLadder::ShouldChangeMover( const Player &inst ) const
 {
@@ -2355,12 +2381,12 @@ void Player::KnockBack::Init( Player &inst )
 
 	inst.UpdateOrientation( knockedFromRight );
 
-	if ( !inst.prevSlidingStatus )
+	if ( inst.currMotionKind != MotionKind::Slide )
 	{
 		const float impulseSign = ( knockedFromRight ) ? -1.0f : 1.0f;
 		inst.lookingSign = -impulseSign;
 
-		if ( !inst.prevBracingStatus )
+		if ( inst.currMotionKind != MotionKind::Brace )
 		{
 			inst.velocity.x  = data.knockBackSpeed * impulseSign;
 		}
@@ -2369,7 +2395,7 @@ void Player::KnockBack::Init( Player &inst )
 	inst.motionManager.QuitShotMotion();
 	
 	timer		= 0.0f;
-	motionSpeed	= ( inst.prevBracingStatus ) ? data.braceStandFactor : 1.0f;
+	motionSpeed	= ( inst.currMotionKind == MotionKind::Brace ) ? data.braceStandFactor : 1.0f;
 }
 void Player::KnockBack::Uninit( Player &inst )
 {
@@ -2389,6 +2415,10 @@ void Player::KnockBack::Move( Player &inst, float elapsedTime, const Map &terrai
 {
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
+}
+Player::MotionKind Player::KnockBack::GetNowMotionKind( const Player &inst ) const
+{
+	return MotionKind::KnockBack;
 }
 bool Player::KnockBack::ShouldChangeMover( const Player &inst ) const
 {
@@ -2427,6 +2457,10 @@ void Player::Miss::Update( Player &inst, float elapsedTime, const Map &terrain )
 void Player::Miss::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
 	// No op
+}
+Player::MotionKind Player::Miss::GetNowMotionKind( const Player &inst ) const
+{
+	return inst.currMotionKind;
 }
 bool Player::Miss::Drawable( const Player &inst ) const
 {
@@ -2474,6 +2508,10 @@ void Player::Appear::Move( Player &inst, float elapsedTime, const Map &terrain, 
 {
 	// No op
 }
+Player::MotionKind Player::Appear::GetNowMotionKind( const Player &inst ) const
+{
+	return MotionKind::Appear;
+}
 bool Player::Appear::Drawable( const Player &inst ) const
 {
 	return visible;
@@ -2520,6 +2558,10 @@ void Player::Leave::Move( Player &inst, float elapsedTime, const Map &terrain, f
 {
 	// No op
 }
+Player::MotionKind Player::Leave::GetNowMotionKind( const Player &inst ) const
+{
+	return inst.currMotionKind;
+}
 bool Player::Leave::Drawable( const Player &inst ) const
 {
 	return visible;
@@ -2558,6 +2600,10 @@ void Player::WinningPose::Move( Player &inst, float elapsedTime, const Map &terr
 {
 	// No op
 }
+Player::MotionKind Player::WinningPose::GetNowMotionKind( const Player &inst ) const
+{
+	return MotionKind::Winning;
+}
 bool Player::WinningPose::ShouldChangeMover( const Player &inst ) const
 {
 	return inst.motionManager.WasCurrentMotionEnded();
@@ -2566,6 +2612,123 @@ std::function<void()> Player::WinningPose::GetChangeStateMethod( Player &inst ) 
 {
 	return [&inst]() { inst.AssignMover<Normal>(); };
 }
+
+void Player::Shoryuken::Init( Player &inst )
+{
+	MoverBase::Init( inst );
+
+	inst.hurtBox.exist	= false;
+	inst.velocity		= Donya::Vector3::Zero();
+	inst.motionManager.QuitShotMotion();
+
+	inst.GenerateSlideEffects();
+
+	timer			= 0.0f;
+	riseHSpeedAdjust= 0.0f;
+	nowRising		= true;
+	wasLanded		= false;
+
+	Donya::Sound::Play( Music::Player_Shoryuken );
+}
+void Player::Shoryuken::Uninit( Player &inst )
+{
+	inst.hurtBox.exist = true;
+}
+void Player::Shoryuken::Update( Player &inst, float elapsedTime, const Map &terrain )
+{
+	timer += elapsedTime;
+	UpdateVSpeed( inst, elapsedTime );
+
+	if ( inst.velocity.y < 0.0f )
+	{
+		nowRising = false;
+	}
+	if ( inst.onGround && !nowRising )
+	{
+		wasLanded = true;
+	}
+
+	UpdateHSpeed( inst, elapsedTime );
+
+	MotionUpdate( inst, elapsedTime );
+}
+void Player::Shoryuken::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
+{
+	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
+	MoveOnlyVertical  ( inst, elapsedTime, terrain );
+}
+Player::MotionKind Player::Shoryuken::GetNowMotionKind( const Player &inst ) const
+{
+	if ( nowRising ) { return MotionKind::Shoryuken_Fire; }
+	// else
+
+	if ( wasLanded ) { return MotionKind::Shoryuken_Landing; }
+	// else
+
+	return MotionKind::Shoryuken_Lag;
+}
+bool Player::Shoryuken::ShouldChangeMover( const Player &inst ) const
+{
+	return ( wasLanded && inst.motionManager.WasCurrentMotionEnded() );
+}
+std::function<void()> Player::Shoryuken::GetChangeStateMethod( Player &inst ) const
+{
+	return [&inst]() { inst.AssignMover<Normal>(); };
+}
+void Player::Shoryuken::UpdateHSpeed( Player &inst, float elapsedTime )
+{
+	if ( wasLanded )
+	{
+		inst.velocity.x = 0.0f;
+		return;
+	}
+	// else
+
+	const auto &data = Parameter().Get();
+	
+	const float inputSign = Donya::SignBitF( inst.inputManager.CurrentMoveDirection().x );
+
+	if ( nowRising )
+	{
+		riseHSpeedAdjust += data.shoryuRiseHSpeedAdjust * elapsedTime * ( inputSign * inst.lookingSign );
+		riseHSpeedAdjust =  Donya::Clamp( riseHSpeedAdjust, -data.shoryuRiseHSpeedRangeL, data.shoryuRiseHSpeedRangeR );
+		inst.velocity.x  =  ( data.shoryuRiseHSpeedBase + riseHSpeedAdjust ) * inst.lookingSign;
+	}
+	else
+	{
+		inst.velocity.x  = data.shoryuFallHSpeed * inputSign;
+	}
+}
+void Player::Shoryuken::UpdateVSpeed( Player &inst, float elapsedTime )
+{
+	const auto &data = Parameter().Get();
+	if ( data.shoryuEntireVSpeeds.empty() )
+	{
+		// Fail safe
+		inst.velocity.y = -1.0f;
+		return;
+	}
+	// else
+	if ( IsZero( data.shoryuEntireTakeSecond ) )
+	{
+		_ASSERT_EXPR( 0, L"Error: Division by zero!" );
+		// Fail safe
+		inst.velocity.y = -1.0f;
+		return;
+	}
+	// else
+
+	if ( data.shoryuEntireTakeSecond <= timer )
+	{
+		inst.velocity.y = data.shoryuEntireVSpeeds.back();
+		return;
+	}
+	// else
+
+	const float t = timer / data.shoryuEntireTakeSecond;
+	inst.velocity.y = Math::CalcBezierCurve( data.shoryuEntireVSpeeds, t );
+}
+
 
 // region Mover
 #pragma endregion
@@ -2814,7 +2977,6 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	shotManager		.Init();
 	commandManager	.Init();
 	currentHP			= data.maxHP;
-	prevSlidingStatus	= false;
 	onGround			= false;
 	wasJumpedWhileSlide	= false;
 	pressJumpSinceSlide = false;
@@ -2857,6 +3019,11 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	? AssignMover<Appear>()
 	: AssignMover<Normal>();
 
+	if ( pMover )
+	{
+		currMotionKind =  pMover->GetNowMotionKind( *this );
+	}
+
 
 	availableWeapon.Reset();
 	const auto &saveData = SaveData::Admin::Get().NowData();
@@ -2883,7 +3050,7 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 			p->exist	= source.exist;
 		};
 
-		if ( prevSlidingStatus )
+		if ( currMotionKind == MotionKind::Slide )
 		{
 			ApplyExceptPosition( &body,		data.slideHitBox  );
 			ApplyExceptPosition( &hurtBox,	data.slideHurtBox );
@@ -2916,7 +3083,7 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 
 	invincibleTimer.Update( *this, elapsedTime );
 	ApplyReceivedDamageIfHas( elapsedTime, terrain );
-	hurtBox.exist = ( invincibleTimer.NowWorking() ) ? false : true;
+	hurtBox.exist = ( invincibleTimer.NowWorking() || NowShoryuken() ) ? false : true;
 
 
 	pMover->Update( *this, elapsedTime, terrain );
@@ -2925,27 +3092,19 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 		auto ChangeMethod = pMover->GetChangeStateMethod( *this );
 		ChangeMethod();
 	}
+	if ( pMover->CanShoryuken( *this ) && commandManager.WantFire() && !IsZero( elapsedTime ) )
+	{
+		// Place on wide area
+		if ( !WillCollideToAroundTiles( GetNormalBody( /* ofHurtBox = */ false ), velocity * elapsedTime, terrain ) )
+		{
+			AssignMover<Shoryuken>();
+		}
+	}
 
-	// These are mainly used in ApplyReceivedDamageIfHas(),
-	// So storing status is here(last call of ApplyReceivedDamageIfHas() ~ next call that).
-	prevSlidingStatus = pMover->NowSliding( *this );
-	prevBracingStatus = pMover->NowBracing( *this );
-
+	currMotionKind = pMover->GetNowMotionKind( *this );
 
 	ShiftGunIfNeeded( elapsedTime );
 	pGun->Update( *this, elapsedTime );
-
-
-#if DEBUG_MODE
-	if ( commandManager.WantFire() )
-	{
-		Effect::Admin::Get().GenerateInstance
-		(
-			Effect::Kind::Charge_Complete, GetPosition()
-		);
-		Donya::Sound::Play( Music::Charge_Complete );
-	}
-#endif // DEBUG_MODE
 }
 void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -3076,11 +3235,11 @@ bool Player::NowMiss() const
 }
 bool Player::NowGrabbingLadder() const
 {
-	return ( pMover && pMover->NowGrabbingLadder( *this ) ) ? true : false;
+	return ( currMotionKind == MotionKind::GrabLadder );
 }
 bool Player::NowWinningPose() const
 {
-	return ( pMover && pMover->NowWinning( *this ) ) ? true : false;
+	return ( currMotionKind == MotionKind::Winning );
 }
 int  Player::GetCurrentHP() const
 {
@@ -3209,7 +3368,7 @@ void Player::ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain )
 	{
 		invincibleTimer.Start( Parameter().Get().invincibleSecond );
 
-		if ( prevSlidingStatus )
+		if ( currMotionKind == MotionKind::Slide )
 		{
 			// If now throughing under a tile, I do not knock-backing.
 			// Else do knock-backing but do not push back the position(it will process in KnockBack::Init()).
@@ -3245,6 +3404,24 @@ void Player::AssignGunByKind( Definition::WeaponKind kind )
 	default: _ASSERT_EXPR( 0, L"Unexpected Kind of Gun!" );
 		return;
 	}
+}
+bool Player::NowShoryuken() const
+{
+	constexpr MotionKind shoryukens[]
+	{
+		MotionKind::Shoryuken_Fire,
+		MotionKind::Shoryuken_Lag,
+		MotionKind::Shoryuken_Landing,
+	};
+	for ( const auto &it : shoryukens )
+	{
+		if ( currMotionKind == it )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 void Player::AssignCurrentBodyInfo( Donya::Collision::Box3F *p, bool useHurtBox ) const
 {
@@ -3400,13 +3577,26 @@ void Player::MoveVertical  ( float elapsedTime )
 }
 bool Player::NowShotable( float elapsedTime ) const
 {
-	if ( IsZero( elapsedTime )				) { return false; } // If game time is pausing
-	if ( !pMover							) { return false; }
-	if ( pMover->NowKnockBacking( *this )	) { return false; }
-	if ( pMover->NowAppearing	( *this )	) { return false; }
-	if ( pMover->NowWinning		( *this )	) { return false; }
-	if ( inputManager.NowHeading()			) { return false; } // It will be true when such as performance. Charge is allowed, but Shot is not allowed.
+	if ( IsZero( elapsedTime )		) { return false; } // If game time is pausing
+	if ( inputManager.NowHeading()	) { return false; } // It will be true when such as performance. Charge is allowed, but Shot is not allowed.
 	// else
+
+	constexpr MotionKind unshotableKinds[]
+	{
+		MotionKind::KnockBack,
+		MotionKind::Appear,
+		MotionKind::Winning,
+		MotionKind::Shoryuken_Fire,
+		MotionKind::Shoryuken_Lag,
+		MotionKind::Shoryuken_Landing,
+	};
+	for ( const auto &it : unshotableKinds )
+	{
+		if ( currMotionKind == it )
+		{
+			return false;
+		}
+	}
 
 	const bool generatable = ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
 	return ( generatable ) ? true : false;
@@ -3433,7 +3623,7 @@ void Player::Jump()
 	const auto &data = Parameter().Get();
 
 	onGround			= false;
-	wasJumpedWhileSlide	= prevSlidingStatus;
+	wasJumpedWhileSlide	= ( currMotionKind == MotionKind::Slide );
 	velocity.y			= data.jumpStrength;
 	nowGravity			= data.gravityRising;
 
@@ -3441,12 +3631,12 @@ void Player::Jump()
 }
 bool Player::Jumpable() const
 {
-	const bool useInSlide = pressJumpSinceSlide || ( pMover && pMover->NowSliding( *this ) );
+	const bool useInSlide = pressJumpSinceSlide || ( currMotionKind == MotionKind::Slide );
 	return ( onGround && inputManager.NowJumpable( useInSlide ) );
 }
 bool Player::WillUseJump() const
 {
-	const bool useInSlide = pressJumpSinceSlide || ( pMover && pMover->NowSliding( *this ) );
+	const bool useInSlide = pressJumpSinceSlide || ( currMotionKind == MotionKind::Slide );
 	return ( Jumpable() && inputManager.NowUseJump( useInSlide ) );
 }
 void Player::Fall( float elapsedTime )
@@ -3492,7 +3682,8 @@ void Player::Landing()
 	{
 		onGround = true;
 
-		if ( pMover && !pMover->NowKnockBacking( *this ) && !pMover->NowGrabbingLadder( *this ) )
+		const bool playableStatus = ( currMotionKind != MotionKind::KnockBack ) || ( currMotionKind != MotionKind::GrabLadder );
+		if ( playableStatus )
 		{
 			Donya::Sound::Play( Music::Player_Landing );
 		}
@@ -3592,7 +3783,7 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::Checkbox		( u8"慣性ジャンプ中か",				&wasJumpedWhileSlide );
 
 	bool tmp{};
-	tmp = pMover->NowKnockBacking( *this );
+	tmp = ( currMotionKind == MotionKind::KnockBack );
 	ImGui::Checkbox		( u8"のけぞり中か",					&tmp );
 	tmp = invincibleTimer.NowWorking();
 	ImGui::Checkbox		( u8"無敵中か",						&tmp );

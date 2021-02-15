@@ -50,7 +50,7 @@ namespace Performer
 		ImGui::DragFloat( u8"一周にかかる秒数", &cycleSecond, 0.01f );
 		cycleSecond = std::max( 0.01f, cycleSecond );
 
-		constexpr Donya::Vector2 offsetRange{ -2000.0f,	2000.0f	};
+		constexpr Donya::Vector2 offsetRange{ -512.0f,	512.0f	};
 		constexpr Donya::Vector2 scaleRange { -10.0f,	10.0f	};
 		ImGui::Helper::ShowBezier2DNode( u8"バウンド・移動量",	&bounceOffsets,		offsetRange.x,	offsetRange.y );
 		ImGui::Helper::ShowBezier2DNode( u8"バウンド・変形",		&bounceStretches,	scaleRange.x,	scaleRange.y  );

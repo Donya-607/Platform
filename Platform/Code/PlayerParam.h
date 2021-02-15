@@ -58,8 +58,15 @@ public:
 	
 	Bullet::FireDesc				fireParam;
 
-	float	commandStickDegreeMargin	= 15.0f;
+	float	commandStickDegreeMargin= 15.0f;
 	std::vector<Command::Part>		commands;
+	float	shoryuEntireTakeSecond	= 2.0f;
+	float	shoryuRiseHSpeedBase	= 1.0f; // velocity.x can be [base-rangeL ~ base+rangeR]
+	float	shoryuRiseHSpeedRangeL	= 1.0f; // Minus offset
+	float	shoryuRiseHSpeedRangeR	= 1.0f; // Plus offset
+	float	shoryuRiseHSpeedAdjust	= 1.0f; // Offset amount per second
+	float	shoryuFallHSpeed		= 1.0f;
+	std::vector<float>				shoryuEntireVSpeeds;
 
 	std::vector<float>				animePlaySpeeds;	// It size() == Player::MotionKind::MotionCount
 	std::vector<float>				animeTransSeconds;	// It interest only destination motion kind. It size() == Player::MotionKind::MotionCount
@@ -242,6 +249,19 @@ private:
 		}
 		if ( 22 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( shoryuEntireTakeSecond	),
+				CEREAL_NVP( shoryuRiseHSpeedBase	),
+				CEREAL_NVP( shoryuRiseHSpeedRangeL	),
+				CEREAL_NVP( shoryuRiseHSpeedRangeR	),
+				CEREAL_NVP( shoryuRiseHSpeedAdjust	),
+				CEREAL_NVP( shoryuFallHSpeed		),
+				CEREAL_NVP( shoryuEntireVSpeeds		)
+			);
+		}
+		if ( 23 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -250,4 +270,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 21 )
+CEREAL_CLASS_VERSION( PlayerParam, 22 )
