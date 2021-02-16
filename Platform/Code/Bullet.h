@@ -30,6 +30,7 @@ namespace Bullet
 		SuperBall,
 		Bone,
 		TogeheroBody,
+		ShoryukenCollision,
 
 		KindCount
 	};
@@ -41,6 +42,7 @@ namespace Bullet
 	struct SuperBallParam;
 	struct BoneParam;
 	struct TogeheroBodyParam;
+	struct ShoryuColParam;
 	namespace Parameter
 	{
 		void Load();
@@ -56,6 +58,7 @@ namespace Bullet
 		const SuperBallParam	&GetSuperBall();
 		const BoneParam			&GetBone();
 		const TogeheroBodyParam	&GetTogeheroBody();
+		const ShoryuColParam	&GetShoryuCol();
 
 		namespace Impl
 		{
@@ -66,6 +69,7 @@ namespace Bullet
 			void LoadSuperBall();
 			void LoadBone();
 			void LoadTogeheroBody();
+			void LoadShoryuCol();
 		#if USE_IMGUI
 			void UpdateBuster( const std::string &nodeCaption );
 			void UpdateGeneral( const std::string &nodeCaption );
@@ -74,6 +78,7 @@ namespace Bullet
 			void UpdateSuperBall( const std::string &nodeCaption );
 			void UpdateBone( const std::string &nodeCaption );
 			void UpdateTogeheroBody( const std::string &nodeCaption );
+			void UpdateShoryuCol( const std::string &nodeCaption );
 		#endif // USE_IMGUI
 		}
 	}

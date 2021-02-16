@@ -24,6 +24,7 @@ namespace Bullet
 	{
 		constexpr size_t kindCount = scast<size_t>( Kind::KindCount );
 		constexpr const char *modelFolderName = "Bullet/";
+		constexpr const char *emptyModelName = "EMPTY_MODEL";
 		constexpr std::array<const char *, kindCount> modelNames
 		{
 			"Buster",
@@ -32,6 +33,7 @@ namespace Bullet
 			"SuperBall",
 			"Bone",
 			"Togehero",
+			/* ShoryukenCollision */ emptyModelName,
 		};
 
 		static std::array<std::shared_ptr<ModelHelper::SkinningSet>, kindCount> modelPtrs{ nullptr };
@@ -44,6 +46,7 @@ namespace Bullet
 			for ( size_t i = 0; i < kindCount; ++i )
 			{
 				if ( modelPtrs[i] ) { continue; }
+				if ( std::strcmp( modelNames[i], emptyModelName ) == 0 ) { continue; }
 				// else
 
 				filePath = MakeModelPath( folderName + modelNames[i] );
@@ -82,6 +85,9 @@ namespace Bullet
 			if ( IsOutOfRange( kind ) ) { return nullptr; }
 			// else
 
+		#if 1 // ALLOW_NULLPTR
+			return modelPtrs[scast<size_t>( kind )];
+		#else
 			const auto &ptr = modelPtrs[scast<size_t>( kind )];
 			if ( !ptr )
 			{
@@ -91,6 +97,7 @@ namespace Bullet
 			// else
 
 			return ptr;
+		#endif // ALLOW_NULLPTR
 		}
 		constexpr const char *GetModelName( Kind kind )
 		{
@@ -112,6 +119,7 @@ namespace Bullet
 			Impl::LoadSuperBall();
 			Impl::LoadBone();
 			Impl::LoadTogeheroBody();
+			Impl::LoadShoryuCol();
 		}
 
 	#if USE_IMGUI
@@ -127,6 +135,7 @@ namespace Bullet
 			Impl::UpdateSuperBall	( u8"SuperBall" );
 			Impl::UpdateBone		( u8"Bone" );
 			Impl::UpdateTogeheroBody( u8"TogeheroBody" );
+			Impl::UpdateShoryuCol	( u8"ShoryukenCollision" );
 
 			ImGui::TreePop();
 		}
@@ -163,11 +172,13 @@ namespace Bullet
 	{
 		switch ( kind )
 		{
-		case Kind::Buster:		return "Buster";
-		case Kind::SkullBuster:	return "SkullBuster";
-		case Kind::SkullShield:	return "SkullShield";
-		case Kind::SuperBall:	return "SuperBall";
-		case Kind::Bone:		return "Bone";
+		case Kind::Buster:				return "Buster";
+		case Kind::SkullBuster:			return "SkullBuster";
+		case Kind::SkullShield:			return "SkullShield";
+		case Kind::SuperBall:			return "SuperBall";
+		case Kind::Bone:				return "Bone";
+		case Kind::TogeheroBody:		return "TogeheroBody";
+		case Kind::ShoryukenCollision:	return "ShoryukenCollision";
 		default: break;
 		}
 

@@ -171,6 +171,7 @@
     <ClCompile Include="Code\Bullet.cpp" />
     <ClCompile Include="Code\Bullets\Bone.cpp" />
     <ClCompile Include="Code\Bullets\Buster.cpp" />
+    <ClCompile Include="Code\Bullets\ShoryukenCollision.cpp" />
     <ClCompile Include="Code\Bullets\SkullBullet.cpp" />
     <ClCompile Include="Code\Bullets\SuperBall.cpp" />
     <ClCompile Include="Code\Bullets\TogeheroBody.cpp" />
@@ -272,6 +273,7 @@
     <ClInclude Include="Code\BulletParam.h" />
     <ClInclude Include="Code\Bullets\Bone.h" />
     <ClInclude Include="Code\Bullets\Buster.h" />
+    <ClInclude Include="Code\Bullets\ShoryukenCollision.h" />
     <ClInclude Include="Code\Bullets\SkullBullet.h" />
     <ClInclude Include="Code\Bullets\SuperBall.h" />
     <ClInclude Include="Code\Bullets\TogeheroBody.h" />

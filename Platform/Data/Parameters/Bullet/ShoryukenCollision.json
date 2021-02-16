@@ -1,0 +1,25 @@
+{
+    "ShoryukenCollision": {
+        "cereal_class_version": 0,
+        "basic": {
+            "cereal_class_version": 1,
+            "hitBoxOffset": {
+                "cereal_class_version": 0,
+                "x": 0.0,
+                "y": 0.4000000059604645,
+                "z": 0.10000000149011612
+            },
+            "hitBoxSize": {
+                "x": 0.6000000238418579,
+                "y": 1.2999999523162842,
+                "z": 0.699999988079071
+            },
+            "damage": {
+                "cereal_class_version": 0,
+                "amount": 14,
+                "type": 6
+            },
+            "animePlaySpeed": 1.0
+        }
+    }
+}

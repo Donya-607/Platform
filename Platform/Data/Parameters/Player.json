@@ -334,7 +334,7 @@
         ],
         "shotBufferSecond": 0.20000000298023225,
         "slideBufferSecond": 0.20000000298023225,
-        "commandStickDegreeMargin": 15.0,
+        "commandStickDegreeMargin": 20.0,
         "commands": [
             {
                 "cereal_class_version": 0,
@@ -354,15 +354,23 @@
                 ]
             }
         ],
-        "shoryuEntireTakeSecond": 1.5,
-        "shoryuRiseHSpeedBase": 3.0,
-        "shoryuRiseHSpeedRangeL": 2.0,
+        "shoryuEntireTakeSecond": 1.0,
+        "shoryuRiseHSpeedBase": 10.0,
+        "shoryuRiseHSpeedRangeL": 6.0,
         "shoryuRiseHSpeedRangeR": 5.0,
-        "shoryuRiseHSpeedAdjust": 20.0,
+        "shoryuRiseHSpeedAdjust": 60.0,
         "shoryuFallHSpeed": 2.0,
         "shoryuEntireVSpeeds": [
-            22.0,
-            -15.0
+            0.0,
+            25.445999145507814,
+            33.928001403808597,
+            11.565999984741211,
+            1.5420000553131104,
+            -3.8550000190734865,
+            -7.710999965667725,
+            -10.795000076293946,
+            -11.565999984741211,
+            -18.600000381469728
         ]
     }
 }

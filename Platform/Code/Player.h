@@ -564,6 +564,11 @@ private:
 	private:
 		void UpdateHSpeed( Player &instance, float elapsedTime );
 		void UpdateVSpeed( Player &instance, float elapsedTime );
+	private:
+		void GenerateCollision( Player &instance );
+		std::shared_ptr<Bullet::Base> FindAliveCollisionOrNullptr( Player &inst );
+		void UpdateCollision( Player &instance );
+		void RemoveCollision( Player &instance );
 	public:
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"è∏ó¥åù"; }

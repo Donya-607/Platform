@@ -15,6 +15,7 @@
 
 #include "Bullets/Buster.h"			// Use Buster::GetLivingCount()
 #include "Bullets/SkullBullet.h"	// Use Buster::SkullShield
+#include "Bullets/ShoryukenCollision.h"// Use Buster::ShoryuCol
 #include "Common.h"
 #include "FilePath.h"
 #include "Map.h"					// Use Map::ToWorldPos()
@@ -2623,6 +2624,8 @@ void Player::Shoryuken::Init( Player &inst )
 
 	inst.GenerateSlideEffects();
 
+	GenerateCollision( inst );
+
 	timer			= 0.0f;
 	riseHSpeedAdjust= 0.0f;
 	nowRising		= true;
@@ -2633,6 +2636,7 @@ void Player::Shoryuken::Init( Player &inst )
 void Player::Shoryuken::Uninit( Player &inst )
 {
 	inst.hurtBox.exist = true;
+	RemoveCollision( inst );
 }
 void Player::Shoryuken::Update( Player &inst, float elapsedTime, const Map &terrain )
 {
@@ -2642,6 +2646,7 @@ void Player::Shoryuken::Update( Player &inst, float elapsedTime, const Map &terr
 	if ( inst.velocity.y < 0.0f )
 	{
 		nowRising = false;
+		RemoveCollision( inst );
 	}
 	if ( inst.onGround && !nowRising )
 	{
@@ -2650,12 +2655,17 @@ void Player::Shoryuken::Update( Player &inst, float elapsedTime, const Map &terr
 
 	UpdateHSpeed( inst, elapsedTime );
 
+	UpdateCollision( inst );
+
 	MotionUpdate( inst, elapsedTime );
 }
 void Player::Shoryuken::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
 	MoveOnlyHorizontal( inst, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
 	MoveOnlyVertical  ( inst, elapsedTime, terrain );
+
+	// Apply the movement
+	UpdateCollision( inst );
 }
 Player::MotionKind Player::Shoryuken::GetNowMotionKind( const Player &inst ) const
 {
@@ -2727,6 +2737,58 @@ void Player::Shoryuken::UpdateVSpeed( Player &inst, float elapsedTime )
 
 	const float t = timer / data.shoryuEntireTakeSecond;
 	inst.velocity.y = Math::CalcBezierCurve( data.shoryuEntireVSpeeds, t );
+}
+void Player::Shoryuken::GenerateCollision( Player &inst )
+{
+	// Release some bullet instance
+	if ( inst.pGun ) { inst.pGun->Uninit( inst ); }
+
+	constexpr Donya::Vector3 right = Donya::Vector3::Right();
+	Bullet::FireDesc desc{};
+	desc.kind			= Bullet::Kind::ShoryukenCollision;
+	desc.initialSpeed	= 0.0f;
+	desc.direction		= ( 0.0f <= inst.lookingSign ) ? right : -right;
+	desc.position		= inst.GetPosition();
+	desc.owner			= inst.hurtBox.id;
+
+	inst.pBullet = std::make_shared<Bullet::ShoryuCol>();
+	inst.pBullet->Init( desc );
+	inst.pBullet->DisallowRemovingByOutOfScreen();
+
+	Bullet::Admin::Get().AddCopy( inst.pBullet );
+}
+std::shared_ptr<Bullet::Base> Player::Shoryuken::FindAliveCollisionOrNullptr( Player &inst )
+{
+	if ( !inst.pBullet ) { return nullptr; }
+	// else
+
+	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
+	if ( !pInstance || pInstance->WasProtected() )
+	{
+		// The handle has been invalided
+		inst.pBullet.reset();
+		return nullptr;
+	}
+	// else
+
+	return pInstance;
+}
+void Player::Shoryuken::UpdateCollision( Player &inst )
+{
+	std::shared_ptr<Bullet::Base> p = FindAliveCollisionOrNullptr( inst );
+	if ( !p ) { return; }
+	// else
+
+	p->SetWorldPosition( inst.GetPosition() );
+}
+void Player::Shoryuken::RemoveCollision( Player &inst )
+{
+	std::shared_ptr<Bullet::Base> p = FindAliveCollisionOrNullptr( inst );
+	if ( !p ) { return; }
+	// else
+
+	p->AllowRemovingByOutOfScreen();
+	p->SetLifeTime( 0.0f );
 }
 
 
@@ -2927,7 +2989,7 @@ void Player::ShieldGun::ExpandShield( Player &inst, const InputManager &input )
 	desc.direction		= Donya::Vector3::Zero();
 	desc.position		= CalcShieldPosition( inst );
 	desc.owner			= inst.hurtBox.id;
-	inst.pBullet = std::make_unique<Bullet::SkullShield>();
+	inst.pBullet = std::make_shared<Bullet::SkullShield>();
 	inst.pBullet->Init( desc );
 	inst.pBullet->DisallowRemovingByOutOfScreen();
 	Bullet::Admin::Get().AddCopy( inst.pBullet );
