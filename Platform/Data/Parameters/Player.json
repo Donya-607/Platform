@@ -217,7 +217,7 @@
         "gravityFalling": 30.0,
         "gravityFallingAccel": 135.0,
         "gravityMax": 80.0,
-        "inertialMoveSpeed": 7.0,
+        "inertialMoveSpeed": 5.0,
         "partMotions": [
             {
                 "key": 7,

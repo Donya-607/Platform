@@ -2048,6 +2048,12 @@ void Player::Slide::UpdateStatus( Player &inst, float elapsedTime, const Map &te
 	// I can finish the sliding here.
 	// The Jump() will fired in UpdateVertical() if finish by jump.
 
+	// Jumped, Fall from an edge, etc...
+	if ( !inst.onGround )
+	{
+		inst.wasJumpedWhileSlide = true;
+	}
+
 	if ( pGrabbingLadder )
 	{
 		inst.pTargetLadder = pGrabbingLadder;
@@ -3290,6 +3296,10 @@ void Player::ApplyAvailableWeapon( const Definition::WeaponAvailableStatus &newS
 void Player::ApplyAvailableWeapon( const Definition::WeaponKind &kind )
 {
 	availableWeapon.Activate( kind );
+}
+bool Player::OnGround() const
+{
+	return onGround;
 }
 bool Player::NowMiss() const
 {

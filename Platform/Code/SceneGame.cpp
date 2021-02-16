@@ -1935,6 +1935,12 @@ void SceneGame::UpdateCurrentRoomID()
 	// Up direction is only able to when grabbing a ladder
 	if ( Contain( adjoinDir, Dir::Up ) )
 	{
+		bool disallow = true;
+		if ( pPlayer->NowGrabbingLadder() )
+		{
+			disallow = false;
+		}
+
 		// But allow if may transition to horizontally
 		// If it is nothing, we can not transition to horizontally without a ladder from a room that has transition-able of [Up] and [Right] or [Left].
 		bool mayHorizontal = false;
@@ -1948,11 +1954,19 @@ void SceneGame::UpdateCurrentRoomID()
 			if ( right < currentRoomArea.Min().x ) { mayHorizontal = true; }
 			if ( left  > currentRoomArea.Max().x ) { mayHorizontal = true; }
 		}
-
-		if ( !mayHorizontal && !pPlayer->NowGrabbingLadder() )
+		if ( mayHorizontal )
 		{
-			return;
+			disallow = false;
 		}
+
+		// If the player climbed by something, we must allow that for visualize the player that off screen.
+		if ( pPlayer->OnGround() )
+		{
+			disallow = false;
+		}
+
+
+		if ( disallow ) { return; }
 		// else
 	}
 

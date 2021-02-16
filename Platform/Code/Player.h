@@ -694,6 +694,7 @@ public:
 	/// </summary>
 	void ApplyAvailableWeapon( const Definition::WeaponKind &unlockKind );
 public:
+	bool OnGround() const;
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;
 	bool NowWinningPose() const;
