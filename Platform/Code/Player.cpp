@@ -432,6 +432,17 @@ void PlayerParam::ShowImGuiNode()
 
 		ImGui::TreePop();
 	}
+	if ( ImGui::TreeNode( u8"écëúä÷òA" ) )
+	{
+		ImGui::DragFloat ( u8"ê∂ë∂ïbêî",		&visionLifeSecond,			0.01f );
+		ImGui::DragFloat ( u8"ê∂ê¨ä‘äu(ïb)",	&visionGenerateInterval,	0.01f );
+		ImGui::ColorEdit3( u8"ÉuÉåÉìÉhêF",	&visionColor.x );
+
+		visionLifeSecond		= std::max( 0.0f,	visionLifeSecond		);
+		visionGenerateInterval	= std::max( 0.001f,	visionGenerateInterval	);
+
+		ImGui::TreePop();
+	}
 
 	constexpr size_t motionCount = scast<size_t>( Player::MotionKind::MotionCount );
 	if ( animePlaySpeeds.size() != motionCount )
@@ -874,7 +885,7 @@ void Player::MotionManager::Init()
 {
 	prevKind = currKind = MotionKind::Jump_Fall;
 
-	auto resource = GetModelOrNullptr();
+	auto resource = ::GetModelOrNullptr();
 	model.Initialize( resource );
 	AssignPose( currKind );
 
@@ -942,6 +953,16 @@ bool Player::MotionManager::WasCurrentMotionEnded() const
 bool Player::MotionManager::NowShotPoses() const
 {
 	return shouldPoseShot;
+}
+const Donya::Model::Pose &Player::MotionManager::GetCurrentPose() const
+{
+	return model.pose;
+}
+const Donya::Model::SkinningModel *Player::MotionManager::GetModelOrNullptr() const
+{
+	if ( !model.pResource ) { return nullptr; }
+	// else
+	return &model.pResource->model;
 }
 void Player::MotionManager::QuitShotMotion()
 {
@@ -1706,6 +1727,60 @@ bool Player::Flusher::Drawable() const
 bool Player::Flusher::NowWorking() const
 {
 	return ( timer < workingSecond ) ? true : false;
+}
+
+
+void Player::LagVision::Init()
+{
+	visions.clear();
+}
+void Player::LagVision::Update( float elapsedTime )
+{
+	const float &wholeSecond = Parameter().Get().visionLifeSecond;
+	const float decrease = ( IsZero( wholeSecond ) ) ? 1.0f : 1.0f / wholeSecond;
+
+	for ( auto &it : visions )
+	{
+		it.alpha -= decrease * elapsedTime;
+	}
+
+	auto result = std::remove_if
+	(
+		visions.begin(), visions.end(),
+		[]( const Vision &element )
+		{
+			return ( element.alpha <= 0.0f );
+		}
+	);
+	visions.erase( result, visions.end() );
+}
+void Player::LagVision::Draw( RenderingHelper *pRenderer, const Donya::Model::SkinningModel &model ) const
+{
+	if ( !pRenderer ) { return; }
+	// else
+
+	const Donya::Vector3 &baseColor = Parameter().Get().visionColor;
+
+	Donya::Model::Constants::PerModel::Common constant{};
+	for ( const auto &it : visions )
+	{
+		constant.drawColor		= Donya::Vector4{ baseColor, it.alpha };
+		constant.worldMatrix	= it.matWorld;
+		pRenderer->UpdateConstant( constant );
+		pRenderer->ActivateConstantModel();
+
+		pRenderer->Render( model, it.pose );
+
+		pRenderer->DeactivateConstantModel();
+	}
+}
+void Player::LagVision::Add( const Donya::Model::Pose &pose, const Donya::Vector3 &pos, const Donya::Quaternion &orientation )
+{
+	Vision tmp;
+	tmp.alpha		= 1.0f;
+	tmp.pose		= pose;
+	tmp.matWorld	= Donya::Vector4x4::MakeTransformation( 1.0f, orientation, pos );
+	visions.emplace_back( std::move( tmp ) );
 }
 
 
@@ -2626,13 +2701,17 @@ void Player::Shoryuken::Init( Player &inst )
 
 	inst.hurtBox.exist	= false;
 	inst.velocity		= Donya::Vector3::Zero();
+
 	inst.motionManager.QuitShotMotion();
+	inst.motionManager.Update( inst, 0.0001f, /* stopAnimation = */ true );
+	inst.AddLagVision(); // Add the beggining pose of Shoryuken
 
 	inst.GenerateSlideEffects();
 
 	GenerateCollision( inst );
 
 	timer			= 0.0f;
+	visionInterval	= 0.0f;
 	riseHSpeedAdjust= 0.0f;
 	nowRising		= true;
 	wasLanded		= false;
@@ -2664,6 +2743,8 @@ void Player::Shoryuken::Update( Player &inst, float elapsedTime, const Map &terr
 	UpdateCollision( inst );
 
 	MotionUpdate( inst, elapsedTime );
+
+	GenerateVisionIfNeeded( inst, elapsedTime );
 }
 void Player::Shoryuken::Move( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -2795,6 +2876,20 @@ void Player::Shoryuken::RemoveCollision( Player &inst )
 
 	p->AllowRemovingByOutOfScreen();
 	p->SetLifeTime( 0.0f );
+}
+void Player::Shoryuken::GenerateVisionIfNeeded( Player &inst, float elapsedTime )
+{
+	if ( !nowRising ) { return; }
+	// else
+
+	visionInterval += elapsedTime;
+
+	const auto &genInterval = Parameter().Get().visionGenerateInterval;
+	if ( genInterval <= visionInterval )
+	{
+		visionInterval = 0.0f;
+		inst.AddLagVision();
+	}
 }
 
 
@@ -3044,6 +3139,7 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	motionManager	.Init();
 	shotManager		.Init();
 	commandManager	.Init();
+	lagVision		.Init();
 	currentHP			= data.maxHP;
 	onGround			= false;
 	wasJumpedWhileSlide	= false;
@@ -3149,30 +3245,14 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 	// else
 
 
-	invincibleTimer.Update( *this, elapsedTime );
-	ApplyReceivedDamageIfHas( elapsedTime, terrain );
-	hurtBox.exist = ( invincibleTimer.NowWorking() || NowShoryuken() ) ? false : true;
+	UpdateInvincible( elapsedTime, terrain );
 
-
-	pMover->Update( *this, elapsedTime, terrain );
-	if ( pMover->ShouldChangeMover( *this ) )
-	{
-		auto ChangeMethod = pMover->GetChangeStateMethod( *this );
-		ChangeMethod();
-	}
-	if ( pMover->CanShoryuken( *this ) && commandManager.WantFire() && !IsZero( elapsedTime ) )
-	{
-		// Place on wide area
-		if ( !WillCollideToAroundTiles( GetNormalBody( /* ofHurtBox = */ false ), velocity * elapsedTime, terrain ) )
-		{
-			AssignMover<Shoryuken>();
-		}
-	}
-
-	currMotionKind = pMover->GetNowMotionKind( *this );
+	UpdateMover( elapsedTime, terrain );
 
 	ShiftGunIfNeeded( elapsedTime );
 	pGun->Update( *this, elapsedTime );
+
+	lagVision.Update( elapsedTime );
 }
 void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
 {
@@ -3279,6 +3359,17 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 		pBullet->DrawHitBox( pRenderer, matVP );
 	}
 #endif // DEBUG_MODE
+}
+void Player::DrawVision( RenderingHelper *pRenderer ) const
+{
+	if ( !pRenderer ) { return; }
+	// else
+
+	const auto *pModel = motionManager.GetModelOrNullptr();
+	if ( !pModel ) { return; }
+	// else
+
+	lagVision.Draw( pRenderer, *pModel );
 }
 void Player::RecoverHP( int recovery )
 {
@@ -3477,6 +3568,36 @@ void Player::AssignGunByKind( Definition::WeaponKind kind )
 		return;
 	}
 }
+
+void Player::UpdateInvincible( float elapsedTime, const Map &terrain )
+{
+	invincibleTimer.Update( *this, elapsedTime );
+	ApplyReceivedDamageIfHas( elapsedTime, terrain );
+	hurtBox.exist = ( invincibleTimer.NowWorking() || NowShoryuken() ) ? false : true;
+}
+void Player::UpdateMover( float elapsedTime, const Map &terrain )
+{
+	if ( !pMover ) { return; }
+	// else
+
+	pMover->Update( *this, elapsedTime, terrain );
+	if ( pMover->ShouldChangeMover( *this ) )
+	{
+		auto ChangeMethod = pMover->GetChangeStateMethod( *this );
+		ChangeMethod();
+	}
+	if ( pMover->CanShoryuken( *this ) && commandManager.WantFire() && !IsZero( elapsedTime ) )
+	{
+		// Place on wide area
+		if ( !WillCollideToAroundTiles( GetNormalBody( /* ofHurtBox = */ false ), velocity * elapsedTime, terrain ) )
+		{
+			AssignMover<Shoryuken>();
+		}
+	}
+
+	currMotionKind = pMover->GetNowMotionKind( *this );
+}
+
 bool Player::NowShoryuken() const
 {
 	constexpr MotionKind shoryukens[]
@@ -3808,6 +3929,14 @@ void Player::GenerateSlideEffects() const
 	Effect::Admin::Get().AddCopy( handle ); // Leave management of the effect instance to admin
 	
 	Donya::Sound::Play( Music::Player_Dash );
+}
+void Player::AddLagVision()
+{
+	const auto &pose = motionManager.GetCurrentPose();
+
+	// I wanna adjust the hit-box to fit for drawing model, so I don't apply the offset for the position of drawing model.
+	const Donya::Vector3 &drawPos = body.pos;
+	lagVision.Add( pose, drawPos, orientation );
 }
 Donya::Vector4x4 Player::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 {

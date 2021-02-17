@@ -369,6 +369,7 @@
     <ClInclude Include="Code\Room.h" />
     <ClInclude Include="Code\SaveData.h" />
     <ClInclude Include="Code\Scene.h" />
+    <ClInclude Include="Code\SceneConstant.h" />
     <ClInclude Include="Code\SceneGame.h" />
     <ClInclude Include="Code\SceneLoad.h" />
     <ClInclude Include="Code\SceneLogo.h" />

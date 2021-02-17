@@ -38,6 +38,7 @@
 #include "PointLightStorage.h"
 #include "RenderingStuff.h"
 #include "SaveData.h"
+#include "SceneConstant.h"
 #include "StageNumber.h"
 
 #undef max
@@ -742,21 +743,6 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	return ReturnResult();
 }
 
-namespace
-{
-	enum class DrawTarget
-	{
-		Map		= 1 << 0,
-		Bullet	= 1 << 1,
-		Player	= 1 << 2,
-		Boss	= 1 << 3,
-		Enemy	= 1 << 4,
-		Item	= 1 << 5,
-
-		All		= Map | Bullet | Player | Boss | Enemy | Item
-	};
-	DEFINE_ENUM_FLAG_OPERATORS( DrawTarget )
-}
 void SceneTitle::Draw( float elapsedTime )
 {
 	ClearBackGround();
@@ -764,6 +750,8 @@ void SceneTitle::Draw( float elapsedTime )
 	RenderingStuff *p = RenderingStuffInstance::Get().Ptr();
 	if ( !p ) { return; }
 	// else
+
+	using Target = Definition::DrawTarget;
 
 	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix )
 	{
@@ -774,10 +762,9 @@ void SceneTitle::Draw( float elapsedTime )
 		constant.viewProjMatrix		= viewProjectionMatrix;
 		p->renderer.UpdateConstant( constant );
 	};
-	auto DrawObjects			= [&]( DrawTarget option, bool castShadow )
+	auto DrawObjects			= [&]( Target option, bool castShadow )
 	{
-		using Kind = DrawTarget;
-		auto Drawable = [&option]( Kind verify )
+		auto Drawable = [&option]( Target verify )
 		{
 			return scast<int>( option & verify ) != 0;
 		};
@@ -788,7 +775,7 @@ void SceneTitle::Draw( float elapsedTime )
 		? p->renderer.ActivateShaderShadowStatic()
 		: p->renderer.ActivateShaderNormalStatic();
 
-		if ( Drawable( Kind::Map ) && pMap ) { pMap->Draw( &p->renderer ); }
+		if ( Drawable( Target::Map ) && pMap ) { pMap->Draw( &p->renderer ); }
 
 		( castShadow )
 		? p->renderer.DeactivateShaderShadowStatic()
@@ -799,11 +786,12 @@ void SceneTitle::Draw( float elapsedTime )
 		? p->renderer.ActivateShaderShadowSkinning()
 		: p->renderer.ActivateShaderNormalSkinning();
 
-		if ( Drawable( Kind::Player	) && pPlayer	)	{ pPlayer->				Draw( &p->renderer ); }
-		if ( Drawable( Kind::Boss	) && pBoss		)	{ pBoss->				Draw( &p->renderer ); }
-		if ( Drawable( Kind::Enemy	) )					{ Enemy::Admin::Get().	Draw( &p->renderer ); }
-		if ( Drawable( Kind::Item	) )					{ Item::Admin::Get().	Draw( &p->renderer ); }
-		if ( Drawable( Kind::Bullet	) )					{ Bullet::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Target::Player	) && pPlayer	)	{ pPlayer->				Draw( &p->renderer ); }
+		if ( Drawable( Target::Vision	) && pPlayer	)	{ pPlayer->				DrawVision( &p->renderer ); }
+		if ( Drawable( Target::Boss		) && pBoss		)	{ pBoss->				Draw( &p->renderer ); }
+		if ( Drawable( Target::Enemy	) )					{ Enemy::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Target::Item		) )					{ Item::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Target::Bullet	) )					{ Bullet::Admin::Get().	Draw( &p->renderer ); }
 
 		( castShadow )
 		? p->renderer.DeactivateShaderShadowSkinning()
@@ -890,7 +878,7 @@ void SceneTitle::Draw( float elapsedTime )
 		}
 		p->renderer.ActivateConstantScene();
 
-		DrawObjects( DrawTarget::All, /* castShadow = */ true );
+		DrawObjects( Target::All ^ Target::Vision, /* castShadow = */ true );
 
 		p->renderer.DeactivateConstantScene();
 	}
@@ -927,7 +915,7 @@ void SceneTitle::Draw( float elapsedTime )
 		p->renderer.ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		p->renderer.ActivateShadowMap( p->shadowMap );
 
-		constexpr DrawTarget option = DrawTarget::All ^ DrawTarget::Bullet ^ DrawTarget::Item;
+		constexpr Target option = Target::All ^ Target::Bullet ^ Target::Vision ^ Target::Item;
 		DrawObjects( option, /* castShadow = */ false );
 
 		// Disable shadow
@@ -938,11 +926,13 @@ void SceneTitle::Draw( float elapsedTime )
 			p->renderer.ActivateConstantShadow();
 		}
 
-		DrawObjects( DrawTarget::Item, /* castShadow = */ false );
+		DrawObjects( Target::Item, /* castShadow = */ false );
 
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_Write );
-		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
+		DrawObjects( Target::Bullet, /* castShadow = */ false );
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
+
+		DrawObjects( Target::Vision, /* castShadow = */ false );
 
 		p->renderer.DeactivateShadowMap( p->shadowMap );
 		p->renderer.DeactivateSamplerShadow();

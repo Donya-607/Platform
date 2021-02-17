@@ -232,6 +232,8 @@ private:
 		bool WasCurrentMotionEnded() const;
 		MotionKind CurrentKind() const { return currKind; }
 		bool NowShotPoses() const;
+		const Donya::Model::Pose &GetCurrentPose() const;
+		const Donya::Model::SkinningModel *GetModelOrNullptr() const;
 	private:
 		void UpdateShotMotion( Player &instance, float elapsedTime );
 		void ApplyPartMotion( Player &instance, float elapsedTime, MotionKind useMotion );
@@ -337,6 +339,24 @@ private:
 		/// It means now invincible.
 		/// </summary>
 		bool NowWorking() const;
+	};
+	class LagVision
+	{
+	private:
+		struct Vision
+		{
+			float				alpha = 1.0f;
+			Donya::Model::Pose	pose;
+			Donya::Vector4x4	matWorld;
+		};
+	private:
+		std::vector<Vision> visions;
+	public:
+		void Init();
+		void Update( float elapsedTime );
+		void Draw( RenderingHelper *pRenderer, const Donya::Model::SkinningModel &model ) const;
+	public:
+		void Add( const Donya::Model::Pose &pose, const Donya::Vector3 &wsPos, const Donya::Quaternion &orientation );
 	};
 #pragma region Mover
 	class MoverBase
@@ -548,6 +568,7 @@ private:
 	{
 	private:
 		float	timer			= 0.0f;
+		float	visionInterval	= 0.0f;
 		float	riseHSpeedAdjust= 0.0f;
 		bool	nowRising		= true;
 		bool	wasLanded		= false; // After ended the attack
@@ -569,6 +590,8 @@ private:
 		std::shared_ptr<Bullet::Base> FindAliveCollisionOrNullptr( Player &inst );
 		void UpdateCollision( Player &instance );
 		void RemoveCollision( Player &instance );
+	private:
+		void GenerateVisionIfNeeded( Player &instance, float elapsedTime );
 	public:
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"è∏ó¥åù"; }
@@ -654,6 +677,7 @@ private:
 	ShotManager							shotManager;
 	CommandManager						commandManager;
 	Flusher								invincibleTimer;
+	LagVision							lagVision;
 	std::unique_ptr<MoverBase>			pMover				= nullptr;
 	std::unique_ptr<GunBase>			pGun				= nullptr;
 	std::shared_ptr<Bullet::Base>		pBullet				= nullptr;
@@ -682,6 +706,7 @@ public:
 
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
+	void DrawVision( RenderingHelper *pRenderer ) const;
 public:
 	void RecoverHP( int recovery );
 	void ChargeFully();
@@ -748,6 +773,9 @@ private:
 	}
 	void AssignGunByKind( Definition::WeaponKind kind );
 private:
+	void UpdateInvincible( float elapsedTime, const Map &terrain );
+	void UpdateMover( float elapsedTime, const Map &terrain );
+private:
 	bool NowShoryuken() const;
 	void AssignCurrentBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
 	Donya::Collision::Box3F GetNormalBody ( bool ofHurtBox ) const;
@@ -772,7 +800,9 @@ private:
 	void Fall( float elapsedTime );
 	void Landing();
 	void ShiftGunIfNeeded( float elapsedTime );
+private:
 	void GenerateSlideEffects() const;
+	void AddLagVision();
 private:
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 public:

@@ -1,6 +1,6 @@
 {
     "Player": {
-        "cereal_class_version": 22,
+        "cereal_class_version": 23,
         "moveSpeed": 5.0,
         "jumpStrength": 18.5,
         "maxFallSpeed": 20.0,
@@ -147,7 +147,7 @@
             1.0,
             1.0,
             1.0,
-            1.0
+            1.5
         ],
         "chargeParams": [
             {
@@ -371,6 +371,13 @@
             -10.795000076293946,
             -11.565999984741211,
             -18.600000381469728
-        ]
+        ],
+        "visionLifeSecond": 0.699999988079071,
+        "visionGenerateInterval": 0.04800000041723251,
+        "visionColor": {
+            "x": 0.125490203499794,
+            "y": 1.8823529481887818,
+            "z": 0.125490203499794
+        }
     }
 }

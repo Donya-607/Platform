@@ -67,6 +67,9 @@ public:
 	float	shoryuRiseHSpeedAdjust	= 1.0f; // Offset amount per second
 	float	shoryuFallHSpeed		= 1.0f;
 	std::vector<float>				shoryuEntireVSpeeds;
+	float	visionLifeSecond		= 0.2f;
+	float	visionGenerateInterval	= 0.2f; // Second
+	Donya::Vector3 visionColor{ 0.2f, 0.2f, 0.2f };
 
 	std::vector<float>				animePlaySpeeds;	// It size() == Player::MotionKind::MotionCount
 	std::vector<float>				animeTransSeconds;	// It interest only destination motion kind. It size() == Player::MotionKind::MotionCount
@@ -262,6 +265,15 @@ private:
 		}
 		if ( 23 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( visionLifeSecond		),
+				CEREAL_NVP( visionGenerateInterval	),
+				CEREAL_NVP( visionColor				)
+			);
+		}
+		if ( 24 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -270,4 +282,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 22 )
+CEREAL_CLASS_VERSION( PlayerParam, 23 )
