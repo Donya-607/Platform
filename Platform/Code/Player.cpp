@@ -1542,8 +1542,8 @@ void Player::CommandManager::Init()
 		it.Init( sumMarginSecond );
 	}
 
-	currTrigger	= false;
-	prevTrigger	= false;
+	currPress	= false;
+	prevPress	= false;
 	wantFire	= false;
 }
 void Player::CommandManager::Update( Player &inst, float elapsedTime )
@@ -1574,27 +1574,30 @@ void Player::CommandManager::Update( Player &inst, float elapsedTime )
 	}
 
 
-	prevTrigger = currTrigger;
-	currTrigger = input.NowTriggerShot();
-
-
-	bool accepted = false;
+	bool canFire = false;
 	for ( auto &proccessor : processors )
 	{
 		proccessor.Update( sticks, elapsedTime );
 		if ( proccessor.Accepted() )
 		{
-			accepted = true;
+			canFire = true;
 		}
 	}
-	if ( accepted )
+	if ( canFire )
 	{
-		const bool triggerOrRelease = ( currTrigger != prevTrigger );
+		// Only accept the trigger/release after succeeded
+		prevPress = currPress;
+		currPress = input.NowUseShot();
+
+		const bool triggerOrRelease = ( currPress != prevPress );
 		wantFire = triggerOrRelease;
 	}
 	else
 	{
-		wantFire = false;
+		// The current status must be update for support the input in succeeded
+		prevPress = false;
+		currPress = input.NowUseShot();
+		wantFire  = false;
 	}
 }
 #if USE_IMGUI
@@ -3594,8 +3597,6 @@ void Player::UpdateMover( float elapsedTime, const Map &terrain )
 			AssignMover<Shoryuken>();
 		}
 	}
-
-	currMotionKind = pMover->GetNowMotionKind( *this );
 }
 
 bool Player::NowShoryuken() const
@@ -3772,6 +3773,7 @@ bool Player::NowShotable( float elapsedTime ) const
 {
 	if ( IsZero( elapsedTime )		) { return false; } // If game time is pausing
 	if ( inputManager.NowHeading()	) { return false; } // It will be true when such as performance. Charge is allowed, but Shot is not allowed.
+	if ( commandManager.WantFire()	) { return false; } // Prioritize the Shoryuken
 	// else
 
 	constexpr MotionKind unshotableKinds[]

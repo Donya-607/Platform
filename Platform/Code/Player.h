@@ -307,8 +307,8 @@ private:
 		#endif // USE_IMGUI
 		};
 	private:
-		bool					currTrigger	= false;
-		bool					prevTrigger	= false;
+		bool					currPress	= false;
+		bool					prevPress	= false;
 		bool					wantFire	= false;
 		SticksType				sticks;
 		std::vector<Processor>	processors;
@@ -757,6 +757,10 @@ private:
 		}
 
 		pMover = std::make_unique<Mover>();
+
+		// The Init() may refers now motion kind
+		currMotionKind = pMover->GetNowMotionKind( *this );
+
 		pMover->Init( *this );
 	}
 	template<class Gun>

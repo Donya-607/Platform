@@ -21,6 +21,14 @@ namespace ModelHelper
 	}
 	void SkinningOperator::SetInterpolationSecond( float takingSecond )
 	{
+		if ( IsZero( takingSecond ) )
+		{
+			interpolation.transSecond  = 0.0f;
+			interpolation.transPercent = 1.0f;
+			return;
+		}
+		// else
+
 		interpolation.transSecond = takingSecond;
 	}
 	Donya::Model::Pose &SkinningOperator::GetCurrentPose()
@@ -55,7 +63,7 @@ namespace ModelHelper
 		if ( motionIndex != interpolation.currMotionIndex )
 		{
 			Interpolation &lerp = interpolation;
-			if ( lerp.transPercent < 1.0f )
+			if ( lerp.transPercent < 1.0f && !IsZero( lerp.transSecond ) )
 			{
 				// Use the lerp-ing pose
 				lerp.prevPose = lerp.lerpedPose;
