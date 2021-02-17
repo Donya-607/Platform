@@ -690,6 +690,7 @@ private:
 	bool								wasJumpedWhileSlide	= false;
 	bool								pressJumpSinceSlide	= false;// Information from: Slide state, to: Normal state
 	MotionKind							currMotionKind		= MotionKind::Idle;
+	MotionKind							prevMotionKind		= MotionKind::Idle;
 
 	struct DamageDesc
 	{
@@ -759,7 +760,8 @@ private:
 
 		pMover = std::make_unique<Mover>();
 
-		// The Init() may refers now motion kind
+		// The Init() may refers the motion kinds
+		prevMotionKind = currMotionKind;
 		currMotionKind = pMover->GetNowMotionKind( *this );
 
 		pMover->Init( *this );

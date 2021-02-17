@@ -2466,12 +2466,12 @@ void Player::KnockBack::Init( Player &inst )
 
 	inst.UpdateOrientation( knockedFromRight );
 
-	if ( inst.currMotionKind != MotionKind::Slide )
+	if ( inst.prevMotionKind != MotionKind::Slide )
 	{
 		const float impulseSign = ( knockedFromRight ) ? -1.0f : 1.0f;
 		inst.lookingSign = -impulseSign;
 
-		if ( inst.currMotionKind != MotionKind::Brace )
+		if ( inst.prevMotionKind != MotionKind::Brace )
 		{
 			inst.velocity.x  = data.knockBackSpeed * impulseSign;
 		}
@@ -2480,7 +2480,7 @@ void Player::KnockBack::Init( Player &inst )
 	inst.motionManager.QuitShotMotion();
 	
 	timer		= 0.0f;
-	motionSpeed	= ( inst.currMotionKind == MotionKind::Brace ) ? data.braceStandFactor : 1.0f;
+	motionSpeed	= ( inst.prevMotionKind == MotionKind::Brace ) ? data.braceStandFactor : 1.0f;
 }
 void Player::KnockBack::Uninit( Player &inst )
 {
@@ -3186,11 +3186,6 @@ void Player::Init( const PlayerInitializer &initializer, const Map &terrain, boo
 	? AssignMover<Appear>()
 	: AssignMover<Normal>();
 
-	if ( pMover )
-	{
-		currMotionKind =  pMover->GetNowMotionKind( *this );
-	}
-
 
 	availableWeapon.Reset();
 	const auto &saveData = SaveData::Admin::Get().NowData();
@@ -3578,7 +3573,10 @@ void Player::AssignGunByKind( Definition::WeaponKind kind )
 {
 	using WP = Definition::WeaponKind;
 
-	_ASSERT_EXPR( 2 == scast<int>( WP::WeaponCount ), L"Please add the new kind's case to switch statement!" );
+#if DEBUG_MODE
+	constexpr int weaponCount = scast<int>( WP::WeaponCount ) - 1; // Except Shoryuken
+	_ASSERT_EXPR( weaponCount == 2, L"Please add the new kind's case to switch statement!" );
+#endif // DEBUG_MODE
 
 	switch ( kind )
 	{

@@ -200,6 +200,7 @@ void SceneLoad::Init()
 			Bundle{ ID::Bullet_HitBone,					"./Data/Sounds/SE/Bullet/Hit_Bone.ogg",					false	},
 			Bundle{ ID::Bullet_HitBuster,				"./Data/Sounds/SE/Bullet/Hit_Buster.wav",				false	},
 			Bundle{ ID::Bullet_HitShield,				"./Data/Sounds/SE/Bullet/Hit_Shield.wav",				false	},
+			Bundle{ ID::Bullet_HitShoryuken,			"./Data/Sounds/SE/Bullet/Hit_Shoryuken.wav",			false	},
 			Bundle{ ID::Bullet_HitSuperBall,			"./Data/Sounds/SE/Bullet/Hit_SuperBall.ogg",			false	},
 			Bundle{ ID::Bullet_Protected,				"./Data/Sounds/SE/Bullet/Protected.wav",				false	},
 			Bundle{ ID::Bullet_ShotBone,				"./Data/Sounds/SE/Bullet/Shot_Bone.ogg",				false	},

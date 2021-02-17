@@ -15,6 +15,7 @@ namespace Music
 		Bullet_HitBone,
 		Bullet_HitBuster,
 		Bullet_HitShield,
+		Bullet_HitShoryuken,
 		Bullet_HitSuperBall,
 		Bullet_Protected,
 		Bullet_ShotBone,

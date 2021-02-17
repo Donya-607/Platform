@@ -51,7 +51,7 @@ namespace Bullet
 	}
 	void ShoryuCol::PlayCollidedSE() const
 	{
-		// No op
+		Donya::Sound::Play( Music::Bullet_HitShoryuken );
 	}
 	Definition::Damage ShoryuCol::GetDamageParameter() const
 	{
