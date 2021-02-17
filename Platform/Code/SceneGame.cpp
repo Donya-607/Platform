@@ -3023,7 +3023,12 @@ void SceneGame::UseImGui( float elapsedTime )
 		SaveData::File tmp = admin.NowData();
 		if ( unlock )
 		{
-			tmp.availableWeapons.Activate( Definition::WeaponKind::SkullShield );
+			using WP = Definition::WeaponKind;
+			constexpr int count = scast<int>( WP::WeaponCount );
+			for ( int i = 0; i < count; ++i )
+			{
+				tmp.availableWeapons.Activate( scast<WP>( i ) );
+			}
 		}
 		else
 		{

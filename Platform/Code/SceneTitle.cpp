@@ -1717,6 +1717,7 @@ void SceneTitle::PlayerInit( const Map &terrain )
 
 	pPlayer = std::make_unique<Player>();
 	pPlayer->Init( playerIniter, terrain, /* withAppearPerformance = */ false );
+	pPlayer->ApplyAvailableWeapon( Definition::WeaponKind::Shoryuken );
 }
 void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 {
@@ -1725,7 +1726,15 @@ void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 
 	const Player::Input input = MakePlayerInput( elapsedTime );
 
+	const bool oldShoryuStatus = pPlayer->NowShoryuken();
 	pPlayer->Update( elapsedTime, input, terrain );
+	if ( !oldShoryuStatus && pPlayer->NowShoryuken() )
+	{
+		auto &saveAdmin = SaveData::Admin::Get();
+		saveAdmin.Write( Definition::WeaponKind::Shoryuken );
+		saveAdmin.Save();
+	}
+
 }
 Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 {

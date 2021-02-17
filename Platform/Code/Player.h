@@ -723,6 +723,7 @@ public:
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;
 	bool NowWinningPose() const;
+	bool NowShoryuken() const;
 	int  GetCurrentHP() const;
 	Donya::Vector3			GetVelocity()		const;
 	Donya::Collision::Box3F	GetHurtBox()		const;
@@ -780,7 +781,6 @@ private:
 	void UpdateInvincible( float elapsedTime, const Map &terrain );
 	void UpdateMover( float elapsedTime, const Map &terrain );
 private:
-	bool NowShoryuken() const;
 	void AssignCurrentBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
 	Donya::Collision::Box3F GetNormalBody ( bool ofHurtBox ) const;
 	Donya::Collision::Box3F GetSlidingBody( bool ofHurtBox ) const;

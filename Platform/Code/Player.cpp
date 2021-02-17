@@ -3233,9 +3233,12 @@ void Player::Update( float elapsedTime, const Input &input, const Map &terrain )
 	}
 #endif // USE_IMGUI
 
-	inputManager	.Update( *this, elapsedTime, input );
-	commandManager	.Update( *this, elapsedTime );
-	shotManager		.Update( *this, elapsedTime );
+	inputManager.Update( *this, elapsedTime, input );
+	shotManager	.Update( *this, elapsedTime );
+	if ( availableWeapon.IsAvailable( Definition::WeaponKind::Shoryuken ) )
+	{
+		commandManager.Update( *this, elapsedTime );
+	}
 
 	hurtBox.UpdateIgnoreList( elapsedTime );
 
@@ -3406,6 +3409,24 @@ bool Player::NowGrabbingLadder() const
 bool Player::NowWinningPose() const
 {
 	return ( currMotionKind == MotionKind::Winning );
+}
+bool Player::NowShoryuken() const
+{
+	constexpr MotionKind shoryukens[]
+	{
+		MotionKind::Shoryuken_Fire,
+		MotionKind::Shoryuken_Lag,
+		MotionKind::Shoryuken_Landing,
+	};
+	for ( const auto &it : shoryukens )
+	{
+		if ( currMotionKind == it )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 int  Player::GetCurrentHP() const
 {
@@ -3599,24 +3620,6 @@ void Player::UpdateMover( float elapsedTime, const Map &terrain )
 	}
 }
 
-bool Player::NowShoryuken() const
-{
-	constexpr MotionKind shoryukens[]
-	{
-		MotionKind::Shoryuken_Fire,
-		MotionKind::Shoryuken_Lag,
-		MotionKind::Shoryuken_Landing,
-	};
-	for ( const auto &it : shoryukens )
-	{
-		if ( currMotionKind == it )
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
 void Player::AssignCurrentBodyInfo( Donya::Collision::Box3F *p, bool useHurtBox ) const
 {
 	p->pos			= ( useHurtBox ) ? hurtBox.pos			: body.pos;
