@@ -6,6 +6,7 @@
 #include "Effect/EffectKind.h"
 
 #include "Donya/Loader.h"
+#include "Donya/Random.h"			// Use for decide the playing sound of buster
 #include "Donya/Sound.h"
 #include "Donya/Template.h"			// Use AppendVector()
 #if DEBUG_MODE
@@ -2964,7 +2965,18 @@ void Player::BusterGun::Fire( Player &inst, const InputManager &input )
 	}
 		
 	Bullet::Admin::Get().RequestFire( desc );
-	Donya::Sound::Play( Music::Bullet_ShotBuster );
+
+
+	constexpr int soundBegin	= scast<int>( Music::Bullet_ShotBuster_Min );
+	constexpr int soundEnd		= scast<int>( Music::Bullet_ShotBuster_Max );
+	constexpr int soundCount	= soundEnd - soundBegin;
+	int playSound = prevPlaySound;
+	while ( playSound == prevPlaySound )
+	{
+		playSound = scast<int>( Donya::Random::GenerateInt( soundCount ) );
+	}
+	prevPlaySound = playSound;
+	Donya::Sound::Play( scast<Music::ID>( soundBegin + playSound ) );
 }
 
 void Player::ShieldGun::Init( Player &inst )
@@ -3616,6 +3628,9 @@ void Player::UpdateMover( float elapsedTime, const Map &terrain )
 			AssignMover<Shoryuken>();
 		}
 	}
+
+	prevMotionKind = currMotionKind;
+	currMotionKind = pMover->GetNowMotionKind( *this );
 }
 
 void Player::AssignCurrentBodyInfo( Donya::Collision::Box3F *p, bool useHurtBox ) const

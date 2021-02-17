@@ -19,7 +19,9 @@ namespace Music
 		Bullet_HitSuperBall,
 		Bullet_Protected,
 		Bullet_ShotBone,
-		Bullet_ShotBuster,
+		Bullet_ShotBuster_Min,	// Begin of variation
+		Bullet_ShotBuster_1,
+		Bullet_ShotBuster_Max,	// End
 		Bullet_ShotShield_Expand,
 		Bullet_ShotShield_Throw,
 		Bullet_ShotSkullBuster,

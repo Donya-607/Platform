@@ -623,6 +623,8 @@ private:
 	};
 	class BusterGun : public GunBase
 	{
+	private:
+		int prevPlaySound = 0;
 	public:
 		bool Chargeable() const override;
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
