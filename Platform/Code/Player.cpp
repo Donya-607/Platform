@@ -3919,6 +3919,7 @@ void Player::ShiftGunIfNeeded( float elapsedTime )
 
 	using WP = Definition::WeaponKind;
 	constexpr int kindCount = scast<int>( WP::WeaponCount );
+	constexpr int exceptIndex = scast<int>( WP::Shoryuken );
 
 	int index = scast<int>( pGun->GetKind() );
 	const int oldIndex = index;
@@ -3932,7 +3933,7 @@ void Player::ShiftGunIfNeeded( float elapsedTime )
 		while ( index <  0			) { index += kindCount; }
 		while ( index >= kindCount	) { index -= kindCount; }
 	}
-	while ( !availableWeapon.IsAvailable( scast<WP>( index ) ) );
+	while ( !availableWeapon.IsAvailable( scast<WP>( index ) ) || index == exceptIndex );
 
 	if ( index != oldIndex )
 	{
