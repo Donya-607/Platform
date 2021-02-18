@@ -191,6 +191,8 @@ namespace Effect
 			return Make( u"Hit_Buster.efk" );
 		case Effect::Kind::Hit_ChargedBuster:
 			return Make( u"Hit_ChargedBuster.efk" );
+		case Effect::Kind::Hit_Shoryuken:
+			return Make( u"Hit_Shoryuken.efk" );
 		case Effect::Kind::HurtDamage:
 			return Make( u"Hurt.efk" );
 		case Effect::Kind::Player_Appear:
