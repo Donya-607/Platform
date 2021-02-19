@@ -572,6 +572,7 @@ private:
 		float	riseHSpeedAdjust= 0.0f;
 		bool	nowRising		= true;
 		bool	wasLanded		= false; // After ended the attack
+		std::shared_ptr<Bullet::Base> hCollision = nullptr;
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
@@ -587,7 +588,7 @@ private:
 		void UpdateVSpeed( Player &instance, float elapsedTime );
 	private:
 		void GenerateCollision( Player &instance );
-		std::shared_ptr<Bullet::Base> FindAliveCollisionOrNullptr( Player &inst );
+		std::shared_ptr<Bullet::Base> FindAliveCollisionOrNullptr();
 		void UpdateCollision( Player &instance );
 		void RemoveCollision( Player &instance );
 	private:
@@ -605,10 +606,10 @@ private:
 	private:
 		Definition::WeaponKind kind = Definition::WeaponKind::Buster;
 	public:
-		virtual ~GunBase() = default;
+		virtual ~GunBase();
 	public:
 		virtual void Init( Player &instance );
-		virtual void Uninit( Player &instance );
+		virtual void Uninit();
 		virtual void Update( Player &instance, float elapsedTime );
 		/// <summary>
 		/// Will called after the Player::PhysicUpdate()
@@ -646,10 +647,10 @@ private:
 	class ShieldGun : public GunBase
 	{
 	private:
-		bool takeShield = false;
+		std::shared_ptr<Bullet::Base> hShield = nullptr;
 	public:
 		void Init( Player &instance ) override;
-		void Uninit( Player &instance ) override;
+		void Uninit() override;
 		void Update( Player &instance, float elapsedTime ) override;
 		void MovedUpdate( Player &instance, float elapsedTime ) override;
 	public:
@@ -666,7 +667,8 @@ private:
 		}
 	#endif // USE_IMGUI
 	private:
-		void ReleaseShieldHandle( Player &instance );
+		std::shared_ptr<Bullet::Base> FindAliveShieldOrNullptr();
+		void ReleaseShieldHandle();
 		Donya::Vector3 CalcThrowDirection( const Player &instance, const InputManager &input ) const;
 		Donya::Vector3 CalcShieldPosition( const Player &instance ) const;
 		void ExpandShield( Player &instance, const InputManager &input );
@@ -688,7 +690,6 @@ private:
 	LagVision							lagVision;
 	std::unique_ptr<MoverBase>			pMover				= nullptr;
 	std::unique_ptr<GunBase>			pGun				= nullptr;
-	std::shared_ptr<Bullet::Base>		pBullet				= nullptr;
 	std::weak_ptr<const Tile>			pTargetLadder{};			// It only used for initialization of Player::GrabLadder as reference
 	Definition::WeaponAvailableStatus	availableWeapon;
 	float								nowGravity			= 0.0f;
@@ -779,7 +780,7 @@ private:
 	{
 		if ( pGun )
 		{
-			pGun->Uninit( *this );
+			pGun->Uninit();
 			pGun.reset();
 		}
 

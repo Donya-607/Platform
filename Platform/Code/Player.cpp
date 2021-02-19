@@ -602,6 +602,9 @@ void PlayerParam::ShowImGuiNode()
 }
 #endif // USE_IMGUI
 
+
+#pragma region Manager
+
 void Player::InputManager::Init()
 {
 	constexpr float margin = 2.0f;
@@ -1424,6 +1427,9 @@ void Player::ShotManager::StopLoopSFXIfPlaying( bool forcely )
 	Donya::Sound::Stop( Music::Charge_Loop, /* isEnableForAll = */ true );
 }
 
+// region Manager
+#pragma endregion
+
 
 #pragma region Command
 
@@ -1691,6 +1697,8 @@ void Player::CommandManager::ShowImGuiNode( const char *nodeCaption )
 #pragma endregion
 
 
+#pragma region Other
+
 Player::Flusher::~Flusher()
 {
 	fxHurt.Stop();
@@ -1786,6 +1794,9 @@ void Player::LagVision::Add( const Donya::Model::Pose &pose, const Donya::Vector
 	tmp.matWorld	= Donya::Vector4x4::MakeTransformation( 1.0f, orientation, pos );
 	visions.emplace_back( std::move( tmp ) );
 }
+
+// region Other
+#pragma endregion
 
 
 #pragma region Mover
@@ -2527,7 +2538,7 @@ void Player::Miss::Init( Player &inst )
 	inst.onGround		= false;
 
 	// Release some bullet instance
-	if ( inst.pGun ) { inst.pGun->Uninit( inst ); }
+	if ( inst.pGun ) { inst.pGun->Uninit(); }
 
 	// Stop charging Effect/Sound
 	inst.shotManager.Uninit();
@@ -2712,6 +2723,7 @@ void Player::Shoryuken::Init( Player &inst )
 
 	inst.GenerateSlideEffects();
 
+	hCollision.reset();
 	GenerateCollision( inst );
 
 	timer			= 0.0f;
@@ -2831,9 +2843,6 @@ void Player::Shoryuken::UpdateVSpeed( Player &inst, float elapsedTime )
 }
 void Player::Shoryuken::GenerateCollision( Player &inst )
 {
-	// Release some bullet instance
-	if ( inst.pGun ) { inst.pGun->Uninit( inst ); }
-
 	constexpr Donya::Vector3 right = Donya::Vector3::Right();
 	Bullet::FireDesc desc{};
 	desc.kind			= Bullet::Kind::ShoryukenCollision;
@@ -2842,22 +2851,21 @@ void Player::Shoryuken::GenerateCollision( Player &inst )
 	desc.position		= inst.GetPosition();
 	desc.owner			= inst.hurtBox.id;
 
-	inst.pBullet = std::make_shared<Bullet::ShoryuCol>();
-	inst.pBullet->Init( desc );
-	inst.pBullet->DisallowRemovingByOutOfScreen();
-
-	Bullet::Admin::Get().AddCopy( inst.pBullet );
+	hCollision = std::make_shared<Bullet::ShoryuCol>();
+	hCollision->Init( desc );
+	hCollision->DisallowRemovingByOutOfScreen();
+	Bullet::Admin::Get().AddCopy( hCollision );
 }
-std::shared_ptr<Bullet::Base> Player::Shoryuken::FindAliveCollisionOrNullptr( Player &inst )
+std::shared_ptr<Bullet::Base> Player::Shoryuken::FindAliveCollisionOrNullptr()
 {
-	if ( !inst.pBullet ) { return nullptr; }
+	if ( !hCollision ) { return nullptr; }
 	// else
 
-	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
+	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( hCollision );
 	if ( !pInstance || pInstance->WasProtected() )
 	{
 		// The handle has been invalided
-		inst.pBullet.reset();
+		hCollision.reset();
 		return nullptr;
 	}
 	// else
@@ -2866,7 +2874,7 @@ std::shared_ptr<Bullet::Base> Player::Shoryuken::FindAliveCollisionOrNullptr( Pl
 }
 void Player::Shoryuken::UpdateCollision( Player &inst )
 {
-	std::shared_ptr<Bullet::Base> p = FindAliveCollisionOrNullptr( inst );
+	std::shared_ptr<Bullet::Base> p = FindAliveCollisionOrNullptr();
 	if ( !p ) { return; }
 	// else
 
@@ -2874,12 +2882,13 @@ void Player::Shoryuken::UpdateCollision( Player &inst )
 }
 void Player::Shoryuken::RemoveCollision( Player &inst )
 {
-	std::shared_ptr<Bullet::Base> p = FindAliveCollisionOrNullptr( inst );
+	std::shared_ptr<Bullet::Base> p = FindAliveCollisionOrNullptr();
 	if ( !p ) { return; }
 	// else
 
 	p->AllowRemovingByOutOfScreen();
 	p->SetLifeTime( 0.0f );
+	hCollision.reset();
 }
 void Player::Shoryuken::GenerateVisionIfNeeded( Player &inst, float elapsedTime )
 {
@@ -2900,14 +2909,18 @@ void Player::Shoryuken::GenerateVisionIfNeeded( Player &inst, float elapsedTime 
 // region Mover
 #pragma endregion
 
+
 #pragma region Gun
 
+Player::GunBase::~GunBase()
+{
+	Uninit();
+}
 void Player::GunBase::Init( Player &inst )
 {
 	kind = GetKind();
-	inst.pBullet.reset();
 }
-void Player::GunBase::Uninit( Player &inst )
+void Player::GunBase::Uninit()
 {
 	// No op
 }
@@ -2987,26 +3000,20 @@ void Player::ShieldGun::Init( Player &inst )
 {
 	GunBase::Init( inst );
 
-	takeShield = false;
+	hShield.reset();
 }
-void Player::ShieldGun::Uninit( Player &inst )
+void Player::ShieldGun::Uninit()
 {
-	if ( takeShield && inst.pBullet )
+	std::shared_ptr<Bullet::Base> pShield = FindAliveShieldOrNullptr();
+	if ( pShield )
 	{
-		std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
-		if ( pInstance )
-		{
-			pInstance->SetLifeTime( 0.0f );
-		}
+		pShield->SetLifeTime( 0.0f );
 	}
 
-	ReleaseShieldHandle( inst );
+	ReleaseShieldHandle();
 }
 void Player::ShieldGun::Update( Player &inst, float elapsedTime )
 {
-	if ( !takeShield ) { return; }
-	// else
-
 	UpdateShield( inst );
 }
 void Player::ShieldGun::MovedUpdate( Player &inst, float elapsedTime )
@@ -3023,19 +3030,34 @@ bool Player::ShieldGun::AllowFireByRelease( ShotLevel nowChargeLevel ) const
 }
 void Player::ShieldGun::Fire( Player &inst, const InputManager &input )
 {
-	if ( !inst.pBullet )
+	if ( hShield )
 	{
-		ExpandShield( inst, input );
+		ThrowShield( inst, input );
 		return;
 	}
 	// else
 
-	ThrowShield( inst, input );
+	ExpandShield( inst, input );
 }
-void Player::ShieldGun::ReleaseShieldHandle( Player &inst )
+std::shared_ptr<Bullet::Base> Player::ShieldGun::FindAliveShieldOrNullptr()
 {
-	takeShield = false;
-	inst.pBullet.reset(); // Also release the handle
+	if ( !hShield ) { return nullptr; }
+	// else
+
+	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( hShield );
+	if ( !pInstance || pInstance->WasProtected() )
+	{
+		// The handle has been invalided
+		ReleaseShieldHandle();
+		return nullptr;
+	}
+	// else
+
+	return pInstance;
+}
+void Player::ShieldGun::ReleaseShieldHandle()
+{
+	hShield.reset();
 }
 Donya::Vector3 Player::ShieldGun::CalcThrowDirection( const Player &inst, const InputManager &input ) const
 {
@@ -3101,51 +3123,41 @@ void Player::ShieldGun::ExpandShield( Player &inst, const InputManager &input )
 	desc.direction		= ( 0.0f <= inst.lookingSign ) ? Donya::Vector3::Right() : -Donya::Vector3::Right();
 	desc.position		= CalcShieldPosition( inst );
 	desc.owner			= inst.hurtBox.id;
-	inst.pBullet = std::make_shared<Bullet::SkullShield>();
-	inst.pBullet->Init( desc );
-	inst.pBullet->DisallowRemovingByOutOfScreen();
-	Bullet::Admin::Get().AddCopy( inst.pBullet );
 
-	takeShield = true;
+	hShield = std::make_shared<Bullet::SkullShield>();
+	hShield->Init( desc );
+	hShield->DisallowRemovingByOutOfScreen();
+	Bullet::Admin::Get().AddCopy( hShield );
 
 	Donya::Sound::Play( Music::Bullet_ShotShield_Expand );
 }
 void Player::ShieldGun::ThrowShield( Player &inst, const InputManager &input )
 {
-	if ( !takeShield ) { return; }
-	// else
-
-	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
-	if ( !pInstance ) { return; } // The handle has been invalided
+	std::shared_ptr<Bullet::Base> p = FindAliveShieldOrNullptr();
+	if ( !p ) { return; }
 	// else
 
 	const Donya::Vector3 direction = CalcThrowDirection( inst, input );
-	pInstance->SetVelocity( direction * Parameter().Get().shieldThrowSpeed );
-	pInstance->AllowRemovingByOutOfScreen();
-	ReleaseShieldHandle( inst );
+	p->SetVelocity( direction * Parameter().Get().shieldThrowSpeed );
+	p->AllowRemovingByOutOfScreen();
+	ReleaseShieldHandle();
 
 	Donya::Sound::Play( Music::Bullet_ShotShield_Throw );
 }
 void Player::ShieldGun::UpdateShield( Player &inst )
 {
-	if ( !inst.pBullet ) { return; }
+	std::shared_ptr<Bullet::Base> p = FindAliveShieldOrNullptr();
+	if ( !p ) { return; }
 	// else
 
-	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
-	if ( !pInstance || pInstance->WasProtected() )
-	{
-		// The handle has been invalided
-		ReleaseShieldHandle( inst );
-		return;
-	}
-	// else
-
-	pInstance->SetWorldPosition( CalcShieldPosition( inst ) );
+	p->SetWorldPosition( CalcShieldPosition( inst ) );
 }
 
 // Gun
 #pragma endregion
 
+
+#pragma region Main
 
 void Player::Init( const PlayerInitializer &initializer, const Map &terrain, bool withAppearPerformance )
 {
@@ -3382,11 +3394,6 @@ void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &mat
 			DrawProcess( body, bodyColor );
 			DrawProcess( hurt, hurtColor );
 		}
-	}
-
-	if ( pBullet )
-	{
-		pBullet->DrawHitBox( pRenderer, matVP );
 	}
 #endif // DEBUG_MODE
 }
@@ -4041,3 +4048,6 @@ void Player::ShowImGuiNode( const std::string &nodeCaption )
 	ImGui::TreePop();
 }
 #endif // USE_IMGUI
+
+// Main
+#pragma endregion
