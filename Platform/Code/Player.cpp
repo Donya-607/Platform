@@ -2915,6 +2915,10 @@ void Player::GunBase::Update( Player &inst, float elapsedTime )
 {
 	// No op
 }
+void Player::GunBase::MovedUpdate( Player &instance, float elapsedTime )
+{
+	// No op.
+}
 Donya::Vector3 Player::GunBase::GetThemeColor() const
 {
 	const auto &source = Parameter().Get().themeColors;
@@ -3003,19 +3007,11 @@ void Player::ShieldGun::Update( Player &inst, float elapsedTime )
 	if ( !takeShield ) { return; }
 	// else
 
-	if ( !inst.pBullet ) { return; }
-	// else
-
-	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
-	if ( !pInstance || pInstance->WasProtected() )
-	{
-		// The handle has been invalided
-		ReleaseShieldHandle( inst );
-		return;
-	}
-	// else
-
-	pInstance->SetWorldPosition( CalcShieldPosition( inst ) );
+	UpdateShield( inst );
+}
+void Player::ShieldGun::MovedUpdate( Player &inst, float elapsedTime )
+{
+	UpdateShield( inst );
 }
 bool Player::ShieldGun::Chargeable() const
 {
@@ -3129,6 +3125,22 @@ void Player::ShieldGun::ThrowShield( Player &inst, const InputManager &input )
 	ReleaseShieldHandle( inst );
 
 	Donya::Sound::Play( Music::Bullet_ShotShield_Throw );
+}
+void Player::ShieldGun::UpdateShield( Player &inst )
+{
+	if ( !inst.pBullet ) { return; }
+	// else
+
+	std::shared_ptr<Bullet::Base> pInstance = Bullet::Admin::Get().FindInstanceOrNullptr( inst.pBullet );
+	if ( !pInstance || pInstance->WasProtected() )
+	{
+		// The handle has been invalided
+		ReleaseShieldHandle( inst );
+		return;
+	}
+	// else
+
+	pInstance->SetWorldPosition( CalcShieldPosition( inst ) );
 }
 
 // Gun
@@ -3277,6 +3289,11 @@ void Player::PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeft
 	// else
 
 	pMover->Move( *this, elapsedTime, terrain, roomLeftBorder, roomRightBorder );
+
+	if ( pGun )
+	{
+		pGun->MovedUpdate( *this, elapsedTime );
+	}
 
 	const Donya::Vector3 movedPos = GetPosition();
 	shotManager		.SetFXPosition( movedPos );

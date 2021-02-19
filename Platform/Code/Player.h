@@ -610,6 +610,10 @@ private:
 		virtual void Init( Player &instance );
 		virtual void Uninit( Player &instance );
 		virtual void Update( Player &instance, float elapsedTime );
+		/// <summary>
+		/// Will called after the Player::PhysicUpdate()
+		/// </summary>
+		virtual void MovedUpdate( Player &instance, float elapsedTime );
 	public:
 		virtual bool Chargeable() const = 0;
 		virtual bool AllowFireByRelease( ShotLevel nowChargeLevel ) const = 0;
@@ -647,6 +651,7 @@ private:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime ) override;
+		void MovedUpdate( Player &instance, float elapsedTime ) override;
 	public:
 		bool Chargeable() const override;
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
@@ -666,6 +671,7 @@ private:
 		Donya::Vector3 CalcShieldPosition( const Player &instance ) const;
 		void ExpandShield( Player &instance, const InputManager &input );
 		void ThrowShield( Player &instance, const InputManager &input );
+		void UpdateShield( Player &instance );
 	};
 // Gun
 #pragma endregion
