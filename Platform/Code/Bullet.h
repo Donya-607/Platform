@@ -189,6 +189,7 @@ namespace Bullet
 		virtual Kind						GetKind()					const = 0;
 		Definition::Damage					GetDamage()					const;
 	public:
+		virtual Donya::Vector3 GetPosition() const override;
 		virtual void SetWorldPosition( const Donya::Vector3 &wsPos );
 		virtual void SetVelocity( const Donya::Vector3 &newVelocity );
 		virtual void SetLifeTime( float second );

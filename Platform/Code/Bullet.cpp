@@ -501,6 +501,11 @@ namespace Bullet
 	{
 		return damage;
 	}
+	Donya::Vector3 Base::GetPosition() const
+	{
+		const bool useAABB = !hitSphere.exist;
+		return ( useAABB ) ? body.WorldPosition() : hitSphere.WorldPosition();
+	}
 	void Base::SetWorldPosition( const Donya::Vector3 &wsPos )
 	{
 		hitSphere.pos = body.pos = wsPos;

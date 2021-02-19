@@ -4,6 +4,8 @@
 #include "../Donya/Sound.h"
 
 #include "../Common.h"
+#include "../Effect/EffectAdmin.h"
+#include "../Effect/EffectKind.h"
 #include "../Music.h"
 #include "../Parameter.h"
 
@@ -196,7 +198,7 @@ namespace Bullet
 	}
 	void SkullShield::GenerateCollidedEffect() const
 	{
-		// No op
+		Effect::Admin::Get().GenerateInstance( Effect::Kind::Hit_SkullShield, GetPosition() );
 	}
 	void SkullShield::PlayCollidedSE() const
 	{
