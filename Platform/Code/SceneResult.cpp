@@ -692,6 +692,17 @@ void SceneResult::Draw( float elapsedTime )
 		Donya::DepthStencil::Deactivate();
 	}
 
+	p->screenSurface.SetRenderTarget();
+	p->screenSurface.SetViewport();
+	// Draw effects
+	{
+		// Ignore the depth of game,
+		// And do not affect the luminance of game.
+		p->screenSurface.ClearDepthStencil();
+		Effect::Admin::Get().Draw();
+	}
+	Donya::Surface::ResetRenderTarget();
+
 	Donya::SetDefaultRenderTargets();
 
 	const Donya::Vector2 screenSurfaceSize = p->screenSurface.GetSurfaceSizeF();
@@ -722,15 +733,23 @@ void SceneResult::Draw( float elapsedTime )
 		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 		Donya::Sampler::ResetPS( 0 );
 	}
-
-	// Add the bloom buffers
-	Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
-	p->bloomer.DrawBlurBuffers( screenSurfaceSize );
-	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
-
-	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
 
+	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_NoWrite );
+	// Add the bloom buffers
+	{
+		const float oldDepth = Donya::Sprite::GetDrawDepth();
+		Donya::Sprite::SetDrawDepth( 0.0f );
+
+		Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
+		p->bloomer.DrawBlurBuffers( screenSurfaceSize );
+		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+
+		Donya::Sprite::SetDrawDepth( oldDepth );
+	}
+	Donya::DepthStencil::Deactivate();
+
+	Donya::Rasterizer::Deactivate();
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )

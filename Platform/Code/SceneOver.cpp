@@ -114,13 +114,13 @@ Scene::Result SceneOver::Update( float elapsedTime )
 		if ( !Fader::Get().IsExist() )
 		{
 		#if USE_IMGUI
-			if(!dontTransition )
+			if ( !dontTransition )
 		#endif // USE_IMGUI
 			StartFade();
 		}
 	}
 
-#if 0
+#if 0 // ALLOW_SKIP
 	if ( !Fader::Get().IsExist() )
 	{
 		bool shouldSkip = false;
@@ -138,7 +138,7 @@ Scene::Result SceneOver::Update( float elapsedTime )
 			StartFade();
 		}
 	}
-#endif // 0
+#endif // ALLOW_SKIP
 
 	return ReturnResult();
 }
@@ -146,6 +146,10 @@ Scene::Result SceneOver::Update( float elapsedTime )
 void SceneOver::Draw( float elapsedTime )
 {
 	ClearBackGround();
+
+	/*
+	Call Effect::Admin::Draw() if you use it
+	*/
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )

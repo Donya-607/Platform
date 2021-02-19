@@ -924,6 +924,17 @@ void SceneGame::Draw( float elapsedTime )
 		Donya::DepthStencil::Deactivate();
 	}
 
+	p->screenSurface.SetRenderTarget();
+	p->screenSurface.SetViewport();
+	// Draw effects
+	{
+		// Ignore the depth of game,
+		// And do not affect the luminance of game.
+		p->screenSurface.ClearDepthStencil();
+		Effect::Admin::Get().Draw();
+	}
+	Donya::Surface::ResetRenderTarget();
+
 	Donya::SetDefaultRenderTargets();
 
 	const Donya::Vector2 screenSurfaceSize = p->screenSurface.GetSurfaceSizeF();
