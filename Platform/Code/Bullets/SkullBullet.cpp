@@ -90,7 +90,10 @@ namespace Bullet
 	{
 		Base::Init( parameter );
 
-		orientation = Donya::Quaternion::Identity();
+		orientation		= Donya::Quaternion::Identity();
+
+		currentDegree	= 0.0f;
+		rotateSign		= ( parameter.direction.x < 0.0f ) ? +1.0f : -1.0f;
 	}
 	void SkullShield::Uninit() {} // No op
 	void SkullShield::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
@@ -98,8 +101,7 @@ namespace Bullet
 		Base::Update( elapsedTime, wsScreenHitBox );
 
 		const auto &data = Parameter::GetSkullShield();
-
-		currentDegree += data.rotateDegree * elapsedTime;
+		currentDegree += data.rotateDegree * rotateSign * elapsedTime;
 
 		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
 	}

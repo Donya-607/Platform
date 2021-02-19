@@ -3098,7 +3098,7 @@ void Player::ShieldGun::ExpandShield( Player &inst, const InputManager &input )
 	Bullet::FireDesc desc{};
 	desc.kind			= Bullet::Kind::SkullShield;
 	desc.initialSpeed	= 0.0f;
-	desc.direction		= Donya::Vector3::Zero();
+	desc.direction		= ( 0.0f <= inst.lookingSign ) ? Donya::Vector3::Right() : -Donya::Vector3::Right();
 	desc.position		= CalcShieldPosition( inst );
 	desc.owner			= inst.hurtBox.id;
 	inst.pBullet = std::make_shared<Bullet::SkullShield>();

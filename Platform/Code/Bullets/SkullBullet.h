@@ -60,7 +60,8 @@ namespace Bullet
 	class SkullShield final : public Base
 	{
 	private:
-		float currentDegree = 0.0f;
+		float currentDegree	= 0.0f;
+		float rotateSign	= 1.0f; // -1.0f or +1.0f
 	public:
 		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
