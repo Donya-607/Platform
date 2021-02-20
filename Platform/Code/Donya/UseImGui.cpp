@@ -329,7 +329,7 @@ namespace ImGui
 		{
 			auto Method = [&]( const char *caption, Donya::Vector3 *p )
 			{
-				ImGui::SliderFloat( caption, &p->x, rangeMin, rangeMax );
+				ImGui::SliderFloat3( caption, &p->x, rangeMin, rangeMax );
 			};
 			ShowBezierNodeImpl( nodeCaption, pCtrlPoints, Method );
 		}
