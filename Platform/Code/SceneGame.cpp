@@ -3137,7 +3137,8 @@ void SceneGame::UseImGui( float elapsedTime )
 	if ( ImGui::Button( u8"[CTRL+F7]	全武器制限＆セーブ" ) ) { ChangeAvailableWeapon( /* unlock = */ false ); }
 	if ( ImGui::Button( u8"[ALT+ 1 ]	自機を 開始地点 へ" ) ) { TeleportPlayerTo( 0 ); }
 	if ( ImGui::Button( u8"[ALT+ 2 ]	自機を 中間地点 へ" ) ) { TeleportPlayerTo( 1 ); }
-	if ( ImGui::Button( u8"[ALT+ 3 ]	自機を ボス直前 へ" ) ) { TeleportPlayerTo( 2 ); }
+	if ( ImGui::Button( u8"[ALT+ 3 ]	自機を 後半地点 へ" ) ) { TeleportPlayerTo( 2 ); }
+	if ( ImGui::Button( u8"[ALT+ 4 ]	自機を ボス直前 へ" ) ) { TeleportPlayerTo( 3 ); }
 	Effect::Admin::Get().SetProjectionMatrix
 	(
 		( projectLightCamera )
