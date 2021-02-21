@@ -2957,6 +2957,12 @@ bool Player::BusterGun::AllowFireByRelease( ShotLevel chargeLevel ) const
 	const bool nowHighLevel = ( chargeLevel != ShotLevel::Normal && chargeLevel != ShotLevel::LevelCount );
 	return nowHighLevel;
 }
+bool Player::BusterGun::NowFireable( const Player &instance ) const
+{
+	const int nowCount = Bullet::Buster::GetLivingCount();
+	const int maxCount = Parameter().Get().maxBusterCount;
+	return  ( nowCount < maxCount );
+}
 void Player::BusterGun::Fire( Player &inst, const InputManager &input )
 {	
 	const auto &data = Parameter().Get();
@@ -3027,6 +3033,10 @@ bool Player::ShieldGun::Chargeable() const
 bool Player::ShieldGun::AllowFireByRelease( ShotLevel nowChargeLevel ) const
 {
 	return false;
+}
+bool Player::ShieldGun::NowFireable( const Player &instance ) const
+{
+	return true;
 }
 void Player::ShieldGun::Fire( Player &inst, const InputManager &input )
 {
@@ -3811,9 +3821,10 @@ void Player::MoveVertical  ( float elapsedTime )
 }
 bool Player::NowShotable( float elapsedTime ) const
 {
-	if ( IsZero( elapsedTime )		) { return false; } // If game time is pausing
-	if ( inputManager.NowHeading()	) { return false; } // It will be true when such as performance. Charge is allowed, but Shot is not allowed.
-	if ( commandManager.WantFire()	) { return false; } // Prioritize the Shoryuken
+	if ( IsZero( elapsedTime )				) { return false; } // If game time is pausing
+	if ( inputManager.NowHeading()			) { return false; } // It will be true when such as performance. Charge is allowed, but Shot is not allowed.
+	if ( pGun && !pGun->NowFireable( *this )) { return false; }
+	if ( commandManager.WantFire()			) { return false; } // Prioritize the Shoryuken
 	// else
 
 	constexpr MotionKind unshotableKinds[]
@@ -3833,8 +3844,7 @@ bool Player::NowShotable( float elapsedTime ) const
 		}
 	}
 
-	const bool generatable = ( Bullet::Buster::GetLivingCount() < Parameter().Get().maxBusterCount );
-	return ( generatable ) ? true : false;
+	return true;
 }
 void Player::ShotIfRequested( float elapsedTime )
 {

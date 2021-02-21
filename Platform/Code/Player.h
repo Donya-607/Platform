@@ -617,6 +617,7 @@ private:
 		virtual void MovedUpdate( Player &instance, float elapsedTime );
 	public:
 		virtual bool Chargeable() const = 0;
+		virtual bool NowFireable( const Player &instance ) const = 0;
 		virtual bool AllowFireByRelease( ShotLevel nowChargeLevel ) const = 0;
 		virtual void Fire( Player &instance, const InputManager &input ) = 0;
 	public:
@@ -632,6 +633,7 @@ private:
 		int prevPlaySound = 0;
 	public:
 		bool Chargeable() const override;
+		bool NowFireable( const Player &instance ) const override;
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
 		void Fire( Player &instance, const InputManager &input ) override;
 	public:
@@ -655,6 +657,7 @@ private:
 		void MovedUpdate( Player &instance, float elapsedTime ) override;
 	public:
 		bool Chargeable() const override;
+		bool NowFireable( const Player &instance ) const override;
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
 		void Fire( Player &instance, const InputManager &input ) override;
 	public:

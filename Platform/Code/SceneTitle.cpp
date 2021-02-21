@@ -1765,7 +1765,8 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 		// First frame of performancing
 		if ( IsZero( performTimer ) && performanceStatus == PerformanceState::ToLeave )
 		{
-			input.useShots.fill( true );
+			input.useShots.fill( false );
+			input.useShots.front() = true;
 
 			// Make to look to left(center direction) side
 			const auto front = pPlayer->GetOrientation();
