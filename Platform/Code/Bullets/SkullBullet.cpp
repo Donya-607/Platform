@@ -4,6 +4,8 @@
 #include "../Donya/Sound.h"
 
 #include "../Common.h"
+#include "../Effect/EffectAdmin.h"
+#include "../Effect/EffectKind.h"
 #include "../Music.h"
 #include "../Parameter.h"
 
@@ -90,7 +92,10 @@ namespace Bullet
 	{
 		Base::Init( parameter );
 
-		orientation = Donya::Quaternion::Identity();
+		orientation		= Donya::Quaternion::Identity();
+
+		currentDegree	= 0.0f;
+		rotateSign		= ( parameter.direction.x < 0.0f ) ? +1.0f : -1.0f;
 	}
 	void SkullShield::Uninit() {} // No op
 	void SkullShield::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
@@ -98,8 +103,7 @@ namespace Bullet
 		Base::Update( elapsedTime, wsScreenHitBox );
 
 		const auto &data = Parameter::GetSkullShield();
-
-		currentDegree += data.rotateDegree * elapsedTime;
+		currentDegree += data.rotateDegree * rotateSign * elapsedTime;
 
 		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
 	}
@@ -194,7 +198,7 @@ namespace Bullet
 	}
 	void SkullShield::GenerateCollidedEffect() const
 	{
-		// No op
+		Effect::Admin::Get().GenerateInstance( Effect::Kind::Hit_SkullShield, GetPosition() );
 	}
 	void SkullShield::PlayCollidedSE() const
 	{

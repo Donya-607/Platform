@@ -11,7 +11,9 @@
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
+#include "BufferedInput.h"
 #include "Bullet.h"
+#include "Command.h"
 #include "CSVLoader.h"
 #include "Damage.h"
 #include "Effect/Effect.h"
@@ -19,6 +21,7 @@
 #include "Map.h"
 #include "Meter.h"
 #include "ModelHelper.h"
+#include "NumPad.h"
 #include "ObjectBase.h"
 #include "Parameter.h"
 #include "Renderer.h"
@@ -98,7 +101,7 @@ public:
 	{
 		static constexpr int variationCount = 2;
 	public:
-		Donya::Vector2	moveVelocity;	// Unit velocity
+		Donya::Vector2	moveVelocity;	// -1.0f ~ +1.0f
 		std::array<bool, variationCount> useJumps  = { false, false };
 		std::array<bool, variationCount> useShots  = { false, false };
 		std::array<bool, variationCount> useDashes = { false, false };
@@ -137,6 +140,9 @@ public:
 		Brace,
 		Appear,
 		Winning,
+		Shoryuken_Fire,
+		Shoryuken_Lag,
+		Shoryuken_Landing,
 
 		MotionCount
 	};
@@ -158,39 +164,46 @@ private:
 	class InputManager
 	{
 	private:
-		Input prev;
-		Input curr;
-		std::array<float, Input::variationCount> keepJumpSeconds;
-		std::array<bool,  Input::variationCount> wasReleasedJumps;
+		std::array<::Input::BufferedInput,	Input::variationCount> jumps;
+		std::array<bool,					Input::variationCount> jumpWasReleased_es; // On when the "jumps" records the press, Off when the "jumps" records the release.
+		std::array<::Input::BufferedInput,	Input::variationCount> shots;
+		std::array<::Input::BufferedInput,	Input::variationCount> dashes;
+		std::array<std::pair<int, int>,		Input::variationCount> shiftGuns; // first:curent, second:previous
+
+		Donya::Vector2	moveVelocity;				// -1.0f ~ +1.0f
+		bool			headToDestination = false;	// It priority is greater than the moveVelocity
+		Donya::Vector3	wsDestination;				// World space. It is valid when the headToDestination is true
 	public:
 		void Init();
 		void Update( const Player &instance, float elapsedTime, const Input &input );
 	public:
-		int  UseJumpIndex( bool getCurrent = true ) const; // Return -1 if not using
-		int  UseShotIndex() const; // Return -1 if not using
-		int  UseDashIndex() const; // Return -1 if not using
-		int  ShiftGunIndex() const; // Return -1 if not using
-		bool UseJump( bool getCurrent = true ) const;
-		bool UseShot() const;
-		bool UseDash() const;
-		int  ShiftGun() const;
-		bool Jumpable( int jumpInputIndex ) const;
+		bool NowJumpable( bool useSlideParam = false )	const;
+		bool NowUseJump( bool useSlideParam = false )	const;	// Returns just is there a jump input
+		bool NowReleaseJump()	const;
+		bool NowUseShot()		const;
+		bool NowTriggerShot()	const;
+		bool NowUseDash()		const;
+		int  NowShiftGun()		const;
 	public:
-		void Overwrite( const Input &overwrite );
-		void OverwritePrevious( const Input &overwrite );
+		void DetainNowJumpInput();
 	public:
-		const Input &Previous() const
-		{ return prev; }
-		const Input &Current() const
-		{ return curr; }
-		std::array<float, Input::variationCount> &KeepSecondJumpInput()
-		{ return keepJumpSeconds; }
-		const std::array<float, Input::variationCount> &KeepSecondJumpInput()  const
-		{ return keepJumpSeconds; }
-		std::array<bool,  Input::variationCount> &WasReleasedJumpInput()
-		{ return wasReleasedJumps; }
-		const std::array<bool,  Input::variationCount> &WasReleasedJumpInput() const
-		{ return wasReleasedJumps; }
+		/// <summary>
+		/// Each element is in range of [-1.0f ~ +1.0f]
+		/// </summary>
+		const Donya::Vector2 &CurrentMoveDirection() const;
+		bool NowHeading() const;
+		/// <summary>
+		/// It returns the destination of now heading, or origin(0,0,0) if NowHeading() is false.
+		/// </summary>
+		Donya::Vector3 HeadingDestinationOrOrigin() const;
+	private:
+		void RegisterCurrentInputs( float elapsedTime, const Input &input );
+		int  IndexOfUsingJump( bool useSlideParam = false ) const; // Return -1 if not using
+		int  IndexOfReleasingJump()		const; // Return -1 if not using
+		int  IndexOfUsingShot()			const; // Return -1 if not using
+		int  IndexOfTriggeringShot()	const; // Return -1 if not using
+		int  IndexOfUsingDash()			const; // Return -1 if not using
+		int  IndexOfShiftingGun()		const; // Return -1 if not using
 	public:
 	#if USE_IMGUI
 		void ShowImGuiNode( const std::string &nodeCaption );
@@ -219,6 +232,8 @@ private:
 		bool WasCurrentMotionEnded() const;
 		MotionKind CurrentKind() const { return currKind; }
 		bool NowShotPoses() const;
+		const Donya::Model::Pose &GetCurrentPose() const;
+		const Donya::Model::SkinningModel *GetModelOrNullptr() const;
 	private:
 		void UpdateShotMotion( Player &instance, float elapsedTime );
 		void ApplyPartMotion( Player &instance, float elapsedTime, MotionKind useMotion );
@@ -227,18 +242,18 @@ private:
 		int  ToMotionIndex( MotionKind kind ) const;
 		void AssignPose( MotionKind kind );
 		bool ShouldEnableLoop( MotionKind kind ) const;
-		MotionKind CalcNowKind( Player &instance, float elapsedTime ) const;
+		MotionKind GetNowKind( Player &instance, float elapsedTime ) const;
 	};
 	class ShotManager
 	{
 	private:
-		ShotLevel		chargeLevel			= ShotLevel::Normal;
-		float			prevChargeSecond	= 0.0f;
-		float			currChargeSecond	= 0.0f;
-		bool			nowTrigger			= false;
+		ShotLevel		chargeLevel		= ShotLevel::Normal;
+		float			chargeSecond	= 0.0f;
+		bool			currUseShot		= false;
+		bool			prevUseShot		= false;
 		Donya::Vector3	emissiveColor	{ 0.0f, 0.0f, 0.0f }; // By charge
 		Donya::Vector3	destColor		{ 0.0f, 0.0f, 0.0f }; // By charge
-		bool			playingChargeSE		= false;
+		bool			playingChargeSE	= false;
 		Effect::Handle	fxComplete;
 		Effect::Handle	fxLoop;
 	public:
@@ -252,21 +267,65 @@ private:
 		void SetFXPosition( const Donya::Vector3 &wsPosition );
 	public:
 		bool			IsShotRequested( const Player &instance ) const;
-		float			ChargeSecond()		const { return currChargeSecond;	}
-		ShotLevel		ChargeLevel()		const { return chargeLevel;			}
-		Donya::Vector3	EmissiveColor()		const { return emissiveColor;		}
+		float			ChargeSecond()		const { return chargeSecond;	}
+		ShotLevel		ChargeLevel()		const { return chargeLevel;		}
+		Donya::Vector3	EmissiveColor()		const { return emissiveColor;	}
 	private:
-		bool NowTriggered( const InputManager &input ) const;
-		ShotLevel		CalcChargeLevel() const;
-		Donya::Vector3	CalcEmissiveColor() const;
+		bool			NowTriggered		( const Player &instance ) const;
+		ShotLevel		CalcChargeLevel		( float chargingSecond ) const;
+		Donya::Vector3	CalcEmissiveColor	( float chargingSecond ) const;
 		void AssignLoopFX( Effect::Kind kind );
+	private:
+		void ChargeUpdate( const Player &instance , float elapsedTime );
 		void PlayLoopSFXIfStopping();
 		void StopLoopSFXIfPlaying( bool forcely = false );
+	};
+	class CommandManager
+	{
+	private:
+		using SticksType = std::array<::Input::BufferedInput, NumPad::keyCount>;
+	private:
+		class Processor
+		{
+		private:
+			int		arraySize			= 0;
+			int		progressIndex		= 0;	// It indicates the you should achieve of next
+			int		backGroundProgress	= 0;	// It always monitors achievements for update the succeed time
+			float	lastElapsedSecond	= 0.0f;	// The elapsed second since last achievement
+			float	BGElapsedSecond		= 0.0f;	// The elapsed second of back-ground's
+			Command::Part cmd;
+		public:
+			void Init( const Command::Part &chargeCommand );
+			void Update( const SticksType &inputs, float elapsedTime );
+			bool Accepted() const;
+		private:
+			void AdvanceProgressIfPressed( const SticksType &inputs );
+		public:
+		#if USE_IMGUI
+			bool EqualTo( const Command::Part &verify ) const;
+			void ShowImGuiNode( const char *nodeCaption );
+		#endif // USE_IMGUI
+		};
+	private:
+		bool					currPress	= false;
+		bool					prevPress	= false;
+		bool					wantFire	= false;
+		SticksType				sticks;
+		std::vector<Processor>	processors;
+	public:
+		void Init();
+		void Update( Player &instance, float elapsedTime );
+		bool WantFire() const { return wantFire; }
+	public:
+	#if USE_IMGUI
+		bool ParametersAreUpdated() const;
+		void ShowImGuiNode( const char *nodeCaption );
+	#endif // USE_IMGUI
 	};
 	class Flusher
 	{
 	private:
-		float			workingSeconds	= 0.0f;
+		float			workingSecond	= 0.0f;
 		float			timer			= 0.0f;
 		Effect::Handle	fxHurt;
 	public:
@@ -281,6 +340,24 @@ private:
 		/// </summary>
 		bool NowWorking() const;
 	};
+	class LagVision
+	{
+	private:
+		struct Vision
+		{
+			float				alpha = 1.0f;
+			Donya::Model::Pose	pose;
+			Donya::Vector4x4	matWorld;
+		};
+	private:
+		std::vector<Vision> visions;
+	public:
+		void Init();
+		void Update( float elapsedTime );
+		void Draw( RenderingHelper *pRenderer, const Donya::Model::SkinningModel &model ) const;
+	public:
+		void Add( const Donya::Model::Pose &pose, const Donya::Vector3 &wsPos, const Donya::Quaternion &orientation );
+	};
 #pragma region Mover
 	class MoverBase
 	{
@@ -291,14 +368,11 @@ private:
 		virtual void Uninit( Player &instance ) {}
 		virtual void Update( Player &instance, float elapsedTime, const Map &terrain ) = 0;
 		virtual void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) = 0;
-		virtual bool NowSliding( const Player &instance ) const { return false; }
-		virtual bool NowKnockBacking( const Player &instance ) const { return false; }
-		virtual bool NowGrabbingLadder( const Player &instance ) const { return false; }
-		virtual bool NowBracing( const Player &instance ) const { return false; }
+	public:
+		virtual MotionKind GetNowMotionKind( const Player &instance ) const = 0;
 		virtual bool NowMiss( const Player &instance ) const { return false; }
-		virtual bool NowAppearing( const Player &instance ) const { return false; }
-		virtual bool NowWinning( const Player &instance ) const { return false; }
 		virtual bool Drawable( const Player &instance ) const { return true; }
+		virtual bool CanShoryuken( const Player &instance ) const { return true; }
 		virtual bool ShouldChangeMover( const Player &instance ) const = 0;
 		virtual std::function<void()> GetChangeStateMethod( Player &instance ) const = 0;
 	#if USE_IMGUI
@@ -320,9 +394,13 @@ private:
 	public:
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowBracing( const Player &instance ) const override;
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	private:
+		void UpdateVertical( Player &instance, float elapsedTime, const Map &terrain );
+	public:
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"通常"; }
 	#endif // USE_IMGUI
@@ -337,16 +415,24 @@ private:
 			Ladder,
 		};
 	private:
-		Destination	nextStatus	= Destination::None;
-		float		timer		= 0.0f;
+		Destination	nextStatus		= Destination::None;
+		float		timer			= 0.0f;
+		bool		takeOverInput	= false; // Take-over the down+jump input to next state
+		bool		finishByJump	= false;
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowSliding( const Player &instance ) const override { return true; }
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	private:
+		void UpdateStatus( Player &instance, float elapsedTime, const Map &terrain );
+		void UpdateVertical( Player &instance, float elapsedTime );
+		void UpdateTakeOverInput( bool pressJump, bool pressDown );
+	public:
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"スライディング"; }
 	#endif // USE_IMGUI
@@ -372,7 +458,8 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowGrabbingLadder( const Player &instance ) const override;
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -397,7 +484,9 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowKnockBacking( const Player &instance ) const override { return true; }
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -410,8 +499,11 @@ private:
 		void Init( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool NowMiss( const Player &instance ) const override { return true; }
 		bool Drawable( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -427,8 +519,10 @@ private:
 		void Init( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowAppearing( const Player &instance ) const override { return true; }
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool Drawable( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -444,7 +538,10 @@ private:
 		void Init( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool Drawable( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
@@ -458,11 +555,47 @@ private:
 		void Uninit( Player &instance ) override;
 		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
 		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
-		bool NowWinning( const Player &instance ) const override { return true; }
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"ガッツポーズ"; }
+	#endif // USE_IMGUI
+	};
+	class Shoryuken : public MoverBase
+	{
+	private:
+		float	timer			= 0.0f;
+		float	visionInterval	= 0.0f;
+		float	riseHSpeedAdjust= 0.0f;
+		bool	nowRising		= true;
+		bool	wasLanded		= false; // After ended the attack
+		std::shared_ptr<Bullet::Base> hCollision = nullptr;
+	public:
+		void Init( Player &instance ) override;
+		void Uninit( Player &instance ) override;
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override;
+		bool CanShoryuken( const Player &instance ) const override { return false; }
+		bool ShouldChangeMover( const Player &instance ) const override;
+		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
+	private:
+		void UpdateHSpeed( Player &instance, float elapsedTime );
+		void UpdateVSpeed( Player &instance, float elapsedTime );
+	private:
+		void GenerateCollision( Player &instance );
+		std::shared_ptr<Bullet::Base> FindAliveCollisionOrNullptr();
+		void UpdateCollision( Player &instance );
+		void RemoveCollision( Player &instance );
+	private:
+		void GenerateVisionIfNeeded( Player &instance, float elapsedTime );
+	public:
+	#if USE_IMGUI
+		std::string GetMoverName() const override { return u8"昇龍拳"; }
 	#endif // USE_IMGUI
 	};
 // Mover
@@ -473,13 +606,18 @@ private:
 	private:
 		Definition::WeaponKind kind = Definition::WeaponKind::Buster;
 	public:
-		virtual ~GunBase() = default;
+		virtual ~GunBase();
 	public:
 		virtual void Init( Player &instance );
-		virtual void Uninit( Player &instance );
+		virtual void Uninit();
 		virtual void Update( Player &instance, float elapsedTime );
+		/// <summary>
+		/// Will called after the Player::PhysicUpdate()
+		/// </summary>
+		virtual void MovedUpdate( Player &instance, float elapsedTime );
 	public:
 		virtual bool Chargeable() const = 0;
+		virtual bool NowFireable( const Player &instance ) const = 0;
 		virtual bool AllowFireByRelease( ShotLevel nowChargeLevel ) const = 0;
 		virtual void Fire( Player &instance, const InputManager &input ) = 0;
 	public:
@@ -491,8 +629,11 @@ private:
 	};
 	class BusterGun : public GunBase
 	{
+	private:
+		int prevPlaySound = 0;
 	public:
 		bool Chargeable() const override;
+		bool NowFireable( const Player &instance ) const override;
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
 		void Fire( Player &instance, const InputManager &input ) override;
 	public:
@@ -508,13 +649,15 @@ private:
 	class ShieldGun : public GunBase
 	{
 	private:
-		bool takeShield = false;
+		std::shared_ptr<Bullet::Base> hShield = nullptr;
 	public:
 		void Init( Player &instance ) override;
-		void Uninit( Player &instance ) override;
+		void Uninit() override;
 		void Update( Player &instance, float elapsedTime ) override;
+		void MovedUpdate( Player &instance, float elapsedTime ) override;
 	public:
 		bool Chargeable() const override;
+		bool NowFireable( const Player &instance ) const override;
 		bool AllowFireByRelease( ShotLevel nowChargeLevel ) const override;
 		void Fire( Player &instance, const InputManager &input ) override;
 	public:
@@ -527,11 +670,13 @@ private:
 		}
 	#endif // USE_IMGUI
 	private:
-		void ReleaseShieldHandle( Player &instance );
+		std::shared_ptr<Bullet::Base> FindAliveShieldOrNullptr();
+		void ReleaseShieldHandle();
 		Donya::Vector3 CalcThrowDirection( const Player &instance, const InputManager &input ) const;
 		Donya::Vector3 CalcShieldPosition( const Player &instance ) const;
 		void ExpandShield( Player &instance, const InputManager &input );
 		void ThrowShield( Player &instance, const InputManager &input );
+		void UpdateShield( Player &instance );
 	};
 // Gun
 #pragma endregion
@@ -543,10 +688,11 @@ private:
 	InputManager						inputManager;
 	MotionManager						motionManager;
 	ShotManager							shotManager;
+	CommandManager						commandManager;
 	Flusher								invincibleTimer;
+	LagVision							lagVision;
 	std::unique_ptr<MoverBase>			pMover				= nullptr;
 	std::unique_ptr<GunBase>			pGun				= nullptr;
-	std::shared_ptr<Bullet::Base>		pBullet				= nullptr;
 	std::weak_ptr<const Tile>			pTargetLadder{};			// It only used for initialization of Player::GrabLadder as reference
 	Definition::WeaponAvailableStatus	availableWeapon;
 	float								nowGravity			= 0.0f;
@@ -554,9 +700,9 @@ private:
 	float								lookingSign			= 1.0f;	// Current looking direction in world space. 0.0f:Left - 1.0f:Right
 	bool								onGround			= false;
 	bool								wasJumpedWhileSlide	= false;
-	// TODO: These status variables can be combine by replace to MotionKind value
-	bool								prevSlidingStatus	= false;
-	bool								prevBracingStatus	= false;
+	bool								pressJumpSinceSlide	= false;// Information from: Slide state, to: Normal state
+	MotionKind							currMotionKind		= MotionKind::Idle;
+	MotionKind							prevMotionKind		= MotionKind::Idle;
 
 	struct DamageDesc
 	{
@@ -573,6 +719,7 @@ public:
 
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
+	void DrawVision( RenderingHelper *pRenderer ) const;
 public:
 	void RecoverHP( int recovery );
 	void ChargeFully();
@@ -585,9 +732,11 @@ public:
 	/// </summary>
 	void ApplyAvailableWeapon( const Definition::WeaponKind &unlockKind );
 public:
+	bool OnGround() const;
 	bool NowMiss() const;
 	bool NowGrabbingLadder() const;
 	bool NowWinningPose() const;
+	bool NowShoryuken() const;
 	int  GetCurrentHP() const;
 	Donya::Vector3			GetVelocity()		const;
 	Donya::Collision::Box3F	GetHurtBox()		const;
@@ -622,6 +771,11 @@ private:
 		}
 
 		pMover = std::make_unique<Mover>();
+
+		// The Init() may refers the motion kinds
+		prevMotionKind = currMotionKind;
+		currMotionKind = pMover->GetNowMotionKind( *this );
+
 		pMover->Init( *this );
 	}
 	template<class Gun>
@@ -629,7 +783,7 @@ private:
 	{
 		if ( pGun )
 		{
-			pGun->Uninit( *this );
+			pGun->Uninit();
 			pGun.reset();
 		}
 
@@ -637,6 +791,9 @@ private:
 		pGun->Init( *this );
 	}
 	void AssignGunByKind( Definition::WeaponKind kind );
+private:
+	void UpdateInvincible( float elapsedTime, const Map &terrain );
+	void UpdateMover( float elapsedTime, const Map &terrain );
 private:
 	void AssignCurrentBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
 	Donya::Collision::Box3F GetNormalBody ( bool ofHurtBox ) const;
@@ -655,13 +812,15 @@ private:
 	bool NowShotable( float elapsedTime ) const;
 	void ShotIfRequested( float elapsedTime );
 	void UpdateOrientation( bool lookingRight );
-	void Jump( int inputIndex );
-	bool Jumpable( int inputIndex ) const;
-	bool WillUseJump() const;
+	void Jump();
+	bool Jumpable() const;
+	bool WillUseJump() const; // Returns comprehensively judge of the player will jumps
 	void Fall( float elapsedTime );
 	void Landing();
 	void ShiftGunIfNeeded( float elapsedTime );
+private:
 	void GenerateSlideEffects() const;
+	void AddLagVision();
 private:
 	Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 public:

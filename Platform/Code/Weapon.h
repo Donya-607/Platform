@@ -12,6 +12,8 @@ namespace Definition
 	{
 		Buster = 0,
 		SkullShield,
+		
+		Shoryuken,
 
 		WeaponCount
 	};
@@ -21,6 +23,8 @@ namespace Definition
 		{
 		case WeaponKind::Buster:		return "Buster";
 		case WeaponKind::SkullShield:	return "Shield";
+		
+		case WeaponKind::Shoryuken:		return "Shoryuken";
 		default: break;
 		}
 

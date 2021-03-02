@@ -13,6 +13,8 @@ namespace Effect
 		DefeatEnemy_Small,
 		Hit_Buster,
 		Hit_ChargedBuster,
+		Hit_Shoryuken,
+		Hit_SkullShield,
 		HurtDamage,
 		Player_Appear,
 		Player_Leave,
@@ -35,6 +37,8 @@ namespace Effect
 		case Effect::Kind::DefeatEnemy_Small:		return "DefeatEnemy_Small";
 		case Effect::Kind::Hit_Buster:				return "Hit_Buster";
 		case Effect::Kind::Hit_ChargedBuster:		return "Hit_ChargedBuster";
+		case Effect::Kind::Hit_Shoryuken:			return "Hit_Shoryuken";
+		case Effect::Kind::Hit_SkullShield:			return "Hit_SkullShield";
 		case Effect::Kind::HurtDamage:				return "HurtDamage";
 		case Effect::Kind::Player_Appear:			return "Player_Appear";
 		case Effect::Kind::Player_Leave:			return "Player_Leave";

@@ -71,8 +71,6 @@ void SceneMng::Draw( float elapsedTime )
 		( *it )->Draw( elapsedTime );
 	}
 
-	Effect::Admin::Get().Draw();
-
 	Donya::Sprite::SetDrawDepth( 0.0f );
 
 	// If use AlphaToCoverage mode, the transparency will be strange.

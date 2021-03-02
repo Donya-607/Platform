@@ -43,6 +43,7 @@
 #include "PointLightStorage.h"
 #include "RenderingStuff.h"
 #include "SaveData.h"
+#include "SceneConstant.h"
 #include "StageNumber.h"
 
 #if DEBUG_MODE
@@ -708,22 +709,6 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	return ReturnResult();
 }
 
-namespace
-{
-	enum class DrawTarget
-	{
-		Map		= 1 << 0,
-		Door	= 1 << 1,
-		Bullet	= 1 << 2,
-		Player	= 1 << 3,
-		Boss	= 1 << 4,
-		Enemy	= 1 << 5,
-		Item	= 1 << 6,
-
-		All		= Map | Door | Bullet | Player | Boss | Enemy | Item
-	};
-	DEFINE_ENUM_FLAG_OPERATORS( DrawTarget )
-}
 void SceneGame::Draw( float elapsedTime )
 {
 	ClearBackGround();
@@ -738,6 +723,8 @@ void SceneGame::Draw( float elapsedTime )
 	RenderingStuff *p = RenderingStuffInstance::Get().Ptr();
 	if ( !p ) { return; }
 	// else
+
+	using Target = Definition::DrawTarget;
 
 	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix, bool applyToEffect )
 	{
@@ -758,10 +745,9 @@ void SceneGame::Draw( float elapsedTime )
 			effectAdmin.SetLightDirection	( directionalLight.direction.XYZ() );
 		}
 	};
-	auto DrawObjects			= [&]( DrawTarget option, bool castShadow )
+	auto DrawObjects			= [&]( Target option, bool castShadow )
 	{
-		using Kind = DrawTarget;
-		auto Drawable = [&option]( Kind verify )
+		auto Drawable = [&option]( Target verify )
 		{
 			return scast<int>( option & verify ) != 0;
 		};
@@ -772,7 +758,7 @@ void SceneGame::Draw( float elapsedTime )
 		? p->renderer.ActivateShaderShadowStatic()
 		: p->renderer.ActivateShaderNormalStatic();
 
-		if ( Drawable( Kind::Map ) && pMap ) { pMap->Draw( &p->renderer ); }
+		if ( Drawable( Target::Map ) && pMap ) { pMap->Draw( &p->renderer ); }
 
 		( castShadow )
 		? p->renderer.DeactivateShaderShadowStatic()
@@ -783,12 +769,13 @@ void SceneGame::Draw( float elapsedTime )
 		? p->renderer.ActivateShaderShadowSkinning()
 		: p->renderer.ActivateShaderNormalSkinning();
 
-		if ( Drawable( Kind::Player	) && pPlayer		)	{ pPlayer->				Draw( &p->renderer ); }
-		if ( Drawable( Kind::Boss	) && pBossContainer	)	{ pBossContainer->		Draw( &p->renderer ); }
-		if ( Drawable( Kind::Enemy	) )						{ Enemy::Admin::Get().	Draw( &p->renderer ); }
-		if ( Drawable( Kind::Door	) && pDoors			)	{ pDoors->				Draw( &p->renderer ); }
-		if ( Drawable( Kind::Item	) )						{ Item::Admin::Get().	Draw( &p->renderer ); }
-		if ( Drawable( Kind::Bullet	) )						{ Bullet::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Target::Player	) && pPlayer		)	{ pPlayer->				Draw( &p->renderer ); }
+		if ( Drawable( Target::Vision	) && pPlayer		)	{ pPlayer->				DrawVision( &p->renderer ); }
+		if ( Drawable( Target::Boss		) && pBossContainer	)	{ pBossContainer->		Draw( &p->renderer ); }
+		if ( Drawable( Target::Enemy	) )						{ Enemy::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Target::Door		) && pDoors			)	{ pDoors->				Draw( &p->renderer ); }
+		if ( Drawable( Target::Item		) )						{ Item::Admin::Get().	Draw( &p->renderer ); }
+		if ( Drawable( Target::Bullet	) )						{ Bullet::Admin::Get().	Draw( &p->renderer ); }
 
 		( castShadow )
 		? p->renderer.DeactivateShaderShadowSkinning()
@@ -844,7 +831,7 @@ void SceneGame::Draw( float elapsedTime )
 		}
 		p->renderer.ActivateConstantScene();
 
-		DrawObjects( DrawTarget::All, /* castShadow = */ true );
+		DrawObjects( Target::All ^ Target::Vision, /* castShadow = */ true );
 
 		p->renderer.DeactivateConstantScene();
 	}
@@ -885,7 +872,7 @@ void SceneGame::Draw( float elapsedTime )
 		p->renderer.ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		p->renderer.ActivateShadowMap( p->shadowMap );
 
-		constexpr DrawTarget option = DrawTarget::All ^ DrawTarget::Bullet ^ DrawTarget::Item;
+		constexpr Target option = Target::All ^ Target::Bullet ^ Target::Vision ^ Target::Item;
 		DrawObjects( option, /* castShadow = */ false );
 
 		// Disable shadow
@@ -896,11 +883,13 @@ void SceneGame::Draw( float elapsedTime )
 			p->renderer.ActivateConstantShadow();
 		}
 
-		DrawObjects( DrawTarget::Item, /* castShadow = */ false );
+		DrawObjects( Target::Item, /* castShadow = */ false );
 
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_Write );
-		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
+		DrawObjects( Target::Bullet, /* castShadow = */ false );
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
+
+		DrawObjects( Target::Vision, /* castShadow = */ false );
 
 		p->renderer.DeactivateShadowMap( p->shadowMap );
 		p->renderer.DeactivateSamplerShadow();
@@ -934,6 +923,17 @@ void SceneGame::Draw( float elapsedTime )
 		Donya::Rasterizer::Deactivate();
 		Donya::DepthStencil::Deactivate();
 	}
+
+	p->screenSurface.SetRenderTarget();
+	p->screenSurface.SetViewport();
+	// Draw effects
+	{
+		// Ignore the depth of game,
+		// And do not affect the luminance of game.
+		p->screenSurface.ClearDepthStencil();
+		Effect::Admin::Get().Draw();
+	}
+	Donya::Surface::ResetRenderTarget();
 
 	Donya::SetDefaultRenderTargets();
 
@@ -1935,6 +1935,12 @@ void SceneGame::UpdateCurrentRoomID()
 	// Up direction is only able to when grabbing a ladder
 	if ( Contain( adjoinDir, Dir::Up ) )
 	{
+		bool disallow = true;
+		if ( pPlayer->NowGrabbingLadder() )
+		{
+			disallow = false;
+		}
+
 		// But allow if may transition to horizontally
 		// If it is nothing, we can not transition to horizontally without a ladder from a room that has transition-able of [Up] and [Right] or [Left].
 		bool mayHorizontal = false;
@@ -1948,11 +1954,19 @@ void SceneGame::UpdateCurrentRoomID()
 			if ( right < currentRoomArea.Min().x ) { mayHorizontal = true; }
 			if ( left  > currentRoomArea.Max().x ) { mayHorizontal = true; }
 		}
-
-		if ( !mayHorizontal && !pPlayer->NowGrabbingLadder() )
+		if ( mayHorizontal )
 		{
-			return;
+			disallow = false;
 		}
+
+		// If the player climbed by something, we must allow that for visualize the player that off screen.
+		if ( pPlayer->OnGround() )
+		{
+			disallow = false;
+		}
+
+
+		if ( disallow ) { return; }
 		// else
 	}
 
@@ -2974,10 +2988,11 @@ void SceneGame::UseImGui( float elapsedTime )
 
 	UseScreenSpaceImGui();
 
-	static std::array<Donya::Vector3, 3> teleportDestinations
+	static std::array<Donya::Vector3, 4> teleportDestinations
 	{
 		Donya::Vector3{  26.5f, -54.0f, 0.0f },
 		Donya::Vector3{  78.0f, -15.0f, 0.0f },
+		Donya::Vector3{ 132.5f, -27.0f, 0.0f },
 		Donya::Vector3{ 202.5f, -28.0f, 0.0f },
 	};
 	auto TeleportPlayerTo = [&]( size_t destIndex )
@@ -3019,7 +3034,12 @@ void SceneGame::UseImGui( float elapsedTime )
 		SaveData::File tmp = admin.NowData();
 		if ( unlock )
 		{
-			tmp.availableWeapons.Activate( Definition::WeaponKind::SkullShield );
+			using WP = Definition::WeaponKind;
+			constexpr int count = scast<int>( WP::WeaponCount );
+			for ( int i = 0; i < count; ++i )
+			{
+				tmp.availableWeapons.Activate( scast<WP>( i ) );
+			}
 		}
 		else
 		{
@@ -3109,13 +3129,16 @@ void SceneGame::UseImGui( float elapsedTime )
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 
+	// ImGui::ShowDemoWindow();
+
 	ImGui::Checkbox( u8"[ALT+L]	光源の可視化",		&drawLightSources	);
 	ImGui::Checkbox( u8"[F4]	光視点にする",		&projectLightCamera	);
 	if ( ImGui::Button( u8"[F7]			全武器解放＆セーブ" ) ) { ChangeAvailableWeapon( /* unlock = */ true  ); }
 	if ( ImGui::Button( u8"[CTRL+F7]	全武器制限＆セーブ" ) ) { ChangeAvailableWeapon( /* unlock = */ false ); }
 	if ( ImGui::Button( u8"[ALT+ 1 ]	自機を 開始地点 へ" ) ) { TeleportPlayerTo( 0 ); }
 	if ( ImGui::Button( u8"[ALT+ 2 ]	自機を 中間地点 へ" ) ) { TeleportPlayerTo( 1 ); }
-	if ( ImGui::Button( u8"[ALT+ 3 ]	自機を ボス直前 へ" ) ) { TeleportPlayerTo( 2 ); }
+	if ( ImGui::Button( u8"[ALT+ 3 ]	自機を 後半地点 へ" ) ) { TeleportPlayerTo( 2 ); }
+	if ( ImGui::Button( u8"[ALT+ 4 ]	自機を ボス直前 へ" ) ) { TeleportPlayerTo( 3 ); }
 	Effect::Admin::Get().SetProjectionMatrix
 	(
 		( projectLightCamera )

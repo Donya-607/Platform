@@ -200,10 +200,13 @@ void SceneLoad::Init()
 			Bundle{ ID::Bullet_HitBone,					"./Data/Sounds/SE/Bullet/Hit_Bone.ogg",					false	},
 			Bundle{ ID::Bullet_HitBuster,				"./Data/Sounds/SE/Bullet/Hit_Buster.wav",				false	},
 			Bundle{ ID::Bullet_HitShield,				"./Data/Sounds/SE/Bullet/Hit_Shield.wav",				false	},
+			Bundle{ ID::Bullet_HitShoryuken,			"./Data/Sounds/SE/Bullet/Hit_Shoryuken.wav",			false	},
 			Bundle{ ID::Bullet_HitSuperBall,			"./Data/Sounds/SE/Bullet/Hit_SuperBall.ogg",			false	},
 			Bundle{ ID::Bullet_Protected,				"./Data/Sounds/SE/Bullet/Protected.wav",				false	},
 			Bundle{ ID::Bullet_ShotBone,				"./Data/Sounds/SE/Bullet/Shot_Bone.ogg",				false	},
-			Bundle{ ID::Bullet_ShotBuster,				"./Data/Sounds/SE/Bullet/Shot_Buster.wav",				false	},
+			Bundle{ ID::Bullet_ShotBuster_Min,			"./Data/Sounds/SE/Bullet/Shot_Buster_0.ogg",			false	},
+			Bundle{ ID::Bullet_ShotBuster_1,			"./Data/Sounds/SE/Bullet/Shot_Buster_1.ogg",			false	},
+			Bundle{ ID::Bullet_ShotBuster_Max,			"./Data/Sounds/SE/Bullet/Shot_Buster_2.ogg",			false	},
 			Bundle{ ID::Bullet_ShotShield_Expand,		"./Data/Sounds/SE/Bullet/Shot_Shield_Expand.wav",		false	},
 			Bundle{ ID::Bullet_ShotShield_Throw,		"./Data/Sounds/SE/Bullet/Shot_Shield_Throw.wav",		false	},
 			Bundle{ ID::Bullet_ShotSkullBuster,			"./Data/Sounds/SE/Bullet/Shot_Skull_Buster.wav",		false	},
@@ -228,6 +231,7 @@ void SceneLoad::Init()
 			Bundle{ ID::Player_Leave,					"./Data/Sounds/SE/Player/Leave.ogg",					false	},
 			Bundle{ ID::Player_Miss,					"./Data/Sounds/SE/Player/Miss.wav",						false	},
 			Bundle{ ID::Player_ShiftGun,				"./Data/Sounds/SE/Player/ShiftGun.ogg",					false	},
+			Bundle{ ID::Player_Shoryuken,				"./Data/Sounds/SE/Player/Shoryuken.ogg",				false	},
 
 			Bundle{ ID::RecoverHP,						"./Data/Sounds/SE/Effect/RecoverHP.wav",				false	},
 

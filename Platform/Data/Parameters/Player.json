@@ -1,10 +1,8 @@
 {
     "Player": {
-        "cereal_class_version": 19,
+        "cereal_class_version": 23,
         "moveSpeed": 5.0,
         "jumpStrength": 18.5,
-        "gravityResistance": 1.0,
-        "resistableSeconds": 0.07999999821186066,
         "maxFallSpeed": 20.0,
         "hitBox": {
             "cereal_class_version": 0,
@@ -66,12 +64,12 @@
         },
         "maxBusterCount": 3,
         "maxHP": 28,
-        "knockBackSeconds": 0.5,
+        "knockBackSecond": 0.5,
         "knockBackSpeed": 2.0,
-        "invincibleSeconds": 1.7000000476837159,
+        "invincibleSecond": 1.7000000476837159,
         "flushingInterval": 0.10000000149011612,
         "slideMoveSpeed": 11.32349967956543,
-        "slideMoveSeconds": 0.3400000035762787,
+        "slideMoveSecond": 0.3400000035762787,
         "slideHitBox": {
             "pos": {
                 "x": 0.0,
@@ -146,7 +144,10 @@
             0.8999999761581421,
             1.5,
             1.2000000476837159,
-            1.0
+            1.0,
+            1.0,
+            1.0,
+            1.5
         ],
         "chargeParams": [
             {
@@ -163,7 +164,7 @@
                 }
             },
             {
-                "chargeSecond": 0.4000000059604645,
+                "chargeSecond": 0.382999986410141,
                 "emissiveCycleSecond": 0.5,
                 "emissiveMinBias": 0.4000000059604645,
                 "emissiveEaseKind": 10,
@@ -175,7 +176,7 @@
                 }
             },
             {
-                "chargeSecond": 1.2999999523162842,
+                "chargeSecond": 1.2649999856948853,
                 "emissiveCycleSecond": 0.4000000059604645,
                 "emissiveMinBias": 0.5,
                 "emissiveEaseKind": 10,
@@ -193,7 +194,7 @@
             "y": 0.0,
             "z": 0.0
         },
-        "jumpBufferSecond": 0.20000000298023225,
+        "jumpBufferSecond": 0.11999999731779099,
         "appearDelaySecond": 0.5,
         "braceStandFactor": 2.0,
         "emissiveTransFactor": 0.30000001192092898,
@@ -208,13 +209,18 @@
                 "x": 0.6627451181411743,
                 "y": 0.8135178089141846,
                 "z": 1.0
+            },
+            {
+                "x": 1.0,
+                "y": 0.7529411911964417,
+                "z": 0.7529411911964417
             }
         ],
         "jumpCancelledVSpeedMax": 4.0,
-        "gravityRising": 45.0,
-        "gravityRisingAccel": 120.0,
-        "gravityFalling": 35.0,
-        "gravityFallingAccel": 90.0,
+        "gravityRising": 40.0,
+        "gravityRisingAccel": 90.0,
+        "gravityFalling": 30.0,
+        "gravityFallingAccel": 135.0,
         "gravityMax": 80.0,
         "inertialMoveSpeed": 5.0,
         "partMotions": [
@@ -326,7 +332,57 @@
             0.08299999684095383,
             0.08299999684095383,
             0.08299999684095383,
-            0.08299999684095383
-        ]
+            0.08299999684095383,
+            0.0,
+            0.0,
+            0.0
+        ],
+        "shotBufferSecond": 0.20000000298023225,
+        "slideBufferSecond": 0.20000000298023225,
+        "commandStickDegreeMargin": 20.0,
+        "commands": [
+            {
+                "cereal_class_version": 0,
+                "marginSecond": 0.10000000149011612,
+                "sticks": [
+                    5,
+                    1,
+                    2
+                ]
+            },
+            {
+                "marginSecond": 0.10000000149011612,
+                "sticks": [
+                    2,
+                    1,
+                    2
+                ]
+            }
+        ],
+        "shoryuEntireTakeSecond": 1.0,
+        "shoryuRiseHSpeedBase": 10.0,
+        "shoryuRiseHSpeedRangeL": 6.0,
+        "shoryuRiseHSpeedRangeR": 5.0,
+        "shoryuRiseHSpeedAdjust": 60.0,
+        "shoryuFallHSpeed": 2.0,
+        "shoryuEntireVSpeeds": [
+            0.0,
+            25.445999145507814,
+            33.928001403808597,
+            11.565999984741211,
+            1.5420000553131104,
+            -3.8550000190734865,
+            -7.710999965667725,
+            -10.795000076293946,
+            -11.565999984741211,
+            -18.600000381469728
+        ],
+        "visionLifeSecond": 0.699999988079071,
+        "visionGenerateInterval": 0.04800000041723251,
+        "visionColor": {
+            "x": 0.125490203499794,
+            "y": 1.8823529481887818,
+            "z": 0.125490203499794
+        }
     }
 }

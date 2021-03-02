@@ -78,15 +78,30 @@ namespace Donya
 		/// </summary>
 		void SetRenderTarget( ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
-		/// Clear render-target view, depth-stencil view.<para></para>
+		/// Clear render-target view and depth-stencil view.<para></para>
 		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
 		void Clear( const Donya::Vector4 clearColor, ID3D11DeviceContext *pContext = nullptr ) const;
 		/// <summary>
-		/// Clear render-target view, depth-stencil view.<para></para>
+		/// Clear render-target view and depth-stencil view.<para></para>
 		/// If set nullptr to pContext, a default device will be used.
 		/// </summary>
 		void Clear( Donya::Color::Code clearColor, float alpha = 1.0f, ID3D11DeviceContext *pContext = nullptr ) const;
+		/// <summary>
+		/// Clear render-target view.<para></para>
+		/// If set nullptr to pContext, a default device will be used.
+		/// </summary>
+		void ClearRenderTarget( const Donya::Vector4 clearColor, ID3D11DeviceContext *pContext = nullptr ) const;
+		/// <summary>
+		/// Clear render-target view.<para></para>
+		/// If set nullptr to pContext, a default device will be used.
+		/// </summary>
+		void ClearRenderTarget( Donya::Color::Code clearColor, float alpha = 1.0f, ID3D11DeviceContext *pContext = nullptr ) const;
+		/// <summary>
+		/// Clear depth-stencil view.<para></para>
+		/// If set nullptr to pContext, a default device will be used.
+		/// </summary>
+		void ClearDepthStencil( ID3D11DeviceContext *pContext = nullptr ) const;
 	public:
 		/// <summary>
 		/// Set render-target's shader-resource view to vertex-shader.<para></para>

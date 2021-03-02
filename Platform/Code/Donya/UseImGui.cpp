@@ -275,13 +275,13 @@ namespace ImGui
 			if ( useTreeNode ) { ImGui::TreePop(); }
 		}
 
-		void ShowBezier2DNode( const std::string &nodeCaption, std::vector<Donya::Vector2> *pCtrlPoints, float rangeMin, float rangeMax )
+		template<typename T, typename ChangeValueMethod>
+		void ShowBezierNodeImpl( const std::string &nodeCaption, std::vector<T> *pCtrlPoints, ChangeValueMethod ChangeValueOf )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
 
-			constexpr Donya::Vector2 append{ 1.0f, 1.0f };
-			ResizeByButton( pCtrlPoints, append );
+			ResizeByButton( pCtrlPoints, T{} );
 			if ( pCtrlPoints->size() < 2 )
 			{
 				pCtrlPoints->resize( 2 );
@@ -292,7 +292,7 @@ namespace ImGui
 			for ( int i = 0; i < pointCount; ++i )
 			{
 				caption = Donya::MakeArraySuffix( i );
-				ImGui::SliderFloat2( caption.c_str(), &pCtrlPoints->at( i ).x, rangeMin, rangeMax );
+				ChangeValueOf( caption.c_str(), &pCtrlPoints->at( i ) );
 			}
 
 			ImGui::Text( "" ); // Line feed
@@ -308,10 +308,35 @@ namespace ImGui
 			auto &timer = found->second;
 			ImGui::SliderFloat( u8"確認用タイマ", &timer, 0.0f, 1.0f );
 
-			Donya::Vector2 result = Math::CalcBezierCurve( *pCtrlPoints, timer );
-			ImGui::SliderFloat2( u8"ベジェ曲線適用結果", &result.x, rangeMin, rangeMax );
+			T result = Math::CalcBezierCurve( *pCtrlPoints, timer );
+			// ImGui::SliderFloat2( u8"ベジェ曲線適用結果", &result.x, rangeMin, rangeMax );
+			ChangeValueOf( u8"ベジェ曲線適用結果", &result );
 
 			ImGui::TreePop();
+		}
+		void ShowBezier1DNode( const std::string &nodeCaption, std::vector<float> *pCtrlPoints, float rangeMin, float rangeMax )
+		{
+			auto Method = [&]( const char *caption, float *p )
+			{
+				ImGui::SliderFloat( caption, p, rangeMin, rangeMax );
+			};
+			ShowBezierNodeImpl( nodeCaption, pCtrlPoints, Method );
+		}
+		void ShowBezier2DNode( const std::string &nodeCaption, std::vector<Donya::Vector2> *pCtrlPoints, float rangeMin, float rangeMax )
+		{
+			auto Method = [&]( const char *caption, Donya::Vector2 *p )
+			{
+				ImGui::SliderFloat2( caption, &p->x, rangeMin, rangeMax );
+			};
+			ShowBezierNodeImpl( nodeCaption, pCtrlPoints, Method );
+		}
+		void ShowBezier3DNode( const std::string &nodeCaption, std::vector<Donya::Vector3> *pCtrlPoints, float rangeMin, float rangeMax )
+		{
+			auto Method = [&]( const char *caption, Donya::Vector3 *p )
+			{
+				ImGui::SliderFloat3( caption, &p->x, rangeMin, rangeMax );
+			};
+			ShowBezierNodeImpl( nodeCaption, pCtrlPoints, Method );
 		}
 	}
 }

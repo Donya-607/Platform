@@ -12,9 +12,10 @@
 #include "Donya/Collision.h"
 #include "Donya/Easing.h"
 #include "Donya/Serializer.h"
-#include "Donya/UseImGui.h"		// use US_IMGUI macro
+#include "Donya/UseImGui.h"		// Use US_IMGUI macro
 
 #include "Bullet.h"				// Use Bullet::FireDesc
+#include "Command.h"
 #include "ModelHelper.h"		// Use PartApply
 
 struct PlayerParam
@@ -26,8 +27,10 @@ public:
 	int		initialRemainCount		= 2;
 	float	moveSpeed				= 1.0f;
 	float	inertialMoveSpeed		= 1.0f;
+	float	shotBufferSecond		= 0.2f;			// Allow second of pre-input
 	float	slideMoveSpeed			= 1.0f;
-	float	slideMoveSeconds		= 1.0f;
+	float	slideMoveSecond			= 1.0f;
+	float	slideBufferSecond		= 0.2f;			// Allow second of pre-input
 	float	ladderMoveSpeed			= 1.0f;
 	float	ladderShotLagSecond		= 0.5f;
 	float	jumpStrength			= 1.0f;
@@ -38,23 +41,36 @@ public:
 	float	gravityFalling			= 1.0f;
 	float	gravityFallingAccel		= 1.0f;
 	float	gravityMax				= 1.0f;
-	float	gravityResistance		= 0.5f;			// Multiply to gravity if while pressing a jump key
-	float	resistableSeconds		= 0.5f;
 	float	maxFallSpeed			= 1.0f;
-	float	knockBackSeconds		= 0.5f;
+	float	knockBackSecond			= 0.5f;
 	float	knockBackSpeed			= 1.0f;			// X speed
 	float	braceStandFactor		= 2.0f;
-	float	invincibleSeconds		= 2.0f;
+	float	invincibleSecond		= 2.0f;
 	float	flushingInterval		= 0.1f;			// Seconds
 	float	emissiveTransFactor		= 0.3f;
-	float	appearDelaySecond		= 0.5f;			// Seconds
-	float	leaveDelaySecond		= 0.5f;			// Seconds
+	float	appearDelaySecond		= 0.5f;
+	float	leaveDelaySecond		= 0.5f;
 	Donya::Collision::Box3F			hitBox;			// VS a terrain
 	Donya::Collision::Box3F			hurtBox;		// VS an attack(e.g. enemy)
 	Donya::Collision::Box3F			slideHitBox;	// VS a terrain when sliding
 	Donya::Collision::Box3F			slideHurtBox;	// VS an attack(e.g. enemy) when sliding
 	Donya::Collision::Box3F			ladderGrabArea;	// It using for considering to continue to grab the ladder
+	
 	Bullet::FireDesc				fireParam;
+
+	float	commandStickDegreeMargin= 15.0f;
+	std::vector<Command::Part>		commands;
+	float	shoryuEntireTakeSecond	= 2.0f;
+	float	shoryuRiseHSpeedBase	= 1.0f; // velocity.x can be [base-rangeL ~ base+rangeR]
+	float	shoryuRiseHSpeedRangeL	= 1.0f; // Minus offset
+	float	shoryuRiseHSpeedRangeR	= 1.0f; // Plus offset
+	float	shoryuRiseHSpeedAdjust	= 1.0f; // Offset amount per second
+	float	shoryuFallHSpeed		= 1.0f;
+	std::vector<float>				shoryuEntireVSpeeds;
+	float	visionLifeSecond		= 0.2f;
+	float	visionGenerateInterval	= 0.2f; // Second
+	Donya::Vector3 visionColor{ 0.2f, 0.2f, 0.2f };
+
 	std::vector<float>				animePlaySpeeds;	// It size() == Player::MotionKind::MotionCount
 	std::vector<float>				animeTransSeconds;	// It interest only destination motion kind. It size() == Player::MotionKind::MotionCount
 
@@ -104,8 +120,6 @@ private:
 		(
 			CEREAL_NVP( moveSpeed			),
 			CEREAL_NVP( jumpStrength		),
-			CEREAL_NVP( gravityResistance	),
-			CEREAL_NVP( resistableSeconds	),
 			CEREAL_NVP( maxFallSpeed		),
 			CEREAL_NVP( hitBox				),
 			CEREAL_NVP( hurtBox				)
@@ -124,9 +138,9 @@ private:
 			archive
 			(
 				CEREAL_NVP( maxHP				),
-				CEREAL_NVP( knockBackSeconds	),
+				CEREAL_NVP( knockBackSecond		),
 				CEREAL_NVP( knockBackSpeed		),
-				CEREAL_NVP( invincibleSeconds	),
+				CEREAL_NVP( invincibleSecond	),
 				CEREAL_NVP( flushingInterval	)
 			);
 		}
@@ -134,10 +148,10 @@ private:
 		{
 			archive
 			(
-				CEREAL_NVP( slideMoveSpeed		),
-				CEREAL_NVP( slideMoveSeconds	),
-				CEREAL_NVP( slideHitBox			),
-				CEREAL_NVP( slideHurtBox		)
+				CEREAL_NVP( slideMoveSpeed	),
+				CEREAL_NVP( slideMoveSecond	),
+				CEREAL_NVP( slideHitBox		),
+				CEREAL_NVP( slideHurtBox	)
 			);
 		}
 		if ( 5 <= version )
@@ -222,6 +236,44 @@ private:
 		}
 		if ( 20 <= version )
 		{
+			archive
+			(
+				CEREAL_NVP( shotBufferSecond  ),
+				CEREAL_NVP( slideBufferSecond )
+			);
+		}
+		if ( 21 <= version )
+		{
+			archive
+			(
+				CEREAL_NVP( commandStickDegreeMargin	),
+				CEREAL_NVP( commands					)
+			);
+		}
+		if ( 22 <= version )
+		{
+			archive
+			(
+				CEREAL_NVP( shoryuEntireTakeSecond	),
+				CEREAL_NVP( shoryuRiseHSpeedBase	),
+				CEREAL_NVP( shoryuRiseHSpeedRangeL	),
+				CEREAL_NVP( shoryuRiseHSpeedRangeR	),
+				CEREAL_NVP( shoryuRiseHSpeedAdjust	),
+				CEREAL_NVP( shoryuFallHSpeed		),
+				CEREAL_NVP( shoryuEntireVSpeeds		)
+			);
+		}
+		if ( 23 <= version )
+		{
+			archive
+			(
+				CEREAL_NVP( visionLifeSecond		),
+				CEREAL_NVP( visionGenerateInterval	),
+				CEREAL_NVP( visionColor				)
+			);
+		}
+		if ( 24 <= version )
+		{
 			// archive( CEREAL_NVP( x ) );
 		}
 	}
@@ -230,4 +282,4 @@ public:
 	void ShowImGuiNode();
 #endif // USE_IMGUI
 };
-CEREAL_CLASS_VERSION( PlayerParam, 19 )
+CEREAL_CLASS_VERSION( PlayerParam, 23 )

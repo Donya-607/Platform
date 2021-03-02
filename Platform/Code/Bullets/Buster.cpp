@@ -103,6 +103,10 @@ namespace Bullet
 		}
 
 		Base::Init( adjusted );
+
+		// The charged buster models are implemented by another motion,
+		// so the interpolation will makes strange model.
+		model.SetInterpolationSecond( 0.0f );
 	}
 	void Buster::Uninit()
 	{

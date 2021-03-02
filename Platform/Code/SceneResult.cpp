@@ -33,6 +33,7 @@
 #include "PointLightStorage.h"
 #include "RenderingStuff.h"
 #include "SaveData.h"
+#include "SceneConstant.h"
 #include "StageNumber.h"
 
 #if DEBUG_MODE
@@ -525,18 +526,6 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	return ReturnResult();
 }
 
-namespace
-{
-	enum class DrawTarget
-	{
-		Bullet	= 1 << 0,
-		Player	= 1 << 1,
-		Enemy	= 1 << 2,
-
-		All		= Bullet | Player | Enemy
-	};
-	DEFINE_ENUM_FLAG_OPERATORS( DrawTarget )
-}
 void SceneResult::Draw( float elapsedTime )
 {
 	ClearBackGround();
@@ -544,6 +533,8 @@ void SceneResult::Draw( float elapsedTime )
 	RenderingStuff *p = RenderingStuffInstance::Get().Ptr();
 	if ( !p ) { return; }
 	// else
+
+	using Target = Definition::DrawTarget;
 
 	auto UpdateSceneConstant	= [&]( const Donya::Model::Constants::PerScene::DirectionalLight &directionalLight, const Donya::Vector4 &eyePos, const Donya::Vector4x4 &viewMatrix, const Donya::Vector4x4 &viewProjectionMatrix )
 	{
@@ -554,10 +545,9 @@ void SceneResult::Draw( float elapsedTime )
 		constant.viewProjMatrix		= viewProjectionMatrix;
 		p->renderer.UpdateConstant( constant );
 	};
-	auto DrawObjects			= [&]( DrawTarget option, bool castShadow )
+	auto DrawObjects			= [&]( Target option, bool castShadow )
 	{
-		using Kind = DrawTarget;
-		auto Drawable = [&option]( Kind verify )
+		auto Drawable = [&option]( Target verify )
 		{
 			return scast<int>( option & verify ) != 0;
 		};
@@ -579,9 +569,10 @@ void SceneResult::Draw( float elapsedTime )
 		? p->renderer.ActivateShaderShadowSkinning()
 		: p->renderer.ActivateShaderNormalSkinning();
 
-		if ( Drawable( Kind::Player	) && pPlayer		)	{ pPlayer->Draw				( &p->renderer ); }
-		if ( Drawable( Kind::Enemy	) )						{ EnemyDraw					( &p->renderer ); }
-		if ( Drawable( Kind::Bullet	) )						{ Bullet::Admin::Get().Draw	( &p->renderer ); }
+		if ( Drawable( Target::Player	) && pPlayer	)	{ pPlayer->Draw				( &p->renderer ); }
+		if ( Drawable( Target::Vision	) && pPlayer	)	{ pPlayer->DrawVision		( &p->renderer ); }
+		if ( Drawable( Target::Enemy	) )					{ EnemyDraw					( &p->renderer ); }
+		if ( Drawable( Target::Bullet	) )					{ Bullet::Admin::Get().Draw	( &p->renderer ); }
 
 		( castShadow )
 		? p->renderer.DeactivateShaderShadowSkinning()
@@ -617,7 +608,7 @@ void SceneResult::Draw( float elapsedTime )
 		}
 		p->renderer.ActivateConstantScene();
 
-		DrawObjects( DrawTarget::All, /* castShadow = */ true );
+		DrawObjects( Target::All ^ Target::Vision, /* castShadow = */ true );
 
 		p->renderer.DeactivateConstantScene();
 	}
@@ -649,7 +640,7 @@ void SceneResult::Draw( float elapsedTime )
 		p->renderer.ActivateSamplerShadow( Donya::Sampler::Defined::Point_Border_White );
 		p->renderer.ActivateShadowMap( p->shadowMap );
 
-		constexpr DrawTarget option = DrawTarget::All ^ DrawTarget::Bullet;
+		constexpr Target option = Target::All ^ Target::Bullet ^ Target::Vision;
 		DrawObjects( option, /* castShadow = */ false );
 
 		// Disable shadow
@@ -661,8 +652,10 @@ void SceneResult::Draw( float elapsedTime )
 		}
 
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_Write );
-		DrawObjects( DrawTarget::Bullet, /* castShadow = */ false );
+		DrawObjects( Target::Bullet, /* castShadow = */ false );
 		Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::Write_PassLess );
+
+		DrawObjects( Target::Vision, /* castShadow = */ false );
 
 		p->renderer.DeactivateShadowMap( p->shadowMap );
 		p->renderer.DeactivateSamplerShadow();
@@ -699,6 +692,17 @@ void SceneResult::Draw( float elapsedTime )
 		Donya::DepthStencil::Deactivate();
 	}
 
+	p->screenSurface.SetRenderTarget();
+	p->screenSurface.SetViewport();
+	// Draw effects
+	{
+		// Ignore the depth of game,
+		// And do not affect the luminance of game.
+		p->screenSurface.ClearDepthStencil();
+		Effect::Admin::Get().Draw();
+	}
+	Donya::Surface::ResetRenderTarget();
+
 	Donya::SetDefaultRenderTargets();
 
 	const Donya::Vector2 screenSurfaceSize = p->screenSurface.GetSurfaceSizeF();
@@ -729,15 +733,23 @@ void SceneResult::Draw( float elapsedTime )
 		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 		Donya::Sampler::ResetPS( 0 );
 	}
-
-	// Add the bloom buffers
-	Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
-	p->bloomer.DrawBlurBuffers( screenSurfaceSize );
-	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
-
-	Donya::Rasterizer::Deactivate();
 	Donya::DepthStencil::Deactivate();
 
+	Donya::DepthStencil::Activate( Donya::DepthStencil::Defined::NoTest_NoWrite );
+	// Add the bloom buffers
+	{
+		const float oldDepth = Donya::Sprite::GetDrawDepth();
+		Donya::Sprite::SetDrawDepth( 0.0f );
+
+		Donya::Blend::Activate( Donya::Blend::Mode::ADD_NO_ATC );
+		p->bloomer.DrawBlurBuffers( screenSurfaceSize );
+		Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
+
+		Donya::Sprite::SetDrawDepth( oldDepth );
+	}
+	Donya::DepthStencil::Deactivate();
+
+	Donya::Rasterizer::Deactivate();
 
 #if DEBUG_MODE
 	if ( Common::IsShowCollision() )

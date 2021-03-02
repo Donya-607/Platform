@@ -722,7 +722,7 @@ namespace Boss
 		Bullet::FireDesc desc;
 		desc.kind				= Bullet::Kind::SkullShield;
 		desc.initialSpeed		= 0.0f;
-		desc.direction			= Donya::Vector3::Zero();
+		desc.direction			= inst.orientation.LocalFront();
 		desc.position			= CalcCurrentShieldPosition( inst );
 		desc.pAdditionalDamage	= std::make_shared<Definition::Damage>();
 		desc.pAdditionalDamage->amount	=  0;

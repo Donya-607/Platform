@@ -272,10 +272,8 @@ namespace Donya
 	void Surface::Clear( const Donya::Vector4 clearColor, ID3D11DeviceContext *pContext ) const
 	{
 		SetDefaultIfNull( &pContext );
-
-		const FLOAT colors[4]{ clearColor.x, clearColor.y, clearColor.z, clearColor.w };
-		if ( pRTV ) { pContext->ClearRenderTargetView( pRTV.Get(), colors ); }
-		if ( pDSV ) { pContext->ClearDepthStencilView( pDSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 ); }
+		ClearRenderTarget( clearColor, pContext );
+		ClearDepthStencil( pContext );
 	}
 	void Surface::Clear( Donya::Color::Code   clearColor, float alpha, ID3D11DeviceContext *pContext ) const
 	{
@@ -284,6 +282,32 @@ namespace Donya
 			Donya::Vector4{ Donya::Color::MakeColor( clearColor ), alpha },
 			pContext
 		);
+	}
+	void Surface::ClearRenderTarget( const Donya::Vector4 clearColor, ID3D11DeviceContext *pContext ) const
+	{
+		if ( !pRTV ) { return; }
+		// else
+
+		SetDefaultIfNull( &pContext );
+
+		const FLOAT colors[4]{ clearColor.x, clearColor.y, clearColor.z, clearColor.w };
+		pContext->ClearRenderTargetView( pRTV.Get(), colors );
+	}
+	void Surface::ClearRenderTarget( Donya::Color::Code clearColor, float alpha, ID3D11DeviceContext *pContext ) const
+	{
+		ClearRenderTarget
+		(
+			Donya::Vector4{ Donya::Color::MakeColor( clearColor ), alpha },
+			pContext
+		);
+	}
+	void Surface::ClearDepthStencil( ID3D11DeviceContext *pContext ) const
+	{
+		if ( !pDSV ) { return; }
+		// else
+
+		SetDefaultIfNull( &pContext );
+		pContext->ClearDepthStencilView( pDSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 );
 	}
 
 	void Surface::SetRenderTargetShaderResourceVS( unsigned int slot, ID3D11DeviceContext *pContext ) const
