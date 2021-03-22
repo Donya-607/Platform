@@ -594,6 +594,22 @@ void PlayerParam::ShowImGuiNode()
 		}
 		ImGui::TreePop();
 	}
+	if ( uvOffsetsPerGun.size() != themeCount )
+	{
+		uvOffsetsPerGun.resize( themeCount, Donya::Vector2{ 0.0f, 0.0f } );
+	}
+	if ( ImGui::TreeNode( u8"ＵＶオフセット設定" ) )
+	{
+		for ( size_t i = 0; i < themeCount; ++i )
+		{
+			ImGui::DragFloat2
+			(
+				Definition::GetWeaponName( scast<Definition::WeaponKind>( i ) ),
+				&uvOffsetsPerGun[i].x
+			);
+		}
+		ImGui::TreePop();
+	}
 
 	ImGui::Helper::ShowAABBNode( u8"地形との当たり判定", &hitBox  );
 	ImGui::Helper::ShowAABBNode( u8"攻撃との喰らい判定", &hurtBox );
@@ -601,7 +617,6 @@ void PlayerParam::ShowImGuiNode()
 	ImGui::Helper::ShowAABBNode( u8"スライド中・攻撃との喰らい判定", &slideHurtBox );
 }
 #endif // USE_IMGUI
-
 
 #pragma region Manager
 
@@ -926,7 +941,7 @@ void Player::MotionManager::Update( Player &inst, float elapsedTime, bool stopAn
 	
 	UpdateShotMotion( inst, elapsedTime );
 }
-void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &W, const Donya::Vector3 &color, float alpha ) const
+void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &W, const Donya::Vector3 &color, float alpha, const Donya::Vector2 &uvOffset ) const
 {
 	if ( !pRenderer ) { return; }
 	if ( !model.pResource )
@@ -939,6 +954,7 @@ void Player::MotionManager::Draw( RenderingHelper *pRenderer, const Donya::Vecto
 	Donya::Model::Constants::PerModel::Common modelConstant{};
 	modelConstant.drawColor		= Donya::Vector4{ color, alpha };
 	modelConstant.worldMatrix	= W;
+	modelConstant.uvOrigin		= uvOffset;
 	pRenderer->UpdateConstant( modelConstant );
 	pRenderer->ActivateConstantModel();
 
@@ -2918,7 +2934,7 @@ Player::GunBase::~GunBase()
 }
 void Player::GunBase::Init( Player &inst )
 {
-	kind = GetKind();
+	// No op
 }
 void Player::GunBase::Uninit()
 {
@@ -3338,7 +3354,19 @@ void Player::Draw( RenderingHelper *pRenderer ) const
 	constexpr Donya::Vector3 basicColor{ 1.0f, 1.0f, 1.0f };
 	const     Donya::Vector3 emissiveColor = shotManager.EmissiveColor();
 	const float alpha = ( invincibleTimer.Drawable() ) ? 1.0f : 0.0f;
-	motionManager.Draw( pRenderer, W, basicColor + emissiveColor, alpha );
+
+	Donya::Vector2 uvOffset = Donya::Vector2::Zero();
+	if ( pGun )
+	{
+		const size_t index = scast<size_t>( pGun->GetKind() );
+		const auto &offsets = Parameter().Get().uvOffsetsPerGun;
+		if ( index < offsets.size() )
+		{
+			uvOffset = offsets[index];
+		}
+	}
+
+	motionManager.Draw( pRenderer, W, basicColor + emissiveColor, alpha, uvOffset );
 }
 void Player::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused ) const
 {

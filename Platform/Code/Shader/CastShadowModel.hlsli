@@ -21,6 +21,8 @@ cbuffer CBPerModel : register( b1 )
 	float4		cbDrawColor;
 	row_major
 	float4x4	cbWorld;
+	float2		cbUVOrigin;
+	float2		_padding_cbpermodel;
 };
 
 // cbuffer( b2 ) is there at VS

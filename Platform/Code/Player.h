@@ -223,7 +223,7 @@ private:
 	public:
 		void Init();
 		void Update( Player &instance, float elapsedTime, bool stopAnimation = false );
-		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW, const Donya::Vector3 &blendColor, float blendAlpha ) const;
+		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW, const Donya::Vector3 &blendColor, float blendAlpha, const Donya::Vector2 &uvOffset ) const;
 	public:
 		void ResetMotionFrame();
 		void QuitShotMotion();
@@ -603,8 +603,6 @@ private:
 #pragma region Gun
 	class GunBase
 	{
-	private:
-		Definition::WeaponKind kind = Definition::WeaponKind::Buster;
 	public:
 		virtual ~GunBase();
 	public:

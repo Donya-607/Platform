@@ -76,7 +76,7 @@ float4 main( VS_OUT pin ) : SV_TARGET
 			normalMapColor	= SRGBToLinear( normalMapColor );
 	float3	tsNormal		= normalize( SampledToNormal( normalMapColor.xyz ) );
 	
-	float4	diffuseMapColor	= diffuseMap.Sample( diffuseMapSampler, pin.texCoord );
+	float4	diffuseMapColor	= diffuseMap.Sample( diffuseMapSampler, pin.texCoord + cbUVOrigin );
 			diffuseMapColor	= SRGBToLinear( diffuseMapColor );
 	float	diffuseAlpha	= diffuseMapColor.a * cbDrawColor.a;
 	clip(	diffuseAlpha - 0.001f ); // Also discard the 0.0f

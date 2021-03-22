@@ -1,6 +1,6 @@
 {
     "Player": {
-        "cereal_class_version": 23,
+        "cereal_class_version": 24,
         "moveSpeed": 5.0,
         "jumpStrength": 18.5,
         "maxFallSpeed": 20.0,
@@ -383,6 +383,21 @@
             "x": 0.125490203499794,
             "y": 1.8823529481887818,
             "z": 0.125490203499794
-        }
+        },
+        "uvOffsetsPerGun": [
+            {
+                "cereal_class_version": 0,
+                "x": 0.0,
+                "y": 0.0
+            },
+            {
+                "x": 0.5,
+                "y": 0.0
+            },
+            {
+                "x": 0.0,
+                "y": 0.0
+            }
+        ]
     }
 }
