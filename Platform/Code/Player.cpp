@@ -2644,7 +2644,9 @@ void Player::Leave::Init( Player &inst )
 
 	inst.velocity		= Donya::Vector3::Zero();
 	inst.hurtBox.exist	= false;
-	inst.AssignGun<BusterGun>(); // Discard shield if the ShieldGun is assigned
+	
+	// Release some bullet instance
+	if ( inst.pGun ) { inst.pGun->Uninit(); }
 
 	timer	= 0.0f;
 	visible	= true;
@@ -2695,7 +2697,6 @@ void Player::WinningPose::Init( Player &inst )
 	inst.velocity		= Donya::Vector3::Zero();
 	inst.hurtBox.exist	= false;
 	inst.motionManager.QuitShotMotion();
-	inst.AssignGun<BusterGun>(); // Discard shield if the ShieldGun is assigned
 
 	inst.UpdateOrientation( /* lookingRight = */ true );
 }
