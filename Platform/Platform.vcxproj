@@ -173,6 +173,7 @@
     <ClCompile Include="Code\PauseProcessor.cpp" />
     <ClCompile Include="Code\Performances\LoadPart.cpp" />
     <ClCompile Include="Code\Player.cpp" />
+    <ClCompile Include="Code\PlayerImpl\PlayerMover_Normal.cpp" />
     <ClCompile Include="Code\PointLightStorage.cpp" />
     <ClCompile Include="Code\Renderer.cpp" />
     <ClCompile Include="Code\RenderingStuff.cpp" />
@@ -296,6 +297,7 @@
     <ClInclude Include="Code\Performances\LoadParam.h" />
     <ClInclude Include="Code\Performances\LoadPart.h" />
     <ClInclude Include="Code\Player.h" />
+    <ClInclude Include="Code\PlayerImpl\PlayerMover_Normal.h" />
     <ClInclude Include="Code\PlayerParam.h" />
     <ClInclude Include="Code\PointLightStorage.h" />
     <ClInclude Include="Code\Renderer.h" />

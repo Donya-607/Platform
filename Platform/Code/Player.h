@@ -25,6 +25,7 @@
 #include "ObjectBase.h"
 #include "Parameter.h"
 #include "Renderer.h"
+#include "StateMachine.h"
 #include "Weapon.h"
 
 
@@ -359,6 +360,54 @@ private:
 		void Add( const Donya::Model::Pose &pose, const Donya::Vector3 &wsPos, const Donya::Quaternion &orientation );
 	};
 #pragma region Mover
+public:
+	class MoverBaseFOO : public StateMachine::IState<Player>
+	{
+	public:
+		virtual ~MoverBaseFOO() = default;
+	public: // Inherited methods
+		virtual void Init( Player &instance ) override;
+		virtual void Uninit( Player &instance ) override;
+		virtual void Update( Player &instance, float elapsedTime, const Map &terrain ) = 0;
+		virtual std::unique_ptr<IState<Player>> MakeNextStateOrNull( Player &ownerInstance ) = 0;
+	#if USE_IMGUI
+		virtual const char *GetMoverName() const = 0;
+	#endif // USE_IMGUI
+	private: // Unused declarations
+		void Update( Player &instance, float elapsedTime ) override {}
+		void PhysicUpdate( Player &instance, float elapsedTime ) override {}
+	public:
+		virtual void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) = 0;
+	public:
+		virtual MotionKind GetNowMotionKind( const Player &instance ) const = 0;
+		virtual bool NowMiss( const Player &instance ) const { return false; }
+		virtual bool Drawable( const Player &instance ) const { return true; }
+		virtual bool CanShoryuken( const Player &instance ) const { return true; }
+	protected:
+		virtual void AssignBodyParameter( Player &instance );
+	protected:
+		void MotionUpdate( Player &instance, float elapsedTime, bool stopAnimation = false );
+		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
+		void MoveOnlyVertical( Player &instance, float elapsedTime, const Map &terrain );
+	};
+	class AccessTest : public MoverBaseFOO
+	{
+		void Foo( Player &inst );
+
+		void Update( Player &instance, float elapsedTime, const Map &terrain ) override {}
+		std::unique_ptr<IState<Player>> MakeNextStateOrNull( Player &ownerInstance ) override { return nullptr; }
+	#if USE_IMGUI
+		virtual const char *GetMoverName() const override { return u8""; };
+	#endif // USE_IMGUI
+	private: // Unused declarations
+		void Update( Player & instance, float elapsedTime ) override {}
+		void PhysicUpdate( Player & instance, float elapsedTime ) override {}
+	public:
+		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override {}
+	public:
+		MotionKind GetNowMotionKind( const Player &instance ) const override { return MotionKind::Appear; }
+	};
+private:
 	class MoverBase
 	{
 	public:

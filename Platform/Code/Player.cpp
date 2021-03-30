@@ -1815,6 +1815,86 @@ void Player::LagVision::Add( const Donya::Model::Pose &pose, const Donya::Vector
 #pragma endregion
 
 
+void Player::MoverBaseFOO::Init( Player &inst )
+{
+	AssignBodyParameter( inst );
+}
+void Player::MoverBaseFOO::Uninit( Player &inst )
+{
+	// No op
+}
+void Player::MoverBaseFOO::MotionUpdate( Player &inst, float elapsedTime, bool stopAnimation )
+{
+	inst.motionManager.Update( inst, elapsedTime, stopAnimation );
+}
+void Player::MoverBaseFOO::MoveOnlyHorizontal( Player &inst, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder )
+{
+	const auto prevPos = inst.GetPosition();
+
+	const auto movement		= inst.velocity * elapsedTime;
+	const auto aroundSolids	= inst.FetchAroundSolids( inst.GetHitBox(), movement, terrain );
+	inst.Actor::MoveX( movement.x, aroundSolids );
+	inst.Actor::MoveZ( movement.z, aroundSolids );
+
+	const auto currPos = inst.GetPosition();
+	const auto &input = inst.inputManager;
+	if ( input.NowHeading() )
+	{
+		const Donya::Vector3 dest = input.HeadingDestinationOrOrigin();
+
+		const auto prevDiff		= dest - prevPos;
+		const auto currDiff		= dest - currPos;
+		const auto nowOveredX	= ( Donya::SignBit( currDiff.x ) != Donya::SignBit( prevDiff.x ) ) || IsZero( currDiff.x );
+		const auto nowOveredZ	= ( Donya::SignBit( currDiff.z ) != Donya::SignBit( prevDiff.z ) ) || IsZero( currDiff.z );
+		if ( nowOveredX ) { inst.body.pos.x = dest.x; }
+		if ( nowOveredZ ) { inst.body.pos.z = dest.z; }
+	}
+
+	// Clamp into room
+	{
+		const float outsideLengthL = roomLeftBorder - inst.body.Min().x;
+		if ( 0.0f < outsideLengthL )
+		{
+			inst.body.pos.x += outsideLengthL;
+		}
+		const float outsideLengthR = inst.body.Max().x - roomRightBorder;
+		if ( 0.0f < outsideLengthR )
+		{
+			inst.body.pos.x -= outsideLengthR;
+		}
+	}
+
+	// We must apply world position to hurt box also
+	inst.hurtBox.pos = inst.body.pos;
+}
+void Player::MoverBaseFOO::MoveOnlyVertical( Player &inst, float elapsedTime, const Map &terrain )
+{
+	const auto movement		= inst.velocity * elapsedTime;
+	const auto aroundSolids	= inst.FetchAroundSolids( inst.GetHitBox(), movement, terrain );
+	const int  collideIndex	= inst.Actor::MoveY( movement.y, aroundSolids );
+	if ( collideIndex != -1 ) // If collided to any
+	{
+		if ( inst.velocity.y <= 0.0f )
+		{
+			inst.Landing();
+		}
+
+		inst.velocity.y = 0.0f;
+	}
+	else if ( 0.001f < fabsf( movement.y ) ) // Should not change if the movement is none
+	{
+		inst.onGround = false;
+	}
+
+	// We must apply world position to hurt box also
+	inst.hurtBox.pos = inst.body.pos;
+}
+void Player::MoverBaseFOO::AssignBodyParameter( Player &inst )
+{
+	inst.body		= inst.GetNormalBody( /* ofHurtBox = */ false );
+	inst.hurtBox	= inst.GetNormalBody( /* ofHurtBox = */ true  );
+}
+
 #pragma region Mover
 
 void Player::MoverBase::Init( Player &inst )

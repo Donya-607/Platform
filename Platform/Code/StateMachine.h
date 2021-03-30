@@ -18,12 +18,15 @@ namespace StateMachine
 		virtual void Uninit( StateOwnerT &ownerInstance ) = 0;
 		virtual void Update( StateOwnerT &ownerInstance, float elapsedTime ) = 0;
 		virtual void PhysicUpdate( StateOwnerT &ownerInstance, float elapsedTime ) = 0;
-		virtual void Draw( StateOwnerT &ownerInstance ) = 0;
 	public:
 		/// <summary>
 		/// Returns nullptr means: do not change now
 		/// </summary>
 		virtual std::unique_ptr<IState<StateOwnerT>> MakeNextStateOrNull( StateOwnerT &ownerInstance ) = 0;
+	#if USE_IMGUI
+	public:
+		virtual const char *GetStateName() const = 0;
+	#endif // USE_IMGUI
 	};
 
 	/// <summary>
