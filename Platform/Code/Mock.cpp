@@ -16,7 +16,9 @@ public:
 		if ( !pBase ) { return; }
 		// else
 
-		StateMachine::ChangeIfNeeded<Owner>( &pBase, *this );
+		float elapsedTime = 0.016666f;
+		pBase->Update( *this, elapsedTime );
+		StateMachine::ChangeIfNeeded( &pBase, *this );
 	}
 };
 
@@ -24,7 +26,7 @@ public:
 using namespace StateMachine;
 #include "Donya/Template.h"
 
-class Idle : IState<Owner>
+class Idle : public Owner::StateBaseT
 {
 	void Init( Owner &instance ) override
 	{
@@ -48,12 +50,12 @@ class Idle : IState<Owner>
 
 	}
 public:
-	std::unique_ptr<IState<Owner>> MakeNextStateOrNull( Owner &instance ) override
+	std::unique_ptr<Owner::StateBaseT> MakeNextStateOrNull( Owner &instance ) override
 	{
 		return nullptr;
 	}
 };
-class Attack : IState<Owner>
+class Attack : public Owner::StateBaseT
 {
 	void Init( Owner &instance ) override
 	{
@@ -77,17 +79,9 @@ class Attack : IState<Owner>
 
 	}
 public:
-	std::unique_ptr<IState<Owner>> MakeNextStateOrNull( Owner &instance ) override
+	std::unique_ptr<Owner::StateBaseT> MakeNextStateOrNull( Owner &instance ) override
 	{
-		// Donya::TypeDetective<Idle> hogeT;
-		// return std::make_unique<Owner>();
-		// return std::make_unique<Idle>();
-		
-		return std::make_unique<IState<Owner>>();
 		return std::make_unique<Idle>();
-
-		// return std::make_unique<Idle>();
-		return nullptr;
 	}
 };
 

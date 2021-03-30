@@ -26,6 +26,9 @@ namespace StateMachine
 		virtual std::unique_ptr<IState<StateOwnerT>> MakeNextStateOrNull( StateOwnerT &ownerInstance ) = 0;
 	};
 
+	/// <summary>
+	/// Helper method. It changes the "pOperatee"'s state if that requests.
+	/// </summary>
 	template<class StateOwnerT>
 	void ChangeIfNeeded( std::unique_ptr<IState<StateOwnerT>> *pOperatee, StateOwnerT &ownerInstance )
 	{
