@@ -166,6 +166,7 @@
     <ClCompile Include="Code\Main.cpp" />
     <ClCompile Include="Code\Map.cpp" />
     <ClCompile Include="Code\Meter.cpp" />
+    <ClCompile Include="Code\Mock.cpp" />
     <ClCompile Include="Code\ModelHelper.cpp" />
     <ClCompile Include="Code\ObjectBase.cpp" />
     <ClCompile Include="Code\Parameter.cpp" />
@@ -315,6 +316,7 @@
     <ClInclude Include="Code\StageFormat.h" />
     <ClInclude Include="Code\Enemies\Togehero.h" />
     <ClInclude Include="Code\StageNumber.h" />
+    <ClInclude Include="Code\StateMachine.h" />
     <ClInclude Include="Code\Thread.h" />
     <ClInclude Include="Code\UI.h" />
     <ClInclude Include="Code\Weapon.h" />
