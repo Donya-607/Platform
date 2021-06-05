@@ -76,6 +76,7 @@ namespace Donya
 			};
 		}
 		constexpr Vector2 operator - () const { return Vector2{ -x, -y }; }
+		constexpr Vector2 operator + () const { return *this; }
 		constexpr Vector2 operator += ( float scalar )
 		{
 			x += scalar;
@@ -314,6 +315,7 @@ namespace Donya
 			};
 		}
 		constexpr Vector3 operator - () const { return Vector3{ -x, -y, -z }; }
+		constexpr Vector3 operator + () const { return *this; }
 		constexpr Vector3 operator += ( float scalar )
 		{
 			x += scalar;
@@ -478,6 +480,9 @@ namespace Donya
 
 #pragma region Vector4
 
+	/// <summary>
+	/// x, y, z, w
+	/// </summary>
 	struct Vector4 : public DirectX::XMFLOAT4
 	{
 	public:
@@ -546,6 +551,7 @@ namespace Donya
 			};
 		}
 		constexpr Vector4 operator - () const { return Vector4{ -x, -y, -z, -w }; }
+		constexpr Vector4 operator + () const { return *this; }
 		constexpr Vector4 operator += ( float scalar )
 		{
 			x += scalar;
@@ -993,6 +999,7 @@ namespace Donya
 		}
 	public:
 		constexpr Int2 operator - () const { return Int2{ -x, -y }; }
+		constexpr Int2 operator + () const { return *this; }
 		Int2 operator += ( int   scalar )
 		{
 			x += scalar;
@@ -1140,6 +1147,7 @@ namespace Donya
 		}
 	public:
 		constexpr Int3 operator - () const { return Int3{ -x, -y, -z }; }
+		constexpr Int3 operator + () const { return *this; }
 		Int3 operator += ( int   scalar )
 		{
 			x += scalar;
@@ -1250,7 +1258,7 @@ namespace Donya
 #pragma region Int4
 
 	/// <summary>
-	/// Have x, y, z with int type.
+	/// Have x, y, z, w with int type.
 	/// </summary>
 	struct Int4
 	{
@@ -1301,6 +1309,7 @@ namespace Donya
 		}
 	public:
 		constexpr Int4 operator - () const { return Int4{ -x, -y, -z, -w }; }
+		constexpr Int4 operator + () const { return *this; }
 		Int4 operator += ( int   scalar )
 		{
 			x += scalar;

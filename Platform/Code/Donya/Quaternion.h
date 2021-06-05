@@ -107,6 +107,10 @@ namespace Donya
 		{
 			return Quaternion{ -x, -y, -z, -w };
 		}
+		constexpr Quaternion operator + () const
+		{
+			return *this;
+		}
 
 		Quaternion &operator += ( const Quaternion &R );
 		Quaternion &operator -= ( const Quaternion &R );
@@ -218,25 +222,28 @@ namespace Donya
 		Quaternion RotateBy( const Quaternion & );
 
 		/// <summary>
-		/// Returns unit up vector of rotated by myself.
-		/// </summary>
-		constexpr Donya::Vector3 LocalUp() const
-		{
-			return RotateVector( Donya::Vector3::Up() );
-		}
-		/// <summary>
 		/// Returns unit right vector of rotated by myself.
 		/// </summary>
 		constexpr Donya::Vector3 LocalRight() const
 		{
-			return RotateVector( Donya::Vector3::Right() );
+			const Donya::Vector4x4 R = MakeRotationMatrix();
+			return Donya::Vector3( R._11, R._12, R._13 );
+		}
+		/// <summary>
+		/// Returns unit up vector of rotated by myself.
+		/// </summary>
+		constexpr Donya::Vector3 LocalUp() const
+		{
+			const Donya::Vector4x4 R = MakeRotationMatrix();
+			return Donya::Vector3( R._21, R._22, R._23 );
 		}
 		/// <summary>
 		/// Returns unit front vector of rotated by myself.
 		/// </summary>
 		constexpr Donya::Vector3 LocalFront() const
 		{
-			return RotateVector( Donya::Vector3::Front() );
+			const Donya::Vector4x4 R = MakeRotationMatrix();
+			return Donya::Vector3( R._31, R._32, R._33 );
 		}
 
 		/// <summary>
