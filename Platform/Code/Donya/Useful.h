@@ -93,6 +93,13 @@ namespace Donya
 	{
 		return start + ( time * ( last - start ) );
 	}
+	/// <summary>
+	/// start + ( t * ( last - start ) )
+	/// </summary>
+	constexpr double Lerp( double start, double last, double time )
+	{
+		return start + ( time * ( last - start ) );
+	}
 
 	/// <summary>
 	/// Returns [-pi ~ +pi].

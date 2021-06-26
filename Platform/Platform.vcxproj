@@ -136,6 +136,7 @@
     <ClCompile Include="Code\Donya\ModelPrimitive.cpp" />
     <ClCompile Include="Code\Donya\ModelRenderer.cpp" />
     <ClCompile Include="Code\Donya\Mouse.cpp" />
+    <ClCompile Include="Code\Donya\PerlinNoise.cpp" />
     <ClCompile Include="Code\Donya\Quaternion.cpp" />
     <ClCompile Include="Code\Donya\Random.cpp" />
     <ClCompile Include="Code\Donya\RenderingStates.cpp" />
@@ -246,6 +247,7 @@
     <ClInclude Include="Code\Donya\ModelRenderer.h" />
     <ClInclude Include="Code\Donya\ModelSource.h" />
     <ClInclude Include="Code\Donya\Mouse.h" />
+    <ClInclude Include="Code\Donya\PerlinNoise.h" />
     <ClInclude Include="Code\Donya\Quaternion.h" />
     <ClInclude Include="Code\Donya\Random.h" />
     <ClInclude Include="Code\Donya\RenderingStates.h" />
