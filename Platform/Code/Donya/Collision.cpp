@@ -2,6 +2,7 @@
 
 #include <array>
 #include <algorithm>	// Use std::find()
+#include <deque>
 #include <limits>		// Use std::numeric_limits<int>::max()
 
 #include "Constant.h"
@@ -12,6 +13,178 @@
 
 namespace Donya
 {
+	namespace Collision
+	{
+		void Substance::AddShape( const std::shared_ptr<ShapeBase> &pShape )
+		{
+			shapePtrs.emplace_back( pShape );
+		}
+		void Substance::RemoveShapes()
+		{
+			shapePtrs.clear();
+		}
+		void Substance::RegisterCallback_OnHitEnter( const EventFuncT_OnHitEnter &function )
+		{
+			onHitHandlers_Enter.push_back( function );
+		}
+		void Substance::RegisterCallback_OnHitContinue( const EventFuncT_OnHitContinue &function )
+		{
+			onHitHandlers_Continue.push_back( function );
+		}
+		void Substance::RegisterCallback_OnHitExit( const EventFuncT_OnHitExit &function )
+		{
+			onHitHandlers_Exit.push_back( function );
+		}
+		void Substance::InvokeCallbacks( const Substance &hitOther, const HitResult &hitParam )
+		{
+			const UniqueIdType otherId = hitOther.GetId();
+			const bool isKnown = hitSubstanceIds.count( otherId );
+
+			if ( hitParam.isHit )
+			{
+				if ( isKnown )
+				{
+					// Continue
+					
+					for ( auto &OnHitContinue : onHitHandlers_Continue )
+					{
+						OnHitContinue( hitOther, hitParam );
+					}
+				}
+				else
+				{
+					// Trigger timing
+
+					hitSubstanceIds.insert( otherId );
+					for ( auto &OnHitEnter : onHitHandlers_Enter )
+					{
+						OnHitEnter( hitOther, hitParam );
+					}
+				}
+			}
+			else if ( isKnown )
+			{
+				// Leave timing
+				
+				hitSubstanceIds.erase( otherId );
+
+				for ( auto &OnHitExit : onHitHandlers_Exit )
+				{
+					OnHitExit( otherId );
+				}
+			}
+		}
+		UniqueIdType Substance::GetId() const
+		{
+			return id.Get();
+		}
+		const std::vector<std::shared_ptr<ShapeBase>> *Substance::GetRegisteredShapePointers() const
+		{
+			return &shapePtrs;
+		}
+
+
+		// Why I choose std::deque:
+		// I can loop all element fastly(cf: https://qiita.com/sileader/items/a40f9acf90fbda16af51#%E8%A6%81%E7%B4%A0%E3%81%AE%E8%B5%B0%E6%9F%BB%E7%AF%84%E5%9B%B2for).
+		// Collider can take a reference directly(emplace_back() kills an iterator, but does not kills a directly reference-pointer. cf: https://cpprefjp.github.io/reference/deque/deque/emplace_back.html).
+		static std::deque<Substance> bodies;
+
+
+		Collider Collider::Generate()
+		{
+			Collider tmp;
+
+			bodies.emplace_back();
+			tmp.pReference = &bodies.back();
+
+			return tmp;
+		}
+		Collider::~Collider()
+		{
+			Destroy();
+		}
+		void Collider::Destroy()
+		{
+			if ( !pReference ) { return; }
+			// else
+
+			// HACK: It method looks slow
+
+			// Find referencing index
+			const size_t invalidIndex = bodies.size();
+			size_t index = 0;
+			for ( const auto &it : bodies )
+			{
+				if ( &it == pReference )
+				{
+					break;
+				}
+				// else
+				index++;
+			}
+
+			// Erase it
+			if ( index < invalidIndex )
+			{
+				bodies.erase( bodies.begin() + index );
+			}
+
+			// Signify it has removed
+			pReference = nullptr;
+		}
+		void Collider::AddShape( const std::shared_ptr<ShapeBase> &pShape )
+		{
+			if ( !pReference ) { return; }
+			// else
+			pReference->AddShape( pShape );
+		}
+		void Collider::RemoveShapes()
+		{
+			if ( !pReference ) { return; }
+			// else
+			pReference->RemoveShapes();
+		}
+		void Collider::SetMass( float mass )
+		{
+			if ( mass <= 0.0f )
+			{
+				_ASSERT_EXPR( 0, L"Error: Mass is must be over than zero!" );
+				return;
+			}
+			// else
+
+			if ( !pReference ) { return; }
+			// else
+			pReference->mass = mass;
+		}
+		void Collider::SetPosition( const Donya::Vector3 &position )
+		{
+			if ( !pReference ) { return; }
+			// else
+			pReference->position = position;
+		}
+		float Collider::GetMass() const
+		{
+			if ( !pReference ) { return EPSILON; } // Not 0.0f for safe
+			// else
+			return pReference->mass;
+		}
+		Donya::Vector3 Collider::GetPosition() const
+		{
+			if ( !pReference ) { return Donya::Vector3::Zero(); }
+			// else
+			return pReference->position;
+		}
+		UniqueIdType Collider::GetColliderId() const
+		{
+			if ( !pReference ) { return scast<UniqueIdType>( 0 ); }
+			// else
+			return pReference->GetId();
+		}
+	}
+
+
+
 	namespace Collision
 	{
 		IDType GetUniqueID()
@@ -46,10 +219,6 @@ namespace Donya
 		}
 
 		constexpr bool Within( int v, int min, int max )
-		{
-			return ( min <= v && v <= max );
-		}
-		constexpr bool Within( float v, float min, float max )
 		{
 			return ( min <= v && v <= max );
 		}

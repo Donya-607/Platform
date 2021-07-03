@@ -35,7 +35,7 @@ namespace
 #endif // DEBUG_MODE
 
 #if USE_IMGUI
-	static bool dontTransition = false;
+	static bool dontTransition = true;
 #endif // USE_IMGUI
 }
 

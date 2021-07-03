@@ -133,6 +133,11 @@ namespace Donya
 		Vector2 Unit() const;
 
 		/// <summary>
+		/// Absolute values
+		/// </summary>
+		Vector2 Abs() const;
+
+		/// <summary>
 		/// Returns [-pi ~ +pi].
 		/// </summary>
 		float Radian() const;
@@ -218,6 +223,7 @@ namespace Donya
 		static constexpr Vector2	Right()	{ return Vector2{ 1.0f, 0.0f }; }
 		static constexpr Vector2	Up()	{ return Vector2{ 0.0f, 1.0f }; }
 		static constexpr Vector2	Zero()	{ return Vector2{ 0.0f, 0.0f }; }
+		static constexpr Vector2	One()	{ return Vector2{ 1.0f, 1.0f }; }
 	};
 
 	static constexpr Vector2	operator + ( const Vector2 &L, float scalar ) { return ( Vector2{ L } += scalar ); }
@@ -380,6 +386,11 @@ namespace Donya
 		Vector3 Unit() const;
 
 		/// <summary>
+		/// Absolute values
+		/// </summary>
+		Vector3 Abs() const;
+
+		/// <summary>
 		/// Is Zero-vector?
 		/// </summary>
 		bool IsZero() const;
@@ -443,6 +454,7 @@ namespace Donya
 		static constexpr Vector3	Right()	{ return Vector3{ 1.0f, 0.0f, 0.0f }; }
 		static constexpr Vector3	Up()	{ return Vector3{ 0.0f, 1.0f, 0.0f }; }
 		static constexpr Vector3	Zero()	{ return Vector3{ 0.0f, 0.0f, 0.0f }; }
+		static constexpr Vector3	One()	{ return Vector3{ 1.0f, 1.0f, 1.0f }; }
 		static DirectX::XMVECTOR	ToXMVector( const Vector3 &V, float fourthParam )
 		{
 			return V.ToXMVector( fourthParam );
@@ -628,6 +640,11 @@ namespace Donya
 	public:
 		constexpr float LengthSq() const { return ( x * x ) + ( y * y ) + ( z * z ) + ( w * w ); }
 		constexpr Vector3 XYZ() const { return Vector3{ x, y, z }; }
+
+		/// <summary>
+		/// Absolute values
+		/// </summary>
+		Vector4 Abs() const;
 	public:
 		/// <summary>
 		/// Multiply each element.
@@ -637,7 +654,8 @@ namespace Donya
 			return L.Product( R );
 		}
 		
-		static constexpr Vector4	Zero() { return Vector4{ 0.0f, 0.0f, 0.0f, 0.0f }; }
+		static constexpr Vector4	Zero()		{ return Vector4{ 0.0f, 0.0f, 0.0f, 0.0f }; }
+		static constexpr Vector4	One()		{ return Vector4{ 1.0f, 1.0f, 1.0f, 1.0f }; }
 		static Vector4				FromXMVector( const DirectX::XMVECTOR &V );
 		static DirectX::XMVECTOR	ToXMVector	( const Vector4 &V ) { return V.ToXMVector(); }
 	};

@@ -119,6 +119,9 @@
     <ClCompile Include="Code\Donya\Blend.cpp" />
     <ClCompile Include="Code\Donya\Camera.cpp" />
     <ClCompile Include="Code\Donya\Collision.cpp" />
+    <ClCompile Include="Code\Donya\CollisionShapes\ShapeAABB.cpp" />
+    <ClCompile Include="Code\Donya\CollisionShapes\ShapePoint.cpp" />
+    <ClCompile Include="Code\Donya\CollisionShapes\ShapeSphere.cpp" />
     <ClCompile Include="Code\Donya\Color.cpp" />
     <ClCompile Include="Code\Donya\Displayer.cpp" />
     <ClCompile Include="Code\Donya\Donya.cpp" />
@@ -224,6 +227,9 @@
     <ClInclude Include="Code\Donya\Camera.h" />
     <ClInclude Include="Code\Donya\CBuffer.h" />
     <ClInclude Include="Code\Donya\Collision.h" />
+    <ClInclude Include="Code\Donya\CollisionShapes\ShapeAABB.h" />
+    <ClInclude Include="Code\Donya\CollisionShapes\ShapePoint.h" />
+    <ClInclude Include="Code\Donya\CollisionShapes\ShapeSphere.h" />
     <ClInclude Include="Code\Donya\Color.h" />
     <ClInclude Include="Code\Donya\Constant.h" />
     <ClInclude Include="Code\Donya\Counter.h" />
@@ -259,6 +265,7 @@
     <ClInclude Include="Code\Donya\Sprite.h" />
     <ClInclude Include="Code\Donya\Surface.h" />
     <ClInclude Include="Code\Donya\Template.h" />
+    <ClInclude Include="Code\Donya\UniqueId.h" />
     <ClInclude Include="Code\Donya\Useful.h" />
     <ClInclude Include="Code\Donya\UseImGui.h" />
     <ClInclude Include="Code\Donya\Vector.h" />

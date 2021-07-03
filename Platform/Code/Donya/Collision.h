@@ -3,17 +3,172 @@
 
 #include <algorithm>	// Use std::remove_if
 #include <cstdint>		// Use for std::uint32_t
+#include <functional>
 #include <vector>
 
 #undef max
 #undef min
 #include <cereal/cereal.hpp>
 
-#include "Vector.h"
 #include "Quaternion.h"
+#include "UniqueId.h"
+#include "Vector.h"
 
 namespace Donya
 {
+	namespace Collision
+	{
+		// Interaction type with other
+		enum class Type
+		{
+			Dynamic,	// Movable. Push other and be pushed by other.
+			Kinematic,	// Movable. Push other and do not be pushed by other.
+			Sensor,		// Movable. Do not push nor be pushed with other.
+			Static,		// Immovable. Push other and do not be pushed by other.
+		};
+
+		// Collider volume type
+		enum class Shape
+		{
+			Point,		// Position.xyz
+			AABB,		// Position.xyz + HalfSize.xyz
+			Sphere,		// Position.xyz + Radius
+		};
+
+		// Collision test result, you must check "isHit" is true.
+		// It depends on: http://noonat.github.io/intersect/
+		struct HitResult
+		{
+			bool			isHit = false;	// Result of collision test, other members of HitResult are valid only when this flag is true
+			Donya::Vector3	contactPoint;	// Contact point between two objects. This is there on the B's shape if the collision test was done as: Test( A, B );
+			Donya::Vector3	surfaceNormal;	// Surface's normal at the contact point. This is there on the B's shape if the collision test was done as: Test( A, B );
+			Donya::Vector3	resolveVector;	// Overlap amount between two objects, you can resolve the collision by add this vector
+		};
+
+		// 
+		class ShapeBase
+		{
+		public:
+			Type			type = Type::Dynamic;
+			Donya::Vector3	position; // Origin of shape
+		public:
+			ShapeBase()									= default;
+			ShapeBase( const ShapeBase & )				= default;
+			ShapeBase( ShapeBase && )					= default;
+			ShapeBase &operator = ( const ShapeBase & )	= default;
+			ShapeBase &operator = ( ShapeBase && )		= default;
+			virtual ~ShapeBase()						= default;
+		public:
+			// For branch a collision detection method
+			virtual Shape GetShape() const = 0;
+			// Minimum side xyz of AABB that wraps the myself
+			virtual Donya::Vector3 GetAABBMin() const = 0;
+			// Maximum side xyz of AABB that wraps the myself
+			virtual Donya::Vector3 GetAABBMax() const = 0;
+		public:
+			// The closest point to "pt" within my shape
+			virtual Donya::Vector3 FindClosestPointTo( const Donya::Vector3 &pt ) const = 0;
+			// 
+			virtual HitResult IntersectTo( const ShapeBase *pOtherShape ) const = 0;
+		};
+
+		// Signature of callback of triggering an intersection, use like this:
+		// void OnHitEnter( DONYA_CALLBACK_ON_HIT_ENTER )
+	#define DONYA_CALLBACK_ON_HIT_ENTER \
+			const Substance &hitOther /* Intersected target */,		\
+			const HitResult &hitParam /* Intersect description */
+		// Signature of callback of continuing an intersection, use like this:
+		// void OnHitContinue( DONYA_CALLBACK_ON_HIT_CONTINUE )
+	#define DONYA_CALLBACK_ON_HIT_CONTINUE \
+			DONYA_CALLBACK_ON_HIT_ENTER // Same signature
+		// Signature of callback of end an intersection, use like this:
+		// void OnHitExit( DONYA_CALLBACK_ON_HIT_EXIT )
+	#define DONYA_CALLBACK_ON_HIT_EXIT \
+			UniqueIdType leaveSubstanceId /* The substance id that was intersected when previous intersection test */
+
+		// Substance of collision body.
+		class Substance
+		{
+		public:
+			// Function pointer of callback of triggering an intersection.
+			using EventFuncT_OnHitEnter		= std::function<void( DONYA_CALLBACK_ON_HIT_ENTER )>;
+			// Function pointer of callback of continuing an intersection.
+			using EventFuncT_OnHitContinue	= std::function<void( DONYA_CALLBACK_ON_HIT_CONTINUE )>;
+			// Function pointer of callback of end an intersection.
+			using EventFuncT_OnHitExit		= std::function<void( DONYA_CALLBACK_ON_HIT_EXIT )>;
+
+		public:
+			float				mass = 1.0f;	// Requirement:[mass > 0.0f] Use only when push/be pushed
+			Donya::Vector3		position;		// Origin of a shapes
+		private:
+			UniqueId<Substance>	id;				// For identify the instance of substance
+			std::vector<std::shared_ptr<ShapeBase>>
+								shapePtrs;		// Registered shape list. If it is empty, just used as point.
+		private:
+			std::set<UniqueIdType>					hitSubstanceIds; // For branch the calling methods when hit. OnHitEnter() or OnHitContinue() or OnHitExit()
+			std::vector<EventFuncT_OnHitEnter>		onHitHandlers_Enter;
+			std::vector<EventFuncT_OnHitContinue>	onHitHandlers_Continue;
+			std::vector<EventFuncT_OnHitExit>		onHitHandlers_Exit;
+		public:
+			void AddShape( const std::shared_ptr<ShapeBase> &pShape );
+			// Remove all tegistered shapes
+			void RemoveShapes();
+		public:
+			void RegisterCallback_OnHitEnter	( const EventFuncT_OnHitEnter		&function );
+			void RegisterCallback_OnHitContinue	( const EventFuncT_OnHitContinue	&function );
+			void RegisterCallback_OnHitExit		( const EventFuncT_OnHitExit		&function );
+			void InvokeCallbacks( const Substance &hitOther, const HitResult &hitParam );
+		public:
+			UniqueIdType GetId() const;
+			const std::vector<std::shared_ptr<ShapeBase>> *GetRegisteredShapePointers() const;
+		};
+
+		// ( min <= v <= max )
+		constexpr bool Within( float v, float min, float max )
+		{
+			return ( min <= v && v <= max );
+		}
+
+
+
+
+		// Handle of collision body, like proxy.
+		class Collider
+		{
+		public:
+			// Generate new collision body instance.
+			static Collider Generate();
+		private:
+			Substance *pReference = nullptr; // No ownership
+		public:
+			Collider()									= default;
+			Collider( const Collider & )				= default;
+			Collider( Collider && )						= default;
+			Collider &operator = ( const Collider & )	= default;
+			Collider &operator = ( Collider && )		= default;
+			~Collider();
+		public:
+			// Destroy the collision body instance.
+			// After that, this class will take nothing.
+			// If already dead, it will do nothing.
+			void Destroy();
+		public:
+			void AddShape( const std::shared_ptr<ShapeBase> &pShape );
+			void RemoveShapes();
+		public:
+			// Requirement:[mass > 0.0f]
+			void SetMass( float mass );
+			void SetPosition( const Donya::Vector3 &position );
+		public:
+			// If already dead, returns FLT_EPSILON.
+			float			GetMass() const;
+			// If already dead, returns (0,0,0).
+			Donya::Vector3	GetPosition() const;
+			// If already dead, returns (0).
+			UniqueIdType	GetColliderId() const;
+		};
+	}
+
 	namespace Collision
 	{
 		/// <summary>

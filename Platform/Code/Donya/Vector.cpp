@@ -27,6 +27,14 @@ namespace Donya
 		normalized.Normalize();
 		return normalized;
 	}
+	Vector2 Vector2::Abs() const
+	{
+		return Vector2
+		{
+			fabsf( x ),
+			fabsf( y )
+		};
+	}
 	float Vector2::Radian() const
 	{
 		return atan2f( y, x );
@@ -77,6 +85,15 @@ namespace Donya
 		normalized.Normalize();
 		return normalized;
 	}
+	Vector3 Vector3::Abs() const
+	{
+		return Vector3
+		{
+			fabsf( x ),
+			fabsf( y ),
+			fabsf( z )
+		};
+	}
 	bool Vector3::IsZero() const
 	{
 		return ( ::IsZero( LengthSq() ) ) ? true : false;
@@ -94,6 +111,16 @@ namespace Donya
 
 #pragma region Vector4
 
+	Vector4 Vector4::Abs() const
+	{
+		return Vector4
+		{
+			fabsf( x ),
+			fabsf( y ),
+			fabsf( z ),
+			fabsf( w )
+		};
+	}
 	Vector4 &Vector4::AssignXMVector( const XMVECTOR &V )
 	{
 		XMStoreFloat4( this, V );
