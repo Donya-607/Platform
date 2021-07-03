@@ -51,9 +51,8 @@ namespace Donya
 		public:
 			Type			type = Type::Dynamic;
 			Donya::Vector3	position; // Origin of shape
-		private:
-			ShapeBase()									= default;
 		public:
+			ShapeBase()									= default;
 			ShapeBase( const ShapeBase & )				= default;
 			ShapeBase( ShapeBase && )					= default;
 			ShapeBase &operator = ( const ShapeBase & )	= default;
@@ -102,11 +101,9 @@ namespace Donya
 			using EventFuncT_OnHitContinue	= std::function<void( DONYA_CALLBACK_ON_HIT_CONTINUE )>;
 			// Function pointer of callback of end an intersection.
 			using EventFuncT_OnHitExit		= std::function<void( DONYA_CALLBACK_ON_HIT_EXIT )>;
-
-		public:
+		private: // HACK: Should "mass" be member of ShapeBase?
 			float				mass = 1.0f;	// Requirement:[mass > 0.0f] Use only when push/be pushed
 			Donya::Vector3		position;		// Origin of a shapes
-		private:
 			UniqueId<Substance>	id;				// For identify the instance of substance
 			std::vector<std::shared_ptr<ShapeBase>>
 								shapePtrs;		// Registered shape list.
@@ -122,13 +119,21 @@ namespace Donya
 			// Remove all tegistered shapes
 			void RemoveShapes();
 		public:
-			void ResolveIntersectionVS( const Substance &other );
+			void ResolveIntersectionVS( Substance *pOther );
 			void RegisterCallback_OnHitEnter	( const EventFuncT_OnHitEnter		&function );
 			void RegisterCallback_OnHitContinue	( const EventFuncT_OnHitContinue	&function );
 			void RegisterCallback_OnHitExit		( const EventFuncT_OnHitExit		&function );
 			void InvokeCallbacks( DONYA_CALLBACK_ON_HIT_ENTER ) const;
 		public:
-			UniqueIdType GetId() const;
+			// Requirement:[mass > 0.0f]
+			void SetMass( float mass );
+			void SetPosition( const Donya::Vector3 &position );
+			// It changes only myself, so it may break the uniquely identify system.
+			void OverwriteId( UniqueIdType newId );
+		public:
+			float			GetMass() const;
+			Donya::Vector3	GetPosition() const;
+			UniqueIdType	GetId() const;
 			const std::vector<std::shared_ptr<ShapeBase>> *GetRegisteredShapePointers() const;
 		private:
 			void AcceptIdRequests();

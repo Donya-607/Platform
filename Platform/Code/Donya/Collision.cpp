@@ -17,19 +17,29 @@ namespace Donya
 	{
 		void Substance::AddShape( const std::shared_ptr<ShapeBase> &pShape )
 		{
+			if ( !pShape )
+			{
+				_ASSERT_EXPR( 0, L"Error: Shape is nullptr!" );
+				return;
+			}
+			// else
+
 			shapePtrs.emplace_back( pShape );
 		}
 		void Substance::RemoveShapes()
 		{
 			shapePtrs.clear();
 		}
-		void Substance::ResolveIntersectionVS( const Substance &other )
+		void Substance::ResolveIntersectionVS( Substance *pOther )
 		{
 			// Update callbacks brancher "hitSubstanceIds"
 			AcceptIdRequests();
 
-			// Validation
-			const std::vector<std::shared_ptr<ShapeBase>> &otherShapePtrs = *other.GetRegisteredShapePointers();
+
+			// Validation and prepare variables
+			if ( !pOther ) { return; }
+			// else
+			const std::vector<std::shared_ptr<ShapeBase>> &otherShapePtrs = *pOther->GetRegisteredShapePointers();
 			const size_t selfShapeCount = shapePtrs.size();
 			const size_t otherShapeCount = otherShapePtrs.size();
 			if ( !selfShapeCount || !otherShapeCount )
@@ -38,6 +48,16 @@ namespace Donya
 				return;
 			}
 			// else
+			const float massSum = GetMass() + pOther->GetMass();
+			if ( massSum <= 0.0f )
+			{
+				_ASSERT_EXPR( 0, L"Error: The \"mass\" must be over than zero! [mass > 0.0]" );
+				return;
+			}
+			// else
+			const float selfMassPercent = 1.0f - ( GetMass() / massSum );
+			const float otherMassPercent = 1.0f - ( pOther->GetMass() / massSum );
+
 
 			// Do intersection between all patterns
 			HitResult hitResult;
@@ -67,13 +87,14 @@ namespace Donya
 					// TODO: Consider shape type
 
 					hitResult = selfShape->IntersectTo( otherShape.get() );
-					InvokeCallbacks( other, otherShape, hitResult );
+					InvokeCallbacks( *pOther, otherShape, hitResult );
 
 
+					// HACK: I should consider a resolving order of shapes
 					if ( hitResult.isHit )
 					{
-						// HACK: I should consider a resolving order
-						position += hitResult.resolveVector;
+						this->position   += hitResult.resolveVector * selfMassPercent;
+						pOther->position -= hitResult.resolveVector * otherMassPercent;
 					}
 				}
 			}
@@ -131,6 +152,49 @@ namespace Donya
 
 			// No hit, and No exit
 		}
+		void Substance::SetMass( float newMass )
+		{
+			if ( newMass <= 0.0f )
+			{
+				_ASSERT_EXPR( 0, L"Error: The \"mass\" must be over than zero! [mass > 0.0]" );
+				return;
+			}
+			// else
+
+			mass = newMass;
+		}
+		void Substance::SetPosition( const Donya::Vector3 &newPosition )
+		{
+			const Donya::Vector3 oldPos = position;
+			position = newPosition;
+
+			Donya::Vector3 offset;
+			for ( auto &pShape : shapePtrs )
+			{
+				if ( !pShape )
+				{
+					_ASSERT_EXPR( 0, L"Error: Shape is nullptr!" );
+					continue;
+				}
+				// else
+
+				offset = pShape->position - oldPos;
+				pShape->position = newPosition + offset;
+			}
+		}
+		void Substance::OverwriteId( UniqueIdType newId )
+		{
+			// Use constructor for assign
+			id = UniqueIdType{ newId };
+		}
+		float Substance::GetMass() const
+		{
+			return mass;
+		}
+		Donya::Vector3 Substance::GetPosition() const
+		{
+			return position;
+		}
 		UniqueIdType Substance::GetId() const
 		{
 			return id.Get();
@@ -179,7 +243,7 @@ namespace Donya
 				{
 					Substance &b = *itrJ;
 
-					a.ResolveIntersectionVS( b );
+					a.ResolveIntersectionVS( &b );
 				}
 			}
 		}
@@ -231,34 +295,29 @@ namespace Donya
 		}
 		void Collider::SetMass( float mass )
 		{
-			if ( mass <= 0.0f )
-			{
-				_ASSERT_EXPR( 0, L"Error: Mass is must be over than zero!" );
-				return;
-			}
-			// else
+			// Error handling will process in Substance::SetMass()
 
 			if ( !pReference ) { return; }
 			// else
-			pReference->mass = mass;
+			pReference->SetMass( mass );
 		}
 		void Collider::SetPosition( const Donya::Vector3 &position )
 		{
 			if ( !pReference ) { return; }
 			// else
-			pReference->position = position;
+			pReference->SetPosition( position );
 		}
 		float Collider::GetMass() const
 		{
 			if ( !pReference ) { return EPSILON; } // Not 0.0f for safe
 			// else
-			return pReference->mass;
+			return pReference->GetMass();
 		}
 		Donya::Vector3 Collider::GetPosition() const
 		{
 			if ( !pReference ) { return Donya::Vector3::Zero(); }
 			// else
-			return pReference->position;
+			return pReference->GetPosition();
 		}
 		UniqueIdType Collider::GetColliderId() const
 		{

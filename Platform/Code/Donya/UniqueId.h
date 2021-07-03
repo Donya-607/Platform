@@ -44,6 +44,7 @@ namespace Donya
 		UniqueIdType id = 0ULL;
 	public: // Allow id duplication
 		UniqueId() : id( GenerateId() ) {}
+		UniqueId( UniqueIdType clone ) : id( clone ) {}
 		UniqueId( const UniqueId &rhs ) : id( rhs.id ) {}
 		UniqueId( UniqueId &&rhs ) : id( rhs.id ) {}
 		UniqueId &operator = ( const UniqueId &rhs )
