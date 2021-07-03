@@ -23,6 +23,61 @@ namespace Donya
 		{
 			shapePtrs.clear();
 		}
+		void Substance::ResolveIntersectionVS( const Substance &other )
+		{
+			// Update callbacks brancher "hitSubstanceIds"
+			AcceptIdRequests();
+
+			// Validation
+			const std::vector<std::shared_ptr<ShapeBase>> &otherShapePtrs = *other.GetRegisteredShapePointers();
+			const size_t selfShapeCount = shapePtrs.size();
+			const size_t otherShapeCount = otherShapePtrs.size();
+			if ( !selfShapeCount || !otherShapeCount )
+			{
+				_ASSERT_EXPR( 0, L"Error: There is no shape!" );
+				return;
+			}
+			// else
+
+			// Do intersection between all patterns
+			HitResult hitResult;
+			std::shared_ptr<ShapeBase> selfShape;
+			std::shared_ptr<ShapeBase> otherShape;
+			for ( size_t i = 0; i < selfShapeCount; ++i )
+			{
+				selfShape = shapePtrs[i];
+				if ( !selfShape )
+				{
+					_ASSERT_EXPR( 0, L"Error: Shape is nullptr!" );
+					continue;
+				}
+				// else
+
+				for ( size_t j = 0; j < otherShapeCount; ++j )
+				{
+					otherShape = otherShapePtrs[j];
+					if ( !otherShape )
+					{
+						_ASSERT_EXPR( 0, L"Error: Shape is nullptr!" );
+						continue;
+					}
+					// else
+
+
+					// TODO: Consider shape type
+
+					hitResult = selfShape->IntersectTo( otherShape.get() );
+					InvokeCallbacks( other, otherShape, hitResult );
+
+
+					if ( hitResult.isHit )
+					{
+						// HACK: I should consider a resolving order
+						position += hitResult.resolveVector;
+					}
+				}
+			}
+		}
 		void Substance::RegisterCallback_OnHitEnter( const EventFuncT_OnHitEnter &function )
 		{
 			onHitHandlers_Enter.push_back( function );
@@ -35,7 +90,7 @@ namespace Donya
 		{
 			onHitHandlers_Exit.push_back( function );
 		}
-		void Substance::InvokeCallbacks( const Substance &hitOther, const HitResult &hitParam )
+		void Substance::InvokeCallbacks( DONYA_CALLBACK_ON_HIT_ENTER ) const
 		{
 			const UniqueIdType otherId = hitOther.GetId();
 			const bool isKnown = hitSubstanceIds.count( otherId );
@@ -48,17 +103,17 @@ namespace Donya
 					
 					for ( auto &OnHitContinue : onHitHandlers_Continue )
 					{
-						OnHitContinue( hitOther, hitParam );
+						OnHitContinue( hitOther, pOtherShape, hitParam );
 					}
 				}
 				else
 				{
 					// Trigger timing
 
-					hitSubstanceIds.insert( otherId );
+					insertRequestIds.insert( otherId );
 					for ( auto &OnHitEnter : onHitHandlers_Enter )
 					{
-						OnHitEnter( hitOther, hitParam );
+						OnHitEnter( hitOther, pOtherShape, hitParam );
 					}
 				}
 			}
@@ -66,13 +121,15 @@ namespace Donya
 			{
 				// Leave timing
 				
-				hitSubstanceIds.erase( otherId );
+				eraseRequestIds.erase( otherId );
 
 				for ( auto &OnHitExit : onHitHandlers_Exit )
 				{
 					OnHitExit( otherId );
 				}
 			}
+
+			// No hit, and No exit
 		}
 		UniqueIdType Substance::GetId() const
 		{
@@ -82,13 +139,26 @@ namespace Donya
 		{
 			return &shapePtrs;
 		}
+		void Substance::AcceptIdRequests()
+		{
+			for ( const auto &id : insertRequestIds )
+			{
+				hitSubstanceIds.insert( id );
+			}
+			insertRequestIds.clear();
+
+			for ( const auto &id : eraseRequestIds )
+			{
+				hitSubstanceIds.erase( id );
+			}
+			eraseRequestIds.clear();
+		}
 
 
 		// Why I choose std::deque:
 		// I can loop all element fastly(cf: https://qiita.com/sileader/items/a40f9acf90fbda16af51#%E8%A6%81%E7%B4%A0%E3%81%AE%E8%B5%B0%E6%9F%BB%E7%AF%84%E5%9B%B2for).
 		// Collider can take a reference directly(emplace_back() kills an iterator, but does not kills a directly reference-pointer. cf: https://cpprefjp.github.io/reference/deque/deque/emplace_back.html).
 		static std::deque<Substance> bodies;
-
 
 		Collider Collider::Generate()
 		{
@@ -99,6 +169,21 @@ namespace Donya
 
 			return tmp;
 		}
+		void Collider::Resolve()
+		{
+			auto itrEnd = bodies.end();
+			for ( auto itrI = bodies.begin(); itrI != itrEnd; ++itrI )
+			{
+				Substance &a = *itrI;
+				for ( auto itrJ = itrI + 1; itrJ != itrEnd; ++itrJ )
+				{
+					Substance &b = *itrJ;
+
+					a.ResolveIntersectionVS( b );
+				}
+			}
+		}
+
 		Collider::~Collider()
 		{
 			Destroy();

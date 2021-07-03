@@ -51,8 +51,9 @@ namespace Donya
 		public:
 			Type			type = Type::Dynamic;
 			Donya::Vector3	position; // Origin of shape
-		public:
+		private:
 			ShapeBase()									= default;
+		public:
 			ShapeBase( const ShapeBase & )				= default;
 			ShapeBase( ShapeBase && )					= default;
 			ShapeBase &operator = ( const ShapeBase & )	= default;
@@ -72,17 +73,20 @@ namespace Donya
 			virtual HitResult IntersectTo( const ShapeBase *pOtherShape ) const = 0;
 		};
 
-		// Signature of callback of triggering an intersection, use like this:
-		// void OnHitEnter( DONYA_CALLBACK_ON_HIT_ENTER )
+		// Signature of callback of triggering an intersection(call it instead of CONTINUE version), use like this:
+		// void OnHitEnter( DONYA_CALLBACK_ON_HIT_ENTER );
+		// It callback will be called before resolving(after call it, resolve will works).
 	#define DONYA_CALLBACK_ON_HIT_ENTER \
-			const Substance &hitOther /* Intersected target */,		\
+			const Substance &hitOther, /* Intersected target */ \
+			const std::shared_ptr<ShapeBase> &pOtherShape, /* Intersected shape(one of target's) */ \
 			const HitResult &hitParam /* Intersect description */
 		// Signature of callback of continuing an intersection, use like this:
-		// void OnHitContinue( DONYA_CALLBACK_ON_HIT_CONTINUE )
+		// void OnHitContinue( DONYA_CALLBACK_ON_HIT_CONTINUE );
+		// It callback will be called before resolving(after call it, resolve will works).
 	#define DONYA_CALLBACK_ON_HIT_CONTINUE \
 			DONYA_CALLBACK_ON_HIT_ENTER // Same signature
 		// Signature of callback of end an intersection, use like this:
-		// void OnHitExit( DONYA_CALLBACK_ON_HIT_EXIT )
+		// void OnHitExit( DONYA_CALLBACK_ON_HIT_EXIT );
 	#define DONYA_CALLBACK_ON_HIT_EXIT \
 			UniqueIdType leaveSubstanceId /* The substance id that was intersected when previous intersection test */
 
@@ -90,9 +94,11 @@ namespace Donya
 		class Substance
 		{
 		public:
-			// Function pointer of callback of triggering an intersection.
+			// Function pointer of callback of triggering an intersection(call it instead of CONTINUE version).
+			// It function will be called before resolving(after call it, resolve will works).
 			using EventFuncT_OnHitEnter		= std::function<void( DONYA_CALLBACK_ON_HIT_ENTER )>;
 			// Function pointer of callback of continuing an intersection.
+			// It function will be called before resolving(after call it, resolve will works).
 			using EventFuncT_OnHitContinue	= std::function<void( DONYA_CALLBACK_ON_HIT_CONTINUE )>;
 			// Function pointer of callback of end an intersection.
 			using EventFuncT_OnHitExit		= std::function<void( DONYA_CALLBACK_ON_HIT_EXIT )>;
@@ -103,9 +109,11 @@ namespace Donya
 		private:
 			UniqueId<Substance>	id;				// For identify the instance of substance
 			std::vector<std::shared_ptr<ShapeBase>>
-								shapePtrs;		// Registered shape list. If it is empty, just used as point.
+								shapePtrs;		// Registered shape list.
 		private:
-			std::set<UniqueIdType>					hitSubstanceIds; // For branch the calling methods when hit. OnHitEnter() or OnHitContinue() or OnHitExit()
+			std::set<UniqueIdType>					hitSubstanceIds;	// For branch the calling methods when hit. OnHitEnter() or OnHitContinue() or OnHitExit()
+			mutable std::set<UniqueIdType>			insertRequestIds;	// Use for delay the inserting until next intersection
+			mutable std::set<UniqueIdType>			eraseRequestIds;	// Use for delay the erasing until next intersectionon
 			std::vector<EventFuncT_OnHitEnter>		onHitHandlers_Enter;
 			std::vector<EventFuncT_OnHitContinue>	onHitHandlers_Continue;
 			std::vector<EventFuncT_OnHitExit>		onHitHandlers_Exit;
@@ -114,13 +122,16 @@ namespace Donya
 			// Remove all tegistered shapes
 			void RemoveShapes();
 		public:
+			void ResolveIntersectionVS( const Substance &other );
 			void RegisterCallback_OnHitEnter	( const EventFuncT_OnHitEnter		&function );
 			void RegisterCallback_OnHitContinue	( const EventFuncT_OnHitContinue	&function );
 			void RegisterCallback_OnHitExit		( const EventFuncT_OnHitExit		&function );
-			void InvokeCallbacks( const Substance &hitOther, const HitResult &hitParam );
+			void InvokeCallbacks( DONYA_CALLBACK_ON_HIT_ENTER ) const;
 		public:
 			UniqueIdType GetId() const;
 			const std::vector<std::shared_ptr<ShapeBase>> *GetRegisteredShapePointers() const;
+		private:
+			void AcceptIdRequests();
 		};
 
 		// ( min <= v <= max )
@@ -137,7 +148,10 @@ namespace Donya
 		{
 		public:
 			// Generate new collision body instance.
+			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Substance, because these callbacks are called in iterating the Substances.
 			static Collider Generate();
+			// Resolve all collision body instance.
+			static void Resolve();
 		private:
 			Substance *pReference = nullptr; // No ownership
 		public:
