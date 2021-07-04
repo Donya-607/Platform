@@ -9,6 +9,22 @@ namespace Donya
 {
 	namespace Collision
 	{
+		std::shared_ptr<ShapeBase> ShapePoint::Generate( Type interactionType, const Donya::Vector3 &posOffset )
+		{
+			std::shared_ptr<ShapePoint> tmp = std::make_shared<ShapePoint>();
+			tmp->type	= interactionType;
+			tmp->offset	= posOffset;
+
+			// Up-cast it
+			return tmp;
+		}
+		std::shared_ptr<ShapeBase> ShapePoint::Clone() const
+		{
+			std::shared_ptr<ShapePoint> tmp = std::make_shared<ShapePoint>( *this );
+			// Up-cast it
+			return tmp;
+		}
+
 		Donya::Vector3 ShapePoint::GetAABBMin() const
 		{
 			return position;
@@ -16,6 +32,10 @@ namespace Donya
 		Donya::Vector3 ShapePoint::GetAABBMax() const
 		{
 			return position;
+		}
+		float ShapePoint::CalcDistanceTo( const Donya::Vector3 &pt ) const
+		{
+			return ( pt - position ).Length();
 		}
 		Donya::Vector3 ShapePoint::FindClosestPointTo( const Donya::Vector3 &pt ) const
 		{
@@ -28,10 +48,10 @@ namespace Donya
 			HitResult result;
 			result.isHit = false;
 
-			if ( pA->position == pB->position )
+			if ( pA->GetPosition() == pB->GetPosition() )
 			{
 				result.isHit = true;
-				result.contactPoint = pA->position;
+				result.contactPoint = pB->GetPosition();
 				// Point does not have a normal, so assign temporary direction
 				result.surfaceNormal = Donya::Vector3::Up();
 				// Smallest amount that makes pA != pB
@@ -49,7 +69,7 @@ namespace Donya
 
 
 			// Find the overlap in all axis
-			const Donya::Vector3 delta = pP->position - pBox->position;
+			const Donya::Vector3 delta = pP->GetPosition() - pBox->GetPosition();
 			const Donya::Vector3 overlap = pBox->size - delta.Abs();
 			if ( overlap.x <= 0.0f ) { return result; }
 			if ( overlap.y <= 0.0f ) { return result; }
@@ -77,8 +97,8 @@ namespace Donya
 
 			const float sign = SignBitF( delta[axis] );
 			// Contact point will be the nearest edge of the other
-			result.contactPoint = pP->position;
-			result.contactPoint[axis] = pBox->position[axis] + ( pBox->size[axis] * sign );
+			result.contactPoint = pP->GetPosition();
+			result.contactPoint[axis] = pBox->GetPosition()[axis] + ( pBox->size[axis] * sign );
 			// Normal will be (1,0,0) or (0,1,0) or (0,0,1)
 			result.surfaceNormal = Donya::Vector3::Zero();
 			result.surfaceNormal[axis] = sign;
@@ -94,13 +114,13 @@ namespace Donya
 			result.isHit = false;
 
 			// Sphere center -> Point
-			const Donya::Vector3 deltaSP = pP->position - pS->position;
+			const Donya::Vector3 deltaSP = pP->GetPosition() - pS->GetPosition();
 			const float distance = deltaSP.Length();
 			if ( distance <= pS->radius )
 			{
 				result.isHit = true;
 				// Contact point is there on the other's edge
-				result.contactPoint  = pS->position + ( deltaSP.Unit() * pS->radius );
+				result.contactPoint  = pS->GetPosition() + ( deltaSP.Unit() * pS->radius );
 				// Normal is surface's at contact point
 				result.surfaceNormal = deltaSP.Unit();
 				result.resolveVector = result.surfaceNormal * ( pS->radius - distance );
@@ -122,7 +142,7 @@ namespace Donya
 			HitResult result;
 			result.isHit = false;
 
-			switch ( pOther->GetShape() )
+			switch ( pOther->GetShapeKind() )
 			{
 			case Shape::Point:
 				{

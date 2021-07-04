@@ -119,7 +119,11 @@ namespace Donya
 		{
 		public:
 			struct Constant : public Impl::PrimitiveModel::ConstantBase
-			{};
+			{
+				Constant() = default;
+				Constant( const Impl::PrimitiveModel::ConstantBase & );
+				Constant &operator = ( const Impl::PrimitiveModel::ConstantBase & );
+			};
 		private:
 			Microsoft::WRL::ComPtr<ID3D11Buffer> pIndexBuffer;
 		public:
@@ -159,7 +163,11 @@ namespace Donya
 		{
 		public:
 			struct Constant : public Impl::PrimitiveModel::ConstantBase
-			{};
+			{
+				Constant() = default;
+				Constant( const Impl::PrimitiveModel::ConstantBase & );
+				Constant &operator = ( const Impl::PrimitiveModel::ConstantBase & );
+			};
 		private:
 			size_t sliceCountH = NULL;
 			size_t sliceCountV = NULL;

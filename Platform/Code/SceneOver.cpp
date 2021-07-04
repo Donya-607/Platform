@@ -6,6 +6,8 @@
 #undef min
 
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
+#include "Donya/CollisionShapes/ShapeAABB.h"
+#include "Donya/CollisionShapes/ShapeSphere.h"
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
 #include "Donya/Sprite.h"
@@ -25,6 +27,7 @@
 #include "Parameter.h"
 #include "Player.h"
 #include "PlayerParam.h"
+#include "RenderingStuff.h"
 
 namespace
 {
@@ -79,6 +82,41 @@ void SceneOver::Init()
 	Player::Remaining::Set( Player::Parameter().Get().initialRemainCount );
 
 	timer = 0.0f;
+
+	{
+		posA = { -2.0f, 0.0f, 0.0f };
+		posB = { +2.0f, 0.0f, 0.0f };
+		using namespace Donya::Collision;
+		Collider::Generate( &colA );
+		Collider::Generate( &colB );
+		constexpr float size = 0.5f;
+		auto pAABB = ShapeAABB::Generate( Donya::Collision::Type::Dynamic, { size, size, size } );
+		auto pSphere = ShapeSphere::Generate( Donya::Collision::Type::Dynamic, size );
+		colA.RegisterShape( pSphere );
+		colB.RegisterShape( pAABB );
+		colA.SetPosition( posA );
+		colB.SetPosition( posB );
+		colA.SetMass( 1.0f );
+		colB.SetMass( 1.0f );
+
+		constexpr Donya::Vector2 screenSize{ Common::ScreenWidthF(), Common::ScreenHeightF() };
+		constexpr Donya::Vector2 defaultZRange{ 0.1f, 500.0f };
+		iCamera.Init			( Donya::ICamera::Mode::Look );
+		iCamera.SetZRange		( defaultZRange.x, defaultZRange.y );
+		iCamera.SetFOV			( ToRadian( 45.0f ) );
+		iCamera.SetScreenSize	( screenSize );
+		iCamera.SetPosition		( { 0.0f, 0.0f, -7.0f } );
+		iCamera.SetFocusPoint	( { 0.0f, 0.0f, 0.0f } );
+		iCamera.SetProjectionPerspective();
+		// I can setting a configuration,
+		// but current data is not changed immediately.
+		// So update here.
+		Donya::ICamera::Controller moveInitPoint{};
+		moveInitPoint.SetNoOperation();
+		moveInitPoint.slerpPercent = 1.0f;
+		iCamera.Update( moveInitPoint );
+	}
+
 
 	Effect::Admin::Get().ClearInstances();
 
@@ -140,6 +178,39 @@ Scene::Result SceneOver::Update( float elapsedTime )
 	}
 #endif // ALLOW_SKIP
 
+
+	{
+		constexpr float speed = 2.5f;
+		Donya::Vector3 velA{};
+		if ( Donya::Keyboard::Press( 'A' ) ) { velA.x -= speed; }
+		if ( Donya::Keyboard::Press( 'D' ) ) { velA.x += speed; }
+		if ( Donya::Keyboard::Press( 'W' ) ) { velA.y += speed; }
+		if ( Donya::Keyboard::Press( 'S' ) ) { velA.y -= speed; }
+		if ( Donya::Keyboard::Press( 'E' ) ) { velA.z += speed; }
+		if ( Donya::Keyboard::Press( 'Q' ) ) { velA.z -= speed; }
+		Donya::Vector3 velB{};
+		if ( Donya::Keyboard::Press( VK_LEFT   ) ) { velB.x -= speed; }
+		if ( Donya::Keyboard::Press( VK_RIGHT  ) ) { velB.x += speed; }
+		if ( Donya::Keyboard::Press( VK_UP     ) ) { velB.y += speed; }
+		if ( Donya::Keyboard::Press( VK_DOWN   ) ) { velB.y -= speed; }
+		if ( Donya::Keyboard::Press( VK_RSHIFT ) ) { velB.z += speed; }
+		if ( Donya::Keyboard::Press( VK_END    ) ) { velB.z -= speed; }
+
+		posA += velA * elapsedTime;
+		posB += velB * elapsedTime;
+
+		colA.SetPosition( posA );
+		colB.SetPosition( posB );
+	}
+	{
+		Donya::Collision::Collider::Resolve();
+
+		posA = colA.GetPosition();
+		posB = colB.GetPosition();
+	}
+
+
+
 	return ReturnResult();
 }
 
@@ -152,9 +223,82 @@ void SceneOver::Draw( float elapsedTime )
 	*/
 
 #if DEBUG_MODE
-	if ( Common::IsShowCollision() )
-	{
+	const Donya::Vector4x4 V = iCamera.CalcViewMatrix();
+	const Donya::Vector4x4 VP = V * iCamera.GetProjectionMatrix();
 
+	RenderingStuff *p = RenderingStuffInstance::Get().Ptr();
+	if ( Common::IsShowCollision() && p )
+	{
+		Donya::Model::Cube::Constant constant;
+		constant.matViewProj	= VP;
+		constant.lightDirection	= -Donya::Vector3::Up();
+
+		auto DrawProcess = [&]( const Donya::Collision::Collider &col, const Donya::Vector4 &color )
+		{
+			constant.drawColor = color;
+
+			constexpr float pointSize = 0.05f;
+
+			const auto *shapePtrs = col.GetRegisteredShapePointers();
+			for ( const auto &pShape : *shapePtrs )
+			{
+				if ( !pShape ) { continue; }
+				// else
+
+				const Donya::Vector3 pos = pShape->GetPosition();
+				constant.matWorld._41 = pos.x;
+				constant.matWorld._42 = pos.y;
+				constant.matWorld._43 = pos.z;
+
+				using namespace Donya::Collision;
+				switch ( pShape->GetShapeKind() )
+				{
+				case Shape::Point:
+					{
+						constant.matWorld._11 = pointSize;
+						constant.matWorld._22 = pointSize;
+						constant.matWorld._33 = pointSize;
+						p->renderer.ProcessDrawingCube( constant );
+					}
+					break;
+				case Shape::AABB:
+					{
+						auto pAABB = dynamic_cast<const ShapeAABB *>( pShape.get() );
+						if ( pAABB )
+						{
+							const Donya::Vector3 size = pAABB->GetSize();
+							constant.matWorld._11 = size.x * 2.0f;
+							constant.matWorld._22 = size.y * 2.0f;
+							constant.matWorld._33 = size.z * 2.0f;
+							p->renderer.ProcessDrawingCube( constant );
+						}
+					}
+					break;
+				case Shape::Sphere:
+					{
+						auto pSphere = dynamic_cast<const ShapeSphere *>( pShape.get() );
+						if ( pSphere )
+						{
+							const float radius = pSphere->GetRadius();
+							constant.matWorld._11 = radius * 2.0f;
+							constant.matWorld._22 = radius * 2.0f;
+							constant.matWorld._33 = radius * 2.0f;
+							p->renderer.ProcessDrawingSphere( constant );
+						}
+					}
+					break;
+				default:
+					break;
+				}
+			}
+		};
+
+		constexpr float alpha = 0.9f;
+		constexpr Donya::Vector4 red	{ 1.0f, 0.0f, 0.0f, alpha };
+		constexpr Donya::Vector4 green	{ 0.0f, 1.0f, 0.0f, alpha };
+		constexpr Donya::Vector4 blue	{ 0.0f, 0.0f, 1.0f, alpha };
+		DrawProcess( colA, red );
+		DrawProcess( colB, green );
 	}
 #endif // DEBUG_MODE
 

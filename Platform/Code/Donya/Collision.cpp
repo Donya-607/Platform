@@ -15,7 +15,7 @@ namespace Donya
 {
 	namespace Collision
 	{
-		void Substance::AddShape( const std::shared_ptr<ShapeBase> &pShape )
+		void Substance::RegisterShape( const std::shared_ptr<ShapeBase> &pShape )
 		{
 			if ( !pShape )
 			{
@@ -24,13 +24,18 @@ namespace Donya
 			}
 			// else
 
-			shapePtrs.emplace_back( pShape );
+			// Store the clone.
+			// It be able to reuse same params, like this:
+			// shared_ptr<ShapeXXX> ptr = XXX::Generate(...); // Make some shape
+			// substance1.RegisterShape( ptr );
+			// substance2.RegisterShape( ptr );
+			shapePtrs.emplace_back( pShape->Clone() );
 		}
-		void Substance::RemoveShapes()
+		void Substance::RemoveAllShapes()
 		{
 			shapePtrs.clear();
 		}
-		void Substance::ResolveIntersectionVS( Substance *pOther )
+		void Substance::ResolveIntersectionWith( Substance *pOther )
 		{
 			// Update callbacks brancher "hitSubstanceIds"
 			AcceptIdRequests();
@@ -95,6 +100,10 @@ namespace Donya
 					{
 						this->position   += hitResult.resolveVector * selfMassPercent;
 						pOther->position -= hitResult.resolveVector * otherMassPercent;
+
+						// Apply the resolved position to all shapes
+						this->SetPosition( this->position );
+						pOther->SetPosition( pOther->position );
 					}
 				}
 			}
@@ -165,21 +174,21 @@ namespace Donya
 		}
 		void Substance::SetPosition( const Donya::Vector3 &newPosition )
 		{
-			const Donya::Vector3 oldPos = position;
-			position = newPosition;
-
-			Donya::Vector3 offset;
+			// Validation
 			for ( auto &pShape : shapePtrs )
 			{
 				if ( !pShape )
 				{
 					_ASSERT_EXPR( 0, L"Error: Shape is nullptr!" );
-					continue;
+					return;
 				}
 				// else
+			}
 
-				offset = pShape->position - oldPos;
-				pShape->position = newPosition + offset;
+			position = newPosition;
+			for ( auto &pShape : shapePtrs )
+			{
+				pShape->position = newPosition;
 			}
 		}
 		void Substance::OverwriteId( UniqueIdType newId )
@@ -224,14 +233,13 @@ namespace Donya
 		// Collider can take a reference directly(emplace_back() kills an iterator, but does not kills a directly reference-pointer. cf: https://cpprefjp.github.io/reference/deque/deque/emplace_back.html).
 		static std::deque<Substance> bodies;
 
-		Collider Collider::Generate()
+		void Collider::Generate( Collider *pOut )
 		{
-			Collider tmp;
+			if ( !pOut ) { return; }
+			// else
 
 			bodies.emplace_back();
-			tmp.pReference = &bodies.back();
-
-			return tmp;
+			pOut->pReference = &bodies.back();
 		}
 		void Collider::Resolve()
 		{
@@ -243,7 +251,7 @@ namespace Donya
 				{
 					Substance &b = *itrJ;
 
-					a.ResolveIntersectionVS( &b );
+					a.ResolveIntersectionWith( &b );
 				}
 			}
 		}
@@ -256,8 +264,6 @@ namespace Donya
 		{
 			if ( !pReference ) { return; }
 			// else
-
-			// HACK: It method looks slow
 
 			// Find referencing index
 			const size_t invalidIndex = bodies.size();
@@ -281,17 +287,17 @@ namespace Donya
 			// Signify it has removed
 			pReference = nullptr;
 		}
-		void Collider::AddShape( const std::shared_ptr<ShapeBase> &pShape )
+		void Collider::RegisterShape( const std::shared_ptr<ShapeBase> &pShape )
 		{
 			if ( !pReference ) { return; }
 			// else
-			pReference->AddShape( pShape );
+			pReference->RegisterShape( pShape );
 		}
-		void Collider::RemoveShapes()
+		void Collider::RemoveAllShapes()
 		{
 			if ( !pReference ) { return; }
 			// else
-			pReference->RemoveShapes();
+			pReference->RemoveAllShapes();
 		}
 		void Collider::SetMass( float mass )
 		{
@@ -324,6 +330,12 @@ namespace Donya
 			if ( !pReference ) { return scast<UniqueIdType>( 0 ); }
 			// else
 			return pReference->GetId();
+		}
+		const std::vector<std::shared_ptr<ShapeBase>> *Collider::GetRegisteredShapePointers() const
+		{
+			if ( !pReference ) { return nullptr; }
+			// else
+			return pReference->GetRegisteredShapePointers();
 		}
 	}
 

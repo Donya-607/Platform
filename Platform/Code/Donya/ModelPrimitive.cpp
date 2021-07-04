@@ -591,6 +591,20 @@ namespace Donya
 
 	#pragma region Cube
 
+		Cube::Constant::Constant( const Impl::PrimitiveModel::ConstantBase &rhs )
+		{
+			auto pBasePart = static_cast<Impl::PrimitiveModel::ConstantBase *>( this );
+			*pBasePart = rhs;
+		}
+		Cube::Constant &Cube::Constant::operator = ( const Impl::PrimitiveModel::ConstantBase &rhs )
+		{
+			if ( &rhs == this ) { return *this; }
+			// else
+			auto pBasePart = static_cast<Impl::PrimitiveModel::ConstantBase *>( this );
+			*pBasePart = rhs;
+			return *this;
+		}
+
 		bool Cube::Create()
 		{
 			if ( wasCreated ) { return true; }
@@ -720,6 +734,20 @@ namespace Donya
 	#pragma endregion
 
 	#pragma region Sphere
+
+		Sphere::Constant::Constant( const Impl::PrimitiveModel::ConstantBase &rhs )
+		{
+			auto pBasePart = static_cast<Impl::PrimitiveModel::ConstantBase *>( this );
+			*pBasePart = rhs;
+		}
+		Sphere::Constant &Sphere::Constant::operator = ( const Impl::PrimitiveModel::ConstantBase &rhs )
+		{
+			if ( &rhs == this ) { return *this; }
+			// else
+			auto pBasePart = static_cast<Impl::PrimitiveModel::ConstantBase *>( this );
+			*pBasePart = rhs;
+			return *this;
+		}
 
 		Sphere::Sphere( size_t sliceH, size_t sliceV )
 			: sliceCountH( sliceH ), sliceCountV( sliceV ), indexCount(), pIndexBuffer()

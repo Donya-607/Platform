@@ -9,6 +9,23 @@ namespace Donya
 {
 	namespace Collision
 	{
+		std::shared_ptr<ShapeBase> ShapeAABB::Generate( Type interactionType, const Donya::Vector3 &halfSize, const Donya::Vector3 &posOffset )
+		{
+			std::shared_ptr<ShapeAABB> tmp = std::make_shared<ShapeAABB>();
+			tmp->type	= interactionType;
+			tmp->offset	= posOffset;
+			tmp->size	= halfSize;
+
+			// Up-cast it
+			return tmp;
+		}
+		std::shared_ptr<ShapeBase> ShapeAABB::Clone() const
+		{
+			std::shared_ptr<ShapeAABB> tmp = std::make_shared<ShapeAABB>( *this );
+			// Up-cast it
+			return tmp;
+		}
+
 		Donya::Vector3 ShapeAABB::GetAABBMin() const
 		{
 			return position - size;
@@ -16,6 +33,19 @@ namespace Donya
 		Donya::Vector3 ShapeAABB::GetAABBMax() const
 		{
 			return position + size;
+		}
+		float ShapeAABB::CalcDistanceTo( const Donya::Vector3 &pt ) const
+		{
+			// By https://stackoverflow.com/a/18157551
+
+			const Donya::Vector3 min = GetAABBMin();
+			const Donya::Vector3 max = GetAABBMax();
+
+			Donya::Vector3 delta;
+			delta.x = std::max( 0.0f, std::max( min.x - pt.x, pt.x - max.x ) );
+			delta.y = std::max( 0.0f, std::max( min.y - pt.y, pt.y - max.y ) );
+			delta.z = std::max( 0.0f, std::max( min.z - pt.z, pt.z - max.z ) );
+			return delta.Length();
 		}
 		Donya::Vector3 ShapeAABB::FindClosestPointTo( const Donya::Vector3 &pt ) const
 		{
@@ -51,7 +81,7 @@ namespace Donya
 			ShapeAABB magnifiedA = *pA;
 			magnifiedA.size += pB->size;
 			ShapePoint pointB;
-			pointB.position = pB->position;
+			pointB.position = pB->GetPosition();
 
 			HitResult result = magnifiedA.IntersectTo( &pointB );
 			if ( result.isHit )
@@ -72,13 +102,13 @@ namespace Donya
 			result.isHit = false;
 
 			// Compare the length between sphere radius and the closest point to sphere center within box
-			const Donya::Vector3 closest = pBox->FindClosestPointTo( pS->position );
-			const Donya::Vector3 deltaSP = closest - pS->position; // Sphere center -> Cloest point
+			const Donya::Vector3 closest = pBox->FindClosestPointTo( pS->GetPosition() );
+			const Donya::Vector3 deltaSP = closest - pS->GetPosition(); // Sphere center -> Cloest point
 			if ( deltaSP.LengthSq() <= pS->radius * pS->radius )
 			{
 				result.isHit = true;
 				// Contact point is there on the other's edge
-				result.contactPoint = pS->position + ( deltaSP.Unit() * pS->radius );
+				result.contactPoint = pS->GetPosition() + ( deltaSP.Unit() * pS->radius );
 
 				// Normal is at contact surface,
 				result.surfaceNormal = deltaSP;
@@ -86,13 +116,13 @@ namespace Donya
 				if ( deltaSP.IsZero() )
 				{
 					// Sphere center -> Box center
-					result.surfaceNormal = pBox->position - pS->position;
+					result.surfaceNormal = pBox->GetPosition() - pS->GetPosition();
 				}
 				result.surfaceNormal.Normalize();
 
 				// Resolver is the distance except for the radius
-				const float penetration = ( pBox->position - pS->position ).Length() - pS->radius;
-				result.resolveVector = result.surfaceNormal * penetration;
+				const float penetration = pBox->CalcDistanceTo( pS->GetPosition() ) - pS->radius;
+				result.resolveVector = result.surfaceNormal * fabsf( penetration );
 			}
 
 			return result;
@@ -111,7 +141,7 @@ namespace Donya
 			HitResult result;
 			result.isHit = false;
 
-			switch ( pOther->GetShape() )
+			switch ( pOther->GetShapeKind() )
 			{
 			case Shape::Point:
 				{

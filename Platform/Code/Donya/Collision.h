@@ -49,8 +49,9 @@ namespace Donya
 		class ShapeBase
 		{
 		public:
-			Type			type = Type::Dynamic;
-			Donya::Vector3	position; // Origin of shape
+			Type			type = Type::Dynamic; // Interaction type
+			Donya::Vector3	position;	// The origin, or owner's position
+			Donya::Vector3	offset;		// Offset from origin
 		public:
 			ShapeBase()									= default;
 			ShapeBase( const ShapeBase & )				= default;
@@ -59,13 +60,25 @@ namespace Donya
 			ShapeBase &operator = ( ShapeBase && )		= default;
 			virtual ~ShapeBase()						= default;
 		public:
+			virtual std::shared_ptr<ShapeBase> Clone() const = 0;
+		public:
+			// Interaction type
+			Type GetType() const { return type; }
+			// The world space position(origin + offset) of shape
+			Donya::Vector3 GetPosition() const { return position + offset; }
+			// The origin of shape
+			Donya::Vector3 GetOrigin() const { return position; }
+			// The offset of shape
+			Donya::Vector3 GetOffset() const { return offset; }
 			// For branch a collision detection method
-			virtual Shape GetShape() const = 0;
+			virtual Shape GetShapeKind() const = 0;
 			// Minimum side xyz of AABB that wraps the myself
 			virtual Donya::Vector3 GetAABBMin() const = 0;
 			// Maximum side xyz of AABB that wraps the myself
 			virtual Donya::Vector3 GetAABBMax() const = 0;
 		public:
+			// Distance between myself and point("pt")
+			virtual float CalcDistanceTo( const Donya::Vector3 &pt ) const = 0;
 			// The closest point to "pt" within my shape
 			virtual Donya::Vector3 FindClosestPointTo( const Donya::Vector3 &pt ) const = 0;
 			// 
@@ -115,11 +128,12 @@ namespace Donya
 			std::vector<EventFuncT_OnHitContinue>	onHitHandlers_Continue;
 			std::vector<EventFuncT_OnHitExit>		onHitHandlers_Exit;
 		public:
-			void AddShape( const std::shared_ptr<ShapeBase> &pShape );
-			// Remove all tegistered shapes
-			void RemoveShapes();
+			// Register the clone of "pShape", so you can reuse the same shape.
+			void RegisterShape( const std::shared_ptr<ShapeBase> &pShape );
+			// Remove all registered shapes
+			void RemoveAllShapes();
 		public:
-			void ResolveIntersectionVS( Substance *pOther );
+			void ResolveIntersectionWith( Substance *pOther );
 			void RegisterCallback_OnHitEnter	( const EventFuncT_OnHitEnter		&function );
 			void RegisterCallback_OnHitContinue	( const EventFuncT_OnHitContinue	&function );
 			void RegisterCallback_OnHitExit		( const EventFuncT_OnHitExit		&function );
@@ -152,9 +166,9 @@ namespace Donya
 		class Collider
 		{
 		public:
-			// Generate new collision body instance.
+			// Generate new collision body instance, then assign the reference to "pOut"(it does not alloc memory).
 			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Substance, because these callbacks are called in iterating the Substances.
-			static Collider Generate();
+			static void Generate( Collider *pOut );
 			// Resolve all collision body instance.
 			static void Resolve();
 		private:
@@ -172,8 +186,10 @@ namespace Donya
 			// If already dead, it will do nothing.
 			void Destroy();
 		public:
-			void AddShape( const std::shared_ptr<ShapeBase> &pShape );
-			void RemoveShapes();
+			// Register the clone of "pShape", so you can reuse the same shape.
+			void RegisterShape( const std::shared_ptr<ShapeBase> &pShape );
+			// Remove all registered shapes
+			void RemoveAllShapes();
 		public:
 			// Requirement:[mass > 0.0f]
 			void SetMass( float mass );
@@ -185,6 +201,8 @@ namespace Donya
 			Donya::Vector3	GetPosition() const;
 			// If already dead, returns (0).
 			UniqueIdType	GetColliderId() const;
+			// If already dead, returns nullptr.
+			const std::vector<std::shared_ptr<ShapeBase>> *GetRegisteredShapePointers() const;
 		};
 	}
 

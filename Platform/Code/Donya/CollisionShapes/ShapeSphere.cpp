@@ -9,6 +9,23 @@ namespace Donya
 {
 	namespace Collision
 	{
+		std::shared_ptr<ShapeBase> ShapeSphere::Generate( Type interactionType, float radius, const Donya::Vector3 &posOffset )
+		{
+			std::shared_ptr<ShapeSphere> tmp = std::make_shared<ShapeSphere>();
+			tmp->type	= interactionType;
+			tmp->offset	= posOffset;
+			tmp->radius	= radius;
+
+			// Up-cast it
+			return tmp;
+		}
+		std::shared_ptr<ShapeBase> ShapeSphere::Clone() const
+		{
+			std::shared_ptr<ShapeSphere> tmp = std::make_shared<ShapeSphere>( *this );
+			// Up-cast it
+			return tmp;
+		}
+
 		Donya::Vector3 ShapeSphere::GetAABBMin() const
 		{
 			return position - radius;
@@ -16,6 +33,10 @@ namespace Donya
 		Donya::Vector3 ShapeSphere::GetAABBMax() const
 		{
 			return position + radius;
+		}
+		float ShapeSphere::CalcDistanceTo( const Donya::Vector3 &pt ) const
+		{
+			return ( pt - position ).Length() - radius;
 		}
 		Donya::Vector3 ShapeSphere::FindClosestPointTo( const Donya::Vector3 &pt ) const
 		{
@@ -54,7 +75,7 @@ namespace Donya
 			ShapeSphere magnifiedA = *pA;
 			magnifiedA.radius += pB->radius;
 			ShapePoint pointB;
-			pointB.position = pB->position;
+			pointB.position = pB->GetPosition();
 
 			HitResult result = magnifiedA.IntersectTo( &pointB );
 			if ( result.isHit )
@@ -81,7 +102,7 @@ namespace Donya
 			HitResult result;
 			result.isHit = false;
 
-			switch ( pOther->GetShape() )
+			switch ( pOther->GetShapeKind() )
 			{
 			case Shape::Point:
 				{
