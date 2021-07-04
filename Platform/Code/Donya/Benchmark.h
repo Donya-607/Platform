@@ -44,7 +44,7 @@ public:
 	}
 
 	/// <summary>
-	/// Returns float type.
+	/// Returns float interactionType.
 	/// </summary>
 	inline float EndF()
 	{

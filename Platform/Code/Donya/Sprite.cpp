@@ -1619,7 +1619,7 @@ namespace Donya
 
 		struct Agent
 		{
-			// Note: container's type isn't need std::unique_ptr, but Sprite::Batch can not copy, so I wrapped by pointer.
+			// Note: container's interactionType isn't need std::unique_ptr, but Sprite::Batch can not copy, so I wrapped by pointer.
 
 			size_t lastReservedIdentifier;
 

@@ -19,17 +19,17 @@ namespace Donya
 	namespace Collision
 	{
 		// Interaction type with other
-		enum class Type
+		enum class InteractionType
 		{
 			Dynamic,	// Movable. Push other and be pushed by other.
 			Kinematic,	// Movable. Push other and do not be pushed by other.
 			Sensor,		// Movable. Do not push nor be pushed with other.
-			Static,		// Immovable. Push other and do not be pushed by other.
 		};
 
 		// Collider volume type
 		enum class Shape
 		{
+			Empty,		// Position.xyz, Do not intersect to anything
 			Point,		// Position.xyz
 			AABB,		// Position.xyz + HalfSize.xyz
 			Sphere,		// Position.xyz + Radius
@@ -45,11 +45,13 @@ namespace Donya
 			Donya::Vector3	resolveVector;	// Overlap amount between two objects, you can resolve the collision by add this vector
 		};
 
-		// 
+		// Shape of collision.
+		// This class has a interaction type, a positions, and a size(in derived class).
+		// And this class provides detecting an intersection method(impl in derived class).
 		class ShapeBase
 		{
 		public:
-			Type			type = Type::Dynamic; // Interaction type
+			InteractionType	type = InteractionType::Dynamic;
 			Donya::Vector3	position;	// The origin, or owner's position
 			Donya::Vector3	offset;		// Offset from origin
 		public:
@@ -63,7 +65,7 @@ namespace Donya
 			virtual std::shared_ptr<ShapeBase> Clone() const = 0;
 		public:
 			// Interaction type
-			Type GetType() const { return type; }
+			InteractionType GetType() const { return type; }
 			// The world space position(origin + offset) of shape
 			Donya::Vector3 GetPosition() const { return position + offset; }
 			// The origin of shape
@@ -174,8 +176,9 @@ namespace Donya
 		{
 		public:
 			// Generate new collision body instance, then assign the reference to "pOut"(it does not alloc memory).
+			// And register an initial shape as "pShape".
 			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Substance, because these callbacks are called in iterating the Substances.
-			static void Generate( Collider *pOut );
+			static void Generate( Collider *pOut, const std::shared_ptr<ShapeBase> &pShape );
 			// Resolve all collision body instance.
 			static void Resolve();
 		private:

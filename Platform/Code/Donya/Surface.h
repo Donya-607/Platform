@@ -58,7 +58,7 @@ namespace Donya
 		/// </summary>
 		Donya::Int2		GetSurfaceSize() const;
 		/// <summary>
-		/// Returns whole-size of surface. That is same as passed size when creating(the type-conversion by static_cast).
+		/// Returns whole-size of surface. That is same as passed size when creating(the interactionType-conversion by static_cast).
 		/// </summary>
 		Donya::Vector2	GetSurfaceSizeF() const;
 		ComPtr<ID3D11RenderTargetView> GetRenderTargetView() const;

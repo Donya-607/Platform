@@ -11,7 +11,7 @@ namespace Donya
 		public:
 			static std::shared_ptr<ShapeBase> Generate
 			(
-				Type interactionType,
+				InteractionType interactionType,
 				const Donya::Vector3 &posOffset = { 0.0f, 0.0f, 0.0f }
 			);
 		public:

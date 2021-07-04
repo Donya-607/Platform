@@ -14,7 +14,7 @@ class Fader final : public Donya::Singleton<Fader>
 	friend class Donya::Singleton<Fader>;
 public:
 	/// <summary>
-	/// You can specify the type of fade-out, fade-in.
+	/// You can specify the interactionType of fade-out, fade-in.
 	/// </summary>
 	enum class Type
 	{
@@ -34,7 +34,7 @@ public:
 	};
 
 	/// <summary>
-	/// "type" : You specify type of fade.<para></para>
+	/// "interactionType" : You specify interactionType of fade.<para></para>
 	/// "closeSecond" : You specify time of completely close(per second).<para></para>
 	/// "parameter" :<para></para>
 	/// Type::Scroll : Used to judge direction(you can specify by Fader::Direction).<para></para>
@@ -42,31 +42,31 @@ public:
 	/// </summary>
 	struct Configuration
 	{
-		Type			type{};			// You specify type of fade.
+		Type			type{};			// You specify interactionType of fade.
 		float			closeSecond{};	// You specify time of completely close(per second)
 		unsigned int	parameter{};	// [Type::Scroll : Used to judge direction(you can specify by Fader::Direction)] [Type::Gradually : Used to fill color. This is linking to Donya::Color::Code]
 	public:
 		void SetDefault( Type fadeType );
 
 		/// <summary>
-		/// Use when the type is Scroll.
+		/// Use when the interactionType is Scroll.
 		/// </summary>
 		void SetDirection( Direction moveDirection );
 		/// <summary>
-		/// Use when the type is Scroll.
+		/// Use when the interactionType is Scroll.
 		/// </summary>
 		void SetDirection( Direction dirX, Direction dirY );
 		/// <summary>
-		/// Use when the type is Scroll.
+		/// Use when the interactionType is Scroll.
 		/// </summary>
 		void NormalizeDirection();
 
 		/// <summary>
-		/// Use when the type is Gradually.
+		/// Use when the interactionType is Gradually.
 		/// </summary>
 		void SetColor( Donya::Color::Code colorCode );
 		/// <summary>
-		/// Use when the type is Gradually.<para></para>
+		/// Use when the interactionType is Gradually.<para></para>
 		/// These float value are expected to [0.0f ~ 1.0f].
 		/// </summary>
 		void SetColor( float R, float G, float B );

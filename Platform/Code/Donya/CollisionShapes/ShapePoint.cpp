@@ -9,7 +9,7 @@ namespace Donya
 {
 	namespace Collision
 	{
-		std::shared_ptr<ShapeBase> ShapePoint::Generate( Type interactionType, const Donya::Vector3 &posOffset )
+		std::shared_ptr<ShapeBase> ShapePoint::Generate( InteractionType interactionType, const Donya::Vector3 &posOffset )
 		{
 			std::shared_ptr<ShapePoint> tmp = std::make_shared<ShapePoint>();
 			tmp->type	= interactionType;
@@ -35,11 +35,11 @@ namespace Donya
 		}
 		float ShapePoint::CalcDistanceTo( const Donya::Vector3 &pt ) const
 		{
-			return ( pt - position ).Length();
+			return ( pt - GetPosition() ).Length();
 		}
 		Donya::Vector3 ShapePoint::FindClosestPointTo( const Donya::Vector3 &pt ) const
 		{
-			return position;
+			return GetPosition();
 		}
 
 
@@ -144,6 +144,9 @@ namespace Donya
 
 			switch ( pOther->GetShapeKind() )
 			{
+			case Shape::Empty:
+				// Can not intersect
+				break;
 			case Shape::Point:
 				{
 					const ShapePoint *pPoint = DownCastWithAssert<ShapePoint>( pOther );

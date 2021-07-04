@@ -80,6 +80,8 @@ namespace Donya
 					continue;
 				}
 				// else
+				if ( selfShape->GetShapeKind() == Shape::Empty ) { continue; }
+				// else
 
 				for ( size_t j = 0; j < otherShapeCount; ++j )
 				{
@@ -89,6 +91,8 @@ namespace Donya
 						_ASSERT_EXPR( 0, L"Error: Shape is nullptr!" );
 						continue;
 					}
+					// else
+					if ( otherShape->GetShapeKind() == Shape::Empty ) { continue; }
 					// else
 
 
@@ -131,6 +135,20 @@ namespace Donya
 		}
 		void Substance::InvokeCallbacks( DONYA_CALLBACK_ON_HIT_ENTER ) const
 		{
+			/*
+			TODO: Fix bug that occur when a substance has multiple shapes,
+			if the substance A has shapes B, C,
+			and there is an other substance O,
+			when the B contacts to O, this calls Enter and memorizes the O's id,
+			and the C does not contacts to O, so the C does not calls nothing.
+			Then next resolving, the B still contacts to O, this calls Continue,
+			BUT the C that does not contacts to anything will calls Exit :(
+			BECAUSE the C was also memorized the O's id, so it can call Exit without call Enter!
+
+			This bug may solve by attach a UniqueId<ShapeBase> to ShapeBase as member,
+			but this solution will make complexity...
+			*/
+
 			const UniqueIdType otherId = hitOther.GetId();
 			const bool isKnown = hitSubstanceIds.count( otherId );
 
@@ -242,13 +260,16 @@ namespace Donya
 		// Collider can take a reference directly(emplace_back() kills an iterator, but does not kills a directly reference-pointer. cf: https://cpprefjp.github.io/reference/deque/deque/emplace_back.html).
 		static std::deque<Substance> bodies;
 
-		void Collider::Generate( Collider *pOut )
+		void Collider::Generate( Collider *pOut, const std::shared_ptr<ShapeBase> &pShape )
 		{
 			if ( !pOut ) { return; }
 			// else
 
 			bodies.emplace_back();
 			pOut->pReference = &bodies.back();
+
+			// Do not allow no shape substance for prevent nullptr.
+			pOut->RegisterShape( pShape );
 		}
 		void Collider::Resolve()
 		{

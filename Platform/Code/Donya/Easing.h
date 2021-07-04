@@ -251,7 +251,7 @@ namespace Donya
 		}
 
 		/// <summary>
-		/// Return value range is basically 0.0f ~ 1.0f(depends on type).<para></para>
+		/// Return value range is basically 0.0f ~ 1.0f(depends on interactionType).<para></para>
 		/// Please set 0.0f ~ 1.0f to "currentTime".
 		/// </summary>
 		static float Ease( Kind kind, Type type, float currentTime )
@@ -349,7 +349,7 @@ namespace Donya
 			return NULL;
 		}
 		/// <summary>
-		/// Return value range is basically 0.0f ~ 1.0f(depends on type).<para></para>
+		/// Return value range is basically 0.0f ~ 1.0f(depends on interactionType).<para></para>
 		/// Please set 0.0f ~ 1.0f to "currentTime".
 		/// </summary>
 		static constexpr float Ease( CKind kind, Type type, float currentTime )

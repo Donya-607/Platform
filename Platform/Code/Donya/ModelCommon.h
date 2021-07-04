@@ -19,7 +19,7 @@ namespace Donya
 	namespace Model
 	{
 		/// <summary>
-		/// The specification of a type of vertex. Static or Skinned.
+		/// The specification of a interactionType of vertex. Static or Skinned.
 		/// </summary>
 		enum class ModelUsage
 		{
@@ -31,7 +31,7 @@ namespace Donya
 		};
 
 		/// <summary>
-		/// The vertex structures by model type.
+		/// The vertex structures by model interactionType.
 		/// </summary>
 		namespace Vertex
 		{
@@ -305,7 +305,7 @@ namespace Donya
 		}
 
 		/// <summary>
-		/// The members of constant-buffer by model type.
+		/// The members of constant-buffer by model interactionType.
 		/// </summary>
 		namespace Constants
 		{
@@ -382,7 +382,7 @@ namespace Donya
 				};
 
 				/// <summary>
-				/// The model type of using skinning.
+				/// The model interactionType of using skinning.
 				/// </summary>
 				struct Bone
 				{

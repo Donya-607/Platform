@@ -33,9 +33,9 @@ namespace Donya
 	};
 
 	/// <summary>
-	/// This class can show the T's type.<para></para>
+	/// This class can show the T's interactionType.<para></para>
 	/// This class don't have definition, so a compiler output the error if you use this class.<para></para>
-	/// You can know the T's type by that error-message.
+	/// You can know the T's interactionType by that error-message.
 	/// </summary>
 	template<typename T> class TypeDetective;
 

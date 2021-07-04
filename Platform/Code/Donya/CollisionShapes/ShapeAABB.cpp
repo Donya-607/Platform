@@ -9,7 +9,7 @@ namespace Donya
 {
 	namespace Collision
 	{
-		std::shared_ptr<ShapeBase> ShapeAABB::Generate( Type interactionType, const Donya::Vector3 &halfSize, const Donya::Vector3 &posOffset )
+		std::shared_ptr<ShapeBase> ShapeAABB::Generate( InteractionType interactionType, const Donya::Vector3 &halfSize, const Donya::Vector3 &posOffset )
 		{
 			std::shared_ptr<ShapeAABB> tmp = std::make_shared<ShapeAABB>();
 			tmp->type	= interactionType;
@@ -143,6 +143,9 @@ namespace Donya
 
 			switch ( pOther->GetShapeKind() )
 			{
+			case Shape::Empty:
+				// Can not intersect
+				break;
 			case Shape::Point:
 				{
 					const ShapePoint *pPoint = DownCastWithAssert<ShapePoint>( pOther );

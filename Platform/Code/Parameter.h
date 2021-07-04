@@ -26,7 +26,7 @@ namespace ParameterHelper
 
 
 /// <summary>
-/// The template type must has below methods:
+/// The template interactionType must has below methods:
 /// -template&lt;class Archive&gt; serialize( Archive &amp; ) : used for cereal API.
 /// -ShowImGuiNode( void ) : only when debug mode.
 /// </summary>
@@ -142,7 +142,7 @@ public:
 		ImGui::TreePop();
 	}
 	/// <summary>
-	/// We regards the signature of template type as: "void Func( ParameterClass &amp; )"
+	/// We regards the signature of template interactionType as: "void Func( ParameterClass &amp; )"
 	/// We call that as: ShowImGuiNode( obj );
 	/// </summary>
 	template<typename ShowImGuiNodeMethod>
