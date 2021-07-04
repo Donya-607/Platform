@@ -7,6 +7,7 @@
 #include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
+#include <string>
 #include "Donya/Camera.h"
 #include "Donya/Collision.h"
 
@@ -42,6 +43,16 @@ private:
 private:
 #if USE_IMGUI
 	void	UseImGui();
+
+	static std::vector<std::string> callbackStrs;
+	static bool hitContinuingA;
+	static bool hitContinuingB;
+	static void OnHitEnterA		( DONYA_CALLBACK_ON_HIT_ENTER );
+	static void OnHitContinueA	( DONYA_CALLBACK_ON_HIT_CONTINUE );
+	static void OnHitExitA		( DONYA_CALLBACK_ON_HIT_EXIT );
+	static void OnHitEnterB		( DONYA_CALLBACK_ON_HIT_ENTER );
+	static void OnHitContinueB	( DONYA_CALLBACK_ON_HIT_CONTINUE );
+	static void OnHitExitB		( DONYA_CALLBACK_ON_HIT_EXIT );
 #endif // USE_IMGUI
 };
 #pragma once

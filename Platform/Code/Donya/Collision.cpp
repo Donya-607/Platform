@@ -38,12 +38,13 @@ namespace Donya
 		void Substance::ResolveIntersectionWith( Substance *pOther )
 		{
 			// Update callbacks brancher "hitSubstanceIds"
-			AcceptIdRequests();
+			this->AcceptIdRequests();
+			if ( !pOther ) { return; }
+			// else
+			pOther->AcceptIdRequests();
 
 
 			// Validation and prepare variables
-			if ( !pOther ) { return; }
-			// else
 			const std::vector<std::shared_ptr<ShapeBase>> &otherShapePtrs = *pOther->GetRegisteredShapePointers();
 			const size_t selfShapeCount = shapePtrs.size();
 			const size_t otherShapeCount = otherShapePtrs.size();
@@ -62,10 +63,12 @@ namespace Donya
 			// else
 			const float selfMassPercent = 1.0f - ( GetMass() / massSum );
 			const float otherMassPercent = 1.0f - selfMassPercent;
+			constexpr float slightlyMagnifier = 1.0001f; // Collision will react even if edgeA == edgeB, so it more resolves to be edgeA != edgeB
 
 
 			// Do intersection between all patterns
 			HitResult hitResult;
+			HitResult invHitResult; // Inverse the intersection viewer
 			std::shared_ptr<ShapeBase> selfShape;
 			std::shared_ptr<ShapeBase> otherShape;
 			for ( size_t i = 0; i < selfShapeCount; ++i )
@@ -92,7 +95,13 @@ namespace Donya
 					// TODO: Consider shape type
 
 					hitResult = selfShape->IntersectTo( otherShape.get() );
-					InvokeCallbacks( *pOther, otherShape, hitResult );
+					hitResult.resolveVector *= slightlyMagnifier;
+
+					invHitResult = hitResult;
+					invHitResult.surfaceNormal *= -1.0f;
+					invHitResult.resolveVector *= -1.0f;
+					this->InvokeCallbacks( *pOther, otherShape, *this, selfShape, hitResult );
+					pOther->InvokeCallbacks( *this, selfShape, *pOther, otherShape, invHitResult );
 
 
 					// HACK: I should consider a resolving order of shapes
@@ -133,7 +142,7 @@ namespace Donya
 					
 					for ( auto &OnHitContinue : onHitHandlers_Continue )
 					{
-						OnHitContinue( hitOther, pOtherShape, hitParam );
+						OnHitContinue( hitOther, pHitOtherShape, hitMyself, pHitMyselfShape, hitParam );
 					}
 				}
 				else
@@ -143,7 +152,7 @@ namespace Donya
 					insertRequestIds.insert( otherId );
 					for ( auto &OnHitEnter : onHitHandlers_Enter )
 					{
-						OnHitEnter( hitOther, pOtherShape, hitParam );
+						OnHitEnter( hitOther, pHitOtherShape, hitMyself, pHitMyselfShape, hitParam );
 					}
 				}
 			}
@@ -151,11 +160,11 @@ namespace Donya
 			{
 				// Leave timing
 				
-				eraseRequestIds.erase( otherId );
+				eraseRequestIds.insert( otherId );
 
 				for ( auto &OnHitExit : onHitHandlers_Exit )
 				{
-					OnHitExit( otherId );
+					OnHitExit( hitOther, pHitOtherShape, hitMyself, pHitMyselfShape );
 				}
 			}
 
@@ -298,6 +307,24 @@ namespace Donya
 			if ( !pReference ) { return; }
 			// else
 			pReference->RemoveAllShapes();
+		}
+		void Collider::RegisterCallback_OnHitEnter( const Substance::EventFuncT_OnHitEnter &function )
+		{
+			if ( !pReference ) { return; }
+			// else
+			pReference->RegisterCallback_OnHitEnter( function );
+		}
+		void Collider::RegisterCallback_OnHitContinue( const Substance::EventFuncT_OnHitContinue &function )
+		{
+			if ( !pReference ) { return; }
+			// else
+			pReference->RegisterCallback_OnHitContinue( function );
+		}
+		void Collider::RegisterCallback_OnHitExit( const Substance::EventFuncT_OnHitExit &function )
+		{
+			if ( !pReference ) { return; }
+			// else
+			pReference->RegisterCallback_OnHitExit( function );
 		}
 		void Collider::SetMass( float mass )
 		{

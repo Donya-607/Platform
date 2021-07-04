@@ -89,18 +89,25 @@ namespace Donya
 		// void OnHitEnter( DONYA_CALLBACK_ON_HIT_ENTER );
 		// It callback will be called before resolving(after call it, resolve will works).
 	#define DONYA_CALLBACK_ON_HIT_ENTER \
-			const Substance &hitOther, /* Intersected target */ \
-			const std::shared_ptr<ShapeBase> &pOtherShape, /* Intersected shape(one of target's) */ \
-			const HitResult &hitParam /* Intersect description */
+			const Donya::Collision::Substance &hitOther, /* Intersected target */ \
+			const std::shared_ptr<Donya::Collision::ShapeBase> &pHitOtherShape, /* Intersected shape of target's (not nullptr) */ \
+			const Donya::Collision::Substance &hitMyself, /* Intersected substance of myself */ \
+			const std::shared_ptr<Donya::Collision::ShapeBase> &pHitMyselfShape, /* Intersected shape of myself (not nullptr) */ \
+			const Donya::Collision::HitResult &hitParam /* Intersect description */
+
 		// Signature of callback of continuing an intersection, use like this:
 		// void OnHitContinue( DONYA_CALLBACK_ON_HIT_CONTINUE );
 		// It callback will be called before resolving(after call it, resolve will works).
 	#define DONYA_CALLBACK_ON_HIT_CONTINUE \
 			DONYA_CALLBACK_ON_HIT_ENTER // Same signature
+
 		// Signature of callback of end an intersection, use like this:
 		// void OnHitExit( DONYA_CALLBACK_ON_HIT_EXIT );
 	#define DONYA_CALLBACK_ON_HIT_EXIT \
-			UniqueIdType leaveSubstanceId /* The substance id that was intersected when previous intersection test */
+			const Donya::Collision::Substance &leaveOther, /* Previously intersected target */ \
+			const std::shared_ptr<Donya::Collision::ShapeBase> &pLeaveOtherShape, /* Previously intersected shape of target's (not nullptr) */ \
+			const Donya::Collision::Substance &leaveMyself, /* Previously intersected substance of myself */ \
+			const std::shared_ptr<Donya::Collision::ShapeBase> &pLeaveMyselfShape /* Previously intersected shape of myself (not nullptr) */
 
 		// Substance of collision body.
 		class Substance
@@ -190,6 +197,10 @@ namespace Donya
 			void RegisterShape( const std::shared_ptr<ShapeBase> &pShape );
 			// Remove all registered shapes
 			void RemoveAllShapes();
+		public:
+			void RegisterCallback_OnHitEnter	( const Substance::EventFuncT_OnHitEnter	&function );
+			void RegisterCallback_OnHitContinue	( const Substance::EventFuncT_OnHitContinue	&function );
+			void RegisterCallback_OnHitExit		( const Substance::EventFuncT_OnHitExit		&function );
 		public:
 			// Requirement:[mass > 0.0f]
 			void SetMass( float mass );

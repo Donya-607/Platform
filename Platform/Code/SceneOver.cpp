@@ -92,23 +92,32 @@ void SceneOver::Init()
 		Collider::Generate( &colB );
 		constexpr float size = 0.5f;
 		auto pPoint = ShapePoint::Generate( Donya::Collision::Type::Dynamic );
-		colA.RegisterShape( pPoint );
-		colB.RegisterShape( pPoint );
+		// colA.RegisterShape( pPoint );
+		// colB.RegisterShape( pPoint );
 		auto pAABB = ShapeAABB::Generate( Donya::Collision::Type::Dynamic, { size, size, size } );
 		auto pSphere = ShapeSphere::Generate( Donya::Collision::Type::Dynamic, size );
 		auto pCapsuleTop = ShapeSphere::Generate( Donya::Collision::Type::Dynamic, size, { 0.0f, +size, 0.0f } );
 		auto pCapsuleBtm = ShapeSphere::Generate( Donya::Collision::Type::Dynamic, size, { 0.0f, -size, 0.0f } );
 		auto pFloor1 = ShapeAABB::Generate( Donya::Collision::Type::Dynamic, { size, size, size }, { size*2.0f * 0.0f, 0.0f, 0.0f } );
 		auto pFloor2 = ShapeAABB::Generate( Donya::Collision::Type::Dynamic, { size, size, size }, { size*2.0f * 1.8f, 0.0f, 0.0f } );
+		// colA.RegisterShape( pAABB );
+		// colA.RegisterShape( pCapsuleTop );
+		// colA.RegisterShape( pCapsuleBtm );
+		// colB.RegisterShape( pFloor1 );
+		// colB.RegisterShape( pFloor2 );
 		colA.RegisterShape( pAABB );
-		colA.RegisterShape( pCapsuleTop );
-		colA.RegisterShape( pCapsuleBtm );
 		colB.RegisterShape( pFloor1 );
-		colB.RegisterShape( pFloor2 );
 		colA.SetPosition( posA );
 		colB.SetPosition( posB );
 		colA.SetMass( 1.0f );
 		colB.SetMass( 65535.0f );
+
+		colA.RegisterCallback_OnHitEnter	( OnHitEnterA );
+		colA.RegisterCallback_OnHitContinue	( OnHitContinueA );
+		colA.RegisterCallback_OnHitExit		( OnHitExitA );
+		colB.RegisterCallback_OnHitEnter	( OnHitEnterB );
+		colB.RegisterCallback_OnHitContinue	( OnHitContinueB );
+		colB.RegisterCallback_OnHitExit		( OnHitExitB );
 
 		constexpr Donya::Vector2 screenSize{ Common::ScreenWidthF(), Common::ScreenHeightF() };
 		constexpr Donya::Vector2 defaultZRange{ 0.1f, 500.0f };
@@ -365,6 +374,85 @@ void SceneOver::UseImGui()
 
 	ImGui::Checkbox( u8"遷移を止める", &dontTransition );
 
+	if ( ImGui::TreeNode( u8"コールバックログ" ) )
+	{
+		if ( ImGui::Button( u8"ログを消去" ) )
+		{
+			callbackStrs.clear();
+		}
+
+		for ( const auto &str : callbackStrs )
+		{
+			ImGui::Text( str.c_str() );
+		}
+
+		ImGui::TreePop();
+	}
+
 	ImGui::End();
+}
+
+std::vector<std::string> SceneOver::callbackStrs{};
+bool SceneOver::hitContinuingA = false;
+bool SceneOver::hitContinuingB = false;
+void SceneOver::OnHitEnterA( DONYA_CALLBACK_ON_HIT_ENTER )
+{
+	std::string tmp = "Enter[A]: ";
+	tmp += "other-id:"		+ std::to_string( hitOther.GetId() ) + ",";
+	tmp += "other-type:"	+ std::to_string( scast<int>( pHitOtherShape->GetType() ) ) + ",";
+	tmp += "other-shape:"	+ std::to_string( scast<int>( pHitOtherShape->GetShapeKind() ) ) + ";";
+	callbackStrs.emplace_back( std::move( tmp ) );
+}
+void SceneOver::OnHitContinueA( DONYA_CALLBACK_ON_HIT_CONTINUE )
+{
+	if ( hitContinuingA ) { return; }
+	// else
+	hitContinuingA = true;
+
+	std::string tmp = "Continue[A]: ";
+	tmp += "other-id:"		+ std::to_string( hitOther.GetId() ) + ",";
+	tmp += "other-type:"	+ std::to_string( scast<int>( pHitOtherShape->GetType() ) ) + ",";
+	tmp += "other-shape:"	+ std::to_string( scast<int>( pHitOtherShape->GetShapeKind() ) ) + ";";
+	callbackStrs.emplace_back( std::move( tmp ) );
+}
+void SceneOver::OnHitExitA( DONYA_CALLBACK_ON_HIT_EXIT )
+{
+	hitContinuingA = false;
+
+	std::string tmp = "Exit[A]: ";
+	tmp += "other-id:"		+ std::to_string( leaveOther.GetId() ) + ",";
+	tmp += "other-type:"	+ std::to_string( scast<int>( pLeaveOtherShape->GetType() ) ) + ",";
+	tmp += "other-shape:"	+ std::to_string( scast<int>( pLeaveOtherShape->GetShapeKind() ) ) + ";";
+	callbackStrs.emplace_back( std::move( tmp ) );
+}
+void SceneOver::OnHitEnterB( DONYA_CALLBACK_ON_HIT_ENTER )
+{
+	std::string tmp = "Enter[B]: ";
+	tmp += "other-id:"		+ std::to_string( hitOther.GetId() ) + ",";
+	tmp += "other-type:"	+ std::to_string( scast<int>( pHitOtherShape->GetType() ) ) + ",";
+	tmp += "other-shape:"	+ std::to_string( scast<int>( pHitOtherShape->GetShapeKind() ) ) + ";";
+	callbackStrs.emplace_back( std::move( tmp ) );
+}
+void SceneOver::OnHitContinueB( DONYA_CALLBACK_ON_HIT_CONTINUE )
+{
+	if ( hitContinuingB ) { return; }
+	// else
+	hitContinuingB = true;
+
+	std::string tmp = "Continue[B]: ";
+	tmp += "other-id:"		+ std::to_string( hitOther.GetId() ) + ",";
+	tmp += "other-type:"	+ std::to_string( scast<int>( pHitOtherShape->GetType() ) ) + ",";
+	tmp += "other-shape:"	+ std::to_string( scast<int>( pHitOtherShape->GetShapeKind() ) ) + ";";
+	callbackStrs.emplace_back( std::move( tmp ) );
+}
+void SceneOver::OnHitExitB( DONYA_CALLBACK_ON_HIT_EXIT )
+{
+	hitContinuingB = false;
+
+	std::string tmp = "Exit[B]: ";
+	tmp += "other-id:"		+ std::to_string( leaveOther.GetId() ) + ",";
+	tmp += "other-type:"	+ std::to_string( scast<int>( pLeaveOtherShape->GetType() ) ) + ",";
+	tmp += "other-shape:"	+ std::to_string( scast<int>( pLeaveOtherShape->GetShapeKind() ) ) + ";";
+	callbackStrs.emplace_back( std::move( tmp ) );
 }
 #endif // USE_IMGUI
