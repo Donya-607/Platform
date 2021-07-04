@@ -28,11 +28,11 @@ namespace Donya
 
 		Donya::Vector3 ShapeAABB::GetAABBMin() const
 		{
-			return position - size;
+			return GetPosition() - GetSize();
 		}
 		Donya::Vector3 ShapeAABB::GetAABBMax() const
 		{
-			return position + size;
+			return GetPosition() + GetSize();
 		}
 		float ShapeAABB::CalcDistanceTo( const Donya::Vector3 &pt ) const
 		{

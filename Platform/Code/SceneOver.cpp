@@ -7,6 +7,7 @@
 
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
 #include "Donya/CollisionShapes/ShapeAABB.h"
+#include "Donya/CollisionShapes/ShapePoint.h"
 #include "Donya/CollisionShapes/ShapeSphere.h"
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
@@ -84,20 +85,30 @@ void SceneOver::Init()
 	timer = 0.0f;
 
 	{
-		posA = { -2.0f, 0.0f, 0.0f };
-		posB = { +2.0f, 0.0f, 0.0f };
+		posA = { -0.0f, +1.0f, 0.0f };
+		posB = { +0.0f, -1.5f, 0.0f };
 		using namespace Donya::Collision;
 		Collider::Generate( &colA );
 		Collider::Generate( &colB );
 		constexpr float size = 0.5f;
+		auto pPoint = ShapePoint::Generate( Donya::Collision::Type::Dynamic );
+		colA.RegisterShape( pPoint );
+		colB.RegisterShape( pPoint );
 		auto pAABB = ShapeAABB::Generate( Donya::Collision::Type::Dynamic, { size, size, size } );
 		auto pSphere = ShapeSphere::Generate( Donya::Collision::Type::Dynamic, size );
-		colA.RegisterShape( pSphere );
-		colB.RegisterShape( pAABB );
+		auto pCapsuleTop = ShapeSphere::Generate( Donya::Collision::Type::Dynamic, size, { 0.0f, +size, 0.0f } );
+		auto pCapsuleBtm = ShapeSphere::Generate( Donya::Collision::Type::Dynamic, size, { 0.0f, -size, 0.0f } );
+		auto pFloor1 = ShapeAABB::Generate( Donya::Collision::Type::Dynamic, { size, size, size }, { size*2.0f * 0.0f, 0.0f, 0.0f } );
+		auto pFloor2 = ShapeAABB::Generate( Donya::Collision::Type::Dynamic, { size, size, size }, { size*2.0f * 1.8f, 0.0f, 0.0f } );
+		colA.RegisterShape( pAABB );
+		colA.RegisterShape( pCapsuleTop );
+		colA.RegisterShape( pCapsuleBtm );
+		colB.RegisterShape( pFloor1 );
+		colB.RegisterShape( pFloor2 );
 		colA.SetPosition( posA );
 		colB.SetPosition( posB );
 		colA.SetMass( 1.0f );
-		colB.SetMass( 1.0f );
+		colB.SetMass( 65535.0f );
 
 		constexpr Donya::Vector2 screenSize{ Common::ScreenWidthF(), Common::ScreenHeightF() };
 		constexpr Donya::Vector2 defaultZRange{ 0.1f, 500.0f };
@@ -293,7 +304,7 @@ void SceneOver::Draw( float elapsedTime )
 			}
 		};
 
-		constexpr float alpha = 0.9f;
+		constexpr float alpha = 0.6f;
 		constexpr Donya::Vector4 red	{ 1.0f, 0.0f, 0.0f, alpha };
 		constexpr Donya::Vector4 green	{ 0.0f, 1.0f, 0.0f, alpha };
 		constexpr Donya::Vector4 blue	{ 0.0f, 0.0f, 1.0f, alpha };

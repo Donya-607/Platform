@@ -61,7 +61,7 @@ namespace Donya
 			}
 			// else
 			const float selfMassPercent = 1.0f - ( GetMass() / massSum );
-			const float otherMassPercent = 1.0f - ( pOther->GetMass() / massSum );
+			const float otherMassPercent = 1.0f - selfMassPercent;
 
 
 			// Do intersection between all patterns
