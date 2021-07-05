@@ -37,7 +37,8 @@ namespace Donya
 		}
 		void Substance::ResolveIntersectionWith( Substance *pOther )
 		{
-			// Update callbacks brancher "hitSubstanceIds"
+			// Update "hitSubstanceIds", brancher of callbacks
+
 			this->AcceptIdRequests();
 			if ( !pOther ) { return; }
 			// else
@@ -45,6 +46,7 @@ namespace Donya
 
 
 			// Validation and prepare variables
+
 			const std::vector<std::shared_ptr<ShapeBase>> &otherShapePtrs = *pOther->GetRegisteredShapePointers();
 			const size_t selfShapeCount = shapePtrs.size();
 			const size_t otherShapeCount = otherShapePtrs.size();
@@ -61,16 +63,21 @@ namespace Donya
 				return;
 			}
 			// else
-			const float selfMassPercent = 1.0f - ( GetMass() / massSum );
+			const float selfMassPercent  = 1.0f - ( GetMass() / massSum );
 			const float otherMassPercent = 1.0f - selfMassPercent;
 			constexpr float slightlyMagnifier = 1.0001f; // Collision will react even if edgeA == edgeB, so it more resolves to be edgeA != edgeB
 
 
 			// Do intersection between all patterns
+
 			HitResult hitResult;
-			HitResult invHitResult; // Inverse the intersection viewer
+			HitResult invHitResult; // Inverse the intersection viewer, for other's callback
 			std::shared_ptr<ShapeBase> selfShape;
 			std::shared_ptr<ShapeBase> otherShape;
+			bool isSensor			= false; // True if either is sensor
+			bool isKinematicSelf	= false;
+			bool isKinematicOther	= false;
+			bool dontResolve		= false; // True when either is sensor, or both are kinematic.
 			for ( size_t i = 0; i < selfShapeCount; ++i )
 			{
 				selfShape = shapePtrs[i];
@@ -82,6 +89,10 @@ namespace Donya
 				// else
 				if ( selfShape->GetShapeKind() == Shape::Empty ) { continue; }
 				// else
+
+				isSensor		= ( selfShape->GetType() == InteractionType::Sensor );
+				isKinematicSelf	= ( selfShape->GetType() == InteractionType::Kinematic );
+
 
 				for ( size_t j = 0; j < otherShapeCount; ++j )
 				{
@@ -95,27 +106,54 @@ namespace Donya
 					if ( otherShape->GetShapeKind() == Shape::Empty ) { continue; }
 					// else
 
+					isSensor			= isSensor			|| ( otherShape->GetType() == InteractionType::Sensor );
+					isKinematicOther	= isKinematicOther	|| ( otherShape->GetType() == InteractionType::Kinematic );
 
-					// TODO: Consider shape type
 
+					// Calc the intersection resolver
 					hitResult = selfShape->IntersectTo( otherShape.get() );
 					hitResult.resolveVector *= slightlyMagnifier;
-
 					invHitResult = hitResult;
 					invHitResult.surfaceNormal *= -1.0f;
 					invHitResult.resolveVector *= -1.0f;
+
+
+					// Invoke callbacks before resolve(even in the case of do not resolve)
 					this->InvokeCallbacks( *pOther, otherShape, *this, selfShape, hitResult );
 					pOther->InvokeCallbacks( *this, selfShape, *pOther, otherShape, invHitResult );
 
 
-					// HACK: I should consider a resolving order of shapes
-					if ( hitResult.isHit )
-					{
-						this->position   += hitResult.resolveVector * selfMassPercent;
-						pOther->position -= hitResult.resolveVector * otherMassPercent;
+					dontResolve = isSensor || ( isKinematicSelf && isKinematicOther ) || !hitResult.isHit;
+					if ( dontResolve ) { continue; }
+					// else
 
-						// Apply the resolved position to all shapes
+
+					// Resolve them
+
+					// Note: I do not consider an order of resolving.
+					// So resolving order is depending on registered order of shapes.
+
+					if ( isKinematicSelf )
+					{
+						// Other receives whole resolver
+						pOther->position -= hitResult.resolveVector;
+						pOther->SetPosition( pOther->position );
+					}
+					else
+					if ( isKinematicOther )
+					{
+						// Self receives whole resolver
+						this->position   += hitResult.resolveVector;
 						this->SetPosition( this->position );
+					}
+					else
+					{
+						// Each other receives resolver calced by mass ratio
+
+						this->position   += hitResult.resolveVector * selfMassPercent;
+						this->SetPosition( this->position );
+
+						pOther->position -= hitResult.resolveVector * otherMassPercent;
 						pOther->SetPosition( pOther->position );
 					}
 				}
@@ -212,6 +250,7 @@ namespace Donya
 				// else
 			}
 
+			// Updation
 			position = newPosition;
 			for ( auto &pShape : shapePtrs )
 			{
@@ -258,23 +297,28 @@ namespace Donya
 		// Why I choose std::deque:
 		// I can loop all element fastly(cf: https://qiita.com/sileader/items/a40f9acf90fbda16af51#%E8%A6%81%E7%B4%A0%E3%81%AE%E8%B5%B0%E6%9F%BB%E7%AF%84%E5%9B%B2for).
 		// Collider can take a reference directly(emplace_back() kills an iterator, but does not kills a directly reference-pointer. cf: https://cpprefjp.github.io/reference/deque/deque/emplace_back.html).
-		static std::deque<Substance> bodies;
+		static std::deque<Substance> substances;
+		std::deque<Substance> &Substances() { return substances; }
 
 		void Collider::Generate( Collider *pOut, const std::shared_ptr<ShapeBase> &pShape )
 		{
 			if ( !pOut ) { return; }
 			// else
 
-			bodies.emplace_back();
-			pOut->pReference = &bodies.back();
+			auto &container = Substances();
+
+			container.emplace_back();
+			pOut->pReference = &( container.back() );
 
 			// Do not allow no shape substance for prevent nullptr.
 			pOut->RegisterShape( pShape );
 		}
 		void Collider::Resolve()
 		{
-			auto itrEnd = bodies.end();
-			for ( auto itrI = bodies.begin(); itrI != itrEnd; ++itrI )
+			auto &container = Substances();
+
+			auto itrEnd = container.end();
+			for ( auto itrI = container.begin(); itrI != itrEnd; ++itrI )
 			{
 				Substance &a = *itrI;
 				for ( auto itrJ = itrI + 1; itrJ != itrEnd; ++itrJ )
@@ -295,10 +339,12 @@ namespace Donya
 			if ( !pReference ) { return; }
 			// else
 
+			auto &container = Substances();
+
 			// Find referencing index
-			const size_t invalidIndex = bodies.size();
+			const size_t invalidIndex = container.size();
 			size_t index = 0;
-			for ( const auto &it : bodies )
+			for ( const auto &it : container )
 			{
 				if ( &it == pReference )
 				{
@@ -311,7 +357,7 @@ namespace Donya
 			// Erase it
 			if ( index < invalidIndex )
 			{
-				bodies.erase( bodies.begin() + index );
+				container.erase( container.begin() + index );
 			}
 
 			// Signify it has removed

@@ -96,10 +96,14 @@ void SceneOver::Init()
 		auto pCapsuleBtm	= ShapeSphere::Generate( InteractionType::Dynamic, size, { 0.0f, -size, 0.0f } );
 		auto pFloor1		= ShapeAABB::Generate( InteractionType::Dynamic, { size, size, size }, { size*2.0f * 0.0f, 0.0f, 0.0f } );
 		auto pFloor2		= ShapeAABB::Generate( InteractionType::Dynamic, { size, size, size }, { size*2.0f * 1.8f, 0.0f, 0.0f } );
+		auto pKinematic		= ShapeAABB::Generate( InteractionType::Kinematic, { size, size, size } );
+		auto pSensor		= ShapeAABB::Generate( InteractionType::Sensor, { size, size, size } );
+		// Collider::Generate( &colA, pAABB );
+		// Collider::Generate( &colB, pFloor1 );
 		Collider::Generate( &colA, pAABB );
-		Collider::Generate( &colB, pFloor1 );
-		colA.RegisterShape( pCapsuleTop );
-		colA.RegisterShape( pCapsuleBtm );
+		Collider::Generate( &colB, pSensor );
+		// colA.RegisterShape( pCapsuleTop );
+		// colA.RegisterShape( pCapsuleBtm );
 		// colB.RegisterShape( pFloor2 );
 		colA.SetPosition( posA );
 		colB.SetPosition( posB );

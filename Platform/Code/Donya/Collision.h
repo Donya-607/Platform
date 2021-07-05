@@ -22,7 +22,7 @@ namespace Donya
 		enum class InteractionType
 		{
 			Dynamic,	// Movable. Push other and be pushed by other.
-			Kinematic,	// Movable. Push other and do not be pushed by other.
+			Kinematic,	// Movable. Push other and do not be pushed by other. Kinematic vs Kinematic is not occur any push/be pushed(works like Sensor).
 			Sensor,		// Movable. Do not push nor be pushed with other.
 		};
 
@@ -83,8 +83,10 @@ namespace Donya
 			virtual float CalcDistanceTo( const Donya::Vector3 &pt ) const = 0;
 			// The closest point to "pt" within my shape
 			virtual Donya::Vector3 FindClosestPointTo( const Donya::Vector3 &pt ) const = 0;
-			// 
+			// Calc the resolver of intersection with "pShape"
 			virtual HitResult IntersectTo( const ShapeBase *pOtherShape ) const = 0;
+
+			// TODO: Provide a collision detection method(just detection only, do not calc a resolver)
 		};
 
 		// Signature of callback of triggering an intersection(call it instead of CONTINUE version), use like this:
