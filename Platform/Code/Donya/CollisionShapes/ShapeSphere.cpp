@@ -77,7 +77,7 @@ namespace Donya
 			ShapePoint pointB;
 			pointB.CopyBaseParameters( pB ); // For id management, we must use this method when copy
 
-			HitResult result = magnifiedA.CalcIntersectionWith( &pointB );
+			HitResult result = IntersectToImpl( &magnifiedA, &pointB );
 			if ( result.isHit )
 			{
 				// Now, the contact point is there on magnifiedA's edge.
