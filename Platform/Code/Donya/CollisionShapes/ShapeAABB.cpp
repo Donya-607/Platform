@@ -121,7 +121,7 @@ namespace Donya
 				result.surfaceNormal.Normalize();
 
 				// Resolver is the distance except for the radius
-				const float penetration = pBox->CalcDistanceTo( pS->GetPosition() ) - pS->radius;
+				const float penetration = pS->radius - deltaSP.Length() + EPSILON;
 				result.resolveVector = result.surfaceNormal * fabsf( penetration );
 			}
 
