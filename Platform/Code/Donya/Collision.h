@@ -4,6 +4,8 @@
 #include <algorithm>	// Use std::remove_if
 #include <cstdint>		// Use for std::uint32_t
 #include <functional>
+#include <set>
+#include <unordered_map>
 #include <vector>
 
 #undef max
@@ -46,14 +48,17 @@ namespace Donya
 		};
 
 		// Shape of collision.
-		// This class has a interaction type, a positions, and a size(in derived class).
+		// This class has an interaction type, a positions, and a size(in derived class).
+		// And this also has an extra id(default is zero), every code of library does not touch it, so an user can use it as freely(e.g. user's enum value, hash of shape name, etc.).
 		// And this class provides detecting an intersection method(impl in derived class).
 		class ShapeBase
 		{
 		public:
-			InteractionType	type = InteractionType::Dynamic;
-			Donya::Vector3	position;	// The origin, or owner's position
-			Donya::Vector3	offset;		// Offset from origin
+			InteractionType		type = InteractionType::Dynamic;
+			Donya::Vector3		position;	// The origin, or owner's position
+			Donya::Vector3		offset;		// Offset from origin
+			int					extraId = 0;// User's space
+			bool				ignoreIntersection = false; // Forcely ignoring(do not hit regardless of the type) the intersection
 		public:
 			ShapeBase()									= default;
 			ShapeBase( const ShapeBase & )				= default;
@@ -62,36 +67,61 @@ namespace Donya
 			ShapeBase &operator = ( ShapeBase && )		= default;
 			virtual ~ShapeBase()						= default;
 		public:
-			virtual std::shared_ptr<ShapeBase> Clone() const = 0;
+			// Copy the Base members(interaction-type, position, offset, and extra id).
+			void CopyBaseParameters( const ShapeBase *pShape )
+			{
+				if ( !pShape || pShape == this ) { return; }
+				// else
+
+				type		= pShape->type;
+				position	= pShape->position;
+				offset		= pShape->offset;
+				extraId		= pShape->extraId;
+			}
 		public:
 			// Interaction type
-			InteractionType GetType() const { return type; }
+			InteractionType	GetType()		const { return type; }
 			// The world space position(origin + offset) of shape
-			Donya::Vector3 GetPosition() const { return position + offset; }
+			Donya::Vector3	GetPosition()	const { return position + offset; }
 			// The origin of shape
-			Donya::Vector3 GetOrigin() const { return position; }
+			Donya::Vector3	GetOrigin()		const { return position; }
 			// The offset of shape
-			Donya::Vector3 GetOffset() const { return offset; }
+			Donya::Vector3	GetOffset()		const { return offset; }
+			// Usage is defined by an user
+			int				GetId()			const { return extraId; }
+		public:
 			// For branch a collision detection method
-			virtual Shape GetShapeKind() const = 0;
+			virtual Shape			GetShapeKind()		const = 0;
 			// Minimum side xyz of AABB that wraps the myself
-			virtual Donya::Vector3 GetAABBMin() const = 0;
+			virtual Donya::Vector3	GetAABBMin()		const = 0;
 			// Maximum side xyz of AABB that wraps the myself
-			virtual Donya::Vector3 GetAABBMax() const = 0;
+			virtual Donya::Vector3	GetAABBMax()		const = 0;
+			// 
+			virtual std::shared_ptr<ShapeBase> Clone()	const = 0;
 		public:
 			// Distance between myself and point("pt")
-			virtual float CalcDistanceTo( const Donya::Vector3 &pt ) const = 0;
+			virtual float			CalcDistanceTo( const Donya::Vector3 &pt )		const = 0;
 			// The closest point to "pt" within my shape
-			virtual Donya::Vector3 FindClosestPointTo( const Donya::Vector3 &pt ) const = 0;
+			virtual Donya::Vector3	FindClosestPointTo( const Donya::Vector3 &pt )	const = 0;
+		protected:
 			// Calc the resolver of intersection with "pShape"
-			virtual HitResult IntersectTo( const ShapeBase *pOtherShape ) const = 0;
+			virtual HitResult		IntersectTo( const ShapeBase *pOtherShape )		const = 0;
 
 			// TODO: Provide a collision detection method(just detection only, do not calc a resolver)
+		public:
+			// Calc the resolver of intersection with "pShape"
+			HitResult CalcIntersectionWith( const ShapeBase *pOtherShape ) const
+			{
+				HitResult noHit; noHit.isHit = false;
+				return ( ignoreIntersection ) ? noHit : IntersectTo( pOtherShape );
+			}
 		};
+
 
 		// Signature of callback of triggering an intersection(call it instead of CONTINUE version), use like this:
 		// void OnHitEnter( DONYA_CALLBACK_ON_HIT_ENTER );
 		// It callback will be called before resolving(after call it, resolve will works).
+		// ENTER will be called when new pair of intersection was detected. It will also be called between another shape in the same substances.
 	#define DONYA_CALLBACK_ON_HIT_ENTER \
 			const Donya::Collision::Substance &hitOther, /* Intersected target */ \
 			const std::shared_ptr<Donya::Collision::ShapeBase> &pHitOtherShape, /* Intersected shape of target's (not nullptr) */ \
@@ -102,11 +132,13 @@ namespace Donya
 		// Signature of callback of continuing an intersection, use like this:
 		// void OnHitContinue( DONYA_CALLBACK_ON_HIT_CONTINUE );
 		// It callback will be called before resolving(after call it, resolve will works).
+		// CONTINUE will be called when the detected intersection's pair is same. If intersected substances are same but the shapes are not same, the callback will call ENTER version.
 	#define DONYA_CALLBACK_ON_HIT_CONTINUE \
 			DONYA_CALLBACK_ON_HIT_ENTER // Same signature
 
 		// Signature of callback of end an intersection, use like this:
 		// void OnHitExit( DONYA_CALLBACK_ON_HIT_EXIT );
+		// EXIT will be called when a known intersection is not detected continuously. EXIT will also be called as the ended intersection's shape pair if intersecting shapes are changed in intersecting substances still are same.
 	#define DONYA_CALLBACK_ON_HIT_EXIT \
 			const Donya::Collision::Substance &leaveOther, /* Previously intersected target */ \
 			const std::shared_ptr<Donya::Collision::ShapeBase> &pLeaveOtherShape, /* Previously intersected shape of target's (not nullptr) */ \
@@ -126,15 +158,29 @@ namespace Donya
 			// Function pointer of callback of end an intersection.
 			using EventFuncT_OnHitExit		= std::function<void( DONYA_CALLBACK_ON_HIT_EXIT )>;
 		private: // HACK: Should "mass" be member of ShapeBase?
+			UniqueId<Substance>	id;				// For identify the instance of substance
 			float				mass = 1.0f;	// Requirement:[mass > 0.0f] Use only when push/be pushed
 			Donya::Vector3		position;		// Origin of a shapes
-			UniqueId<Substance>	id;				// For identify the instance of substance
 			std::vector<std::shared_ptr<ShapeBase>>
 								shapePtrs;		// Registered shape list.
+			bool				ignoreIntersection = false; // Forcely ignoring(do not hit regardless of the type) the intersection
 		private:
-			std::set<UniqueIdType>					hitSubstanceIds;	// For branch the calling methods when hit. OnHitEnter() or OnHitContinue() or OnHitExit()
-			mutable std::set<UniqueIdType>			insertRequestIds;	// Use for delay the inserting until next intersection
-			mutable std::set<UniqueIdType>			eraseRequestIds;	// Use for delay the erasing until next intersectionon
+			struct HitValue
+			{
+				std::shared_ptr<ShapeBase> myselfShape = nullptr;
+				std::shared_ptr<ShapeBase> otherShape  = nullptr;
+			public:
+				bool IsEqual( const HitValue &rhs ) const
+				{
+					return	myselfShape == rhs.myselfShape &&
+							otherShape == rhs.otherShape;
+				}
+			};
+			// Key:Id, Value:Hit shape pair
+			using HitSubstanceMap = std::unordered_multimap<UniqueIdType, const HitValue>;
+			HitSubstanceMap							hitSubstances;	// Store the intersected substance's id and intersected shape pair(myself's and other's). For branch the calling methods when hit. OnHitEnter() or OnHitContinue() or OnHitExit()
+			mutable HitSubstanceMap					insertRequests;	// Use for delay the inserting until next intersection
+			mutable HitSubstanceMap					eraseRequests;	// Use for delay the erasing until next intersectionon
 			std::vector<EventFuncT_OnHitEnter>		onHitHandlers_Enter;
 			std::vector<EventFuncT_OnHitContinue>	onHitHandlers_Continue;
 			std::vector<EventFuncT_OnHitExit>		onHitHandlers_Exit;
@@ -153,13 +199,19 @@ namespace Donya
 			// Requirement:[mass > 0.0f]
 			void SetMass( float mass );
 			void SetPosition( const Donya::Vector3 &position );
+			// If it is true, it forcely ignoring(do not hit regardless of the shape's type) the intersection
+			void SetIgnoringIntersection( bool shouldIgnore );
 			// It changes only myself, so it may break the uniquely identify system.
 			void OverwriteId( UniqueIdType newId );
 		public:
+			bool			NowIgnoringIntersection() const;
 			float			GetMass() const;
 			Donya::Vector3	GetPosition() const;
+			// Substance's id. Do not compare it to other class's.
 			UniqueIdType	GetId() const;
 			const std::vector<std::shared_ptr<ShapeBase>> *GetRegisteredShapePointers() const;
+			// Find a shape by an extra id that usage is defined by user, or nullptr if not found.
+			std::shared_ptr<ShapeBase> FindShapePointerByExtraIdOrNullptr( int lookingExtraId );
 		private:
 			void AcceptIdRequests();
 		};

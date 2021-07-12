@@ -111,7 +111,7 @@ namespace Donya
 
 
 					// Calc the intersection resolver
-					hitResult = selfShape->IntersectTo( otherShape.get() );
+					hitResult = selfShape->CalcIntersectionWith( otherShape.get() );
 					hitResult.resolveVector *= slightlyMagnifier;
 					invHitResult = hitResult;
 					invHitResult.surfaceNormal *= -1.0f;
@@ -176,7 +176,7 @@ namespace Donya
 			/*
 			TODO: Fix bug that occur when a substance has multiple shapes,
 			if the substance A has shapes B, C,
-			and there is an other substance O,
+			 and there is an other substance O("O"ther),
 			when the B contacts to O, this calls Enter and memorizes the O's id,
 			and the C does not contacts to O, so the C does not calls nothing.
 			Then next resolving, the B still contacts to O, this calls Continue,
@@ -188,8 +188,24 @@ namespace Donya
 			*/
 
 			const UniqueIdType otherId = hitOther.GetId();
-			const bool isKnown = hitSubstanceIds.count( otherId );
+			const auto memorizedOthers = hitSubstances.equal_range( otherId );
 
+			HitValue nowHit{};
+			nowHit.myselfShape = pHitMyselfShape;
+			nowHit.otherShape  = pHitOtherShape;
+
+			bool isKnown = false;
+			// Check the other is known pair
+			for ( auto itr = memorizedOthers.first; itr != hitSubstances.cend() && itr != memorizedOthers.second; ++itr )
+			{
+				if ( itr->second.IsEqual( nowHit ) )
+				{
+					isKnown = true;
+					break;
+				}
+			}
+
+			// Branch to Enter or Continue or Exit
 			if ( hitParam.isHit )
 			{
 				if ( isKnown )
@@ -205,7 +221,7 @@ namespace Donya
 				{
 					// Trigger timing
 
-					insertRequestIds.insert( otherId );
+					insertRequests.insert( std::make_pair( otherId, nowHit ) );
 					for ( auto &OnHitEnter : onHitHandlers_Enter )
 					{
 						OnHitEnter( hitOther, pHitOtherShape, hitMyself, pHitMyselfShape, hitParam );
@@ -216,7 +232,7 @@ namespace Donya
 			{
 				// Leave timing
 				
-				eraseRequestIds.insert( otherId );
+				eraseRequests.insert( std::make_pair( otherId, nowHit ) );
 
 				for ( auto &OnHitExit : onHitHandlers_Exit )
 				{
@@ -257,10 +273,17 @@ namespace Donya
 				pShape->position = newPosition;
 			}
 		}
+		void Substance::SetIgnoringIntersection( bool shouldIgnore )
+		{
+			ignoreIntersection = shouldIgnore;
+		}
 		void Substance::OverwriteId( UniqueIdType newId )
 		{
-			// Use constructor for assign
-			id = UniqueIdType{ newId };
+			id.OverwriteBy( newId );
+		}
+		bool Substance::NowIgnoringIntersection() const
+		{
+			return ignoreIntersection;
 		}
 		float Substance::GetMass() const
 		{
@@ -278,19 +301,48 @@ namespace Donya
 		{
 			return &shapePtrs;
 		}
+		std::shared_ptr<ShapeBase> Substance::FindShapePointerByExtraIdOrNullptr( int lookingExtraId )
+		{
+			for ( const auto &pIt : shapePtrs )
+			{
+				if ( !pIt ) { continue; }
+				// else
+
+				if ( pIt->extraId == lookingExtraId )
+				{
+					return pIt;
+				}
+			}
+
+			return nullptr;
+		}
 		void Substance::AcceptIdRequests()
 		{
-			for ( const auto &id : insertRequestIds )
+			for ( const auto &pair : insertRequests )
 			{
-				hitSubstanceIds.insert( id );
+				hitSubstances.insert( pair );
 			}
-			insertRequestIds.clear();
+			insertRequests.clear();
 
-			for ( const auto &id : eraseRequestIds )
+			for ( const auto &pair : eraseRequests )
 			{
-				hitSubstanceIds.erase( id );
+				// Erase the same values to "pair"
+
+				// Loop of the substances that id is same to pair's
+				const auto foundRange = hitSubstances.equal_range( pair.first );
+				for ( auto itr = foundRange.first; itr != hitSubstances.end() && itr != foundRange.second; /* advance "itr" in inner loop */ )
+				{
+					// Erase one by one completely same(UniqueId and HitValue are same) substance
+					if ( itr->second.IsEqual( pair.second ) )
+					{
+						itr = hitSubstances.erase( itr );
+						continue;
+					}
+					// else
+					++itr;
+				}
 			}
-			eraseRequestIds.clear();
+			eraseRequests.clear();
 		}
 
 

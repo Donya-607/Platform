@@ -21,6 +21,7 @@ namespace Donya
 			Donya::Vector3 GetAABBMax() const override;
 			float CalcDistanceTo( const Donya::Vector3 &pt ) const override;
 			Donya::Vector3 FindClosestPointTo( const Donya::Vector3 &pt ) const override;
+		protected:
 			HitResult IntersectTo( const ShapeBase *pOtherShape ) const override;
 		};
 	}

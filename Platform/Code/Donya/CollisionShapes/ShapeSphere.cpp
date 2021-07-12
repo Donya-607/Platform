@@ -47,7 +47,7 @@ namespace Donya
 
 		HitResult IntersectToImpl( const ShapeSphere *pS, const ShapePoint *pP )
 		{
-			HitResult result = pP->IntersectTo( pS );
+			HitResult result = pP->CalcIntersectionWith( pS );
 
 			// These vectors are seen from point,
 			// so reinterpret them to seen from box.
@@ -58,7 +58,7 @@ namespace Donya
 		}
 		HitResult IntersectToImpl( const ShapeSphere *pS, const ShapeAABB *pBox )
 		{
-			HitResult result = pBox->IntersectTo( pS );
+			HitResult result = pBox->CalcIntersectionWith( pS );
 
 			// These vectors are seen from point,
 			// so reinterpret them to seen from box.
@@ -75,9 +75,9 @@ namespace Donya
 			ShapeSphere magnifiedA = *pA;
 			magnifiedA.radius += pB->radius;
 			ShapePoint pointB;
-			pointB.position = pB->GetPosition();
+			pointB.CopyBaseParameters( pB ); // For id management, we must use this method when copy
 
-			HitResult result = magnifiedA.IntersectTo( &pointB );
+			HitResult result = magnifiedA.CalcIntersectionWith( &pointB );
 			if ( result.isHit )
 			{
 				// Now, the contact point is there on magnifiedA's edge.

@@ -62,7 +62,7 @@ namespace Donya
 
 		HitResult IntersectToImpl( const ShapeAABB *pBox, const ShapePoint *pP )
 		{
-			HitResult result = pP->IntersectTo( pBox );
+			HitResult result = pP->CalcIntersectionWith( pBox );
 
 			// These vectors are seen from point,
 			// so reinterpret them to seen from box.
@@ -74,16 +74,16 @@ namespace Donya
 		HitResult IntersectToImpl( const ShapeAABB *pA, const ShapeAABB *pB )
 		{
 			// By http://noonat.github.io/intersect/#:~:text=time%3B%0A%20%20%20%20return%20hit%3B%0A%20%20%7D-,AABB%20VS%20AABB,-This%20test%20uses
-			
+
 			// AABB vs AABB is very similar to Point vs AABB,
 			// so it uses method is mainly Point vs AABB version.
 
 			ShapeAABB magnifiedA = *pA;
 			magnifiedA.size += pB->size;
 			ShapePoint pointB;
-			pointB.position = pB->GetPosition();
+			pointB.CopyBaseParameters( pB ); // For id management, we must use this method when copy
 
-			HitResult result = magnifiedA.IntersectTo( &pointB );
+			HitResult result = magnifiedA.CalcIntersectionWith( &pointB );
 			if ( result.isHit )
 			{
 				// Now, the contact point is there on magnifiedA's edge.
