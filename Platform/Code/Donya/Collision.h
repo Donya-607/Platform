@@ -4,258 +4,48 @@
 #include <algorithm>	// Use std::remove_if
 #include <cstdint>		// Use for std::uint32_t
 #include <functional>
-#include <set>
-#include <unordered_map>
+#include <memory>
 #include <vector>
 
 #undef max
 #undef min
 #include <cereal/cereal.hpp>
 
+#include "CollisionBody.h"		// Body
+#include "CollisionCallback.h"	// DONYA_CALLBACK_ON_HIT_XXX
+#include "CollisionConstant.h"	// HitResult
+#include "CollisionShape.h"		// ShapeBase
 #include "Quaternion.h"
-#include "UniqueId.h"
+#include "UniqueId.h"			// UniqueIdType
 #include "Vector.h"
 
 namespace Donya
 {
 	namespace Collision
 	{
-		// Interaction type with other
-		enum class InteractionType
-		{
-			Dynamic,	// Movable. Push other and be pushed by other.
-			Kinematic,	// Movable. Push other and do not be pushed by other. Kinematic vs Kinematic is not occur any push/be pushed(works like Sensor).
-			Sensor,		// Movable. Do not push nor be pushed with other.
-		};
-
-		// Collider volume type
-		enum class Shape
-		{
-			Empty,		// Position.xyz, Do not intersect to anything
-			Point,		// Position.xyz
-			AABB,		// Position.xyz + HalfSize.xyz
-			Sphere,		// Position.xyz + Radius
-		};
-
-		// Collision test result, you must check "isHit" is true.
-		// It depends on: http://noonat.github.io/intersect/
-		struct HitResult
-		{
-			bool			isHit = false;	// Result of collision test, other members of HitResult are valid only when this flag is true
-			Donya::Vector3	contactPoint;	// Contact point between two objects. This is there on the B's shape if the collision test was done as: Test( A, B );
-			Donya::Vector3	surfaceNormal;	// Surface's normal at the contact point. This is there on the B's shape if the collision test was done as: Test( A, B );
-			Donya::Vector3	resolveVector;	// Overlap amount between two objects, you can resolve the collision by add this vector
-		};
-
-		// Shape of collision.
-		// This class has an interaction type, a positions, and a size(in derived class).
-		// And this also has an extra id(default is zero), every code of library does not touch it, so an user can use it as freely(e.g. user's enum value, hash of shape name, etc.).
-		// And this class provides detecting an intersection method(impl in derived class).
-		class ShapeBase
-		{
-		public:
-			InteractionType		type = InteractionType::Dynamic;
-			Donya::Vector3		position;	// The origin, or owner's position
-			Donya::Vector3		offset;		// Offset from origin
-			int					extraId = 0;// User's space
-			bool				ignoreIntersection = false; // Forcely ignoring the intersection(do not hit regardless of the type)
-		public:
-			ShapeBase()									= default;
-			ShapeBase( const ShapeBase & )				= default;
-			ShapeBase( ShapeBase && )					= default;
-			ShapeBase &operator = ( const ShapeBase & )	= default;
-			ShapeBase &operator = ( ShapeBase && )		= default;
-			virtual ~ShapeBase()						= default;
-		public:
-			// Copy the Base members(interaction-type, position, offset, and extra id).
-			void CopyBaseParameters( const ShapeBase *pShape )
-			{
-				if ( !pShape || pShape == this ) { return; }
-				// else
-
-				type		= pShape->type;
-				position	= pShape->position;
-				offset		= pShape->offset;
-				extraId		= pShape->extraId;
-			}
-		public:
-			// Interaction type
-			InteractionType	GetType()		const { return type; }
-			// The world space position(origin + offset) of shape
-			Donya::Vector3	GetPosition()	const { return position + offset; }
-			// The origin of shape
-			Donya::Vector3	GetOrigin()		const { return position; }
-			// The offset of shape
-			Donya::Vector3	GetOffset()		const { return offset; }
-			// Usage is defined by an user
-			int				GetId()			const { return extraId; }
-		public:
-			// For branch a collision detection method
-			virtual Shape			GetShapeKind()		const = 0;
-			// Minimum side xyz of AABB that wraps the myself
-			virtual Donya::Vector3	GetAABBMin()		const = 0;
-			// Maximum side xyz of AABB that wraps the myself
-			virtual Donya::Vector3	GetAABBMax()		const = 0;
-			// 
-			virtual std::shared_ptr<ShapeBase> Clone()	const = 0;
-		public:
-			// Distance between myself and point("pt")
-			virtual float			CalcDistanceTo( const Donya::Vector3 &pt )		const = 0;
-			// The closest point to "pt" within my shape
-			virtual Donya::Vector3	FindClosestPointTo( const Donya::Vector3 &pt )	const = 0;
-		protected:
-			// Calc the resolver of intersection with "pShape"
-			virtual HitResult		IntersectTo( const ShapeBase *pOtherShape )		const = 0;
-
-			// TODO: Provide a collision detection method(just detection only, do not calc a resolver)
-		public:
-			// Calc the resolver of intersection with "pShape"
-			HitResult CalcIntersectionWith( const ShapeBase *pOtherShape ) const
-			{
-				HitResult noHit;
-				noHit.isHit = false;
-				
-				if ( !pOtherShape ) { return noHit; }
-				// else
-
-				const bool shouldIgnore = ( ignoreIntersection || pOtherShape->ignoreIntersection );
-				return ( shouldIgnore ) ? noHit : IntersectTo( pOtherShape );
-			}
-		};
-
-
-		// Signature of callback of triggering an intersection(call it instead of CONTINUE version), use like this:
-		// void OnHitEnter( DONYA_CALLBACK_ON_HIT_ENTER );
-		// It callback will be called before resolving(after call it, resolve will works).
-		// ENTER will be called when new pair of intersection was detected. It will also be called between another shape in the same substances.
-	#define DONYA_CALLBACK_ON_HIT_ENTER \
-			const Donya::Collision::Substance &hitOther, /* Intersected target */ \
-			const std::shared_ptr<Donya::Collision::ShapeBase> &pHitOtherShape, /* Intersected shape of target's (not nullptr) */ \
-			const Donya::Collision::Substance &hitMyself, /* Intersected substance of myself */ \
-			const std::shared_ptr<Donya::Collision::ShapeBase> &pHitMyselfShape, /* Intersected shape of myself (not nullptr) */ \
-			const Donya::Collision::HitResult &hitParam /* Intersect description */
-
-		// Signature of callback of continuing an intersection, use like this:
-		// void OnHitContinue( DONYA_CALLBACK_ON_HIT_CONTINUE );
-		// It callback will be called before resolving(after call it, resolve will works).
-		// CONTINUE will be called when the detected intersection's pair is same. If intersected substances are same but the shapes are not same, the callback will call ENTER version.
-	#define DONYA_CALLBACK_ON_HIT_CONTINUE \
-			DONYA_CALLBACK_ON_HIT_ENTER // Same signature
-
-		// Signature of callback of end an intersection, use like this:
-		// void OnHitExit( DONYA_CALLBACK_ON_HIT_EXIT );
-		// EXIT will be called when a known intersection is not detected continuously. EXIT will also be called as the ended intersection's shape pair if intersecting shapes are changed in intersecting substances still are same.
-	#define DONYA_CALLBACK_ON_HIT_EXIT \
-			const Donya::Collision::Substance &leaveOther, /* Previously intersected target */ \
-			const std::shared_ptr<Donya::Collision::ShapeBase> &pLeaveOtherShape, /* Previously intersected shape of target's (not nullptr) */ \
-			const Donya::Collision::Substance &leaveMyself, /* Previously intersected substance of myself */ \
-			const std::shared_ptr<Donya::Collision::ShapeBase> &pLeaveMyselfShape /* Previously intersected shape of myself (not nullptr) */
-
-		// Substance of collision body.
-		class Substance
-		{
-		public:
-			// Function pointer of callback of triggering an intersection(call it instead of CONTINUE version).
-			// It function will be called before resolving(after call it, resolve will works).
-			using EventFuncT_OnHitEnter		= std::function<void( DONYA_CALLBACK_ON_HIT_ENTER )>;
-			// Function pointer of callback of continuing an intersection.
-			// It function will be called before resolving(after call it, resolve will works).
-			using EventFuncT_OnHitContinue	= std::function<void( DONYA_CALLBACK_ON_HIT_CONTINUE )>;
-			// Function pointer of callback of end an intersection.
-			using EventFuncT_OnHitExit		= std::function<void( DONYA_CALLBACK_ON_HIT_EXIT )>;
-		private: // HACK: Should "mass" be member of ShapeBase?
-			UniqueId<Substance>	id;				// For identify the instance of substance
-			float				mass = 1.0f;	// Requirement:[mass > 0.0f] Use only when push/be pushed
-			Donya::Vector3		position;		// Origin of a shapes
-			std::vector<std::shared_ptr<ShapeBase>>
-								shapePtrs;		// Registered shape list.
-			bool				ignoreIntersection = false; // Forcely ignoring the intersection(do not hit regardless of the type)
-		private:
-			struct HitValue
-			{
-				std::shared_ptr<ShapeBase> myselfShape = nullptr;
-				std::shared_ptr<ShapeBase> otherShape  = nullptr;
-			public:
-				bool IsEqual( const HitValue &rhs ) const
-				{
-					return	myselfShape == rhs.myselfShape &&
-							otherShape == rhs.otherShape;
-				}
-			};
-			// Key:Id, Value:Hit shape pair
-			using HitSubstanceMap = std::unordered_multimap<UniqueIdType, const HitValue>;
-			HitSubstanceMap							hitSubstances;	// Store the intersected substance's id and intersected shape pair(myself's and other's). For branch the calling methods when hit. OnHitEnter() or OnHitContinue() or OnHitExit()
-			mutable HitSubstanceMap					insertRequests;	// Use for delay the inserting until next intersection
-			mutable HitSubstanceMap					eraseRequests;	// Use for delay the erasing until next intersectionon
-			std::vector<EventFuncT_OnHitEnter>		onHitHandlers_Enter;
-			std::vector<EventFuncT_OnHitContinue>	onHitHandlers_Continue;
-			std::vector<EventFuncT_OnHitExit>		onHitHandlers_Exit;
-		public:
-			// Register the clone of "pShape", so you can reuse the same shape.
-			void RegisterShape( const std::shared_ptr<ShapeBase> &pShape );
-			// Remove all registered shapes
-			void RemoveAllShapes();
-		public:
-			void ResolveIntersectionWith( Substance *pOther );
-			void RegisterCallback_OnHitEnter		( const EventFuncT_OnHitEnter		&function );
-			void RegisterCallback_OnHitContinue		( const EventFuncT_OnHitContinue	&function );
-			void RegisterCallback_OnHitExit			( const EventFuncT_OnHitExit		&function );
-			void InvokeCallbacks( DONYA_CALLBACK_ON_HIT_ENTER ) const;
-			void UnregisterCallback_OnHitEnter		();
-			void UnregisterCallback_OnHitContinue	();
-			void UnregisterCallback_OnHitExit		();
-			// It calls: UnregisterCallback_OnHitEnter(), UnregisterCallback_OnHitContinue(), UnregisterCallback_OnHitExit().
-			void UnregisterCallback_All				();
-		public:
-			// Requirement:[mass > 0.0f]
-			void SetMass( float mass );
-			void SetPosition( const Donya::Vector3 &position );
-			// If it is true, it forcely ignoring the intersection(regardless of the shape's type), the callbacks be not called also.
-			void SetIgnoringIntersection( bool shouldIgnore );
-			// It changes only myself, so it may break the uniquely identify system.
-			void OverwriteId( UniqueIdType newId );
-		public:
-			bool			NowIgnoringIntersection() const;
-			float			GetMass() const;
-			Donya::Vector3	GetPosition() const;
-			// Substance's id. Do not compare it to other class's.
-			UniqueIdType	GetId() const;
-			const std::vector<std::shared_ptr<ShapeBase>> *GetRegisteredShapePointers() const;
-			// Find a shape by an extra id that usage is defined by user, or nullptr if not found.
-			std::shared_ptr<ShapeBase> FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const;
-		private:
-			void AcceptIdRequests();
-		};
-
-		// ( min <= v <= max )
-		constexpr bool Within( float v, float min, float max )
-		{
-			return ( min <= v && v <= max );
-		}
-
-
-
-
 		// Handle of collision body, like proxy.
+		// Please initialize it by Collider::Generate().
+		// If you want destroy it before a destructor, use Destroy().
+		// It's copy constructor works as Duplication, so that process is might be heavy(will allocates a memory).
 		class Collider
 		{
 		public:
 			// Generate new collision body instance, then assign the reference to "pOut"(it does not alloc memory).
-			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Substance, because these callbacks are called in iterating the Substances.
+			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Body, because these callbacks are called in iterating the Bodys.
 			static Collider Generate();
 			// Resolve all collision body instance.
 			static void Resolve();
 		private:
-			std::shared_ptr<Substance> pReference = nullptr; // No ownership, I manage the reference count by shared_ptr.
+			std::shared_ptr<Body> pReference = nullptr; // No ownership, I manage the reference count by shared_ptr.
 		public:
 			Collider()								= default;
 			Collider( Collider && )					= default;
 			Collider &operator = ( Collider && )	= default;
 			// Duplicate.
-			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Substance, because these callbacks are called in iterating the Substances.
+			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Body, because these callbacks are called in iterating the Bodys.
 			Collider( const Collider &duplicateCollider );
 			// Duplicate.
-			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Substance, because these callbacks are called in iterating the Substances.
+			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Body, because these callbacks are called in iterating the Bodys.
 			Collider &operator = ( const Collider &duplicateCollider );
 			~Collider();
 		public:
@@ -269,9 +59,9 @@ namespace Donya
 			// Remove all registered shapes
 			void RemoveAllShapes();
 		public:
-			void RegisterCallback_OnHitEnter	( const Substance::EventFuncT_OnHitEnter	&function );
-			void RegisterCallback_OnHitContinue	( const Substance::EventFuncT_OnHitContinue	&function );
-			void RegisterCallback_OnHitExit		( const Substance::EventFuncT_OnHitExit		&function );
+			void RegisterCallback_OnHitEnter	( const Body::EventFuncT_OnHitEnter		&function );
+			void RegisterCallback_OnHitContinue	( const Body::EventFuncT_OnHitContinue	&function );
+			void RegisterCallback_OnHitExit		( const Body::EventFuncT_OnHitExit		&function );
 			void UnregisterCallback_OnHitEnter();
 			void UnregisterCallback_OnHitContinue();
 			void UnregisterCallback_OnHitExit();
@@ -290,7 +80,7 @@ namespace Donya
 			float			GetMass() const;
 			// If already dead, returns (0,0,0).
 			Donya::Vector3	GetPosition() const;
-			// Substance's id. Do not compare it to other class's.
+			// Body's id. Do not compare it to other class's.
 			// If already dead, returns (0).
 			UniqueIdType	GetColliderId() const;
 			// If already dead, returns nullptr.

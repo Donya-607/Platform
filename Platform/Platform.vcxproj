@@ -119,6 +119,7 @@
     <ClCompile Include="Code\Donya\Blend.cpp" />
     <ClCompile Include="Code\Donya\Camera.cpp" />
     <ClCompile Include="Code\Donya\Collision.cpp" />
+    <ClCompile Include="Code\Donya\CollisionBody.cpp" />
     <ClCompile Include="Code\Donya\CollisionShapes\ShapeAABB.cpp" />
     <ClCompile Include="Code\Donya\CollisionShapes\ShapeEmpty.cpp" />
     <ClCompile Include="Code\Donya\CollisionShapes\ShapePoint.cpp" />
@@ -228,6 +229,10 @@
     <ClInclude Include="Code\Donya\Camera.h" />
     <ClInclude Include="Code\Donya\CBuffer.h" />
     <ClInclude Include="Code\Donya\Collision.h" />
+    <ClInclude Include="Code\Donya\CollisionBody.h" />
+    <ClInclude Include="Code\Donya\CollisionCallback.h" />
+    <ClInclude Include="Code\Donya\CollisionConstant.h" />
+    <ClInclude Include="Code\Donya\CollisionShape.h" />
     <ClInclude Include="Code\Donya\CollisionShapes\ShapeAABB.h" />
     <ClInclude Include="Code\Donya\CollisionShapes\ShapeEmpty.h" />
     <ClInclude Include="Code\Donya\CollisionShapes\ShapePoint.h" />

@@ -15,364 +15,31 @@ namespace Donya
 {
 	namespace Collision
 	{
-		void Substance::RegisterShape( const std::shared_ptr<ShapeBase> &pShape )
-		{
-			if ( !pShape )
-			{
-				_ASSERT_EXPR( 0, L"Error: Shape is nullptr!" );
-				return;
-			}
-			// else
-
-			// Store the clone.
-			// It be able to reuse same params, like this:
-			// shared_ptr<ShapeXXX> ptr = XXX::Generate(...); // Make some shape
-			// substance1.RegisterShape( ptr );
-			// substance2.RegisterShape( ptr );
-			shapePtrs.emplace_back( pShape->Clone() );
-		}
-		void Substance::RemoveAllShapes()
-		{
-			shapePtrs.clear();
-		}
-		void Substance::ResolveIntersectionWith( Substance *pOther )
-		{
-			// Update "hitSubstanceIds", brancher of callbacks
-			this->AcceptIdRequests();
-			if ( !pOther ) { return; }
-			// else
-			pOther->AcceptIdRequests();
-
-
-			// Ignore intersection if requested
-			if ( ignoreIntersection || pOther->ignoreIntersection ) { return; }
-			// else
-
-
-			// Validation and prepare variables
-			const std::vector<std::shared_ptr<ShapeBase>> &otherShapePtrs = *pOther->GetRegisteredShapePointers();
-			const size_t selfShapeCount = shapePtrs.size();
-			const size_t otherShapeCount = otherShapePtrs.size();
-			if ( !selfShapeCount || !otherShapeCount ) { return; }
-			// else
-			const float massSum = GetMass() + pOther->GetMass();
-			if ( massSum <= 0.0f )
-			{
-				_ASSERT_EXPR( 0, L"Error: The \"mass\" must be over than zero! [mass > 0.0]" );
-				return;
-			}
-			// else
-			const float selfMassPercent  = 1.0f - ( GetMass() / massSum );
-			const float otherMassPercent = 1.0f - selfMassPercent;
-			constexpr float slightlyMagnifier = 1.0001f; // Collision will react even if edgeA == edgeB, so it more resolves to be edgeA != edgeB
-
-
-			// Do intersection between all patterns
-			HitResult hitResult;
-			HitResult invHitResult; // Inverse the intersection viewer, for other's callback
-			std::shared_ptr<ShapeBase> selfShape;
-			std::shared_ptr<ShapeBase> otherShape;
-			bool isSensor			= false; // True if either is sensor
-			bool isKinematicSelf	= false;
-			bool isKinematicOther	= false;
-			bool dontResolve		= false; // True when either is sensor, or both are kinematic.
-			for ( size_t i = 0; i < selfShapeCount; ++i )
-			{
-				selfShape = shapePtrs[i];
-				if ( !selfShape )
-				{
-					_ASSERT_EXPR( 0, L"Error: Shape is nullptr!" );
-					continue;
-				}
-				// else
-				if ( selfShape->GetShapeKind() == Shape::Empty ) { continue; }
-				// else
-
-				isSensor		= ( selfShape->GetType() == InteractionType::Sensor );
-				isKinematicSelf	= ( selfShape->GetType() == InteractionType::Kinematic );
-
-
-				for ( size_t j = 0; j < otherShapeCount; ++j )
-				{
-					otherShape = otherShapePtrs[j];
-					if ( !otherShape )
-					{
-						_ASSERT_EXPR( 0, L"Error: Shape is nullptr!" );
-						continue;
-					}
-					// else
-					if ( otherShape->GetShapeKind() == Shape::Empty ) { continue; }
-					// else
-
-					isSensor			= isSensor || ( otherShape->GetType() == InteractionType::Sensor );
-					isKinematicOther	= ( otherShape->GetType() == InteractionType::Kinematic );
-
-
-					// Calc the intersection resolver
-					hitResult = selfShape->CalcIntersectionWith( otherShape.get() );
-					hitResult.resolveVector *= slightlyMagnifier;
-					invHitResult = hitResult;
-					invHitResult.surfaceNormal *= -1.0f;
-					invHitResult.resolveVector *= -1.0f;
-
-
-					// Invoke callbacks before resolve(even in the case of do not resolve)
-					this->InvokeCallbacks( *pOther, otherShape, *this, selfShape, hitResult );
-					pOther->InvokeCallbacks( *this, selfShape, *pOther, otherShape, invHitResult );
-
-
-					// Early return if I do not need to resolve
-					dontResolve = isSensor || ( isKinematicSelf && isKinematicOther ) || !hitResult.isHit;
-					if ( dontResolve ) { continue; }
-					// else
-
-
-					// Resolve them
-					// Note: I do not consider an order of resolving.
-					// So resolving order is depending on registered order of shapes.
-
-					if ( isKinematicSelf )
-					{
-						// Other receives whole resolver
-						pOther->position -= hitResult.resolveVector;
-						pOther->SetPosition( pOther->position );
-					}
-					else
-					if ( isKinematicOther )
-					{
-						// Self receives whole resolver
-						this->position   += hitResult.resolveVector;
-						this->SetPosition( this->position );
-					}
-					else
-					{
-						// Each other receives resolver calced by mass ratio
-
-						this->position   += hitResult.resolveVector * selfMassPercent;
-						this->SetPosition( this->position );
-
-						pOther->position -= hitResult.resolveVector * otherMassPercent;
-						pOther->SetPosition( pOther->position );
-					}
-				}
-			}
-		}
-		void Substance::RegisterCallback_OnHitEnter( const EventFuncT_OnHitEnter &function )
-		{
-			onHitHandlers_Enter.push_back( function );
-		}
-		void Substance::RegisterCallback_OnHitContinue( const EventFuncT_OnHitContinue &function )
-		{
-			onHitHandlers_Continue.push_back( function );
-		}
-		void Substance::RegisterCallback_OnHitExit( const EventFuncT_OnHitExit &function )
-		{
-			onHitHandlers_Exit.push_back( function );
-		}
-		void Substance::InvokeCallbacks( DONYA_CALLBACK_ON_HIT_ENTER ) const
-		{
-			const UniqueIdType otherId = hitOther.GetId();
-			const auto memorizedOthers = hitSubstances.equal_range( otherId );
-
-			HitValue nowHit{};
-			nowHit.myselfShape = pHitMyselfShape;
-			nowHit.otherShape  = pHitOtherShape;
-
-			bool isKnown = false;
-			// Check the other is known pair
-			for ( auto itr = memorizedOthers.first; itr != hitSubstances.cend() && itr != memorizedOthers.second; ++itr )
-			{
-				if ( itr->second.IsEqual( nowHit ) )
-				{
-					isKnown = true;
-					break;
-				}
-			}
-
-			// Branch to Enter or Continue or Exit
-			if ( hitParam.isHit )
-			{
-				if ( isKnown )
-				{
-					// Continue
-					
-					for ( auto &OnHitContinue : onHitHandlers_Continue )
-					{
-						OnHitContinue( hitOther, pHitOtherShape, hitMyself, pHitMyselfShape, hitParam );
-					}
-				}
-				else
-				{
-					// Trigger timing
-
-					insertRequests.insert( std::make_pair( otherId, nowHit ) );
-					for ( auto &OnHitEnter : onHitHandlers_Enter )
-					{
-						OnHitEnter( hitOther, pHitOtherShape, hitMyself, pHitMyselfShape, hitParam );
-					}
-				}
-			}
-			else if ( isKnown )
-			{
-				// Leave timing
-				
-				eraseRequests.insert( std::make_pair( otherId, nowHit ) );
-
-				for ( auto &OnHitExit : onHitHandlers_Exit )
-				{
-					OnHitExit( hitOther, pHitOtherShape, hitMyself, pHitMyselfShape );
-				}
-			}
-
-			// No hit, and No exit
-		}
-		void Substance::UnregisterCallback_OnHitEnter()
-		{
-			onHitHandlers_Enter.clear();
-		}
-		void Substance::UnregisterCallback_OnHitContinue()
-		{
-			onHitHandlers_Continue.clear();
-		}
-		void Substance::UnregisterCallback_OnHitExit()
-		{
-			onHitHandlers_Exit.clear();
-		}
-		void Substance::UnregisterCallback_All()
-		{
-			UnregisterCallback_OnHitEnter();
-			UnregisterCallback_OnHitContinue();
-			UnregisterCallback_OnHitExit();
-		}
-		void Substance::SetMass( float newMass )
-		{
-			if ( newMass <= 0.0f )
-			{
-				_ASSERT_EXPR( 0, L"Error: The \"mass\" must be over than zero! [mass > 0.0]" );
-				return;
-			}
-			// else
-
-			mass = newMass;
-		}
-		void Substance::SetPosition( const Donya::Vector3 &newPosition )
-		{
-			// Validation
-			for ( auto &pShape : shapePtrs )
-			{
-				if ( !pShape )
-				{
-					_ASSERT_EXPR( 0, L"Error: Shape is nullptr!" );
-					return;
-				}
-				// else
-			}
-
-			// Updation
-			position = newPosition;
-			for ( auto &pShape : shapePtrs )
-			{
-				pShape->position = newPosition;
-			}
-		}
-		void Substance::SetIgnoringIntersection( bool shouldIgnore )
-		{
-			ignoreIntersection = shouldIgnore;
-		}
-		void Substance::OverwriteId( UniqueIdType newId )
-		{
-			id.OverwriteBy( newId );
-		}
-		bool Substance::NowIgnoringIntersection() const
-		{
-			return ignoreIntersection;
-		}
-		float Substance::GetMass() const
-		{
-			return mass;
-		}
-		Donya::Vector3 Substance::GetPosition() const
-		{
-			return position;
-		}
-		UniqueIdType Substance::GetId() const
-		{
-			return id.Get();
-		}
-		const std::vector<std::shared_ptr<ShapeBase>> *Substance::GetRegisteredShapePointers() const
-		{
-			return &shapePtrs;
-		}
-		std::shared_ptr<ShapeBase> Substance::FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const
-		{
-			for ( const auto &pIt : shapePtrs )
-			{
-				if ( !pIt ) { continue; }
-				// else
-
-				if ( pIt->extraId == lookingExtraId )
-				{
-					return pIt;
-				}
-			}
-
-			return nullptr;
-		}
-		void Substance::AcceptIdRequests()
-		{
-			for ( const auto &pair : insertRequests )
-			{
-				hitSubstances.insert( pair );
-			}
-			insertRequests.clear();
-
-			for ( const auto &pair : eraseRequests )
-			{
-				// Erase the same values to "pair"
-
-				// Loop of the substances that id is same to pair's
-				const auto foundRange = hitSubstances.equal_range( pair.first );
-				for ( auto itr = foundRange.first; itr != hitSubstances.end() && itr != foundRange.second; /* advance "itr" in inner loop */ )
-				{
-					// Erase one by one completely same(UniqueId and HitValue are same) substance
-					if ( itr->second.IsEqual( pair.second ) )
-					{
-						itr = hitSubstances.erase( itr );
-						continue;
-					}
-					// else
-					++itr;
-				}
-			}
-			eraseRequests.clear();
-		}
-
-
 		class World
 		{
 		private:
 			// Why I choose std::deque:
 			// I can loop all element fastly(cf: https://qiita.com/sileader/items/a40f9acf90fbda16af51#%E8%A6%81%E7%B4%A0%E3%81%AE%E8%B5%B0%E6%9F%BB%E7%AF%84%E5%9B%B2for).
 			// Collider can take a reference directly(emplace_back() kills an iterator, but does not kills a directly reference-pointer. cf: https://cpprefjp.github.io/reference/deque/deque/emplace_back.html).
-			std::deque<std::shared_ptr<Substance>> substances;
+			std::deque<std::shared_ptr<Body>> bodies;
 		public:
 			// You must return the reference with ReturnReference( borrowed )
-			std::shared_ptr<Substance> GenerateAndBorrowReference()
+			std::shared_ptr<Body> GenerateAndBorrowReference()
 			{
-				substances.emplace_back( std::make_shared<Substance>() );
-				return substances.back();
+				bodies.emplace_back( std::make_shared<Body>() );
+				return bodies.back();
 			}
 			// You must return the reference with ReturnReference( borrowed )
-			std::shared_ptr<Substance> DuplicateAndBorrowReference( const std::shared_ptr<Substance> &duplicateSubstance )
+			std::shared_ptr<Body> DuplicateAndBorrowReference( const std::shared_ptr<Body> &duplicateBody )
 			{
-				if ( !duplicateSubstance ) { return nullptr; }
+				if ( !duplicateBody ) { return nullptr; }
 				// else
 
-				substances.emplace_back( std::make_shared<Substance>( *duplicateSubstance ) );
-				return substances.back();
+				bodies.emplace_back( std::make_shared<Body>( *duplicateBody ) );
+				return bodies.back();
 			}
 			// "pReference" will be reset
-			void ReturnReference( std::shared_ptr<Substance> *pReference )
+			void ReturnReference( std::shared_ptr<Body> *pReference )
 			{
 				if ( !pReference ) { return; }
 				// else
@@ -405,10 +72,10 @@ namespace Donya
 				// I erase the both
 
 
-				// Find the specified substance
-				decltype( substances )::iterator found = substances.end();
+				// Find the specified body
+				decltype( bodies )::iterator found = bodies.end();
 				size_t index = 0;
-				for ( const auto &it : substances )
+				for ( const auto &it : bodies )
 				{
 					if ( it == *pReference )
 					{
@@ -417,24 +84,24 @@ namespace Donya
 					// else
 					index++;
 				}
-				if ( index < substances.size() )
+				if ( index < bodies.size() )
 				{
-					found = ( substances.begin() + index );
+					found = ( bodies.begin() + index );
 				}
 
 				// Erase the original
-				if ( found != substances.end() )
+				if ( found != bodies.end() )
 				{
-					substances.erase( found );
+					bodies.erase( found );
 				}
 
 				// Erase the reference
 				pReference->reset();
 			}
 		public:
-			std::deque<std::shared_ptr<Substance>> &Substances()
+			std::deque<std::shared_ptr<Body>> &Bodies()
 			{
-				return substances;
+				return bodies;
 			}
 		};
 		static World gWorld{};
@@ -449,15 +116,15 @@ namespace Donya
 		}
 		void Collider::Resolve()
 		{
-			auto &container = GetWorld().Substances();
+			auto &container = GetWorld().Bodies();
 
 			auto itrEnd = container.end();
 			for ( auto itrI = container.begin(); itrI != itrEnd; ++itrI )
 			{
-				std::shared_ptr<Substance> &a = *itrI;
+				std::shared_ptr<Body> &a = *itrI;
 				for ( auto itrJ = itrI + 1; itrJ != itrEnd; ++itrJ )
 				{
-					std::shared_ptr<Substance> &b = *itrJ;
+					std::shared_ptr<Body> &b = *itrJ;
 
 					a->ResolveIntersectionWith( b.get() );
 				}
@@ -500,19 +167,19 @@ namespace Donya
 			// else
 			pReference->RemoveAllShapes();
 		}
-		void Collider::RegisterCallback_OnHitEnter( const Substance::EventFuncT_OnHitEnter &function )
+		void Collider::RegisterCallback_OnHitEnter( const Body::EventFuncT_OnHitEnter &function )
 		{
 			if ( !pReference ) { return; }
 			// else
 			pReference->RegisterCallback_OnHitEnter( function );
 		}
-		void Collider::RegisterCallback_OnHitContinue( const Substance::EventFuncT_OnHitContinue &function )
+		void Collider::RegisterCallback_OnHitContinue( const Body::EventFuncT_OnHitContinue &function )
 		{
 			if ( !pReference ) { return; }
 			// else
 			pReference->RegisterCallback_OnHitContinue( function );
 		}
-		void Collider::RegisterCallback_OnHitExit( const Substance::EventFuncT_OnHitExit &function )
+		void Collider::RegisterCallback_OnHitExit( const Body::EventFuncT_OnHitExit &function )
 		{
 			if ( !pReference ) { return; }
 			// else
@@ -545,7 +212,7 @@ namespace Donya
 
 		void Collider::SetMass( float mass )
 		{
-			// Error handling will process in Substance::SetMass()
+			// Error handling will process in Body::SetMass()
 
 			if ( !pReference ) { return; }
 			// else
@@ -636,7 +303,13 @@ namespace Donya
 			return false;
 		}
 
+		// ( min <= v <= max )
 		constexpr bool Within( int v, int min, int max )
+		{
+			return ( min <= v && v <= max );
+		}
+		// ( min <= v <= max )
+		constexpr bool Within( float v, float min, float max )
 		{
 			return ( min <= v && v <= max );
 		}

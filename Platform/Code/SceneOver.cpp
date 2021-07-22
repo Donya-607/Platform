@@ -426,7 +426,7 @@ void SceneOver::UseImGui()
 std::vector<std::string> SceneOver::callbackStrs{};
 bool SceneOver::hitContinuingA = false;
 bool SceneOver::hitContinuingB = false;
-void AppendCallbackDescriptions( std::string *pTarget, const Donya::Collision::Substance &other, const std::shared_ptr<Donya::Collision::ShapeBase> &pOtherShape, const Donya::Collision::Substance &myself, const std::shared_ptr<Donya::Collision::ShapeBase> &pMyselfShape )
+void AppendCallbackDescriptions( std::string *pTarget, const Donya::Collision::Body &other, const std::shared_ptr<Donya::Collision::ShapeBase> &pOtherShape, const Donya::Collision::Body &myself, const std::shared_ptr<Donya::Collision::ShapeBase> &pMyselfShape )
 {
 	if ( !pTarget ) { return; }
 	// else
