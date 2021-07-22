@@ -98,18 +98,19 @@ void SceneOver::Init()
 		auto pFloor2		= ShapeAABB::Generate( InteractionType::Dynamic, { size, size, size }, { size*2.0f * 1.8f, 0.0f, 0.0f } );
 		//auto pKinematic		= ShapeAABB::Generate( InteractionType::Kinematic, { size, size, size } );
 		auto pSensor		= ShapeAABB::Generate( InteractionType::Sensor, { size, size, size } );
-		// Collider::Generate( &colA, pAABB );
-		// Collider::Generate( &colB, pFloor1 );
+		colA = Collider::Generate();
+		colB = Collider::Generate();
 		pAABB->extraId = 1;
-		Collider::Generate( &colA, pAABB );
-		pFloor1->extraId = 1;
-		Collider::Generate( &colB, pFloor1 );
+		colA.RegisterShape( pAABB );
+		pSensor->extraId = 9;
+		pFloor1->extraId = 9;
+		colB.RegisterShape( pFloor1 );
 		pCapsuleTop->extraId = 2;
 		colA.RegisterShape( pCapsuleTop );
 		pCapsuleBtm->extraId = 3;
 		colA.RegisterShape( pCapsuleBtm );
-		pFloor2->extraId = 2;
-		colB.RegisterShape( pFloor2 );
+		// pFloor2->extraId = 2;
+		// colB.RegisterShape( pFloor2 );
 		colA.SetPosition( posA );
 		colB.SetPosition( posB );
 		colA.SetMass( 1.0f );
@@ -121,6 +122,23 @@ void SceneOver::Init()
 		colB.RegisterCallback_OnHitEnter	( OnHitEnterB );
 		colB.RegisterCallback_OnHitContinue	( OnHitContinueB );
 		colB.RegisterCallback_OnHitExit		( OnHitExitB );
+
+		/*
+		colB.RegisterCallback_OnHitContinue
+		(
+			[&]( DONYA_CALLBACK_ON_HIT_CONTINUE )
+			{
+				callbackStrs.emplace_back( "TIMER:" + std::to_string( timer ) );
+			}
+		);
+		*/
+		colB.RegisterCallback_OnHitEnter
+		(
+			[&]( DONYA_CALLBACK_ON_HIT_ENTER )
+			{
+				callbackStrs.emplace_back( "TIMER:" + std::to_string( timer ) );
+			}
+		);
 
 		constexpr Donya::Vector2 screenSize{ Common::ScreenWidthF(), Common::ScreenHeightF() };
 		constexpr Donya::Vector2 defaultZRange{ 0.1f, 500.0f };
@@ -202,6 +220,13 @@ Scene::Result SceneOver::Update( float elapsedTime )
 #endif // ALLOW_SKIP
 
 
+	{
+		if ( Donya::Keyboard::Trigger( 'T' ) )
+		{
+			const bool now = colA.NowIgnoringIntersection();
+			colA.SetIgnoringIntersection( !now );
+		}
+	}
 	{
 		constexpr float speed = 2.5f;
 		Donya::Vector3 velA{};

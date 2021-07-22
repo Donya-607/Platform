@@ -38,23 +38,22 @@ namespace Donya
 		void Substance::ResolveIntersectionWith( Substance *pOther )
 		{
 			// Update "hitSubstanceIds", brancher of callbacks
-
 			this->AcceptIdRequests();
 			if ( !pOther ) { return; }
 			// else
 			pOther->AcceptIdRequests();
 
 
-			// Validation and prepare variables
+			// Ignore intersection if requested
+			if ( ignoreIntersection || pOther->ignoreIntersection ) { return; }
+			// else
 
+
+			// Validation and prepare variables
 			const std::vector<std::shared_ptr<ShapeBase>> &otherShapePtrs = *pOther->GetRegisteredShapePointers();
 			const size_t selfShapeCount = shapePtrs.size();
 			const size_t otherShapeCount = otherShapePtrs.size();
-			if ( !selfShapeCount || !otherShapeCount )
-			{
-				_ASSERT_EXPR( 0, L"Error: There is no shape!" );
-				return;
-			}
+			if ( !selfShapeCount || !otherShapeCount ) { return; }
 			// else
 			const float massSum = GetMass() + pOther->GetMass();
 			if ( massSum <= 0.0f )
@@ -69,7 +68,6 @@ namespace Donya
 
 
 			// Do intersection between all patterns
-
 			HitResult hitResult;
 			HitResult invHitResult; // Inverse the intersection viewer, for other's callback
 			std::shared_ptr<ShapeBase> selfShape;
@@ -106,8 +104,8 @@ namespace Donya
 					if ( otherShape->GetShapeKind() == Shape::Empty ) { continue; }
 					// else
 
-					isSensor			= isSensor			|| ( otherShape->GetType() == InteractionType::Sensor );
-					isKinematicOther	= isKinematicOther	|| ( otherShape->GetType() == InteractionType::Kinematic );
+					isSensor			= isSensor || ( otherShape->GetType() == InteractionType::Sensor );
+					isKinematicOther	= ( otherShape->GetType() == InteractionType::Kinematic );
 
 
 					// Calc the intersection resolver
@@ -123,13 +121,13 @@ namespace Donya
 					pOther->InvokeCallbacks( *this, selfShape, *pOther, otherShape, invHitResult );
 
 
+					// Early return if I do not need to resolve
 					dontResolve = isSensor || ( isKinematicSelf && isKinematicOther ) || !hitResult.isHit;
 					if ( dontResolve ) { continue; }
 					// else
 
 
 					// Resolve them
-
 					// Note: I do not consider an order of resolving.
 					// So resolving order is depending on registered order of shapes.
 
@@ -227,6 +225,24 @@ namespace Donya
 			}
 
 			// No hit, and No exit
+		}
+		void Substance::UnregisterCallback_OnHitEnter()
+		{
+			onHitHandlers_Enter.clear();
+		}
+		void Substance::UnregisterCallback_OnHitContinue()
+		{
+			onHitHandlers_Continue.clear();
+		}
+		void Substance::UnregisterCallback_OnHitExit()
+		{
+			onHitHandlers_Exit.clear();
+		}
+		void Substance::UnregisterCallback_All()
+		{
+			UnregisterCallback_OnHitEnter();
+			UnregisterCallback_OnHitContinue();
+			UnregisterCallback_OnHitExit();
 		}
 		void Substance::SetMass( float newMass )
 		{
@@ -332,74 +348,145 @@ namespace Donya
 		}
 
 
-		// Why I choose std::deque:
-		// I can loop all element fastly(cf: https://qiita.com/sileader/items/a40f9acf90fbda16af51#%E8%A6%81%E7%B4%A0%E3%81%AE%E8%B5%B0%E6%9F%BB%E7%AF%84%E5%9B%B2for).
-		// Collider can take a reference directly(emplace_back() kills an iterator, but does not kills a directly reference-pointer. cf: https://cpprefjp.github.io/reference/deque/deque/emplace_back.html).
-		static std::deque<Substance> substances;
-		std::deque<Substance> &Substances() { return substances; }
-
-		void Collider::Generate( Collider *pOut, const std::shared_ptr<ShapeBase> &pShape )
+		class World
 		{
-			if ( !pOut ) { return; }
-			// else
+		private:
+			// Why I choose std::deque:
+			// I can loop all element fastly(cf: https://qiita.com/sileader/items/a40f9acf90fbda16af51#%E8%A6%81%E7%B4%A0%E3%81%AE%E8%B5%B0%E6%9F%BB%E7%AF%84%E5%9B%B2for).
+			// Collider can take a reference directly(emplace_back() kills an iterator, but does not kills a directly reference-pointer. cf: https://cpprefjp.github.io/reference/deque/deque/emplace_back.html).
+			std::deque<std::shared_ptr<Substance>> substances;
+		public:
+			// You must return the reference with ReturnReference( borrowed )
+			std::shared_ptr<Substance> GenerateAndBorrowReference()
+			{
+				substances.emplace_back( std::make_shared<Substance>() );
+				return substances.back();
+			}
+			// You must return the reference with ReturnReference( borrowed )
+			std::shared_ptr<Substance> DuplicateAndBorrowReference( const std::shared_ptr<Substance> &duplicateSubstance )
+			{
+				if ( !duplicateSubstance ) { return nullptr; }
+				// else
 
-			auto &container = Substances();
+				substances.emplace_back( std::make_shared<Substance>( *duplicateSubstance ) );
+				return substances.back();
+			}
+			// "pReference" will be reset
+			void ReturnReference( std::shared_ptr<Substance> *pReference )
+			{
+				if ( !pReference ) { return; }
+				// else
 
-			container.emplace_back();
-			pOut->pReference = &( container.back() );
 
-			// Do not allow no shape substance for prevent nullptr.
-			pOut->RegisterShape( pShape );
+				const long refCount = pReference->use_count();
+
+
+				// If the reference is one of a much, I just discard it.
+				if ( 2 < refCount )
+				{
+					pReference->reset();
+					return;
+				}
+				// else
+
+
+				// If the argument is last reference, erase original also.
+
+				if ( refCount <= 1 ) // 0 or 1
+				{
+					// The original is already erased, so I just discard it.
+					pReference->reset();
+					return;
+				}
+				// else
+
+
+				// refCount is 2(original and "pReference")
+				// I erase the both
+
+
+				// Find the specified substance
+				decltype( substances )::iterator found = substances.end();
+				size_t index = 0;
+				for ( const auto &it : substances )
+				{
+					if ( it == *pReference )
+					{
+						break;
+					}
+					// else
+					index++;
+				}
+				if ( index < substances.size() )
+				{
+					found = ( substances.begin() + index );
+				}
+
+				// Erase the original
+				if ( found != substances.end() )
+				{
+					substances.erase( found );
+				}
+
+				// Erase the reference
+				pReference->reset();
+			}
+		public:
+			std::deque<std::shared_ptr<Substance>> &Substances()
+			{
+				return substances;
+			}
+		};
+		static World gWorld{};
+		World &GetWorld() { return gWorld; }
+
+		Collider Collider::Generate()
+		{
+			Collider out;
+			out.pReference = GetWorld().GenerateAndBorrowReference();
+
+			return out;
 		}
 		void Collider::Resolve()
 		{
-			auto &container = Substances();
+			auto &container = GetWorld().Substances();
 
 			auto itrEnd = container.end();
 			for ( auto itrI = container.begin(); itrI != itrEnd; ++itrI )
 			{
-				Substance &a = *itrI;
+				std::shared_ptr<Substance> &a = *itrI;
 				for ( auto itrJ = itrI + 1; itrJ != itrEnd; ++itrJ )
 				{
-					Substance &b = *itrJ;
+					std::shared_ptr<Substance> &b = *itrJ;
 
-					a.ResolveIntersectionWith( &b );
+					a->ResolveIntersectionWith( b.get() );
 				}
 			}
 		}
 
+		Collider::Collider( const Collider &copy ) : pReference( nullptr )
+		{
+			pReference = GetWorld().DuplicateAndBorrowReference( copy.pReference );
+		}
+		Collider &Collider::operator = ( const Collider &copy )
+		{
+			if ( &copy == this ) { return *this; }
+			// else
+
+			// I must return the borrowed one before
+			Destroy();
+
+			pReference = GetWorld().DuplicateAndBorrowReference( copy.pReference );
+
+			return *this;
+		}
 		Collider::~Collider()
 		{
 			Destroy();
 		}
 		void Collider::Destroy()
 		{
-			if ( !pReference ) { return; }
-			// else
-
-			auto &container = Substances();
-
-			// Find referencing index
-			const size_t invalidIndex = container.size();
-			size_t index = 0;
-			for ( const auto &it : container )
-			{
-				if ( &it == pReference )
-				{
-					break;
-				}
-				// else
-				index++;
-			}
-
-			// Erase it
-			if ( index < invalidIndex )
-			{
-				container.erase( container.begin() + index );
-			}
-
-			// Signify it has removed
-			pReference = nullptr;
+			GetWorld().ReturnReference( &pReference );
 		}
 		void Collider::RegisterShape( const std::shared_ptr<ShapeBase> &pShape )
 		{
@@ -431,6 +518,31 @@ namespace Donya
 			// else
 			pReference->RegisterCallback_OnHitExit( function );
 		}
+		void Collider::UnregisterCallback_OnHitEnter()
+		{
+			if ( !pReference ) { return; }
+			// else
+			pReference->UnregisterCallback_OnHitEnter();
+		}
+		void Collider::UnregisterCallback_OnHitContinue()
+		{
+			if ( !pReference ) { return; }
+			// else
+			pReference->UnregisterCallback_OnHitContinue();
+		}
+		void Collider::UnregisterCallback_OnHitExit()
+		{
+			if ( !pReference ) { return; }
+			// else
+			pReference->UnregisterCallback_OnHitExit();
+		}
+		void Collider::UnregisterCallback_All()
+		{
+			UnregisterCallback_OnHitEnter();
+			UnregisterCallback_OnHitContinue();
+			UnregisterCallback_OnHitExit();
+		}
+
 		void Collider::SetMass( float mass )
 		{
 			// Error handling will process in Substance::SetMass()
@@ -444,6 +556,18 @@ namespace Donya
 			if ( !pReference ) { return; }
 			// else
 			pReference->SetPosition( position );
+		}
+		void Collider::SetIgnoringIntersection( bool shouldIgnore )
+		{
+			if ( !pReference ) { return; }
+			// else
+			pReference->SetIgnoringIntersection( shouldIgnore );
+		}
+		bool Collider::NowIgnoringIntersection() const
+		{
+			if ( !pReference ) { return true; }
+			// else
+			return pReference->NowIgnoringIntersection();
 		}
 		float Collider::GetMass() const
 		{

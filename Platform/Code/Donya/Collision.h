@@ -58,7 +58,7 @@ namespace Donya
 			Donya::Vector3		position;	// The origin, or owner's position
 			Donya::Vector3		offset;		// Offset from origin
 			int					extraId = 0;// User's space
-			bool				ignoreIntersection = false; // Forcely ignoring(do not hit regardless of the type) the intersection
+			bool				ignoreIntersection = false; // Forcely ignoring the intersection(do not hit regardless of the type)
 		public:
 			ShapeBase()									= default;
 			ShapeBase( const ShapeBase & )				= default;
@@ -112,8 +112,14 @@ namespace Donya
 			// Calc the resolver of intersection with "pShape"
 			HitResult CalcIntersectionWith( const ShapeBase *pOtherShape ) const
 			{
-				HitResult noHit; noHit.isHit = false;
-				return ( ignoreIntersection ) ? noHit : IntersectTo( pOtherShape );
+				HitResult noHit;
+				noHit.isHit = false;
+				
+				if ( !pOtherShape ) { return noHit; }
+				// else
+
+				const bool shouldIgnore = ( ignoreIntersection || pOtherShape->ignoreIntersection );
+				return ( shouldIgnore ) ? noHit : IntersectTo( pOtherShape );
 			}
 		};
 
@@ -163,7 +169,7 @@ namespace Donya
 			Donya::Vector3		position;		// Origin of a shapes
 			std::vector<std::shared_ptr<ShapeBase>>
 								shapePtrs;		// Registered shape list.
-			bool				ignoreIntersection = false; // Forcely ignoring(do not hit regardless of the type) the intersection
+			bool				ignoreIntersection = false; // Forcely ignoring the intersection(do not hit regardless of the type)
 		private:
 			struct HitValue
 			{
@@ -191,15 +197,20 @@ namespace Donya
 			void RemoveAllShapes();
 		public:
 			void ResolveIntersectionWith( Substance *pOther );
-			void RegisterCallback_OnHitEnter	( const EventFuncT_OnHitEnter		&function );
-			void RegisterCallback_OnHitContinue	( const EventFuncT_OnHitContinue	&function );
-			void RegisterCallback_OnHitExit		( const EventFuncT_OnHitExit		&function );
+			void RegisterCallback_OnHitEnter		( const EventFuncT_OnHitEnter		&function );
+			void RegisterCallback_OnHitContinue		( const EventFuncT_OnHitContinue	&function );
+			void RegisterCallback_OnHitExit			( const EventFuncT_OnHitExit		&function );
 			void InvokeCallbacks( DONYA_CALLBACK_ON_HIT_ENTER ) const;
+			void UnregisterCallback_OnHitEnter		();
+			void UnregisterCallback_OnHitContinue	();
+			void UnregisterCallback_OnHitExit		();
+			// It calls: UnregisterCallback_OnHitEnter(), UnregisterCallback_OnHitContinue(), UnregisterCallback_OnHitExit().
+			void UnregisterCallback_All				();
 		public:
 			// Requirement:[mass > 0.0f]
 			void SetMass( float mass );
 			void SetPosition( const Donya::Vector3 &position );
-			// If it is true, it forcely ignoring(do not hit regardless of the shape's type) the intersection
+			// If it is true, it forcely ignoring the intersection(regardless of the shape's type), the callbacks be not called also.
 			void SetIgnoringIntersection( bool shouldIgnore );
 			// It changes only myself, so it may break the uniquely identify system.
 			void OverwriteId( UniqueIdType newId );
@@ -230,24 +241,27 @@ namespace Donya
 		{
 		public:
 			// Generate new collision body instance, then assign the reference to "pOut"(it does not alloc memory).
-			// And register an initial shape as "pShape".
 			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Substance, because these callbacks are called in iterating the Substances.
-			static void Generate( Collider *pOut, const std::shared_ptr<ShapeBase> &pShape );
+			static Collider Generate();
 			// Resolve all collision body instance.
 			static void Resolve();
 		private:
-			Substance *pReference = nullptr; // No ownership
+			std::shared_ptr<Substance> pReference = nullptr; // No ownership, I manage the reference count by shared_ptr.
 		public:
-			Collider()									= default;
-			Collider( const Collider & )				= default;
-			Collider( Collider && )						= default;
-			Collider &operator = ( const Collider & )	= default;
-			Collider &operator = ( Collider && )		= default;
+			Collider()								= default;
+			Collider( Collider && )					= default;
+			Collider &operator = ( Collider && )	= default;
+			// Duplicate.
+			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Substance, because these callbacks are called in iterating the Substances.
+			Collider( const Collider &duplicateCollider );
+			// Duplicate.
+			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Substance, because these callbacks are called in iterating the Substances.
+			Collider &operator = ( const Collider &duplicateCollider );
 			~Collider();
 		public:
 			// Destroy the collision body instance.
 			// After that, this class will take nothing.
-			// If already dead, it will do nothing.
+			// If already dead, it does nothing.
 			void Destroy();
 		public:
 			// Register the clone of "pShape", so you can reuse the same shape.
@@ -258,11 +272,20 @@ namespace Donya
 			void RegisterCallback_OnHitEnter	( const Substance::EventFuncT_OnHitEnter	&function );
 			void RegisterCallback_OnHitContinue	( const Substance::EventFuncT_OnHitContinue	&function );
 			void RegisterCallback_OnHitExit		( const Substance::EventFuncT_OnHitExit		&function );
+			void UnregisterCallback_OnHitEnter();
+			void UnregisterCallback_OnHitContinue();
+			void UnregisterCallback_OnHitExit();
+			// It calls: UnregisterCallback_OnHitEnter(), UnregisterCallback_OnHitContinue(), UnregisterCallback_OnHitExit().
+			void UnregisterCallback_All();
 		public:
 			// Requirement:[mass > 0.0f]
 			void SetMass( float mass );
 			void SetPosition( const Donya::Vector3 &position );
+			// If it is true, it forcely ignoring(do not hit regardless of the shape's type) the intersection
+			void SetIgnoringIntersection( bool shouldIgnore );
 		public:
+			// If already dead, returns true.
+			bool			NowIgnoringIntersection() const;
 			// If already dead, returns FLT_EPSILON.
 			float			GetMass() const;
 			// If already dead, returns (0,0,0).
