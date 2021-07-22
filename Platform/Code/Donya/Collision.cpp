@@ -303,7 +303,7 @@ namespace Donya
 		{
 			return &shapePtrs;
 		}
-		std::shared_ptr<ShapeBase> Substance::FindShapePointerByExtraIdOrNullptr( int lookingExtraId )
+		std::shared_ptr<ShapeBase> Substance::FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const
 		{
 			for ( const auto &pIt : shapePtrs )
 			{
@@ -592,6 +592,12 @@ namespace Donya
 			if ( !pReference ) { return nullptr; }
 			// else
 			return pReference->GetRegisteredShapePointers();
+		}
+		std::shared_ptr<ShapeBase> Collider::FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const
+		{
+			if ( !pReference ) { return nullptr; }
+			// else
+			return pReference->FindShapePointerByExtraIdOrNullptr( lookingExtraId );
 		}
 	}
 

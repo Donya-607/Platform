@@ -222,7 +222,7 @@ namespace Donya
 			UniqueIdType	GetId() const;
 			const std::vector<std::shared_ptr<ShapeBase>> *GetRegisteredShapePointers() const;
 			// Find a shape by an extra id that usage is defined by user, or nullptr if not found.
-			std::shared_ptr<ShapeBase> FindShapePointerByExtraIdOrNullptr( int lookingExtraId );
+			std::shared_ptr<ShapeBase> FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const;
 		private:
 			void AcceptIdRequests();
 		};
@@ -290,10 +290,14 @@ namespace Donya
 			float			GetMass() const;
 			// If already dead, returns (0,0,0).
 			Donya::Vector3	GetPosition() const;
+			// Substance's id. Do not compare it to other class's.
 			// If already dead, returns (0).
 			UniqueIdType	GetColliderId() const;
 			// If already dead, returns nullptr.
 			const std::vector<std::shared_ptr<ShapeBase>> *GetRegisteredShapePointers() const;
+			// Find a shape by an extra id that usage is defined by user, or nullptr if not found.
+			// If already dead, returns nullptr.
+			std::shared_ptr<ShapeBase> FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const;
 		};
 	}
 

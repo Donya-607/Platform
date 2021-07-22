@@ -99,7 +99,8 @@ void SceneOver::Init()
 		//auto pKinematic		= ShapeAABB::Generate( InteractionType::Kinematic, { size, size, size } );
 		auto pSensor		= ShapeAABB::Generate( InteractionType::Sensor, { size, size, size } );
 		colA = Collider::Generate();
-		colB = Collider::Generate();
+		//colB = Collider::Generate();
+		colB = colA; // duplicate
 		pAABB->extraId = 1;
 		colA.RegisterShape( pAABB );
 		pSensor->extraId = 9;
