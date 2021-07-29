@@ -1,5 +1,9 @@
 #pragma once
 
+#undef max
+#undef min
+#include <cereal/types/polymorphic.hpp>
+
 #include "../Collision.h"
 
 namespace Donya
@@ -17,6 +21,21 @@ namespace Donya
 			);
 		public:
 			Donya::Vector3 size; // HalfSize
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					cereal::base_class<ShapeBase>( this ),
+					CEREAL_NVP( size )
+				);
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
 		public:
 			std::shared_ptr<ShapeBase> Clone() const override;
 			Shape GetShapeKind() const override { return Shape::AABB; }
@@ -30,3 +49,7 @@ namespace Donya
 		};
 	}
 }
+
+CEREAL_CLASS_VERSION( Donya::Collision::ShapeAABB, 0 )
+CEREAL_REGISTER_TYPE( Donya::Collision::ShapeAABB )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( Donya::Collision::ShapeBase, Donya::Collision::ShapeAABB )

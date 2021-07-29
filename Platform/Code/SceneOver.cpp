@@ -102,16 +102,16 @@ void SceneOver::Init()
 		//colB = Collider::Generate();
 		colB = colA; // duplicate
 		pAABB->extraId = 1;
-		colA.RegisterShape( pAABB );
+		colA.AddShape( pAABB );
 		pSensor->extraId = 9;
 		pFloor1->extraId = 9;
-		colB.RegisterShape( pFloor1 );
+		colB.AddShape( pFloor1 );
 		pCapsuleTop->extraId = 2;
-		colA.RegisterShape( pCapsuleTop );
+		colA.AddShape( pCapsuleTop );
 		pCapsuleBtm->extraId = 3;
-		colA.RegisterShape( pCapsuleBtm );
+		colA.AddShape( pCapsuleBtm );
 		// pFloor2->extraId = 2;
-		// colB.RegisterShape( pFloor2 );
+		// colB.AddShape( pFloor2 );
 		colA.SetPosition( posA );
 		colB.SetPosition( posB );
 		colA.SetMass( 1.0f );
@@ -123,6 +123,10 @@ void SceneOver::Init()
 		colB.RegisterCallback_OnHitEnter	( OnHitEnterB );
 		colB.RegisterCallback_OnHitContinue	( OnHitContinueB );
 		colB.RegisterCallback_OnHitExit		( OnHitExitB );
+
+		body.SetPosition( { 42.0f, 42.0f, 42.0f } );
+		body.RegisterCallback_OnHitEnter( OnHitEnterB );
+		
 
 		/*
 		colB.RegisterCallback_OnHitContinue
@@ -288,7 +292,7 @@ void SceneOver::Draw( float elapsedTime )
 
 			constexpr float pointSize = 0.05f;
 
-			const auto *shapePtrs = col.GetRegisteredShapePointers();
+			const auto *shapePtrs = col.GetAddedShapePointers();
 			for ( const auto &pShape : *shapePtrs )
 			{
 				if ( !pShape ) { continue; }
@@ -383,9 +387,15 @@ Scene::Result SceneOver::ReturnResult()
 {
 	if ( Fader::Get().IsClosed() )
 	{
+		Scene::Type next = Scene::Type::Over;
+		if ( Donya::Keyboard::Press( VK_CONTROL ) )
+		{
+			next = Scene::Type::Title;
+		}
+
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
-		change.sceneType = Scene::Type::Title;
+		change.sceneType = next;
 		return change;
 	}
 
@@ -394,6 +404,29 @@ Scene::Result SceneOver::ReturnResult()
 }
 
 #if USE_IMGUI
+namespace
+{
+	constexpr const char *filePathBin  = "./Data/foobarColliders.bin";
+	constexpr const char *filePathJson = "./Data/foobarColliders.json";
+	constexpr const char *objectName   = "Colliders_AandB";
+}
+#include "Donya/Serializer.h"
+void SceneOver::Save()
+{
+	Donya::Serializer tmp;
+	tmp.SaveBinary	( *this, filePathBin,  objectName );
+	tmp.SaveJSON	( *this, filePathJson, objectName );
+}
+void SceneOver::LoadBin()
+{
+	Donya::Serializer tmp;
+	tmp.LoadBinary( *this, filePathBin, objectName );
+}
+void SceneOver::LoadJson()
+{
+	Donya::Serializer tmp;
+	tmp.LoadJSON( *this, filePathJson, objectName );
+}
 void SceneOver::UseImGui()
 {
 	if ( !ImGui::BeginIfAllowed() ) { return; }
@@ -402,6 +435,140 @@ void SceneOver::UseImGui()
 	sceneParam.ShowImGuiNode( u8"ゲームオーバーシーンのパラメータ" );
 
 	ImGui::Checkbox( u8"遷移を止める", &dontTransition );
+
+	using namespace Donya::Collision;
+	constexpr float shapeSize = 0.5f;
+	constexpr Donya::Vector3 shapeSize3{ shapeSize, shapeSize, shapeSize };
+	constexpr InteractionType shapeTypes[]{ InteractionType::Dynamic, InteractionType::Kinematic, InteractionType::Sensor };
+	constexpr int shapeTypeCount = ArraySize( shapeTypes );
+	if ( ImGui::TreeNode( u8"変更とシリアライズ" ) )
+	{
+		using Type = InteractionType;
+
+		static int typeA = scast<int>( Type::Dynamic );
+		static int typeB = scast<int>( Type::Dynamic );
+		static int kindA = 1; // 0:Point, 1:AABB, 2:Sphere
+		static int kindB = 1; // 0:Point, 1:AABB, 2:Sphere
+		constexpr int shapeKindCount = 3;
+		static Donya::Vector3 sizeA = shapeSize3;
+		static Donya::Vector3 sizeB = shapeSize3;
+		static Donya::Vector3 offsetA{};
+		static Donya::Vector3 offsetB{};
+		auto Show = [&]( std::string colName, Collider *pCol, int *pType, int *pKind, Donya::Vector3 *pSize, Donya::Vector3 *pOffset )
+		{
+			if ( !ImGui::TreeNode( ( u8"変更：" + colName ).c_str() ) ) { return; }
+			// else
+
+
+			// Type
+			static const char *shapeTypeNames[]{ "Dynamic", "Kinematic", "Sensor" };
+			for ( int i = 0; i < shapeTypeCount; ++i )
+			{
+				if ( ImGui::RadioButton( shapeTypeNames[i], *pType == i ) )
+				{
+					*pType = i;
+				}
+
+				if ( i + 1 < shapeTypeCount )
+				{
+					ImGui::SameLine();
+				}
+			}
+			
+			
+			// Kind
+			static const char *shapeKindNames[]{ "Point", "AABB", "Sphere" };
+			for ( int i = 0; i < shapeKindCount; ++i )
+			{
+				if ( ImGui::RadioButton( shapeKindNames[i], *pKind == i ) )
+				{
+					*pKind = i;
+				}
+
+				if ( i + 1 < shapeKindCount )
+				{
+					ImGui::SameLine();
+				}
+			}
+
+
+			// Size
+			ImGui::DragFloat3( u8"Size", &pSize->x, 0.1f );
+			
+			
+			// Offset
+			ImGui::DragFloat3( u8"Offset", &pOffset->x, 0.05f );
+
+
+			// Assign
+			if ( ImGui::Button( u8"再設定" ) )
+			{
+				pCol->RemoveAllShapes();
+
+				switch ( *pKind )
+				{
+				case 0:
+					pCol->AddShape
+					(
+						ShapePoint::Generate
+						(
+							scast<Type>( *pType ),
+							*pOffset
+						)
+					);
+					break;
+				case 1:
+					pCol->AddShape
+					(
+						ShapeAABB::Generate
+						(
+							scast<Type>( *pType ),
+							*pSize,
+							*pOffset
+						)
+					);
+					break;
+				case 2:
+					pCol->AddShape
+					(
+						ShapeSphere::Generate
+						(
+							scast<Type>( *pType ),
+							pSize->x,
+							*pOffset
+						)
+					);
+					break;
+				default: assert( 0 ); break;
+				}
+			}
+
+
+			ImGui::TreePop();
+		};
+
+		Show( u8"A-赤", &colA, &typeA, &kindA, &sizeA, &offsetA );
+		Show( u8"B-緑", &colB, &typeB, &kindB, &sizeB, &offsetB );
+
+		if ( ImGui::Button( u8"保存" ) )
+		{
+			Save();
+		}
+		if ( ImGui::Button( u8"読み込み-Bin" ) )
+		{
+			LoadBin();
+			posA = colA.GetPosition();
+			posB = colB.GetPosition();
+		}
+		if ( ImGui::Button( u8"読み込み-Json" ) )
+		{
+			LoadJson();
+			posA = colA.GetPosition();
+			posB = colB.GetPosition();
+		}
+
+		ImGui::TreePop();
+	}
 
 	if ( ImGui::TreeNode( u8"コールバックログ" ) )
 	{

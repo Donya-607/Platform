@@ -1,6 +1,10 @@
 #ifndef INCLUDED_DONYA_COLLISION_SHAPE_BASE_H_
 #define INCLUDED_DONYA_COLLISION_SHAPE_BASE_H_
 
+#undef max
+#undef min
+#include <cereal/cereal.hpp>
+
 #include "CollisionConstant.h"	// InteractionType, Shape, HitResult
 #include "Vector.h"				// Donya::Vector3
 
@@ -12,6 +16,7 @@ namespace Donya
 		// This class has an interaction type, a positions, and a size(in derived class).
 		// And this also has an extra id(default is zero), every code of library does not touch it, so an user can use it as freely(e.g. user's enum value, hash of shape name, etc.).
 		// And this class provides detecting an intersection method(impl in derived class).
+		// It serializes(save/load) all members.
 		class ShapeBase
 		{
 		public:
@@ -27,17 +32,36 @@ namespace Donya
 			ShapeBase &operator = ( const ShapeBase & )	= default;
 			ShapeBase &operator = ( ShapeBase && )		= default;
 			virtual ~ShapeBase()						= default;
+		private:
+			friend class cereal::access;
+			template<class Archive>
+			void serialize( Archive &archive, std::uint32_t version )
+			{
+				archive
+				(
+					CEREAL_NVP( type				),
+					CEREAL_NVP( position			),
+					CEREAL_NVP( offset				),
+					CEREAL_NVP( extraId				),
+					CEREAL_NVP( ignoreIntersection	)
+				);
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
 		public:
-			// Copy the Base members(interaction-type, position, offset, and extra id).
+			// Copy the all Base members(interaction-type, position, offset, extra id, and ignoring intersection).
 			void CopyBaseParameters( const ShapeBase *pShape )
 			{
 				if ( !pShape || pShape == this ) { return; }
 				// else
 
-				type		= pShape->type;
-				position	= pShape->position;
-				offset		= pShape->offset;
-				extraId		= pShape->extraId;
+				type				= pShape->type;
+				position			= pShape->position;
+				offset				= pShape->offset;
+				extraId				= pShape->extraId;
+				ignoreIntersection	= pShape->ignoreIntersection;
 			}
 		public:
 			// Interaction type
@@ -85,5 +109,29 @@ namespace Donya
 		};
 	}
 }
+
+CEREAL_CLASS_VERSION( Donya::Collision::ShapeBase, 0 )
+CEREAL_REGISTER_TYPE( Donya::Collision::ShapeBase )
+// If you inherit the ShapeBase, please follow below.
+/*
+Note: How to register a derived shape class to Cereal
+
+1.Include cereal/types/polymorphic.hpp, like this:
+#include <cereal/types/polymorphic.hpp>
+
+2.In cereal's serialize(),
+  include cereal::base_class<ShapeBase> as first of passing arguments of archive(),
+  like this:
+archive
+(
+	cereal::base_class<Donya::Collision::ShapeBase>( this ),
+	// some derived class's members here...
+);
+
+3.Register the relation by using macros, like this:
+CEREAL_CLASS_VERSION( Donya::Collision::ShapeXXX, n )
+CEREAL_REGISTER_TYPE( Donya::Collision::ShapeXXX )
+CEREAL_REGISTER_POLYMORPHIC_RELATION( Donya::Collision::ShapeBase, Donya::Collision::ShapeXXX )
+*/
 
 #endif // !INCLUDED_DONYA_COLLISION_SHAPE_BASE_H_

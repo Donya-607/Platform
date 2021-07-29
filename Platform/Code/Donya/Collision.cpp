@@ -74,16 +74,7 @@ namespace Donya
 
 				// Find the specified body
 				decltype( bodies )::iterator found = bodies.end();
-				size_t index = 0;
-				for ( const auto &it : bodies )
-				{
-					if ( it == *pReference )
-					{
-						break;
-					}
-					// else
-					index++;
-				}
+				const size_t index = FindIteratorIndexOrEnd( *pReference );
 				if ( index < bodies.size() )
 				{
 					found = ( bodies.begin() + index );
@@ -99,6 +90,38 @@ namespace Donya
 				pReference->reset();
 			}
 		public:
+			void UpdateParameterDirectly( size_t updateIndex, const Body &copyingParameter )
+			{
+				// Validation
+				if ( bodies.size() <= updateIndex ) { return; }
+				// else
+
+				auto itr = bodies.begin() + updateIndex;
+				if ( !( *itr ) ) { return; } // != nullptr
+				// else
+
+
+				// Assign
+				Body &refElement = *( *itr ); // iterator -> shared_ptr -> value
+				refElement = copyingParameter;
+			}
+		public:
+			size_t FindIteratorIndexOrEnd( const std::shared_ptr<Body> &key ) const
+			{
+				size_t index = 0;
+
+				for ( const auto &it : bodies )
+				{
+					if ( it.get() == key.get() )
+					{
+						break;
+					}
+					// else
+					index++;
+				}
+
+				return index;
+			}
 			std::deque<std::shared_ptr<Body>> &Bodies()
 			{
 				return bodies;
@@ -151,15 +174,42 @@ namespace Donya
 		{
 			Destroy();
 		}
+
+		size_t Collider::FetchOriginalIndex() const
+		{
+			return GetWorld().FindIteratorIndexOrEnd( pReference );
+		}
+		void Collider::UpdateOriginalDirectly( size_t index )
+		{
+			if ( !pReference ) { return; }
+			// else
+			GetWorld().UpdateParameterDirectly( index, *pReference );
+		}
+		void Collider::ReplaceReference( size_t index )
+		{
+			// Decrement the ref-count
+			pReference.reset();
+
+
+			auto &container = GetWorld().Bodies();
+			if ( container.size() <= index ) { return; } // The reference is still nullptr
+			// else
+
+
+			// Replace the reference
+			pReference = *( container.begin() + index );
+		}
+
 		void Collider::Destroy()
 		{
 			GetWorld().ReturnReference( &pReference );
 		}
-		void Collider::RegisterShape( const std::shared_ptr<ShapeBase> &pShape )
+
+		void Collider::AddShape( const std::shared_ptr<ShapeBase> &pShape )
 		{
 			if ( !pReference ) { return; }
 			// else
-			pReference->RegisterShape( pShape );
+			pReference->AddShape( pShape );
 		}
 		void Collider::RemoveAllShapes()
 		{
@@ -167,6 +217,7 @@ namespace Donya
 			// else
 			pReference->RemoveAllShapes();
 		}
+
 		void Collider::RegisterCallback_OnHitEnter( const Body::EventFuncT_OnHitEnter &function )
 		{
 			if ( !pReference ) { return; }
@@ -254,11 +305,11 @@ namespace Donya
 			// else
 			return pReference->GetId();
 		}
-		const std::vector<std::shared_ptr<ShapeBase>> *Collider::GetRegisteredShapePointers() const
+		const std::vector<std::shared_ptr<ShapeBase>> *Collider::GetAddedShapePointers() const
 		{
 			if ( !pReference ) { return nullptr; }
 			// else
-			return pReference->GetRegisteredShapePointers();
+			return pReference->GetAddedShapePointers();
 		}
 		std::shared_ptr<ShapeBase> Collider::FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const
 		{

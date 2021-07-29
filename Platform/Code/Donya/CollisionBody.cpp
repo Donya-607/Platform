@@ -6,7 +6,7 @@ namespace Donya
 {
 	namespace Collision
 	{
-		void Body::RegisterShape( const std::shared_ptr<ShapeBase> &pShape )
+		void Body::AddShape( const std::shared_ptr<ShapeBase> &pShape )
 		{
 			if ( !pShape )
 			{
@@ -18,8 +18,8 @@ namespace Donya
 			// Store the clone.
 			// It be able to reuse same params, like this:
 			// shared_ptr<ShapeXXX> ptr = XXX::Generate(...); // Make some shape
-			// body1.RegisterShape( ptr );
-			// body2.RegisterShape( ptr );
+			// body1.AddShape( ptr );
+			// body2.AddShape( ptr );
 			shapePtrs.emplace_back( pShape->Clone() );
 		}
 		void Body::RemoveAllShapes()
@@ -41,7 +41,7 @@ namespace Donya
 
 
 			// Validation and prepare variables
-			const std::vector<std::shared_ptr<ShapeBase>> &otherShapePtrs = *pOther->GetRegisteredShapePointers();
+			const std::vector<std::shared_ptr<ShapeBase>> &otherShapePtrs = *pOther->GetAddedShapePointers();
 			const size_t selfShapeCount = shapePtrs.size();
 			const size_t otherShapeCount = otherShapePtrs.size();
 			if ( !selfShapeCount || !otherShapeCount ) { return; }
@@ -160,6 +160,41 @@ namespace Donya
 		{
 			onHitHandlers_Exit.push_back( function );
 		}
+		void Body::UnregisterCallback_OnHitEnter()
+		{
+			onHitHandlers_Enter.clear();
+		}
+		void Body::UnregisterCallback_OnHitContinue()
+		{
+			onHitHandlers_Continue.clear();
+		}
+		void Body::UnregisterCallback_OnHitExit()
+		{
+			onHitHandlers_Exit.clear();
+		}
+		void Body::UnregisterCallback_All()
+		{
+			UnregisterCallback_OnHitEnter();
+			UnregisterCallback_OnHitContinue();
+			UnregisterCallback_OnHitExit();
+		}
+		void Body::OverwriteCallbacksBy( const Body &source )
+		{
+			onHitHandlers_Enter		= source.onHitHandlers_Enter;
+			onHitHandlers_Continue	= source.onHitHandlers_Continue;
+			onHitHandlers_Exit		= source.onHitHandlers_Exit;
+		}
+		void Body::OverwriteIntersectionRecordsBy( const Body &source )
+		{
+			// Copy the base record
+			hitBodies		= source.hitBodies;
+
+
+			// Copy the requests and then apply them
+			insertRequests	= source.insertRequests;
+			eraseRequests	= source.eraseRequests;
+			AcceptIdRequests();
+		}
 		void Body::InvokeCallbacks( DONYA_CALLBACK_ON_HIT_ENTER ) const
 		{
 			const UniqueIdType otherId = hitOther.GetId();
@@ -173,7 +208,7 @@ namespace Donya
 			// Check the other is known pair
 			for ( auto itr = memorizedOthers.first; itr != hitBodies.cend() && itr != memorizedOthers.second; ++itr )
 			{
-				if ( itr->second.IsEqual( nowHit ) )
+				if ( HitValue::IsEqual( itr->second, nowHit ) )
 				{
 					isKnown = true;
 					break;
@@ -216,24 +251,6 @@ namespace Donya
 			}
 
 			// No hit, and No exit
-		}
-		void Body::UnregisterCallback_OnHitEnter()
-		{
-			onHitHandlers_Enter.clear();
-		}
-		void Body::UnregisterCallback_OnHitContinue()
-		{
-			onHitHandlers_Continue.clear();
-		}
-		void Body::UnregisterCallback_OnHitExit()
-		{
-			onHitHandlers_Exit.clear();
-		}
-		void Body::UnregisterCallback_All()
-		{
-			UnregisterCallback_OnHitEnter();
-			UnregisterCallback_OnHitContinue();
-			UnregisterCallback_OnHitExit();
 		}
 		void Body::SetMass( float newMass )
 		{
@@ -290,7 +307,7 @@ namespace Donya
 		{
 			return id.Get();
 		}
-		const std::vector<std::shared_ptr<ShapeBase>> *Body::GetRegisteredShapePointers() const
+		const std::vector<std::shared_ptr<ShapeBase>> *Body::GetAddedShapePointers() const
 		{
 			return &shapePtrs;
 		}
@@ -326,7 +343,7 @@ namespace Donya
 				for ( auto itr = foundRange.first; itr != hitBodies.end() && itr != foundRange.second; /* advance "itr" in inner loop */ )
 				{
 					// Erase one by one completely same(UniqueId and HitValue are same) body
-					if ( itr->second.IsEqual( pair.second ) )
+					if ( HitValue::IsEqual( itr->second, pair.second ) )
 					{
 						itr = hitBodies.erase( itr );
 						continue;

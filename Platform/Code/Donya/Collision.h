@@ -9,6 +9,7 @@
 
 #undef max
 #undef min
+#include <cereal/types/memory.hpp>
 #include <cereal/cereal.hpp>
 
 #include "CollisionBody.h"		// Body
@@ -48,6 +49,52 @@ namespace Donya
 			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Body, because these callbacks are called in iterating the Bodys.
 			Collider &operator = ( const Collider &duplicateCollider );
 			~Collider();
+		private:
+			// Fetch an identifier of referencing original
+			size_t FetchOriginalIndex() const;
+			// Update the original's parameter by now referencing one
+			void UpdateOriginalDirectly( size_t originalIndex );
+			// It does not destroy the old one.
+			// If the index is invalid, my reference will be nullptr.
+			void ReplaceReference( size_t originalIndex );
+		private:
+			friend class cereal::access;
+
+			template<class Archive>
+			void save( Archive &archive, std::uint32_t version ) const
+			{
+				archive( CEREAL_NVP( pReference ) );
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+			}
+			template<class Archive>
+			void load( Archive &archive, std::uint32_t version )
+			{
+				const size_t nowOriginalIndex = FetchOriginalIndex();
+				const Body   oldBody = *pReference;
+
+
+				// Load the saved one
+				archive( CEREAL_NVP( pReference ) );
+				if ( 1 <= version )
+				{
+					// archive( CEREAL_NVP( x ) );
+				}
+
+
+				// Re-attach the non-saving parameters
+				pReference->OverwriteId( oldBody.GetId() );
+				pReference->OverwriteCallbacksBy( oldBody );
+				pReference->OverwriteIntersectionRecordsBy( oldBody );
+
+
+				// Update the original one
+				UpdateOriginalDirectly( nowOriginalIndex );
+				// and re-get reference to it
+				ReplaceReference( nowOriginalIndex );
+			}
 		public:
 			// Destroy the collision body instance.
 			// After that, this class will take nothing.
@@ -55,7 +102,7 @@ namespace Donya
 			void Destroy();
 		public:
 			// Register the clone of "pShape", so you can reuse the same shape.
-			void RegisterShape( const std::shared_ptr<ShapeBase> &pShape );
+			void AddShape( const std::shared_ptr<ShapeBase> &pShape );
 			// Remove all registered shapes
 			void RemoveAllShapes();
 		public:
@@ -84,12 +131,13 @@ namespace Donya
 			// If already dead, returns (0).
 			UniqueIdType	GetColliderId() const;
 			// If already dead, returns nullptr.
-			const std::vector<std::shared_ptr<ShapeBase>> *GetRegisteredShapePointers() const;
+			const std::vector<std::shared_ptr<ShapeBase>> *GetAddedShapePointers() const;
 			// Find a shape by an extra id that usage is defined by user, or nullptr if not found.
 			// If already dead, returns nullptr.
 			std::shared_ptr<ShapeBase> FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const;
 		};
 	}
+
 
 	namespace Collision
 	{
@@ -764,6 +812,8 @@ namespace Donya
 	bool		operator == ( const OBB &L,		const OBB &R );
 	static bool	operator != ( const OBB &L,		const OBB &R ) { return !( L == R ); }
 }
+
+CEREAL_CLASS_VERSION( Donya::Collision::Collider,	0 );
 
 CEREAL_CLASS_VERSION( Donya::Collision::Box2,		0 );
 CEREAL_CLASS_VERSION( Donya::Collision::Box3,		0 );

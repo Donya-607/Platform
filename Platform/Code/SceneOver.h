@@ -10,6 +10,7 @@
 #include <string>
 #include "Donya/Camera.h"
 #include "Donya/Collision.h"
+#include "Donya/Serializer.h"
 
 #include "Scene.h"
 
@@ -26,8 +27,28 @@ private:
 	Donya::Collision::Collider colA;
 	Donya::Vector3 posB;
 	Donya::Collision::Collider colB;
+	Donya::Collision::Body body;
 public:
 	SceneOver() : Scene() {}
+private:
+	friend class cereal::access;
+	template<class Archive>
+	void serialize( Archive &archive, std::uint32_t version )
+	{
+		archive
+		(
+			CEREAL_NVP( colA ),
+			CEREAL_NVP( colB )
+		);
+		if ( 1 <= version )
+		{
+			archive( CEREAL_NVP( body ) );
+		}
+		if ( 2 <= version )
+		{
+			// archive( CEREAL_NVP( x ) );
+		}
+	}
 public:
 	void	Init() override;
 	void	Uninit() override;
@@ -42,6 +63,9 @@ private:
 	Result	ReturnResult();
 private:
 #if USE_IMGUI
+	void	Save();
+	void	LoadBin();
+	void	LoadJson();
 	void	UseImGui();
 
 	static std::vector<std::string> callbackStrs;
@@ -55,4 +79,6 @@ private:
 	static void OnHitExitB		( DONYA_CALLBACK_ON_HIT_EXIT );
 #endif // USE_IMGUI
 };
-#pragma once
+
+CEREAL_CLASS_VERSION( SceneOver, 1 )
+
