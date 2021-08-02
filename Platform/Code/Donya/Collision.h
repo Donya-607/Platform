@@ -24,130 +24,6 @@ namespace Donya
 {
 	namespace Collision
 	{
-		// Handle of collision body, like proxy.
-		// Please initialize it by Collider::Generate().
-		// If you want destroy it before a destructor, use Destroy().
-		// It's copy constructor works as Duplication, so that process is might be heavy(will allocates a memory).
-		class Collider
-		{
-		public:
-			// Generate new collision body instance, then assign the reference to "pOut"(it does not alloc memory).
-			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Body, because these callbacks are called in iterating the Bodys.
-			static Collider Generate();
-			// Resolve all collision body instance.
-			static void Resolve();
-		private:
-			std::shared_ptr<Body> pReference = nullptr; // No ownership, I manage the reference count by shared_ptr.
-		public:
-			Collider()								= default;
-			Collider( Collider && )					= default;
-			Collider &operator = ( Collider && )	= default;
-			// Duplicate.
-			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Body, because these callbacks are called in iterating the Bodys.
-			Collider( const Collider &duplicateCollider );
-			// Duplicate.
-			// YOU MUST NOT CALL IT IN CALLBACK METHODS OF Body, because these callbacks are called in iterating the Bodys.
-			Collider &operator = ( const Collider &duplicateCollider );
-			~Collider();
-		private:
-			// Fetch an identifier of referencing original
-			size_t FetchOriginalIndex() const;
-			// Update the original's parameter by now referencing one
-			void UpdateOriginalDirectly( size_t originalIndex );
-			// It does not destroy the old one.
-			// If the index is invalid, my reference will be nullptr.
-			void ReplaceReference( size_t originalIndex );
-		private:
-			friend class cereal::access;
-		#define DONYA_COLLISION_COLLIDER_ARCHIVE_PROCESS( archive )	\
-			archive( CEREAL_NVP( pReference ) );			\
-			// if ( 1 <= version )							\
-			// {											\
-			//	archive( CEREAL_NVP( x ) );					\
-			// }											\
-
-			template<class Archive>
-			void save( Archive &archive, std::uint32_t version ) const
-			{
-				DONYA_COLLISION_COLLIDER_ARCHIVE_PROCESS( archive )
-			}
-			template<class Archive>
-			void load( Archive &archive, std::uint32_t version )
-			{
-				if ( !pReference )
-				{
-					// TODO
-					assert( 0 );
-				}
-
-
-				const size_t nowOriginalIndex = FetchOriginalIndex();
-				const Body   oldBody = *pReference;
-
-
-				// Load the saved one
-				DONYA_COLLISION_COLLIDER_ARCHIVE_PROCESS( archive )
-
-
-				// Re-attach the non-saving parameters
-				pReference->OverwriteId( oldBody.GetId() );
-				pReference->OverwriteCallbacksBy( oldBody );
-				pReference->OverwriteIntersectionRecordsBy( oldBody );
-
-
-				// Update the original one
-				UpdateOriginalDirectly( nowOriginalIndex );
-				// and re-get reference to it
-				ReplaceReference( nowOriginalIndex );
-			}
-
-		#undef DONYA_COLLISION_COLLIDER_ARCHIVE_PROCESS
-		public:
-			// Destroy the collision body instance.
-			// After that, this class will take nothing.
-			// If already dead, it does nothing.
-			void Destroy();
-		public:
-			// Register the clone of "pShape", so you can reuse the same shape.
-			void AddShape( const std::shared_ptr<ShapeBase> &pShape );
-			// Remove all registered shapes
-			void RemoveAllShapes();
-		public:
-			void RegisterCallback_OnHitEnter	( const Body::EventFuncT_OnHitEnter		&function );
-			void RegisterCallback_OnHitContinue	( const Body::EventFuncT_OnHitContinue	&function );
-			void RegisterCallback_OnHitExit		( const Body::EventFuncT_OnHitExit		&function );
-			void UnregisterCallback_OnHitEnter();
-			void UnregisterCallback_OnHitContinue();
-			void UnregisterCallback_OnHitExit();
-			// It calls: UnregisterCallback_OnHitEnter(), UnregisterCallback_OnHitContinue(), UnregisterCallback_OnHitExit().
-			void UnregisterCallback_All();
-		public:
-			// Requirement:[mass > 0.0f]
-			void SetMass( float mass );
-			void SetPosition( const Donya::Vector3 &position );
-			// If it is true, it forcely ignoring(do not hit regardless of the shape's type) the intersection
-			void SetIgnoringIntersection( bool shouldIgnore );
-		public:
-			// If already dead, returns true.
-			bool			NowIgnoringIntersection() const;
-			// If already dead, returns FLT_EPSILON.
-			float			GetMass() const;
-			// If already dead, returns (0,0,0).
-			Donya::Vector3	GetPosition() const;
-			// Body's id. Do not compare it to other class's.
-			// If already dead, returns (0).
-			UniqueIdType	GetColliderId() const;
-			// If already dead, returns nullptr.
-			const std::vector<std::shared_ptr<ShapeBase>> *GetAddedShapePointers() const;
-			// Find a shape by an extra id that usage is defined by user, or nullptr if not found.
-			// If already dead, returns nullptr.
-			std::shared_ptr<ShapeBase> FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const;
-		};
-	}
-
-
-	namespace Collision
-	{
 		/// <summary>
 		/// You can assign the int type to it
 		/// </summary>
@@ -819,8 +695,6 @@ namespace Donya
 	bool		operator == ( const OBB &L,		const OBB &R );
 	static bool	operator != ( const OBB &L,		const OBB &R ) { return !( L == R ); }
 }
-
-CEREAL_CLASS_VERSION( Donya::Collision::Collider,	0 );
 
 CEREAL_CLASS_VERSION( Donya::Collision::Box2,		0 );
 CEREAL_CLASS_VERSION( Donya::Collision::Box3,		0 );

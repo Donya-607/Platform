@@ -43,7 +43,7 @@ namespace Donya
 			std::vector<std::shared_ptr<ShapeBase>>
 								shapePtrs;		// Registered shape list.
 			bool				ignoreIntersection = false; // Forcely ignoring the intersection(do not hit regardless of the type)
-		private:
+		protected:
 			struct HitValue
 			{
 				std::shared_ptr<ShapeBase> myselfShape = nullptr;
@@ -63,6 +63,13 @@ namespace Donya
 			std::vector<EventFuncT_OnHitEnter>		onHitHandlers_Enter;
 			std::vector<EventFuncT_OnHitContinue>	onHitHandlers_Continue;
 			std::vector<EventFuncT_OnHitExit>		onHitHandlers_Exit;
+		public:
+			Body()								= default;
+			Body( const Body & )				= default;
+			Body( Body && )						= default;
+			Body &operator = ( const Body & )	= default;
+			Body &operator = ( Body && )		= default;
+			virtual ~Body()						= default;
 		private:
 			friend class cereal::access;
 			template<class Archive>

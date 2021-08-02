@@ -9,7 +9,8 @@
 
 #include <string>
 #include "Donya/Camera.h"
-#include "Donya/Collision.h"
+#include "Donya/CollisionBody.h"
+#include "Donya/CollisionWorld.h"
 #include "Donya/Serializer.h"
 
 #include "Scene.h"
@@ -24,10 +25,11 @@ private:
 	Donya::ICamera iCamera;
 
 	Donya::Vector3 posA;
-	Donya::Collision::Collider colA;
+	Donya::Collision::Body bodyA;
 	Donya::Vector3 posB;
-	Donya::Collision::Collider colB;
-	Donya::Collision::Body body;
+	Donya::Collision::Body bodyB;
+
+	Donya::Collision::World world;
 public:
 	SceneOver() : Scene() {}
 private:
@@ -37,14 +39,10 @@ private:
 	{
 		archive
 		(
-			CEREAL_NVP( colA ),
-			CEREAL_NVP( colB )
+			CEREAL_NVP( bodyA ),
+			CEREAL_NVP( bodyB )
 		);
 		if ( 1 <= version )
-		{
-			archive( CEREAL_NVP( body ) );
-		}
-		if ( 2 <= version )
 		{
 			// archive( CEREAL_NVP( x ) );
 		}
@@ -80,5 +78,5 @@ private:
 #endif // USE_IMGUI
 };
 
-CEREAL_CLASS_VERSION( SceneOver, 1 )
+CEREAL_CLASS_VERSION( SceneOver, 0 )
 

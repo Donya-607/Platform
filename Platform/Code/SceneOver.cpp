@@ -98,38 +98,36 @@ void SceneOver::Init()
 		auto pFloor2		= ShapeAABB::Generate( InteractionType::Dynamic, { size, size, size }, { size*2.0f * 1.8f, 0.0f, 0.0f } );
 		//auto pKinematic		= ShapeAABB::Generate( InteractionType::Kinematic, { size, size, size } );
 		auto pSensor		= ShapeAABB::Generate( InteractionType::Sensor, { size, size, size } );
-		colA = Collider::Generate();
-		//colB = Collider::Generate();
-		colB = colA; // duplicate
+		bodyB = bodyA; // duplicate
 		pAABB->extraId = 1;
-		colA.AddShape( pAABB );
+		bodyA.AddShape( pAABB );
 		pSensor->extraId = 9;
 		pFloor1->extraId = 9;
-		colB.AddShape( pFloor1 );
+		bodyB.AddShape( pFloor1 );
 		pCapsuleTop->extraId = 2;
-		colA.AddShape( pCapsuleTop );
+		bodyA.AddShape( pCapsuleTop );
 		pCapsuleBtm->extraId = 3;
-		colA.AddShape( pCapsuleBtm );
+		bodyA.AddShape( pCapsuleBtm );
 		// pFloor2->extraId = 2;
-		// colB.AddShape( pFloor2 );
-		colA.SetPosition( posA );
-		colB.SetPosition( posB );
-		colA.SetMass( 1.0f );
-		colB.SetMass( 65535.0f );
+		// bodyB.AddShape( pFloor2 );
+		bodyA.SetPosition( posA );
+		bodyB.SetPosition( posB );
+		bodyA.SetMass( 1.0f );
+		bodyB.SetMass( 65535.0f );
 
-		colA.RegisterCallback_OnHitEnter	( OnHitEnterA );
-		colA.RegisterCallback_OnHitContinue	( OnHitContinueA );
-		colA.RegisterCallback_OnHitExit		( OnHitExitA );
-		colB.RegisterCallback_OnHitEnter	( OnHitEnterB );
-		colB.RegisterCallback_OnHitContinue	( OnHitContinueB );
-		colB.RegisterCallback_OnHitExit		( OnHitExitB );
+		bodyA.RegisterCallback_OnHitEnter	( OnHitEnterA );
+		bodyA.RegisterCallback_OnHitContinue	( OnHitContinueA );
+		bodyA.RegisterCallback_OnHitExit		( OnHitExitA );
+		bodyB.RegisterCallback_OnHitEnter	( OnHitEnterB );
+		bodyB.RegisterCallback_OnHitContinue	( OnHitContinueB );
+		bodyB.RegisterCallback_OnHitExit		( OnHitExitB );
 
-		body.SetPosition( { 42.0f, 42.0f, 42.0f } );
-		body.RegisterCallback_OnHitEnter( OnHitEnterB );
+		//body.SetPosition( { 42.0f, 42.0f, 42.0f } );
+		//body.RegisterCallback_OnHitEnter( OnHitEnterB );
 		
 
 		/*
-		colB.RegisterCallback_OnHitContinue
+		bodyB.RegisterCallback_OnHitContinue
 		(
 			[&]( DONYA_CALLBACK_ON_HIT_CONTINUE )
 			{
@@ -137,13 +135,17 @@ void SceneOver::Init()
 			}
 		);
 		*/
-		colB.RegisterCallback_OnHitEnter
+		bodyB.RegisterCallback_OnHitEnter
 		(
 			[&]( DONYA_CALLBACK_ON_HIT_ENTER )
 			{
 				callbackStrs.emplace_back( "TIMER:" + std::to_string( timer ) );
 			}
 		);
+
+		world.ClearAll();
+		world.Register( &bodyA );
+		world.Register( &bodyB );
 
 		constexpr Donya::Vector2 screenSize{ Common::ScreenWidthF(), Common::ScreenHeightF() };
 		constexpr Donya::Vector2 defaultZRange{ 0.1f, 500.0f };
@@ -228,8 +230,8 @@ Scene::Result SceneOver::Update( float elapsedTime )
 	{
 		if ( Donya::Keyboard::Trigger( 'T' ) )
 		{
-			const bool now = colA.NowIgnoringIntersection();
-			colA.SetIgnoringIntersection( !now );
+			const bool now = bodyA.NowIgnoringIntersection();
+			bodyA.SetIgnoringIntersection( !now );
 		}
 	}
 	{
@@ -252,14 +254,17 @@ Scene::Result SceneOver::Update( float elapsedTime )
 		posA += velA * elapsedTime;
 		posB += velB * elapsedTime;
 
-		colA.SetPosition( posA );
-		colB.SetPosition( posB );
+		bodyA.SetPosition( posA );
+		bodyB.SetPosition( posB );
+
 	}
 	{
-		Donya::Collision::Collider::Resolve();
+		//world.RegisterOnce( &bodyA );
+		//world.RegisterOnce( &bodyB );
+		world.Resolve();
 
-		posA = colA.GetPosition();
-		posB = colB.GetPosition();
+		posA = bodyA.GetPosition();
+		posB = bodyB.GetPosition();
 	}
 
 
@@ -286,13 +291,13 @@ void SceneOver::Draw( float elapsedTime )
 		constant.matViewProj	= VP;
 		constant.lightDirection	= -Donya::Vector3::Up();
 
-		auto DrawProcess = [&]( const Donya::Collision::Collider &col, const Donya::Vector4 &color )
+		auto DrawProcess = [&]( const Donya::Collision::Body &body, const Donya::Vector4 &color )
 		{
 			constant.drawColor = color;
 
 			constexpr float pointSize = 0.05f;
 
-			const auto *shapePtrs = col.GetAddedShapePointers();
+			const auto *shapePtrs = body.GetAddedShapePointers();
 			for ( const auto &pShape : *shapePtrs )
 			{
 				if ( !pShape ) { continue; }
@@ -350,8 +355,8 @@ void SceneOver::Draw( float elapsedTime )
 		constexpr Donya::Vector4 red	{ 1.0f, 0.0f, 0.0f, alpha };
 		constexpr Donya::Vector4 green	{ 0.0f, 1.0f, 0.0f, alpha };
 		constexpr Donya::Vector4 blue	{ 0.0f, 0.0f, 1.0f, alpha };
-		DrawProcess( colA, red );
-		DrawProcess( colB, green );
+		DrawProcess( bodyA, red );
+		DrawProcess( bodyB, green );
 	}
 #endif // DEBUG_MODE
 
@@ -454,7 +459,7 @@ void SceneOver::UseImGui()
 		static Donya::Vector3 sizeB = shapeSize3;
 		static Donya::Vector3 offsetA{};
 		static Donya::Vector3 offsetB{};
-		auto Show = [&]( std::string colName, Collider *pCol, int *pType, int *pKind, Donya::Vector3 *pSize, Donya::Vector3 *pOffset )
+		auto Show = [&]( std::string colName, Body *pBody, int *pType, int *pKind, Donya::Vector3 *pSize, Donya::Vector3 *pOffset )
 		{
 			if ( !ImGui::TreeNode( ( u8"ïœçXÅF" + colName ).c_str() ) ) { return; }
 			// else
@@ -503,12 +508,12 @@ void SceneOver::UseImGui()
 			// Assign
 			if ( ImGui::Button( u8"çƒê›íË" ) )
 			{
-				pCol->RemoveAllShapes();
+				pBody->RemoveAllShapes();
 
 				switch ( *pKind )
 				{
 				case 0:
-					pCol->AddShape
+					pBody->AddShape
 					(
 						ShapePoint::Generate
 						(
@@ -518,7 +523,7 @@ void SceneOver::UseImGui()
 					);
 					break;
 				case 1:
-					pCol->AddShape
+					pBody->AddShape
 					(
 						ShapeAABB::Generate
 						(
@@ -529,7 +534,7 @@ void SceneOver::UseImGui()
 					);
 					break;
 				case 2:
-					pCol->AddShape
+					pBody->AddShape
 					(
 						ShapeSphere::Generate
 						(
@@ -547,8 +552,8 @@ void SceneOver::UseImGui()
 			ImGui::TreePop();
 		};
 
-		Show( u8"A-ê‘", &colA, &typeA, &kindA, &sizeA, &offsetA );
-		Show( u8"B-óŒ", &colB, &typeB, &kindB, &sizeB, &offsetB );
+		Show( u8"A-ê‘", &bodyA, &typeA, &kindA, &sizeA, &offsetA );
+		Show( u8"B-óŒ", &bodyB, &typeB, &kindB, &sizeB, &offsetB );
 
 		if ( ImGui::Button( u8"ï€ë∂" ) )
 		{
@@ -557,14 +562,14 @@ void SceneOver::UseImGui()
 		if ( ImGui::Button( u8"ì«Ç›çûÇ›-Bin" ) )
 		{
 			LoadBin();
-			posA = colA.GetPosition();
-			posB = colB.GetPosition();
+			posA = bodyA.GetPosition();
+			posB = bodyB.GetPosition();
 		}
 		if ( ImGui::Button( u8"ì«Ç›çûÇ›-Json" ) )
 		{
 			LoadJson();
-			posA = colA.GetPosition();
-			posB = colB.GetPosition();
+			posA = bodyA.GetPosition();
+			posB = bodyB.GetPosition();
 		}
 
 		ImGui::TreePop();
