@@ -311,6 +311,14 @@ void SceneOver::Draw( float elapsedTime )
 				using namespace Donya::Collision;
 				switch ( pShape->GetShapeKind() )
 				{
+				case Shape::Empty:
+					{
+						constant.matWorld._11 = pointSize;
+						constant.matWorld._22 = pointSize;
+						constant.matWorld._33 = pointSize;
+						p->renderer.ProcessDrawingCube( constant );
+					}
+					break;
 				case Shape::Point:
 					{
 						constant.matWorld._11 = pointSize;
@@ -450,113 +458,8 @@ void SceneOver::UseImGui()
 	constexpr int shapeTypeCount = ArraySize( shapeTypes );
 	if ( ImGui::TreeNode( u8"変更とシリアライズ" ) )
 	{
-		using Type = InteractionType;
-
-		static int typeA = scast<int>( Type::Dynamic );
-		static int typeB = scast<int>( Type::Dynamic );
-		static int kindA = 1; // 0:Point, 1:AABB, 2:Sphere
-		static int kindB = 1; // 0:Point, 1:AABB, 2:Sphere
-		constexpr int shapeKindCount = 3;
-		static Donya::Vector3 sizeA = shapeSize3;
-		static Donya::Vector3 sizeB = shapeSize3;
-		static Donya::Vector3 offsetA{};
-		static Donya::Vector3 offsetB{};
-		auto Show = [&]( std::string colName, Body *pBody, int *pType, int *pKind, Donya::Vector3 *pSize, Donya::Vector3 *pOffset )
-		{
-			if ( !ImGui::TreeNode( ( u8"変更：" + colName ).c_str() ) ) { return; }
-			// else
-
-
-			// Type
-			static const char *shapeTypeNames[]{ "Dynamic", "Kinematic", "Sensor" };
-			for ( int i = 0; i < shapeTypeCount; ++i )
-			{
-				if ( ImGui::RadioButton( shapeTypeNames[i], *pType == i ) )
-				{
-					*pType = i;
-				}
-
-				if ( i + 1 < shapeTypeCount )
-				{
-					ImGui::SameLine();
-				}
-			}
-			
-			
-			// Kind
-			static const char *shapeKindNames[]{ "Point", "AABB", "Sphere" };
-			for ( int i = 0; i < shapeKindCount; ++i )
-			{
-				if ( ImGui::RadioButton( shapeKindNames[i], *pKind == i ) )
-				{
-					*pKind = i;
-				}
-
-				if ( i + 1 < shapeKindCount )
-				{
-					ImGui::SameLine();
-				}
-			}
-
-
-			// Size
-			ImGui::DragFloat3( u8"Size", &pSize->x, 0.1f );
-			
-			
-			// Offset
-			ImGui::DragFloat3( u8"Offset", &pOffset->x, 0.05f );
-
-
-			// Assign
-			if ( ImGui::Button( u8"再設定" ) )
-			{
-				pBody->RemoveAllShapes();
-
-				switch ( *pKind )
-				{
-				case 0:
-					pBody->AddShape
-					(
-						ShapePoint::Generate
-						(
-							scast<Type>( *pType ),
-							*pOffset
-						)
-					);
-					break;
-				case 1:
-					pBody->AddShape
-					(
-						ShapeAABB::Generate
-						(
-							scast<Type>( *pType ),
-							*pSize,
-							*pOffset
-						)
-					);
-					break;
-				case 2:
-					pBody->AddShape
-					(
-						ShapeSphere::Generate
-						(
-							scast<Type>( *pType ),
-							pSize->x,
-							*pOffset
-						)
-					);
-					break;
-				default: assert( 0 ); break;
-				}
-			}
-
-
-			ImGui::TreePop();
-		};
-
-		ImGui::Helper::ShowBodyNode( u8"A-赤", "hogehogefoobaridentifier", &bodyA );
-		//Show( u8"A-赤", &bodyA, &typeA, &kindA, &sizeA, &offsetA );
-		Show( u8"B-緑", &bodyB, &typeB, &kindB, &sizeB, &offsetB );
+		ImGui::Helper::ShowBodyNode( u8"変更：A-赤", "guiid_bodyA", &bodyA );
+		ImGui::Helper::ShowBodyNode( u8"変更：B-緑", "guiid_bodyB", &bodyB );
 		posA = bodyA.GetPosition();
 		posB = bodyB.GetPosition();
 

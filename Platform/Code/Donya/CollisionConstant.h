@@ -10,10 +10,25 @@ namespace Donya
 		// Interaction type with other
 		enum class InteractionType
 		{
-			Dynamic,	// Movable. Push other and be pushed by other.
-			Kinematic,	// Movable. Push other and do not be pushed by other. Kinematic vs Kinematic is not occur any push/be pushed(works like Sensor).
-			Sensor,		// Movable. Do not push nor be pushed with other.
+			Dynamic,	// Push other and be pushed by other.
+			Kinematic,	// Push other and do not be pushed by other. Kinematic vs Kinematic is not occur any push/be pushed(works like Sensor).
+			Sensor,		// Do not push nor be pushed with other.
 		};
+		constexpr const char *GetInteractionTypeName( InteractionType shape )
+		{
+			switch ( shape )
+			{
+			case InteractionType::Dynamic:
+				return "Dynamic";
+			case InteractionType::Kinematic:
+				return "Kinematic";
+			case InteractionType::Sensor:
+				return "Sensor";
+			default:
+				break;
+			}
+			return "!ERROR_KIND!";
+		}
 
 		// Collider volume type
 		enum class Shape

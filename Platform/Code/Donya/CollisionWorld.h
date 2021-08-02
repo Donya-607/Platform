@@ -32,6 +32,8 @@ namespace Donya
 			// Resolve all intersections between registered bodies.
 			// It clears registrations by RegisterOnce() after resolve.
 			void Resolve();
+
+			// TODO: Provide to be able to specify the iterating count of Resolve().
 		};
 	}
 }

@@ -52,6 +52,10 @@ namespace ImGui
 }
 #include "Collision.h" // OLD ver
 #include "CollisionBody.h"
+#include "CollisionShapes/ShapeEmpty.h"
+#include "CollisionShapes/ShapePoint.h"
+#include "CollisionShapes/ShapeAABB.h"
+#include "CollisionShapes/ShapeSphere.h"
 #include "Easing.h"
 #include "ModelCommon.h"
 #include "Quaternion.h"
@@ -67,8 +71,13 @@ namespace ImGui
 		void ShowDirectionalLightNode	( const std::string &nodeCaption, Donya::Model::Constants::PerScene::DirectionalLight	*pLight, bool useTreeNode = true );
 		void ShowPointLightNode			( const std::string &nodeCaption, Donya::Model::Constants::PerScene::PointLight			*pLight, bool useTreeNode = true );
 
-		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeBase *pShape );
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeEmpty	*pShape, bool useTreeNode = false );
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapePoint	*pShape, bool useTreeNode = false );
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeAABB	*pShape, bool useTreeNode = false );
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeSphere	*pShape, bool useTreeNode = false );
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeBase	*pShape );
 		void ShowBodyNode	( const std::string &nodeCaption, const std::string &bufferIdentifier, Donya::Collision::Body *pBody );
+
 		void ShowAABBNode	( const std::string &nodeCaption, Donya::Collision::Box3F *pBox );
 		void ShowSphereNode	( const std::string &nodeCaption, Donya::Collision::Sphere3F *pSphere );
 		

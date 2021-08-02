@@ -3,10 +3,6 @@
 #include <unordered_map>// Use at ShowStringNode()
 
 #include "Donya.h"		// Use for GetWindowCaption()
-#include "CollisionShapes/ShapeEmpty.h"	// Use for ShowBodyNode(), ShowShapeNode()
-#include "CollisionShapes/ShapePoint.h"	// Use for ShowBodyNode(), ShowShapeNode()
-#include "CollisionShapes/ShapeAABB.h"	// Use for ShowBodyNode(), ShowShapeNode()
-#include "CollisionShapes/ShapeSphere.h"// Use for ShowBodyNode(), ShowShapeNode()
 
 #include "../Math.h"	// Use CalcBezierCurve()
 
@@ -124,6 +120,7 @@ namespace ImGui
 
 			ImGui::TreePop();
 		}
+
 		void ShowStringNode	( const std::string &nodeCaption, const std::string &bufferId, std::string *p )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
@@ -154,6 +151,7 @@ namespace ImGui
 
 			ImGui::TreePop();
 		}
+
 		void ShowLightNode				( const std::string &nodeCaption, Donya::Model::Constants::PerScene::Light				*p, bool useTreeNode )
 		{
 			if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
@@ -206,12 +204,117 @@ namespace ImGui
 
 			if ( useTreeNode ) { ImGui::TreePop(); }
 		}
-		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeBase *pShape )
+
+		void ShowShapeBaseParameters( Donya::Collision::ShapeBase *pShape )
+		{
+			using namespace Donya::Collision;
+
+			auto &s = *pShape;
+
+			ImGui::DragFloat3	( u8"原点",					&s.position.x,	0.1f );
+			ImGui::DragFloat3	( u8"オフセット",			&s.offset.x,	0.1f );
+
+			// Interaction type
+			{
+				constexpr const char *types[]
+				{
+					GetInteractionTypeName( InteractionType::Dynamic	),
+					GetInteractionTypeName( InteractionType::Kinematic	),
+					GetInteractionTypeName( InteractionType::Sensor		),
+				};
+				constexpr int typeCount = scast<int>( ArraySize( types ) );
+
+				int currType = scast<int>( pShape->GetType() );
+				ImGui::Combo( u8"衝突タイプ", &currType, types, typeCount );
+				pShape->type = scast<InteractionType>( currType );
+				ImGui::SameLine();
+				ImGui::TextDisabled( "(?)" );
+				if ( ImGui::IsItemHovered() )
+				{
+					ImGui::BeginTooltip();
+					ImGui::Text
+					(
+						u8"Dynamic: 衝突相手を押したり，押されたりします。衝突相手との質量比により，押す割合が決まります。\n"
+						u8"Kinematic: 衝突相手を押しますが，押されることはありません（質量が無限大）。お互いがKinematicの場合，何も押されません。\n"
+						u8"Sensor: 何も押しません。衝突検出のみを使う場合に便利です。"
+					);
+					ImGui::EndTooltip();
+				}
+			}
+
+			ImGui::InputInt		( u8"ユーザ定義ID",			&s.extraId );
+			ImGui::Checkbox		( u8"当たり判定を無視する",	&s.ignoreIntersection );
+		}
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeEmpty	*pShape, bool useTreeNode )
+		{
+			if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ShowShapeBaseParameters( pShape );
+
+			if ( useTreeNode ) { ImGui::TreePop(); }
+		}
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapePoint	*pShape, bool useTreeNode )
+		{
+			if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ShowShapeBaseParameters( pShape );
+
+			if ( useTreeNode ) { ImGui::TreePop(); }
+		}
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeAABB	*pShape, bool useTreeNode )
+		{
+			if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ImGui::DragFloat3( u8"半径サイズ", &pShape->size.x, 0.05f );
+			ShowShapeBaseParameters( pShape );
+
+			if ( useTreeNode ) { ImGui::TreePop(); }
+		}
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeSphere	*pShape, bool useTreeNode )
+		{
+			if ( useTreeNode && !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ImGui::DragFloat( u8"半径", &pShape->radius, 0.05f );
+			ShowShapeBaseParameters( pShape );
+
+			if ( useTreeNode ) { ImGui::TreePop(); }
+		}
+		template<class ShapeType>
+		ShapeType *DownCastWithAssert( Donya::Collision::ShapeBase *pBase )
+		{
+			ShapeType *pDerived = dynamic_cast<ShapeType *>( pBase );
+			_ASSERT_EXPR( pDerived, L"Error: Invalid dynamic_cast!" );
+			return pDerived;
+		}
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeBase	*pShape )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
 			// else
 
-			ImGui::Text( u8"hogehogefoobar" );
+			using namespace Donya::Collision;
+
+			switch ( pShape->GetShapeKind() )
+			{
+			case Shape::Empty:
+				ShowShapeNode( nodeCaption, DownCastWithAssert<ShapeEmpty>( pShape ) );
+				break;
+			case Shape::Point:
+				ShowShapeNode( nodeCaption, DownCastWithAssert<ShapePoint>( pShape ) );
+				break;
+			case Shape::AABB:
+				ShowShapeNode( nodeCaption, DownCastWithAssert<ShapeAABB>( pShape ) );
+				break;
+			case Shape::Sphere:
+				ShowShapeNode( nodeCaption, DownCastWithAssert<ShapeSphere>( pShape ) );
+				break;
+			default:
+				_ASSERT_EXPR( 0, L"Error: Unexpected Kind!" );
+				break;
+			}
 
 			ImGui::TreePop();
 		}
@@ -276,85 +379,122 @@ namespace ImGui
 			if ( ImGui::BeginTabItem( u8"形状-追加/削除" ) )
 			{
 				// Append
-				if ( ImGui::Button( u8"末尾に追加" ) )
 				{
-					// For visualize, append some AABB
+					using namespace Donya::Collision;
+
+					constexpr const char *kinds[]
+					{
+						GetShapeName( Shape::Empty	),
+						GetShapeName( Shape::Point	),
+						GetShapeName( Shape::AABB	),
+						GetShapeName( Shape::Sphere	),
+					};
+					constexpr int kindCount = scast<int>( ArraySize( kinds ) );
+
+					static std::unordered_map<std::string, int> appendKindMap;
+					// Choose AABB as default
+					if ( appendKindMap.find( bufferId ) == appendKindMap.end() )
+					{
+						appendKindMap.insert( std::make_pair( bufferId, scast<int>( Shape::AABB ) ) );
+					}
+					int &appendKind = appendKindMap[bufferId];
+
+
+					ImGui::Combo( u8"追加する種類", &appendKind, kinds, kindCount );
+					
+
+					// Prepare adding shapes for visible when add
 					constexpr auto initType = Donya::Collision::InteractionType::Sensor;
 					constexpr auto initSize = Donya::Vector3{ 0.5f, 0.5f, 0.5f };
-					auto tmp = Donya::Collision::ShapeAABB::Generate( initType, initSize );
-					pBody->AddShape( tmp );
+					static std::shared_ptr<ShapeBase> addingShapePtrs[kindCount]
+					{
+						Donya::Collision::ShapeEmpty ::Generate(),
+						Donya::Collision::ShapePoint ::Generate( initType ),
+						Donya::Collision::ShapeAABB  ::Generate( initType, initSize ),
+						Donya::Collision::ShapeSphere::Generate( initType, initSize.x ),
+					};
+
+
+					// Add it
+					if ( ImGui::Button( u8"末尾に追加" ) )
+					{
+						pBody->AddShape( addingShapePtrs[appendKind] );
+					}
 				}
 				ImGui::Text( u8"" );
 
 
 				// Remove
-				auto pTargetShapes = pBody->RequireRawShapePointers();
+				{
+					auto pTargetShapes = pBody->RequireRawShapePointers();
 				
-				static std::unordered_map<std::string, std::shared_ptr<Donya::Collision::ShapeBase>> choosingShapeMap;
-				auto &choosingShape = choosingShapeMap[bufferId];
+					static std::unordered_map<std::string, std::shared_ptr<Donya::Collision::ShapeBase>> choosingShapeMap;
+					auto &choosingShape = choosingShapeMap[bufferId];
+					choosingShape = nullptr; // Reset by below find process
 
-				// Find erasing one
-				std::string caption;
-				std::shared_ptr<Donya::Collision::ShapeBase> pShape = nullptr;
+					// Find erasing one
+					std::string caption;
+					std::shared_ptr<Donya::Collision::ShapeBase> pShape = nullptr;
 
-				const size_t shapeCount = ( pTargetShapes ) ? pTargetShapes->size() : 0U;
-				for ( size_t i = 0; i < shapeCount; ++i )
-				{
-					pShape = pTargetShapes->at( i );
-					if ( !pShape ) { continue; }
-					// else
-
-					caption = Donya::MakeArraySuffix( i ) + ":" + Donya::Collision::GetShapeName( pShape->GetShapeKind() );
-					if ( ImGui::Selectable( caption.c_str(), choosingShape == pShape ) )
+					const size_t shapeCount = ( pTargetShapes ) ? pTargetShapes->size() : 0U;
+					for ( size_t i = 0; i < shapeCount; ++i )
 					{
-						choosingShape = pShape;
-					}
-				}
-				if ( ImGui::Selectable( u8"選択解除" ) )
-				{
-					choosingShape = nullptr;
-				}
+						pShape = pTargetShapes->at( i );
+						if ( !pShape ) { continue; }
+						// else
 
-
-				// Erase if chosen
-				if ( choosingShape )
-				{
-					if ( ImGui::Button( u8"選択した形状を削除" ) )
-					{
-						// Find the index
-						size_t  eraseIndex = shapeCount;
-						for ( size_t i = 0; i < shapeCount; ++i )
+						caption = Donya::MakeArraySuffix( i ) + ":" + Donya::Collision::GetShapeName( pShape->GetShapeKind() );
+						if ( ImGui::Selectable( caption.c_str(), choosingShape == pShape ) )
 						{
-							pShape = pTargetShapes->at( i );
-							if ( !pShape ) { continue; }
-							// else
-
-							if ( choosingShape == pShape )
-							{
-								eraseIndex = i;
-								break;
-							}
-						}
-
-						// Erase it
-						if ( eraseIndex < shapeCount )
-						{
-							pTargetShapes->erase( pTargetShapes->begin() + eraseIndex );
-							if ( pTargetShapes->empty() )
-							{
-								choosingShape = nullptr;
-							}
-							else
-							{
-								eraseIndex = std::min( pTargetShapes->size() - 1, eraseIndex );
-								choosingShape = pTargetShapes->at( eraseIndex );
-							}
+							choosingShape = pShape;
 						}
 					}
-				}
-				else
-				{
-					ImGui::TextDisabled( u8"選択した形状を削除" );
+					if ( ImGui::Selectable( u8"選択解除" ) )
+					{
+						choosingShape = nullptr;
+					}
+
+
+					// Erase if chosen
+					if ( choosingShape )
+					{
+						if ( ImGui::Button( u8"選択した形状を削除" ) )
+						{
+							// Find the index
+							size_t  eraseIndex = shapeCount;
+							for ( size_t i = 0; i < shapeCount; ++i )
+							{
+								pShape = pTargetShapes->at( i );
+								if ( !pShape ) { continue; }
+								// else
+
+								if ( choosingShape == pShape )
+								{
+									eraseIndex = i;
+									break;
+								}
+							}
+
+							// Erase it
+							if ( eraseIndex < shapeCount )
+							{
+								pTargetShapes->erase( pTargetShapes->begin() + eraseIndex );
+								if ( pTargetShapes->empty() )
+								{
+									choosingShape = nullptr;
+								}
+								else
+								{
+									eraseIndex = std::min( pTargetShapes->size() - 1, eraseIndex );
+									choosingShape = pTargetShapes->at( eraseIndex );
+								}
+							}
+						}
+					}
+					else
+					{
+						ImGui::TextDisabled( u8"選択した形状を削除" );
+					}
 				}
 
 
@@ -437,6 +577,7 @@ namespace ImGui
 
 			ImGui::TreePop();
 		}
+
 		void ShowAABBNode	( const std::string &nodeCaption, Donya::Collision::Box3F *p )
 		{
 			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
