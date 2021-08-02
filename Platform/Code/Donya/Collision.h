@@ -59,29 +59,34 @@ namespace Donya
 			void ReplaceReference( size_t originalIndex );
 		private:
 			friend class cereal::access;
+		#define DONYA_COLLISION_COLLIDER_ARCHIVE_PROCESS( archive )	\
+			archive( CEREAL_NVP( pReference ) );			\
+			// if ( 1 <= version )							\
+			// {											\
+			//	archive( CEREAL_NVP( x ) );					\
+			// }											\
 
 			template<class Archive>
 			void save( Archive &archive, std::uint32_t version ) const
 			{
-				archive( CEREAL_NVP( pReference ) );
-				if ( 1 <= version )
-				{
-					// archive( CEREAL_NVP( x ) );
-				}
+				DONYA_COLLISION_COLLIDER_ARCHIVE_PROCESS( archive )
 			}
 			template<class Archive>
 			void load( Archive &archive, std::uint32_t version )
 			{
+				if ( !pReference )
+				{
+					// TODO
+					assert( 0 );
+				}
+
+
 				const size_t nowOriginalIndex = FetchOriginalIndex();
 				const Body   oldBody = *pReference;
 
 
 				// Load the saved one
-				archive( CEREAL_NVP( pReference ) );
-				if ( 1 <= version )
-				{
-					// archive( CEREAL_NVP( x ) );
-				}
+				DONYA_COLLISION_COLLIDER_ARCHIVE_PROCESS( archive )
 
 
 				// Re-attach the non-saving parameters
@@ -95,6 +100,8 @@ namespace Donya
 				// and re-get reference to it
 				ReplaceReference( nowOriginalIndex );
 			}
+
+		#undef DONYA_COLLISION_COLLIDER_ARCHIVE_PROCESS
 		public:
 			// Destroy the collision body instance.
 			// After that, this class will take nothing.
