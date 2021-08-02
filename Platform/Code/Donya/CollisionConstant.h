@@ -23,6 +23,23 @@ namespace Donya
 			AABB,		// Position.xyz + HalfSize.xyz
 			Sphere,		// Position.xyz + Radius
 		};
+		constexpr const char *GetShapeName( Shape shape )
+		{
+			switch ( shape )
+			{
+			case Shape::Empty:
+				return "Empty";
+			case Shape::Point:
+				return "Point";
+			case Shape::AABB:
+				return "AABB";
+			case Shape::Sphere:
+				return "Sphere";
+			default:
+				break;
+			}
+			return "!ERROR_KIND!";
+		}
 
 		// Collision test result, you must check "isHit" is true.
 		// It depends on: http://noonat.github.io/intersect/

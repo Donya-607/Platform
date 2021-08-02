@@ -434,6 +434,8 @@ void SceneOver::LoadJson()
 }
 void SceneOver::UseImGui()
 {
+	ImGui::ShowDemoWindow();
+
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 	
@@ -552,8 +554,11 @@ void SceneOver::UseImGui()
 			ImGui::TreePop();
 		};
 
-		Show( u8"A-ê‘", &bodyA, &typeA, &kindA, &sizeA, &offsetA );
+		ImGui::Helper::ShowBodyNode( u8"A-ê‘", "hogehogefoobaridentifier", &bodyA );
+		//Show( u8"A-ê‘", &bodyA, &typeA, &kindA, &sizeA, &offsetA );
 		Show( u8"B-óŒ", &bodyB, &typeB, &kindB, &sizeB, &offsetB );
+		posA = bodyA.GetPosition();
+		posB = bodyB.GetPosition();
 
 		if ( ImGui::Button( u8"ï€ë∂" ) )
 		{

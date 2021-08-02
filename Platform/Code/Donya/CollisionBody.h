@@ -141,10 +141,12 @@ namespace Donya
 			// Body's id. Do not compare it to other class's.
 			UniqueIdType	GetId() const;
 		public:
-			// Return the pointer of list added by AddShape()
-			const std::vector<std::shared_ptr<ShapeBase>> *GetAddedShapePointers() const;
 			// Find a shape by an extra id that usage is defined by user, or nullptr if not found.
 			std::shared_ptr<ShapeBase> FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const;
+			// Return the shape list added by AddShape()
+			const std::vector<std::shared_ptr<ShapeBase>> *GetAddedShapePointers() const;
+			// Non const version of GetAddedShapePointers().
+			std::vector<std::shared_ptr<ShapeBase>> *RequireRawShapePointers();
 		private:
 			// Process the "insertRequests" and "eraseRequests"
 			void AcceptIdRequests();

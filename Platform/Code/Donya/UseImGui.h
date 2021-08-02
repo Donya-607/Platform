@@ -50,7 +50,8 @@ namespace ImGui
 	bool BeginIfAllowed( const char* name = nullptr, bool* p_open = NULL, ImGuiWindowFlags flags = 0 );
 
 }
-#include "Collision.h"
+#include "Collision.h" // OLD ver
+#include "CollisionBody.h"
 #include "Easing.h"
 #include "ModelCommon.h"
 #include "Quaternion.h"
@@ -66,6 +67,8 @@ namespace ImGui
 		void ShowDirectionalLightNode	( const std::string &nodeCaption, Donya::Model::Constants::PerScene::DirectionalLight	*pLight, bool useTreeNode = true );
 		void ShowPointLightNode			( const std::string &nodeCaption, Donya::Model::Constants::PerScene::PointLight			*pLight, bool useTreeNode = true );
 
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeBase *pShape );
+		void ShowBodyNode	( const std::string &nodeCaption, const std::string &bufferIdentifier, Donya::Collision::Body *pBody );
 		void ShowAABBNode	( const std::string &nodeCaption, Donya::Collision::Box3F *pBox );
 		void ShowSphereNode	( const std::string &nodeCaption, Donya::Collision::Sphere3F *pSphere );
 		

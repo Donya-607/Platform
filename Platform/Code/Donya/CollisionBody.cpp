@@ -307,10 +307,6 @@ namespace Donya
 		{
 			return id.Get();
 		}
-		const std::vector<std::shared_ptr<ShapeBase>> *Body::GetAddedShapePointers() const
-		{
-			return &shapePtrs;
-		}
 		std::shared_ptr<ShapeBase> Body::FindShapePointerByExtraIdOrNullptr( int lookingExtraId ) const
 		{
 			for ( const auto &pIt : shapePtrs )
@@ -325,6 +321,14 @@ namespace Donya
 			}
 
 			return nullptr;
+		}
+		const std::vector<std::shared_ptr<ShapeBase>> *Body::GetAddedShapePointers() const
+		{
+			return &shapePtrs;
+		}
+		std::vector<std::shared_ptr<ShapeBase>> *Body::RequireRawShapePointers()
+		{
+			return &shapePtrs;
 		}
 		void Body::AcceptIdRequests()
 		{

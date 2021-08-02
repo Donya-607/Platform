@@ -3,6 +3,10 @@
 #include <unordered_map>// Use at ShowStringNode()
 
 #include "Donya.h"		// Use for GetWindowCaption()
+#include "CollisionShapes/ShapeEmpty.h"	// Use for ShowBodyNode(), ShowShapeNode()
+#include "CollisionShapes/ShapePoint.h"	// Use for ShowBodyNode(), ShowShapeNode()
+#include "CollisionShapes/ShapeAABB.h"	// Use for ShowBodyNode(), ShowShapeNode()
+#include "CollisionShapes/ShapeSphere.h"// Use for ShowBodyNode(), ShowShapeNode()
 
 #include "../Math.h"	// Use CalcBezierCurve()
 
@@ -201,6 +205,237 @@ namespace ImGui
 			p->range			= std::max( 0.0f, p->range			);
 
 			if ( useTreeNode ) { ImGui::TreePop(); }
+		}
+		void ShowShapeNode	( const std::string &nodeCaption, Donya::Collision::ShapeBase *pShape )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			ImGui::Text( u8"hogehogefoobar" );
+
+			ImGui::TreePop();
+		}
+		void ShowBodyNode	( const std::string &nodeCaption, const std::string &bufferId, Donya::Collision::Body *pBody )
+		{
+			if ( !ImGui::TreeNode( nodeCaption.c_str() ) ) { return; }
+			// else
+
+			constexpr auto tabFlag = ImGuiTabBarFlags_None | ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_FittingPolicyScroll;
+			if ( !ImGui::BeginTabBar( ( bufferId + "EditTab" ).c_str(), tabFlag ) ) { return; }
+			// else
+
+			
+			// Show Body's GUI
+			if ( ImGui::BeginTabItem( u8"ボディ-編集" ) )
+			{
+				ImGui::Text( u8"固有ID：%d", pBody->GetId() );
+
+				
+				float mass = pBody->GetMass();
+				ImGui::DragFloat( u8"質量", &mass, 0.005f );
+				pBody->SetMass( std::max( 0.001f, mass ) );
+
+
+				Donya::Vector3 pos = pBody->GetPosition();
+				ImGui::DragFloat3( u8"座標", &pos.x );
+				pBody->SetPosition( pos );
+				
+				
+				bool wantIgnore = pBody->NowIgnoringIntersection();
+				ImGui::Checkbox( u8"当たり判定を無視する", &wantIgnore );
+				pBody->SetIgnoringIntersection( wantIgnore );
+
+
+				ImGui::EndTabItem();
+			}
+
+
+			// Show Shape's GUIs
+			if ( ImGui::BeginTabItem( u8"形状-編集" ) )
+			{
+				auto pShapes = pBody->RequireRawShapePointers();
+
+				std::string caption;
+				std::shared_ptr<Donya::Collision::ShapeBase> pShape = nullptr;
+
+				const size_t count = ( pShapes ) ? pShapes->size() : 0U;
+				for ( size_t i = 0; i < count; ++i )
+				{
+					pShape = pShapes->at( i );
+					if ( !pShape ) { continue; }
+					// else
+
+					caption = Donya::MakeArraySuffix( i ) + ":" + Donya::Collision::GetShapeName( pShape->GetShapeKind() );
+					ShowShapeNode( caption, pShape.get() );
+				}
+
+				
+				ImGui::EndTabItem();
+			}
+			
+			if ( ImGui::BeginTabItem( u8"形状-追加/削除" ) )
+			{
+				// Append
+				if ( ImGui::Button( u8"末尾に追加" ) )
+				{
+					// For visualize, append some AABB
+					constexpr auto initType = Donya::Collision::InteractionType::Sensor;
+					constexpr auto initSize = Donya::Vector3{ 0.5f, 0.5f, 0.5f };
+					auto tmp = Donya::Collision::ShapeAABB::Generate( initType, initSize );
+					pBody->AddShape( tmp );
+				}
+				ImGui::Text( u8"" );
+
+
+				// Remove
+				auto pTargetShapes = pBody->RequireRawShapePointers();
+				
+				static std::unordered_map<std::string, std::shared_ptr<Donya::Collision::ShapeBase>> choosingShapeMap;
+				auto &choosingShape = choosingShapeMap[bufferId];
+
+				// Find erasing one
+				std::string caption;
+				std::shared_ptr<Donya::Collision::ShapeBase> pShape = nullptr;
+
+				const size_t shapeCount = ( pTargetShapes ) ? pTargetShapes->size() : 0U;
+				for ( size_t i = 0; i < shapeCount; ++i )
+				{
+					pShape = pTargetShapes->at( i );
+					if ( !pShape ) { continue; }
+					// else
+
+					caption = Donya::MakeArraySuffix( i ) + ":" + Donya::Collision::GetShapeName( pShape->GetShapeKind() );
+					if ( ImGui::Selectable( caption.c_str(), choosingShape == pShape ) )
+					{
+						choosingShape = pShape;
+					}
+				}
+				if ( ImGui::Selectable( u8"選択解除" ) )
+				{
+					choosingShape = nullptr;
+				}
+
+
+				// Erase if chosen
+				if ( choosingShape )
+				{
+					if ( ImGui::Button( u8"選択した形状を削除" ) )
+					{
+						// Find the index
+						size_t  eraseIndex = shapeCount;
+						for ( size_t i = 0; i < shapeCount; ++i )
+						{
+							pShape = pTargetShapes->at( i );
+							if ( !pShape ) { continue; }
+							// else
+
+							if ( choosingShape == pShape )
+							{
+								eraseIndex = i;
+								break;
+							}
+						}
+
+						// Erase it
+						if ( eraseIndex < shapeCount )
+						{
+							pTargetShapes->erase( pTargetShapes->begin() + eraseIndex );
+							if ( pTargetShapes->empty() )
+							{
+								choosingShape = nullptr;
+							}
+							else
+							{
+								eraseIndex = std::min( pTargetShapes->size() - 1, eraseIndex );
+								choosingShape = pTargetShapes->at( eraseIndex );
+							}
+						}
+					}
+				}
+				else
+				{
+					ImGui::TextDisabled( u8"選択した形状を削除" );
+				}
+
+
+				ImGui::EndTabItem();
+			}
+
+			if ( ImGui::BeginTabItem( u8"形状-並び替え" ) )
+			{
+				constexpr const char *columnId = "ReorderBodyShapesColumn";
+				ImGui::Columns( 2, columnId );
+
+
+				auto pShapes = pBody->RequireRawShapePointers();
+
+				size_t reorderFrom = ( pShapes ) ? pShapes->size() : 0U;
+				size_t reorderTo   = ( pShapes ) ? pShapes->size() : 0U;
+
+
+				// Find reorder target
+				std::string caption;
+				std::shared_ptr<Donya::Collision::ShapeBase> pShape = nullptr;
+
+				const size_t count = ( pShapes ) ? pShapes->size() : 0U;
+				for ( size_t i = 0; i < count; ++i )
+				{
+					pShape = pShapes->at( i );
+					if ( !pShape ) { continue; }
+					// else
+
+
+					// Name column
+					caption = Donya::MakeArraySuffix( i ) + ":" + Donya::Collision::GetShapeName( pShape->GetShapeKind() );
+					ImGui::Text( caption.c_str() );
+					ImGui::NextColumn();
+
+
+					// Arrow column
+					if ( ImGui::ArrowButton( ( caption + "Up" ).c_str(), ImGuiDir_Up ) )
+					{
+						reorderFrom = i;
+						reorderTo   = std::min( count, reorderFrom - 1 );
+					}
+					ImGui::SameLine();
+					if ( ImGui::ArrowButton( ( caption + "Down" ).c_str(), ImGuiDir_Down ) )
+					{
+						reorderFrom = i;
+						reorderTo   = std::max( 0U, reorderFrom + 1 );
+					}
+					ImGui::NextColumn();
+				}
+
+
+				// Reorder it if requested(reorderFrom != reorderTo)
+				if ( pShapes && reorderFrom != reorderTo && reorderFrom < pShapes->size() )
+				{
+					auto &from = pShapes->at( reorderFrom );
+					auto &to   = pShapes->at( reorderTo   );
+					std::swap( from, to );
+				}
+
+
+				ImGui::Columns( 1 ); // Put back to original
+
+				ImGui::EndTabItem();
+			}
+
+
+			//enum GUIMode
+			//{
+			//	Edit,	// Edit parameter of once
+			//	AddSub,	// Append/Erase a shape
+			//	Sort,	// Sort shapes
+			//};
+			//static std::unordered_map<std::string, GUIMode> modeMap;
+			//GUIMode &mode = modeMap[bufferId];
+			//// Show GUI by mode
+
+
+			ImGui::EndTabBar();
+
+			ImGui::TreePop();
 		}
 		void ShowAABBNode	( const std::string &nodeCaption, Donya::Collision::Box3F *p )
 		{
