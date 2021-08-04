@@ -149,12 +149,14 @@ namespace Donya
 			std::array<Vertex, 4 * 6>		vertices{};
 			std::array<size_t, 3 * 2 * 6>	indices{};
 
+			constexpr float RADIUS = 1.0f;
+
 			// HACK:I should be refactoring this makeing cube method, doing hard-coding :(
 			{
-				auto MakeVertex = []( XMFLOAT3 pos, XMFLOAT3 normal )->Vertex
+				auto MakeVertex = [&RADIUS]( XMFLOAT3 pos, XMFLOAT3 normal )->Vertex
 				{
 					Vertex v{};
-					v.pos = pos;
+					v.pos = pos * RADIUS;
 					v.normal = normal;
 					return v;
 				};
@@ -164,10 +166,10 @@ namespace Donya
 				// Top
 				{
 					XMFLOAT3 norm{ 0.0f, 1.0f, 0.0f };
-					vertices[vIndex + 0] = MakeVertex( { -0.5f, +0.5f, +0.5f }, norm ); // LTF
-					vertices[vIndex + 1] = MakeVertex( { +0.5f, +0.5f, +0.5f }, norm ); // RTF
-					vertices[vIndex + 2] = MakeVertex( { -0.5f, +0.5f, -0.5f }, norm ); // LTB
-					vertices[vIndex + 3] = MakeVertex( { +0.5f, +0.5f, -0.5f }, norm ); // RTB
+					vertices[vIndex + 0] = MakeVertex( { -1.0f, +1.0f, +1.0f }, norm ); // LTF
+					vertices[vIndex + 1] = MakeVertex( { +1.0f, +1.0f, +1.0f }, norm ); // RTF
+					vertices[vIndex + 2] = MakeVertex( { -1.0f, +1.0f, -1.0f }, norm ); // LTB
+					vertices[vIndex + 3] = MakeVertex( { +1.0f, +1.0f, -1.0f }, norm ); // RTB
 
 					indices[iIndex + 0] = vIndex + 0;
 					indices[iIndex + 1] = vIndex + 1;
@@ -182,10 +184,10 @@ namespace Donya
 				// Bottom
 				{
 					XMFLOAT3 norm{ 0.0f, -1.0f, 0.0f };
-					vertices[vIndex + 0] = MakeVertex( { -0.5f, -0.5f, +0.5f }, norm ); // LBF
-					vertices[vIndex + 1] = MakeVertex( { +0.5f, -0.5f, +0.5f }, norm ); // RBF
-					vertices[vIndex + 2] = MakeVertex( { -0.5f, -0.5f, -0.5f }, norm ); // LBB
-					vertices[vIndex + 3] = MakeVertex( { +0.5f, -0.5f, -0.5f }, norm ); // RBB
+					vertices[vIndex + 0] = MakeVertex( { -1.0f, -1.0f, +1.0f }, norm ); // LBF
+					vertices[vIndex + 1] = MakeVertex( { +1.0f, -1.0f, +1.0f }, norm ); // RBF
+					vertices[vIndex + 2] = MakeVertex( { -1.0f, -1.0f, -1.0f }, norm ); // LBB
+					vertices[vIndex + 3] = MakeVertex( { +1.0f, -1.0f, -1.0f }, norm ); // RBB
 
 					indices[iIndex + 0] = vIndex + 0;
 					indices[iIndex + 1] = vIndex + 2;
@@ -200,10 +202,10 @@ namespace Donya
 				// Right
 				{
 					XMFLOAT3 norm{ 1.0f, 0.0f, 0.0f };
-					vertices[vIndex + 0] = MakeVertex( { +0.5f, +0.5f, -0.5f }, norm ); // RTB
-					vertices[vIndex + 1] = MakeVertex( { +0.5f, +0.5f, +0.5f }, norm ); // RTF
-					vertices[vIndex + 2] = MakeVertex( { +0.5f, -0.5f, -0.5f }, norm ); // RBB
-					vertices[vIndex + 3] = MakeVertex( { +0.5f, -0.5f, +0.5f }, norm ); // RBF
+					vertices[vIndex + 0] = MakeVertex( { +1.0f, +1.0f, -1.0f }, norm ); // RTB
+					vertices[vIndex + 1] = MakeVertex( { +1.0f, +1.0f, +1.0f }, norm ); // RTF
+					vertices[vIndex + 2] = MakeVertex( { +1.0f, -1.0f, -1.0f }, norm ); // RBB
+					vertices[vIndex + 3] = MakeVertex( { +1.0f, -1.0f, +1.0f }, norm ); // RBF
 
 					indices[iIndex + 0] = vIndex + 0;
 					indices[iIndex + 1] = vIndex + 1;
@@ -218,10 +220,10 @@ namespace Donya
 				// Left
 				{
 					XMFLOAT3 norm{ -1.0f, 0.0f, 0.0f };
-					vertices[vIndex + 0] = MakeVertex( { -0.5f, +0.5f, -0.5f }, norm ); // LTB
-					vertices[vIndex + 1] = MakeVertex( { -0.5f, +0.5f, +0.5f }, norm ); // LTF
-					vertices[vIndex + 2] = MakeVertex( { -0.5f, -0.5f, -0.5f }, norm ); // LBB
-					vertices[vIndex + 3] = MakeVertex( { -0.5f, -0.5f, +0.5f }, norm ); // LBF
+					vertices[vIndex + 0] = MakeVertex( { -1.0f, +1.0f, -1.0f }, norm ); // LTB
+					vertices[vIndex + 1] = MakeVertex( { -1.0f, +1.0f, +1.0f }, norm ); // LTF
+					vertices[vIndex + 2] = MakeVertex( { -1.0f, -1.0f, -1.0f }, norm ); // LBB
+					vertices[vIndex + 3] = MakeVertex( { -1.0f, -1.0f, +1.0f }, norm ); // LBF
 
 					indices[iIndex + 0] = vIndex + 0;
 					indices[iIndex + 1] = vIndex + 2;
@@ -236,10 +238,10 @@ namespace Donya
 				// Back
 				{
 					XMFLOAT3 norm{ 0.0f, 0.0f, 1.0f };
-					vertices[vIndex + 0] = MakeVertex( { +0.5f, -0.5f, +0.5f }, norm ); // RBF
-					vertices[vIndex + 1] = MakeVertex( { +0.5f, +0.5f, +0.5f }, norm ); // RTF
-					vertices[vIndex + 2] = MakeVertex( { -0.5f, -0.5f, +0.5f }, norm ); // LBF
-					vertices[vIndex + 3] = MakeVertex( { -0.5f, +0.5f, +0.5f }, norm ); // LTF
+					vertices[vIndex + 0] = MakeVertex( { +1.0f, -1.0f, +1.0f }, norm ); // RBF
+					vertices[vIndex + 1] = MakeVertex( { +1.0f, +1.0f, +1.0f }, norm ); // RTF
+					vertices[vIndex + 2] = MakeVertex( { -1.0f, -1.0f, +1.0f }, norm ); // LBF
+					vertices[vIndex + 3] = MakeVertex( { -1.0f, +1.0f, +1.0f }, norm ); // LTF
 
 					indices[iIndex + 0] = vIndex + 0;
 					indices[iIndex + 1] = vIndex + 1;
@@ -254,10 +256,10 @@ namespace Donya
 				// Front
 				{
 					XMFLOAT3 norm{ 0.0f, 0.0f, -1.0f };
-					vertices[vIndex + 0] = MakeVertex( { +0.5f, -0.5f, -0.5f }, norm ); // RBB
-					vertices[vIndex + 1] = MakeVertex( { +0.5f, +0.5f, -0.5f }, norm ); // RTB
-					vertices[vIndex + 2] = MakeVertex( { -0.5f, -0.5f, -0.5f }, norm ); // LBB
-					vertices[vIndex + 3] = MakeVertex( { -0.5f, +0.5f, -0.5f }, norm ); // LTB
+					vertices[vIndex + 0] = MakeVertex( { +1.0f, -1.0f, -1.0f }, norm ); // RBB
+					vertices[vIndex + 1] = MakeVertex( { +1.0f, +1.0f, -1.0f }, norm ); // RTB
+					vertices[vIndex + 2] = MakeVertex( { -1.0f, -1.0f, -1.0f }, norm ); // LBB
+					vertices[vIndex + 3] = MakeVertex( { -1.0f, +1.0f, -1.0f }, norm ); // LTB
 
 					indices[iIndex + 0] = vIndex + 0;
 					indices[iIndex + 1] = vIndex + 2;
@@ -497,7 +499,7 @@ namespace Donya
 		{
 			// see http://rudora7.blog81.fc2.com/blog-entry-388.html
 
-			constexpr float RADIUS = 0.5f;
+			constexpr float RADIUS = 1.0f;
 			constexpr XMFLOAT3 CENTER{ 0.0f, 0.0f, 0.0f };
 
 			std::vector<Vertex> vertices{};
