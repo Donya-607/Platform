@@ -1037,9 +1037,9 @@ void SceneGame::Draw( float elapsedTime )
 		auto DrawCube = [&]( const Donya::Vector3 &pos, const Donya::Vector3 &scale = { 1.0f, 1.0f, 1.0f }, const Donya::Quaternion &rotation = Donya::Quaternion::Identity() )
 		{
 			constant.matWorld = Donya::Vector4x4::Identity();
-			constant.matWorld._11 = scale.x * 2.0f;
-			constant.matWorld._22 = scale.y * 2.0f;
-			constant.matWorld._33 = scale.z * 2.0f;
+			constant.matWorld._11 = scale.x;
+			constant.matWorld._22 = scale.y;
+			constant.matWorld._33 = scale.z;
 			constant.matWorld *= rotation.MakeRotationMatrix();
 			constant.matWorld._41 = pos.x;
 			constant.matWorld._42 = pos.y;

@@ -50,9 +50,9 @@ namespace
 	{
 		const auto wsPos = box.WorldPosition();
 		Donya::Vector4x4 W{};
-		W._11 = box.size.x * 2.0f;
-		W._22 = box.size.y * 2.0f;
-		W._33 = box.size.z * 2.0f;
+		W._11 = box.size.x;
+		W._22 = box.size.y;
+		W._33 = box.size.z;
 		W._41 = wsPos.x;
 		W._42 = wsPos.y;
 		W._43 = wsPos.z;

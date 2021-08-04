@@ -260,7 +260,7 @@ namespace Boss
 		{
 			const Donya::Vector4x4 W = MakeWorldMatrix
 			(
-				box.size * 2.0f,
+				box.size,
 				/* enableRotation = */ false,
 				box.WorldPosition()
 			);

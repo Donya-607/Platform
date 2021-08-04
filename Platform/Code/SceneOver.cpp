@@ -333,9 +333,9 @@ void SceneOver::Draw( float elapsedTime )
 						if ( pAABB )
 						{
 							const Donya::Vector3 size = pAABB->GetSize();
-							constant.matWorld._11 = size.x * 2.0f;
-							constant.matWorld._22 = size.y * 2.0f;
-							constant.matWorld._33 = size.z * 2.0f;
+							constant.matWorld._11 = size.x;
+							constant.matWorld._22 = size.y;
+							constant.matWorld._33 = size.z;
 							p->renderer.ProcessDrawingCube( constant );
 						}
 					}
@@ -346,9 +346,9 @@ void SceneOver::Draw( float elapsedTime )
 						if ( pSphere )
 						{
 							const float radius = pSphere->GetRadius();
-							constant.matWorld._11 = radius * 2.0f;
-							constant.matWorld._22 = radius * 2.0f;
-							constant.matWorld._33 = radius * 2.0f;
+							constant.matWorld._11 = radius;
+							constant.matWorld._22 = radius;
+							constant.matWorld._33 = radius;
 							p->renderer.ProcessDrawingSphere( constant );
 						}
 					}
@@ -442,8 +442,6 @@ void SceneOver::LoadJson()
 }
 void SceneOver::UseImGui()
 {
-	ImGui::ShowDemoWindow();
-
 	if ( !ImGui::BeginIfAllowed() ) { return; }
 	// else
 	

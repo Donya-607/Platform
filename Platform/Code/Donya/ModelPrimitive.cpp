@@ -610,7 +610,7 @@ namespace Donya
 			if ( wasCreated ) { return true; }
 			// else
 
-			constexpr float radius = 0.5f;
+			constexpr float radius = 1.0f;
 			const auto cubeSource  = Geometry::CreateCube( radius );
 
 			// The creation method requires std::vector.
@@ -757,7 +757,7 @@ namespace Donya
 			if ( wasCreated ) { return true; }
 			// else
 
-			constexpr float	radius			= 1.0f / 2.0f;
+			constexpr float	radius			= 1.0f;
 			const auto		sphereSource	= Geometry::CreateSphere( sliceCountH, sliceCountV, radius );
 			ID3D11Device	*pDevice		= Donya::GetDevice();
 			HRESULT			hr = S_OK;

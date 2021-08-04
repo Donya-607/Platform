@@ -92,7 +92,7 @@ namespace Enemy
 
 		const Donya::Vector4x4 matW = MakeWorldMatrix
 		(
-			body.size * 2.0f,
+			body.size,
 			/* enableRotation = */ false,
 			body.WorldPosition()
 		);

@@ -808,9 +808,9 @@ void SceneResult::Draw( float elapsedTime )
 		
 		auto DrawCube = [&]( const Donya::Vector3 &pos, const Donya::Vector3 &scale = { 1.0f, 1.0f, 1.0f } )
 		{
-			constant.matWorld._11 = scale.x * 2.0f;
-			constant.matWorld._22 = scale.y * 2.0f;
-			constant.matWorld._33 = scale.z * 2.0f;
+			constant.matWorld._11 = scale.x;
+			constant.matWorld._22 = scale.y;
+			constant.matWorld._33 = scale.z;
 			constant.matWorld._41 = pos.x;
 			constant.matWorld._42 = pos.y;
 			constant.matWorld._43 = pos.z;

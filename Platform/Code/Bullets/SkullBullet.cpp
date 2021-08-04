@@ -165,9 +165,9 @@ namespace Bullet
 		
 		auto Draw = [&]( float radius, const Donya::Vector4 &color )
 		{
-			baseWorld._11 = radius * 2.0f;
-			baseWorld._22 = radius * 2.0f;
-			baseWorld._33 = radius * 2.0f;
+			baseWorld._11 = radius;
+			baseWorld._22 = radius;
+			baseWorld._33 = radius;
 			constant.matWorld	= baseWorld;
 			constant.drawColor	= color;
 			pRenderer->UpdateConstant( constant );

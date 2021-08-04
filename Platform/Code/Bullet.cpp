@@ -371,8 +371,8 @@ namespace Bullet
 		// else
 
 		const Donya::Vector3 size	=
-									( useAABB	) ? body.size * 2.0f :
-									( useSphere	) ? hitSphere.radius * 2.0f :
+									( useAABB	) ? body.size :
+									( useSphere	) ? hitSphere.radius :
 									0.0f;
 		const Donya::Vector3 wsPos	=
 									( useAABB	) ? body.WorldPosition() :

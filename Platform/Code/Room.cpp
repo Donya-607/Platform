@@ -22,8 +22,8 @@ void Room::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) 
 {
 	constexpr float maxSize = 0.2f;
 	Donya::Vector4x4 W;
-	W._11 = area.size.x * 2.0f;
-	W._22 = area.size.y * 2.0f;
+	W._11 = area.size.x;
+	W._22 = area.size.y;
 	W._33 = maxSize;
 	W._41 = area.pos.x;
 	W._42 = area.pos.y;

@@ -77,9 +77,9 @@ namespace CheckPoint
 		{
 			const auto &area = element.GetArea();
 
-			constant.matWorld._11		= area.size.x * 2.0f;
-			constant.matWorld._22		= area.size.y * 2.0f;
-			constant.matWorld._33		= area.size.z * 2.0f;
+			constant.matWorld._11		= area.size.x;
+			constant.matWorld._22		= area.size.y;
+			constant.matWorld._33		= area.size.z;
 			constant.matWorld._41		= area.pos.x + area.offset.x;
 			constant.matWorld._42		= area.pos.y + area.offset.y;
 			constant.matWorld._43		= area.pos.z + area.offset.z;
