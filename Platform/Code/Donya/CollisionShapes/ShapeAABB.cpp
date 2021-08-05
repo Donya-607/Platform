@@ -60,6 +60,30 @@ namespace Donya
 		}
 
 
+		bool IsOverlappingToImpl( const ShapeAABB *pBox, const ShapePoint *pP )
+		{
+			return pP->IsOverlappingWith( pBox );
+		}
+		bool IsOverlappingToImpl( const ShapeAABB *pA, const ShapeAABB *pB )
+		{
+			// AABB vs AABB is the same as: the AABB that magnified by B's size vs B's Point
+			
+			ShapeAABB magnifiedA = *pA;
+			magnifiedA.size += pB->size;
+			ShapePoint pointB;
+			pointB.CopyBaseParameters( pB ); // For id management, we must use this method when copy
+
+			return IsOverlappingToImpl( &magnifiedA, &pointB );
+		}
+		bool IsOverlappingToImpl( const ShapeAABB *pBox, const ShapeSphere *pS )
+		{
+			// Compare the length between sphere radius and the distance from the closest point to sphere center within box
+			const Donya::Vector3 closest = pBox->FindClosestPointTo( pS->GetPosition() );
+			const Donya::Vector3 deltaSP = closest - pS->GetPosition(); // Sphere center -> Cloest point
+			const float distSq   = deltaSP.LengthSq();
+			const float radiusSq = pS->radius * pS->radius;
+			return ( distSq <= radiusSq );
+		}
 		HitResult IntersectToImpl( const ShapeAABB *pBox, const ShapePoint *pP )
 		{
 			HitResult result = pP->CalcIntersectionWith( pBox );
@@ -101,7 +125,7 @@ namespace Donya
 			HitResult result;
 			result.isHit = false;
 
-			// Compare the length between sphere radius and the closest point to sphere center within box
+			// Compare the length between sphere radius and the distance from the closest point to sphere center within box
 			const Donya::Vector3 closest = pBox->FindClosestPointTo( pS->GetPosition() );
 			const Donya::Vector3 deltaSP = closest - pS->GetPosition(); // Sphere center -> Cloest point
 			if ( deltaSP.LengthSq() <= pS->radius * pS->radius )
@@ -135,6 +159,49 @@ namespace Donya
 			const ShapeType *pDerived = dynamic_cast<const ShapeType *>( pBase );
 			_ASSERT_EXPR( pDerived, L"Error: Invalid dynamic_cast!" );
 			return pDerived;
+		}
+		bool ShapeAABB::IsOverlappingTo( const ShapeBase *pOther ) const
+		{
+			bool result = false;
+
+			switch ( pOther->GetShapeKind() )
+			{
+			case Shape::Empty:
+				// Can not intersect
+				break;
+			case Shape::Point:
+				{
+					const ShapePoint *pPoint = DownCastWithAssert<ShapePoint>( pOther );
+					if ( pPoint )
+					{
+						result = IsOverlappingToImpl( this, pPoint );
+					}
+				}
+				break;
+			case Shape::AABB:
+				{
+					const ShapeAABB *pAABB = DownCastWithAssert<ShapeAABB>( pOther );
+					if ( pAABB )
+					{
+						result = IsOverlappingToImpl( this, pAABB );
+					}
+				}
+				break;
+			case Shape::Sphere:
+				{
+					const ShapeSphere *pSphere = DownCastWithAssert<ShapeSphere>( pOther );
+					if ( pSphere )
+					{
+						result = IsOverlappingToImpl( this, pSphere );
+					}
+				}
+				break;
+			default:
+				_ASSERT_EXPR( 0, L"Failed: Not supported collision!" );
+				break;
+			}
+
+			return result;
 		}
 		HitResult ShapeAABB::IntersectTo( const ShapeBase *pOther ) const
 		{

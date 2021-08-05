@@ -43,12 +43,32 @@ namespace Donya
 		}
 
 
+		bool IsOverlappingToImpl( const ShapePoint *pA, const ShapePoint *pB )
+		{
+			return ( pA->GetPosition() == pB->GetPosition() );
+		}
+		bool IsOverlappingToImpl( const ShapePoint *pP, const ShapeAABB *pBox )
+		{
+			// Consider in Box's local space
+			Donya::Vector3 localPoint = pP->GetPosition() - pBox->GetPosition();
+			if ( pBox->size.x < fabsf( localPoint.x ) ) { return false; }
+			if ( pBox->size.y < fabsf( localPoint.y ) ) { return false; }
+			if ( pBox->size.z < fabsf( localPoint.z ) ) { return false; }
+			// else
+			return true;
+		}
+		bool IsOverlappingToImpl( const ShapePoint *pP, const ShapeSphere *pS )
+		{
+			const float distSq   = ( pP->GetPosition() - pS->GetPosition() ).LengthSq();
+			const float radiusSq = pS->radius * pS->radius;
+			return ( distSq <= radiusSq );
+		}
 		HitResult IntersectToImpl( const ShapePoint *pA, const ShapePoint *pB )
 		{
 			HitResult result;
 			result.isHit = false;
 
-			if ( pA->GetPosition() == pB->GetPosition() )
+			if ( IsOverlappingToImpl( pA, pB ) )
 			{
 				result.isHit = true;
 				result.contactPoint = pB->GetPosition();
@@ -136,6 +156,49 @@ namespace Donya
 			const ShapeType *pDerived = dynamic_cast<const ShapeType *>( pBase );
 			_ASSERT_EXPR( pDerived, L"Error: Invalid dynamic_cast!" );
 			return pDerived;
+		}
+		bool ShapePoint::IsOverlappingTo( const ShapeBase *pOther ) const
+		{
+			bool result = false;
+
+			switch ( pOther->GetShapeKind() )
+			{
+			case Shape::Empty:
+				// Can not intersect
+				break;
+			case Shape::Point:
+				{
+					const ShapePoint *pPoint = DownCastWithAssert<ShapePoint>( pOther );
+					if ( pPoint )
+					{
+						result = IsOverlappingToImpl( this, pPoint );
+					}
+				}
+				break;
+			case Shape::AABB:
+				{
+					const ShapeAABB *pAABB = DownCastWithAssert<ShapeAABB>( pOther );
+					if ( pAABB )
+					{
+						result = IsOverlappingToImpl( this, pAABB );
+					}
+				}
+				break;
+			case Shape::Sphere:
+				{
+					const ShapeSphere *pSphere = DownCastWithAssert<ShapeSphere>( pOther );
+					if ( pSphere )
+					{
+						result = IsOverlappingToImpl( this, pSphere );
+					}
+				}
+				break;
+			default:
+				_ASSERT_EXPR( 0, L"Failed: Not supported collision!" );
+				break;
+			}
+
+			return result;
 		}
 		HitResult ShapePoint::IntersectTo( const ShapeBase *pOther ) const
 		{

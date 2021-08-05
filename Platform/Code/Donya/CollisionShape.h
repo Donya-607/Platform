@@ -89,12 +89,25 @@ namespace Donya
 			// The closest point to "pt" within my shape
 			virtual Donya::Vector3	FindClosestPointTo( const Donya::Vector3 &pt )	const = 0;
 		protected:
-			// Calc the resolver of intersection with "pShape"
+			// Detect the intersection with "pOtherShape".
+			// Unlike to IntersectTo(), it just calc the detection.
+			virtual bool			IsOverlappingTo( const ShapeBase *pOtherShape ) const = 0;
+			// Calc the resolver of intersection with "pOtherShape".
+			// It also contain the detecting process(and store it into HitResult::isHit), so it is may heavy than IsOverrapingTo().
 			virtual HitResult		IntersectTo( const ShapeBase *pOtherShape )		const = 0;
-
-			// TODO: Provide a collision detection method(just detection only, do not calc a resolver)
 		public:
-			// Calc the resolver of intersection with "pShape"
+			// Detect the intersection with "pOtherShape".
+			// Unlike to IntersectTo(), it just calc the detection.
+			bool IsOverlappingWith( const ShapeBase *pOtherShape ) const
+			{
+				if ( !pOtherShape ) { return false; }
+				// else
+
+				const bool shouldIgnore = ( ignoreIntersection || pOtherShape->ignoreIntersection );
+				return ( shouldIgnore ) ? false : IsOverlappingTo( pOtherShape );
+			}
+			// Calc the resolver of intersection with "pOtherShape".
+			// It also contain the detecting process(and store it into HitResult::isHit), so it is may heavy than IsOverrapingWith().
 			HitResult CalcIntersectionWith( const ShapeBase *pOtherShape ) const
 			{
 				HitResult noHit;

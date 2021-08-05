@@ -38,6 +38,10 @@ namespace Donya
 		}
 
 
+		bool ShapeEmpty::IsOverlappingTo( const ShapeBase *pOther ) const
+		{
+			return false;
+		}
 		HitResult ShapeEmpty::IntersectTo( const ShapeBase *pOther ) const
 		{
 			HitResult result;

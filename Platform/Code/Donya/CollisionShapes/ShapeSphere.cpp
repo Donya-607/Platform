@@ -45,6 +45,25 @@ namespace Donya
 		}
 
 
+		bool IsOverlappingToImpl( const ShapeSphere *pS, const ShapePoint *pP )
+		{
+			return pP->IsOverlappingWith( pS );
+		}
+		bool IsOverlappingToImpl( const ShapeSphere *pS, const ShapeAABB *pBox )
+		{
+			return pBox->IsOverlappingWith( pS );
+		}
+		bool IsOverlappingToImpl( const ShapeSphere *pA, const ShapeSphere *pB )
+		{
+			// Sphere vs Sphere is the same as: the Sphere that magnified by B's radius vs B's Point
+
+			ShapeSphere magnifiedA = *pA;
+			magnifiedA.radius += pB->radius;
+			ShapePoint pointB;
+			pointB.CopyBaseParameters( pB ); // For id management, we must use this method when copy
+
+			return IsOverlappingToImpl( &magnifiedA, &pointB );
+		}
 		HitResult IntersectToImpl( const ShapeSphere *pS, const ShapePoint *pP )
 		{
 			HitResult result = pP->CalcIntersectionWith( pS );
@@ -96,6 +115,49 @@ namespace Donya
 			const ShapeType *pDerived = dynamic_cast<const ShapeType *>( pBase );
 			_ASSERT_EXPR( pDerived, L"Error: Invalid dynamic_cast!" );
 			return pDerived;
+		}
+		bool ShapeSphere::IsOverlappingTo( const ShapeBase *pOther ) const
+		{
+			bool result = false;
+
+			switch ( pOther->GetShapeKind() )
+			{
+			case Shape::Empty:
+				// Can not intersect
+				break;
+			case Shape::Point:
+				{
+					const ShapePoint *pPoint = DownCastWithAssert<ShapePoint>( pOther );
+					if ( pPoint )
+					{
+						result = IsOverlappingToImpl( this, pPoint );
+					}
+				}
+				break;
+			case Shape::AABB:
+				{
+					const ShapeAABB *pAABB = DownCastWithAssert<ShapeAABB>( pOther );
+					if ( pAABB )
+					{
+						result = IsOverlappingToImpl( this, pAABB );
+					}
+				}
+				break;
+			case Shape::Sphere:
+				{
+					const ShapeSphere *pSphere = DownCastWithAssert<ShapeSphere>( pOther );
+					if ( pSphere )
+					{
+						result = IsOverlappingToImpl( this, pSphere );
+					}
+				}
+				break;
+			default:
+				_ASSERT_EXPR( 0, L"Failed: Not supported collision!" );
+				break;
+			}
+
+			return result;
 		}
 		HitResult ShapeSphere::IntersectTo( const ShapeBase *pOther ) const
 		{

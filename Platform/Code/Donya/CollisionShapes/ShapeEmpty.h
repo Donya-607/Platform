@@ -39,6 +39,7 @@ namespace Donya
 			float CalcDistanceTo( const Donya::Vector3 &pt ) const override;
 			Donya::Vector3 FindClosestPointTo( const Donya::Vector3 &pt ) const override;
 		protected:
+			bool IsOverlappingTo( const ShapeBase *pOtherShape ) const override;
 			HitResult IntersectTo( const ShapeBase *pOtherShape ) const override;
 		};
 	}

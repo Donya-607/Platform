@@ -430,7 +430,6 @@ namespace ImGui
 				
 					static std::unordered_map<std::string, std::shared_ptr<Donya::Collision::ShapeBase>> choosingShapeMap;
 					auto &choosingShape = choosingShapeMap[bufferId];
-					choosingShape = nullptr; // Reset by below find process
 
 					// Find erasing one
 					std::string caption;
