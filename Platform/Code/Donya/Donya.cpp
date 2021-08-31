@@ -1015,18 +1015,54 @@ namespace Donya
 		if ( !smg ) { return false; }
 		// else
 
+
+		DWORD	lastError	= ERROR_SUCCESS;
+		HRESULT	hr			= S_OK;
+
+
 		HICON hIcon = LoadIcon( hInstance, MAKEINTRESOURCE( iconID ) );
 		if ( !hIcon )
 		{
-			auto err = GetLastError();
-			auto hr = HRESULT_FROM_WIN32( err );
+			Donya::OutputDebugStr
+			(
+				( L"[Donya ERROR] SetWindowIcon(): " + Donya::ConvertLastErrorMessage() ).c_str()
+			);
+			return false;
+		}
+		// else
+
+
+		// It is necessary for the validation of SetClassLong()'s return value
+		auto prevResult = GetClassLong( smg->hWnd, GCL_HICON );
+		lastError	= GetLastError();
+		hr			= HRESULT_FROM_WIN32( lastError );
+		if ( FAILED( hr ) )
+		{
+			SetLastError( lastError );
+			Donya::OutputDebugStr
+			(
+				( L"[Donya ERROR] SetWindowIcon(): " + Donya::ConvertLastErrorMessage() ).c_str()
+			);
 
 			return false;
 		}
 		// else
 
+
 		auto result = SetClassLong( smg->hWnd, GCL_HICON, ( LONG )( hIcon ) );
-		return ( result == 0 ) ? false : true;
+		if ( result == 0 && result != prevResult && prevResult != 0 ) // (prevResult == 0) means the icon was not set yet.
+		{
+			lastError	= GetLastError();
+			hr			= HRESULT_FROM_WIN32( lastError );
+
+			Donya::OutputDebugStr( Donya::ConvertLastErrorMessage().c_str() );
+
+			return false;
+		}
+		// else
+
+
+		return true;
 	}
 
 	void CalcFPS()
