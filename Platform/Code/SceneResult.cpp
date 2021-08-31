@@ -28,6 +28,7 @@
 #include "Fader.h"
 #include "FilePath.h"
 #include "FontHelper.h"
+#include "GameStatus.h"
 #include "Music.h"
 #include "Parameter.h"
 #include "PointLightStorage.h"
@@ -420,8 +421,11 @@ void SceneResult::Uninit()
 	Donya::Sound::Stop( Music::BGM_Result );
 }
 
-Scene::Result SceneResult::Update( float elapsedTime )
+Scene::Result SceneResult::Update()
 {
+	const float deltaTime = Status::GetDeltaTime();
+
+
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
 	{
@@ -458,10 +462,12 @@ Scene::Result SceneResult::Update( float elapsedTime )
 
 	PointLightStorage::Get().Clear();
 
+
 	controller.Update();
 
+
 	previousTimer = currentTimer;
-	currentTimer += elapsedTime;
+	currentTimer += deltaTime;
 #if USE_IMGUI
 	if ( dontAdvanceTimer )
 	{
@@ -469,7 +475,9 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	}
 #endif // USE_IMGUI
 
+
 	const auto &data = FetchParameter();
+
 
 	// State advacing
 	if ( status == State::Performance )
@@ -488,6 +496,7 @@ Scene::Result SceneResult::Update( float elapsedTime )
 		}
 	}
 
+
 	// Skip this scene
 	if ( !Fader::Get().IsExist() )
 	{
@@ -503,17 +512,18 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	}
 
 
-	if ( pMap ) { pMap->Update( elapsedTime ); }
+	// Update objects
+	if ( pMap ) { pMap->Update( deltaTime ); }
 	const Map emptyMap{}; // Used for empty argument. Fali safe.
 	const Map &mapRef = ( pMap ) ? *pMap : emptyMap;
 
-	PlayerUpdate( elapsedTime, mapRef );
-	EnemyUpdate( elapsedTime, GetPlayerPosition() );
-	Bullet::Admin::Get().Update( elapsedTime, currentScreen );
+	PlayerUpdate( deltaTime, mapRef );
+	EnemyUpdate( deltaTime, GetPlayerPosition() );
+	Bullet::Admin::Get().Update( deltaTime, currentScreen );
 
-	PlayerPhysicUpdate( elapsedTime, mapRef );
-	EnemyPhysicUpdate( elapsedTime, mapRef );
-	Bullet::Admin::Get().PhysicUpdate( elapsedTime, mapRef );
+	PlayerPhysicUpdate( deltaTime, mapRef );
+	EnemyPhysicUpdate( deltaTime, mapRef );
+	Bullet::Admin::Get().PhysicUpdate( deltaTime, mapRef );
 
 	currentScreen = CalcCurrentScreenPlane();
 	CameraUpdate();
@@ -521,12 +531,12 @@ Scene::Result SceneResult::Update( float elapsedTime )
 	Collision_BulletVSBullet();
 	Collision_BulletVSEnemy();
 
-	if ( pInputExplainer ) { pInputExplainer->Update( elapsedTime ); }
+	if ( pInputExplainer ) { pInputExplainer->Update( deltaTime ); }
 
 	return ReturnResult();
 }
 
-void SceneResult::Draw( float elapsedTime )
+void SceneResult::Draw()
 {
 	ClearBackGround();
 
@@ -1122,7 +1132,7 @@ void SceneResult::PlayerInit( const PlayerInitializer &initializer, const Map &t
 	pPlayer->Init( initializer, terrain, /* withAppearPerformance = */ false );
 	prevPlayerPos = pPlayer->GetPosition();
 }
-void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
+void SceneResult::PlayerUpdate( float deltaTime, const Map &terrain )
 {
 	if ( !pPlayer ) { return; }
 	// else
@@ -1190,20 +1200,20 @@ void SceneResult::PlayerUpdate( float elapsedTime, const Map &terrain )
 	default: break;
 	}
 
-	pPlayer->Update( elapsedTime, input, terrain );
+	pPlayer->Update( deltaTime, input, terrain );
 
 	if ( pMeter )
 	{
 		pMeter->SetDrawOption( data.ssMeterDrawPos, pPlayer->GetThemeColor(), data.ssMeterDrawScale );
 	}
 }
-void SceneResult::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
+void SceneResult::PlayerPhysicUpdate( float deltaTime, const Map &terrain )
 {
 	if ( !pPlayer ) { return; }
 	// else
 
 	prevPlayerPos = pPlayer->GetPosition();
-	pPlayer->PhysicUpdate( elapsedTime, terrain, -FLT_MAX, FLT_MAX );
+	pPlayer->PhysicUpdate( deltaTime, terrain, -FLT_MAX, FLT_MAX );
 }
 Donya::Vector3 SceneResult::GetPlayerPosition() const
 {
@@ -1227,7 +1237,7 @@ void SceneResult::RegenerateEnemies( const Donya::Vector3 &targetPos )
 
 	extinctTime = -1.0f;
 }
-void SceneResult::EnemyUpdate( float elapsedTime, const Donya::Vector3 &targetPos )
+void SceneResult::EnemyUpdate( float deltaTime, const Donya::Vector3 &targetPos )
 {
 	const auto &data	= FetchParameter();
 	const auto &source	= data.enemies;
@@ -1264,7 +1274,7 @@ void SceneResult::EnemyUpdate( float elapsedTime, const Donya::Vector3 &targetPo
 			extincted = false;
 		}
 
-		pIt->Update( elapsedTime, targetPos, unlimitedScreen );
+		pIt->Update( deltaTime, targetPos, unlimitedScreen );
 	}
 
 	if ( extincted && extinctTime < 0.0f )
@@ -1272,13 +1282,13 @@ void SceneResult::EnemyUpdate( float elapsedTime, const Donya::Vector3 &targetPo
 		extinctTime = currentTimer;
 	}
 }
-void SceneResult::EnemyPhysicUpdate( float elapsedTime, const Map &terrain )
+void SceneResult::EnemyPhysicUpdate( float deltaTime, const Map &terrain )
 {
 	for ( auto &pIt : enemies )
 	{
 		if ( !pIt ) { continue; }
 		// else
-		pIt->PhysicUpdate( elapsedTime, terrain );
+		pIt->PhysicUpdate( deltaTime, terrain );
 	}
 }
 void SceneResult::EnemyDraw( RenderingHelper *pRenderer )

@@ -61,10 +61,8 @@ public:
 public:
 	void	Init() override;
 	void	Uninit() override;
-
-	Result	Update( float elapsedTime ) override;
-
-	void	Draw( float elapsedTime ) override;
+	Result	Update() override;
+	void	Draw() override;
 private:
 	Donya::Vector3 CalcCenterPoint( const Map &terrain ) const;
 
@@ -78,13 +76,13 @@ private:
 	void	CameraUpdate();
 
 	void	PlayerInit( const PlayerInitializer &initializer, const Map &terrain );
-	void	PlayerUpdate( float elapsedTime, const Map &terrain );
-	void	PlayerPhysicUpdate( float elapsedTime, const Map &terrain );
+	void	PlayerUpdate( float deltaTime, const Map &terrain );
+	void	PlayerPhysicUpdate( float deltaTime, const Map &terrain );
 	Donya::Vector3 GetPlayerPosition() const;
 
 	void	RegenerateEnemies( const Donya::Vector3 &targetPos );
-	void	EnemyUpdate( float elapsedTime, const Donya::Vector3 &targetPos );
-	void	EnemyPhysicUpdate( float elapsedTime, const Map &terrain );
+	void	EnemyUpdate( float deltaTime, const Donya::Vector3 &targetPos );
+	void	EnemyPhysicUpdate( float deltaTime, const Map &terrain );
 	void	EnemyDraw( RenderingHelper *pRenderer );
 
 	void	Collision_BulletVSBullet();

@@ -28,6 +28,7 @@
 #include "Fader.h"
 #include "FilePath.h"
 #include "FontHelper.h"
+#include "GameStatus.h"
 #include "Input.h"
 #include "Item.h"
 #include "Math.h"					// Use CalcBezierCurve()
@@ -603,8 +604,11 @@ void SceneTitle::Uninit()
 	Donya::Sound::Stop( Music::BGM_Title );
 }
 
-Scene::Result SceneTitle::Update( float elapsedTime )
+Scene::Result SceneTitle::Update()
 {
+	const float deltaTime = Status::GetDeltaTime();
+
+
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F2 ) )
 	{
@@ -655,13 +659,19 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	PointLightStorage::Get().Clear();
 
+
 	UpdateInput();
+
+
+
+	// Update things related to the Performance
+	// like Camera and Item.
 
 	if ( transCameraTime < 1.0f )
 	{
 		const float takeSecond = FetchCameraOrDefault( currCameraStatus ).lerpSecFromOther;
 		const float advance = 1.0f / takeSecond;
-		transCameraTime += advance * elapsedTime;
+		transCameraTime += advance * deltaTime;
 		if ( 1.0f <= transCameraTime )
 		{
 			beforeCameraStatus = currCameraStatus;
@@ -671,8 +681,8 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	
 	UpdateChooseItem();
 
-	elapsedSecond += elapsedTime;
-	if ( wasDecided ) { afterDecidedTimer += elapsedTime; }
+	elapsedSecond += deltaTime;
+	if ( wasDecided ) { afterDecidedTimer += deltaTime; }
 
 	// Reload save file regularly for apply a direct changes
 	// TODO: To be parameter the magic-number "1.0f"
@@ -682,11 +692,15 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 		LoadSaveData();
 	}
 
-	UpdatePerformance( elapsedTime );
+	UpdatePerformance( deltaTime );
 
-	const float deltaTimeForMove = elapsedTime;
 
-	if ( pSky ) { pSky->Update( elapsedTime ); }
+
+	// Update objects
+
+	const float deltaTimeForMove = deltaTime;
+
+	if ( pSky ) { pSky->Update( deltaTime ); }
 
 	if ( pMap ) { pMap->Update( deltaTimeForMove ); }
 	const Map  emptyMap{}; // Used for empty argument. Fali safe.
@@ -734,7 +748,7 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 
 	// CameraUpdate() depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
-	CameraUpdate( elapsedTime );
+	CameraUpdate( deltaTime );
 
 	const auto &currCamera = GetCurrentCamera( currCameraStatus );
 	Effect::Admin::Get().SetViewMatrix( currCamera.CalcViewMatrix() );
@@ -743,7 +757,7 @@ Scene::Result SceneTitle::Update( float elapsedTime )
 	return ReturnResult();
 }
 
-void SceneTitle::Draw( float elapsedTime )
+void SceneTitle::Draw()
 {
 	ClearBackGround();
 
@@ -1381,7 +1395,7 @@ void SceneTitle::UpdateChooseItem()
 	}
 }
 
-void SceneTitle::UpdatePerformance( float elapsedTime )
+void SceneTitle::UpdatePerformance( float deltaTime )
 {
 	if ( performanceStatus == PerformanceState::NotPerforming )
 	{
@@ -1420,7 +1434,7 @@ void SceneTitle::UpdatePerformance( float elapsedTime )
 		}
 	}
 
-	performTimer += elapsedTime;
+	performTimer += deltaTime;
 
 	const auto &data = FetchParameter();
 	switch ( performanceStatus )
@@ -1590,7 +1604,7 @@ void SceneTitle::AssignCameraPos()
 	lightCamera.SetPosition  ( playerPos + offset );
 	lightCamera.SetFocusPoint( playerPos );
 }
-void SceneTitle::CameraUpdate( float elapsedTime )
+void SceneTitle::CameraUpdate( float deltaTime )
 {
 	const auto &data = FetchParameter();
 
@@ -1739,15 +1753,15 @@ void SceneTitle::PlayerInit( const Map &terrain )
 	pPlayer->Init( playerIniter, terrain, /* withAppearPerformance = */ false );
 	pPlayer->ApplyAvailableWeapon( Definition::WeaponKind::Shoryuken );
 }
-void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
+void SceneTitle::PlayerUpdate( float deltaTime, const Map &terrain )
 {
 	if ( !pPlayer ) { return; }
 	// else
 
-	const Player::Input input = MakePlayerInput( elapsedTime );
+	const Player::Input input = MakePlayerInput( deltaTime );
 
 	const bool oldShoryuStatus = pPlayer->NowShoryuken();
-	pPlayer->Update( elapsedTime, input, terrain );
+	pPlayer->Update( deltaTime, input, terrain );
 	if ( !oldShoryuStatus && pPlayer->NowShoryuken() )
 	{
 		auto &saveAdmin = SaveData::Admin::Get();
@@ -1756,7 +1770,7 @@ void SceneTitle::PlayerUpdate( float elapsedTime, const Map &terrain )
 	}
 
 }
-Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
+Player::Input SceneTitle::MakePlayerInput( float deltaTime )
 {
 	Player::Input input{};
 
@@ -1818,7 +1832,7 @@ Player::Input SceneTitle::MakePlayerInput( float elapsedTime )
 		}
 		else
 		{
-			elapsedSecondSinceLastInput += elapsedTime;
+			elapsedSecondSinceLastInput += deltaTime;
 			if ( FetchParameter().resetCameraWaitSec <= elapsedSecondSinceLastInput )
 			{
 				ActivateReturning();
@@ -1871,7 +1885,7 @@ Donya::Vector3 SceneTitle::GetPlayerPosition() const
 	return ( pPlayer ) ? pPlayer->GetPosition() : playerIniter.GetWorldInitialPos();
 }
 
-void SceneTitle::BossUpdate( float elapsedTime, const Donya::Vector3 &targetPos )
+void SceneTitle::BossUpdate( float deltaTime, const Donya::Vector3 &targetPos )
 {
 	if ( !pBoss ) { return; }
 	// else
@@ -1892,7 +1906,7 @@ void SceneTitle::BossUpdate( float elapsedTime, const Donya::Vector3 &targetPos 
 		input.dontMove		= true;
 	}
 
-	pBoss->Update( elapsedTime, input );
+	pBoss->Update( deltaTime, input );
 
 	if ( toLeave )
 	{

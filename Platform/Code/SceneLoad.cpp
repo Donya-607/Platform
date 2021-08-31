@@ -363,17 +363,20 @@ void SceneLoad::Uninit()
 	loadPerformer.Uninit();
 }
 
-Scene::Result SceneLoad::Update( float elapsedTime )
+Scene::Result SceneLoad::Update()
 {
+	const float deltaTime = Donya::GetElapsedTime();
+
+
 #if USE_IMGUI
 	UseImGui();
 #endif // USE_IMGUI
 
 #if DEBUG_MODE
-	elapsedTimer += elapsedTime;
+	elapsedTimer += deltaTime;
 #endif // DEBUG_MODE
 
-	loadPerformer.UpdateIfActive( elapsedTime );
+	loadPerformer.UpdateIfActive( deltaTime );
 
 	if ( !Fader::Get().IsExist() && AllFinished() )
 	{
@@ -406,7 +409,7 @@ Scene::Result SceneLoad::Update( float elapsedTime )
 	return ReturnResult();
 }
 
-void SceneLoad::Draw( float elapsedTime )
+void SceneLoad::Draw()
 {
 	ClearBackGround();
 

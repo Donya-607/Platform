@@ -42,21 +42,19 @@ public:
 public:
 	void	Init() override;
 	void	Uninit() override;
-
-	Result	Update( float elapsedTime ) override;
-
-	void	Draw( float elapsedTime ) override;
+	Result	Update() override;
+	void	Draw() override;
 private:
 	bool	WannaSkip() const;
 	bool	HasRemainLogo() const;
 	void	AdvanceLogoIndexOrEnd();
 private:
 	void	InitFadeIn();
-	void	UpdateFadeIn( float elapsedTime );
+	void	UpdateFadeIn( float deltaTime );
 	void	InitWait();
-	void	UpdateWait( float elapsedTime );
+	void	UpdateWait( float deltaTime );
 	void	InitFadeOut();
-	void	UpdateFadeOut( float elapsedTime );
+	void	UpdateFadeOut( float deltaTime );
 	void	InitEnd();
 private:
 	void	ClearBackGround() const;

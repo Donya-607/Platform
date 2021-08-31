@@ -98,16 +98,14 @@ public:
 public:
 	void	Init() override;
 	void	Uninit() override;
-
-	Result	Update( float elapsedTime ) override;
-
-	void	Draw( float elapsedTime ) override;
+	Result	Update() override;
+	void	Draw() override;
 private:
 	void	LoadSaveData();
 
 	void	UpdateInput();
 	void	UpdateChooseItem();
-	void	UpdatePerformance( float elapsedTime );
+	void	UpdatePerformance( float deltaTime );
 
 	void	ChangeCameraState( CameraState next );
 
@@ -116,17 +114,17 @@ private:
 
 	void	CameraInit();
 	void	AssignCameraPos();
-	void	CameraUpdate( float elapsedTime );
+	void	CameraUpdate( float deltaTime );
 	const Donya::ICamera &GetCurrentCamera( CameraState key ) const;
 
 	Donya::Vector4x4 CalcLightViewMatrix() const;
 
 	void	PlayerInit( const Map &terrain );
-	void	PlayerUpdate( float elapsedTime, const Map &terrain );
-	Player::Input  MakePlayerInput( float elapsedTime );
+	void	PlayerUpdate( float deltaTime, const Map &terrain );
+	Player::Input  MakePlayerInput( float deltaTime );
 	Donya::Vector3 GetPlayerPosition() const;
 
-	void	BossUpdate( float elapsedTime, const Donya::Vector3 &targetPos );
+	void	BossUpdate( float deltaTime, const Donya::Vector3 &targetPos );
 
 	int		CalcCurrentRoomID() const;
 

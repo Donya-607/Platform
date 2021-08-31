@@ -53,8 +53,8 @@ public:
 	Scene() {}
 	virtual ~Scene() {}
 public:
-	virtual void	Init()			= 0;
-	virtual void	Uninit()		= 0;
-	virtual Result	Update( float elapsedTime )	= 0;
-	virtual void	Draw( float elapsedTime )	= 0;
+	virtual void	Init()		= 0;
+	virtual void	Uninit()	= 0;
+	virtual Result	Update()	= 0;
+	virtual void	Draw()		= 0;
 };

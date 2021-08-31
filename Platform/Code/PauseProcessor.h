@@ -60,7 +60,7 @@ public:
 
 	Result	Update( float elapsedTime, const Donya::XInput &controller );
 
-	void	Draw( float elapsedTime );
+	void	Draw();
 private:
 	void	SetVolume( float volume );
 	void	UpdateInput( const Donya::XInput &controller );

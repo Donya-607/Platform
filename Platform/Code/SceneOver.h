@@ -50,10 +50,8 @@ private:
 public:
 	void	Init() override;
 	void	Uninit() override;
-
-	Result	Update( float elapsedTime ) override;
-
-	void	Draw( float elapsedTime ) override;
+	Result	Update() override;
+	void	Draw() override;
 private:
 	void	ClearBackGround() const;
 	void	StartFade();

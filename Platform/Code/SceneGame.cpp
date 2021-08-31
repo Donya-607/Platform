@@ -32,6 +32,7 @@
 #include "Fader.h"
 #include "FilePath.h"
 #include "FontHelper.h"
+#include "GameStatus.h"
 #include "Input.h"
 #include "Item.h"
 #include "ItemParam.h"				// Use a recovery amount
@@ -498,8 +499,11 @@ void SceneGame::Uninit()
 	Donya::Sound::Stop( currentPlayingBGM, /* isEnableForAll = */ true );
 }
 
-Scene::Result SceneGame::Update( float elapsedTime )
+Scene::Result SceneGame::Update()
 {
+	float deltaTime = Status::GetDeltaTime();
+
+
 #if DEBUG_MODE
 	if ( status != State::FirstInitialize )
 	{
@@ -543,7 +547,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 #endif // DEBUG_MODE
 
 #if USE_IMGUI
-	UseImGui( elapsedTime );
+	UseImGui();
 
 	// Apply for be able to see an adjustment immediately
 	if ( status != State::FirstInitialize )
@@ -556,15 +560,21 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 #endif // USE_IMGUI
 
-	loadPerformer.UpdateIfActive( elapsedTime );
 
+	// Update loading performance
+	loadPerformer.UpdateIfActive( deltaTime );
+	// And early-return here until the loading is finish
 	if ( status == State::FirstInitialize )
 	{
-		FirstInitStateUpdate( elapsedTime );
+		FirstInitStateUpdate( deltaTime );
 		Scene::Result noop{ Scene::Request::NONE, Scene::Type::Null };
 		return noop;
 	}
 	// else
+
+
+
+	// Update Main game
 
 
 	const auto &data = FetchParameter();
@@ -582,21 +592,29 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	controller.Update();
 	AssignCurrentInput();
 
-	const float updateSpeedFactor = PauseUpdate( elapsedTime );
-	elapsedTime *= updateSpeedFactor;
 
-	stageTimer += elapsedTime;
+	const float  updateSpeedFactor = PauseUpdate( deltaTime );
+	deltaTime *= updateSpeedFactor;
+	Status::SetDeltaTime( deltaTime );
+
+	stageTimer += deltaTime;
 	ReadyPlayer();
 
-	const float deltaTimeForMove  = ( scroll.active ) ? 0.0f : elapsedTime;
-	const float deltaTimeForAnime = ( scroll.active ) ? 0.0f : elapsedTime;
 
 
-	if ( pSky	) { pSky->Update( elapsedTime );		}
+	// Update objects
+
+
+	const float deltaTimeForMove  = ( scroll.active ) ? 0.0f : deltaTime;
+	const float deltaTimeForAnime = ( scroll.active ) ? 0.0f : deltaTime;
+
+
+
+	if ( pSky	) { pSky->Update( deltaTime );			}
 	if ( pMap	) { pMap->Update( deltaTimeForMove );	}
 	if ( pDoors	)
 	{
-		pDoors->Update( elapsedTime );
+		pDoors->Update( deltaTime );
 		if ( pMap )
 		{
 			pMap->ClearExtraSolids();
@@ -624,10 +642,10 @@ Scene::Result SceneGame::Update( float elapsedTime )
 	}
 
 
-	StageStateUpdate( elapsedTime );
-	AppearBossStateUpdate( elapsedTime );
-	VSBossStateUpdate( elapsedTime );
-	ClearStateUpdate( elapsedTime );
+	StageStateUpdate( deltaTime );
+	AppearBossStateUpdate( deltaTime );
+	VSBossStateUpdate( deltaTime );
+	ClearStateUpdate( deltaTime );
 
 	
 	PlayerUpdate( deltaTimeForMove, mapRef );
@@ -667,7 +685,7 @@ Scene::Result SceneGame::Update( float elapsedTime )
 
 	// AssignCameraPos() (will called in CameraUpdate()) depends the currentScreen, so I should update that before CameraUpdate().
 	currentScreen = CalcCurrentScreenPlane();
-	CameraUpdate( elapsedTime );
+	CameraUpdate( deltaTime );
 
 	UpdatePlayerIniter();
 
@@ -703,13 +721,13 @@ Scene::Result SceneGame::Update( float elapsedTime )
 		pPlayer->KillMeIfCollideToKillAreas( deltaTimeForMove, mapRef );
 	}
 
-	if ( pPlayerMeter ) { pPlayerMeter->Update( elapsedTime ); }
-	if ( pSkullMeter  ) { pSkullMeter->Update( elapsedTime );  }
+	if ( pPlayerMeter ) { pPlayerMeter->Update( deltaTime ); }
+	if ( pSkullMeter  ) { pSkullMeter->Update( deltaTime );  }
 
 	return ReturnResult();
 }
 
-void SceneGame::Draw( float elapsedTime )
+void SceneGame::Draw()
 {
 	ClearBackGround();
 
@@ -1120,7 +1138,7 @@ void SceneGame::Draw( float elapsedTime )
 
 	if ( pPauser )
 	{
-		pPauser->Draw( elapsedTime );
+		pPauser->Draw();
 	}
 
 	loadPerformer.DrawIfActive( 0.0f );
@@ -1339,7 +1357,7 @@ void SceneGame::AssignCurrentInput()
 	currentInput = Input::MakeCurrentInput( controller, deadZone );
 }
 
-float SceneGame::PauseUpdate( float elapsedTime )
+float SceneGame::PauseUpdate( float deltaTime )
 {
 	float updateSpeedFactor = 1.0f;
 
@@ -1370,7 +1388,7 @@ float SceneGame::PauseUpdate( float elapsedTime )
 
 	using Cmd = PauseProcessor::Result::Command;
 
-	const auto result = pPauser->Update( elapsedTime, controller );
+	const auto result = pPauser->Update( deltaTime, controller );
 	if ( result.command == Cmd::Noop ) { return updateSpeedFactor; }
 	// else
 
@@ -1419,7 +1437,7 @@ bool SceneGame::IsPlayingStatus( State verify ) const
 	return ( status == State::Stage || status == State::VSBoss );
 }
 
-void SceneGame::FirstInitStateUpdate( float elapsedTime )
+void SceneGame::FirstInitStateUpdate( float deltaTime )
 {
 	if ( status != State::FirstInitialize ) { return; }
 	// else
@@ -1440,7 +1458,7 @@ void SceneGame::FirstInitStateUpdate( float elapsedTime )
 	PlayBGM( currentPlayingBGM );
 }
 
-void SceneGame::StageStateUpdate( float elapsedTime )
+void SceneGame::StageStateUpdate( float deltaTime )
 {
 	if ( status != State::Stage ) { return; }
 	// else
@@ -1482,7 +1500,7 @@ void SceneGame::AppearBossStateInit()
 	willUnlockWeapon	= Definition::WeaponKind::Buster; // Init
 	FadeOutBGM();
 }
-void SceneGame::AppearBossStateUpdate( float elapsedTime )
+void SceneGame::AppearBossStateUpdate( float deltaTime )
 {
 	if ( status != State::AppearBoss	) { return; }
 	if ( scroll.active					) { return; }
@@ -1548,7 +1566,7 @@ void SceneGame::VSBossStateInit( Definition::WeaponKind bossWeapon )
 	willUnlockWeapon	= bossWeapon;
 	PlayBGM( Music::BGM_Boss );
 }
-void SceneGame::VSBossStateUpdate( float elapsedTime )
+void SceneGame::VSBossStateUpdate( float deltaTime )
 {
 	if ( status != State::VSBoss	) { return; }
 	if ( !isThereBoss				) { return; }
@@ -1611,7 +1629,7 @@ void SceneGame::ClearStateInit()
 
 	FadeOutBGM();
 }
-void SceneGame::ClearStateUpdate( float elapsedTime )
+void SceneGame::ClearStateUpdate( float deltaTime )
 {
 	if ( status != State::Clear && status != State::WaitToFade ) { return; }
 	// else
@@ -1622,7 +1640,7 @@ void SceneGame::ClearStateUpdate( float elapsedTime )
 	const float secSecond	= data.waitSecBet_LeaveFade + secFirst;
 
 	const float prevTimer = clearTimer;
-	clearTimer += elapsedTime;
+	clearTimer += deltaTime;
 
 	if ( secPlaySE <= clearTimer )
 	{
@@ -1747,7 +1765,7 @@ void SceneGame::AssignCameraPos()
 	lightCamera.SetPosition  ( playerPos + offset );
 	lightCamera.SetFocusPoint( playerPos );
 }
-void SceneGame::CameraUpdate( float elapsedTime )
+void SceneGame::CameraUpdate( float deltaTime )
 {
 	const auto &data = FetchParameter();
 
@@ -1773,7 +1791,7 @@ void SceneGame::CameraUpdate( float elapsedTime )
 
 	if ( scroll.active )
 	{
-		scroll.elapsedSecond += elapsedTime;
+		scroll.elapsedSecond += deltaTime;
 		if ( data.scrollTakeSecond <= scroll.elapsedSecond )
 		{
 			scroll.active = false;
@@ -2024,15 +2042,15 @@ void SceneGame::PlayerInit( const PlayerInitializer &initializer, const Map &ter
 	pPlayerMeter->Init( maxHP, maxHP, maxHP );
 	pPlayerMeter->SetDrawOption( meterData.hpDrawPos, pPlayer->GetThemeColor(), meterData.hpDrawScale );
 }
-void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
+void SceneGame::PlayerUpdate( float deltaTime, const Map &terrain )
 {
 	if ( !pPlayer ) { return; }
 	// else
 
-	const Player::Input input = MakePlayerInput( elapsedTime );
+	const Player::Input input = MakePlayerInput( deltaTime );
 
 	const bool prevIsWinning = pPlayer->NowWinningPose();
-	pPlayer->Update( elapsedTime, input, terrain );
+	pPlayer->Update( deltaTime, input, terrain );
 	const bool currIsWinning = pPlayer->NowWinningPose();
 
 	if ( status == State::WaitToFade )
@@ -2055,7 +2073,7 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 			}
 		}
 
-		elapsedSecondsAfterMiss += elapsedTime;
+		elapsedSecondsAfterMiss += deltaTime;
 	}
 	else
 	{
@@ -2070,7 +2088,7 @@ void SceneGame::PlayerUpdate( float elapsedTime, const Map &terrain )
 		pPlayerMeter->SetDrawOption( meterData.hpDrawPos, pPlayer->GetThemeColor(), meterData.hpDrawScale );
 	}
 }
-void SceneGame::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
+void SceneGame::PlayerPhysicUpdate( float deltaTime, const Map &terrain )
 {
 	if ( !pPlayer ) { return; }
 	// else
@@ -2092,7 +2110,7 @@ void SceneGame::PlayerPhysicUpdate( float elapsedTime, const Map &terrain )
 							: std::max( currentRoomArea.Max().x, currentScreen.Max().x );
 
 	prevPlayerPos = pPlayer->GetPosition();
-	pPlayer->PhysicUpdate( elapsedTime, terrain, leftBorder, rightBorder );
+	pPlayer->PhysicUpdate( deltaTime, terrain, leftBorder, rightBorder );
 }
 Donya::Vector3 SceneGame::GetPlayerPosition() const
 {
@@ -2120,7 +2138,7 @@ Donya::Vector3 SceneGame::MakeBossRoomInitialPosOf( int roomId ) const
 
 	return destination;
 }
-Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
+Player::Input  SceneGame::MakePlayerInput( float deltaTime )
 {
 	Player::Input input{};
 
@@ -2138,7 +2156,7 @@ Player::Input  SceneGame::MakePlayerInput( float elapsedTime )
 		if ( wantLeave )
 		{
 			// Discard the elapsed time when heading to destination
-			clearTimer -= elapsedTime;
+			clearTimer -= deltaTime;
 
 			const Donya::Vector3 playerPos	= pPlayer->GetPosition();
 			const Room		*pCurrentRoom	= ( pHouse ) ? pHouse->FindRoomOrNullptr( currentRoomID ) : nullptr;
@@ -2220,7 +2238,7 @@ bool SceneGame::NowThroughingDoor() const
 	return pThroughingDoor;
 }
 
-void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+void SceneGame::BossUpdate( float deltaTime, const Donya::Vector3 &wsTargetPos )
 {
 	if ( !pBossContainer ) { return; }
 	// else
@@ -2234,7 +2252,7 @@ void SceneGame::BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos
 		input.pressShot					= Input::HasTrue( currentInput.useShots );
 	}
 
-	pBossContainer->Update( elapsedTime, input );
+	pBossContainer->Update( deltaTime, input );
 
 	const auto pBoss = pBossContainer->GetBossOrNullptr( currentRoomID );
 	if ( pBoss )
@@ -2954,7 +2972,7 @@ namespace
 
 	constexpr float bgAlpha = 0.6f;
 }
-void SceneGame::UseImGui( float elapsedTime )
+void SceneGame::UseImGui()
 {
 	if ( status == State::FirstInitialize )
 	{

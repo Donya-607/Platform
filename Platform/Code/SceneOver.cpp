@@ -24,6 +24,7 @@
 #include "Effect/EffectAdmin.h"
 #include "Fader.h"
 #include "FontHelper.h"
+#include "GameStatus.h"
 #include "Music.h"
 #include "Parameter.h"
 #include "Player.h"
@@ -177,7 +178,7 @@ void SceneOver::Uninit()
 	Effect::Admin::Get().ClearInstances();
 }
 
-Scene::Result SceneOver::Update( float elapsedTime )
+Scene::Result SceneOver::Update()
 {
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Trigger( VK_F2 ) && !Fader::Get().IsExist() )
@@ -192,9 +193,12 @@ Scene::Result SceneOver::Update( float elapsedTime )
 	UseImGui();
 #endif // USE_IMGUI
 
+
 	controller.Update();
 
-	timer += elapsedTime;
+
+	const float deltaTime = Status::GetDeltaTime();
+	timer += deltaTime;
 	if ( FetchParameter().waitToFadeSecond <= timer )
 	{
 		if ( !Fader::Get().IsExist() )
@@ -251,8 +255,8 @@ Scene::Result SceneOver::Update( float elapsedTime )
 		if ( Donya::Keyboard::Press( VK_RSHIFT ) ) { velB.z += speed; }
 		if ( Donya::Keyboard::Press( VK_END    ) ) { velB.z -= speed; }
 
-		posA += velA * elapsedTime;
-		posB += velB * elapsedTime;
+		posA += velA * deltaTime;
+		posB += velB * deltaTime;
 
 		bodyA.SetPosition( posA );
 		bodyB.SetPosition( posB );
@@ -272,7 +276,7 @@ Scene::Result SceneOver::Update( float elapsedTime )
 	return ReturnResult();
 }
 
-void SceneOver::Draw( float elapsedTime )
+void SceneOver::Draw()
 {
 	ClearBackGround();
 

@@ -106,10 +106,8 @@ public:
 public:
 	void	Init() override;
 	void	Uninit() override;
-
-	Result	Update( float elapsedTime ) override;
-
-	void	Draw( float elapsedTime ) override;
+	Result	Update() override;
+	void	Draw() override;
 private:
 	void	PlayBGM( Music::ID kind );
 	void	FadeOutBGM() const;
@@ -122,30 +120,30 @@ private:
 
 	void	AssignCurrentInput();
 	
-	float	PauseUpdate( float elapsedTime );
+	float	PauseUpdate( float deltaTime );
 	void	BeginPause();
 	void	EndPause();
 
 	bool	IsPlayingStatus( State verify ) const;
 
-	void	FirstInitStateUpdate( float elapsedTime );
+	void	FirstInitStateUpdate( float deltaTime );
 	
-	void	StageStateUpdate( float elapsedTime );
+	void	StageStateUpdate( float deltaTime );
 
 	void	AppearBossStateInit();
-	void	AppearBossStateUpdate( float elapsedTime );
+	void	AppearBossStateUpdate( float deltaTime );
 	
 	void	VSBossStateInit( Definition::WeaponKind bossWeapon );
-	void	VSBossStateUpdate( float elapsedTime );
+	void	VSBossStateUpdate( float deltaTime );
 
 	void	ClearStateInit();
-	void	ClearStateUpdate( float elapsedTime );
+	void	ClearStateUpdate( float deltaTime );
 
 	void	CameraInit();
 	Donya::Vector3 ClampFocusPoint( const Donya::Vector3 &focusPoint, int roomID );
 	void	PrepareScrollIfNotActive( int oldRoomID, int newRoomID );
 	void	AssignCameraPos();
-	void	CameraUpdate( float elapsedTime );
+	void	CameraUpdate( float deltaTime );
 
 	void	UpdateCurrentRoomID();
 
@@ -154,18 +152,18 @@ private:
 
 	void	ReadyPlayer();
 	void	PlayerInit( const PlayerInitializer &initializer, const Map &terrain );
-	void	PlayerUpdate( float elapsedTime, const Map &terrain );
-	void	PlayerPhysicUpdate( float elapsedTime, const Map &terrain );
+	void	PlayerUpdate( float deltaTime, const Map &terrain );
+	void	PlayerPhysicUpdate( float deltaTime, const Map &terrain );
 	Donya::Vector3 GetPlayerPosition() const;
 	Donya::Vector3 MakeBossRoomInitialPosOf( int roomId ) const;
-	Player::Input  MakePlayerInput( float elapsedTime );
+	Player::Input  MakePlayerInput( float deltaTime );
 	
 	void	UpdatePlayerIniter();
 
 	void	DoorUpdate();
 	bool	NowThroughingDoor() const;
 
-	void	BossUpdate( float elapsedTime, const Donya::Vector3 &wsTargetPos );
+	void	BossUpdate( float deltaTime, const Donya::Vector3 &wsTargetPos );
 
 	int		CalcCurrentRoomID() const;
 
@@ -183,7 +181,7 @@ private:
 	Result	ReturnResult();
 private:
 #if USE_IMGUI
-	void	UseImGui( float elapsedTime );
+	void	UseImGui();
 	void	UseScreenSpaceImGui();
 #endif // USE_IMGUI
 };

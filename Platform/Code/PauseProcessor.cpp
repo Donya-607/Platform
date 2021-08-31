@@ -94,7 +94,7 @@ PauseProcessor::Result PauseProcessor::Update( float elapsedTime, const Donya::X
 	return ReturnResult( controller );
 }
 
-void PauseProcessor::Draw( float elapsedTime )
+void PauseProcessor::Draw()
 {
 	const auto &data = FetchParameter();
 

@@ -91,10 +91,12 @@ void SceneLogo::Uninit()
 {
 
 }
-Scene::Result SceneLogo::Update( float elapsedTime )
+Scene::Result SceneLogo::Update()
 {
 	controller.Update();
 
+
+	// Skip process if requested
 	if ( WannaSkip() && status != State::END )
 	{
 		if ( status == State::FADE_OUT )
@@ -107,13 +109,17 @@ Scene::Result SceneLogo::Update( float elapsedTime )
 		}
 	}
 
+
+	// Update process
+	const float deltaTime = Donya::GetElapsedTime();
 	switch ( status )
 	{
-	case SceneLogo::State::FADE_IN:		UpdateFadeIn	( elapsedTime ); break;
-	case SceneLogo::State::WAIT:		UpdateWait		( elapsedTime ); break;
-	case SceneLogo::State::FADE_OUT:	UpdateFadeOut	( elapsedTime ); break;
+	case SceneLogo::State::FADE_IN:		UpdateFadeIn	( deltaTime ); break;
+	case SceneLogo::State::WAIT:		UpdateWait		( deltaTime ); break;
+	case SceneLogo::State::FADE_OUT:	UpdateFadeOut	( deltaTime ); break;
 	default: break;
 	}
+
 
 #if USE_IMGUI
 	if ( ImGui::BeginIfAllowed() )
@@ -130,9 +136,10 @@ Scene::Result SceneLogo::Update( float elapsedTime )
 	}
 #endif // USE_IMGUI
 
+
 	return ReturnResult();
 }
-void SceneLogo::Draw( float elapsedTime )
+void SceneLogo::Draw()
 {
 	ClearBackGround();
 
@@ -194,13 +201,13 @@ void SceneLogo::InitFadeIn()
 	frameTimer	= 0;
 	secondTimer	= 0;
 }
-void SceneLogo::UpdateFadeIn( float elapsedTime )
+void SceneLogo::UpdateFadeIn( float deltaTime )
 {
 	bool done = false;
 
 #if USE_REAL_TIME_BASE
-	secondTimer	+= elapsedTime;
-	alpha		+= FADE_IN_SPEED * elapsedTime;
+	secondTimer	+= deltaTime;
+	alpha		+= FADE_IN_SPEED * deltaTime;
 	done		= ( FADE_IN_TIME <= secondTimer );
 #else
 	frameTimer	+= 1;
@@ -221,12 +228,12 @@ void SceneLogo::InitWait()
 	frameTimer	= 0;
 	secondTimer	= 0;
 }
-void SceneLogo::UpdateWait( float elapsedTime )
+void SceneLogo::UpdateWait( float deltaTime )
 {
 	bool done = false;
 
 #if USE_REAL_TIME_BASE
-	secondTimer	+= elapsedTime;
+	secondTimer	+= deltaTime;
 	done		= ( WAIT_TIME <= secondTimer );
 #else
 	frameTimer	+= 1;
@@ -246,13 +253,13 @@ void SceneLogo::InitFadeOut()
 	frameTimer	= 0;
 	secondTimer	= 0;
 }
-void SceneLogo::UpdateFadeOut( float elapsedTime )
+void SceneLogo::UpdateFadeOut( float deltaTime )
 {
 	bool done = false;
 
 #if USE_REAL_TIME_BASE
-	secondTimer	+= elapsedTime;
-	alpha		-= FADE_OUT_SPEED * elapsedTime;
+	secondTimer	+= deltaTime;
+	alpha		-= FADE_OUT_SPEED * deltaTime;
 	done		= ( FADE_OUT_TIME <= secondTimer );
 #else
 	frameTimer	+= 1;
