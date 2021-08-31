@@ -54,9 +54,9 @@ namespace Enemy
 		Base::Init( parameter, wsTargetPos, wsScreenHitBox );
 		ChangeState( MotionKind::Idle );
 	}
-	void SkeletonJoe::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void SkeletonJoe::Update( float deltaTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
-		Base::Update( elapsedTime, wsTargetPos, wsScreen );
+		Base::Update( deltaTime, wsTargetPos, wsScreen );
 		if ( NowWaiting() ) { return; }
 		// else
 
@@ -70,7 +70,7 @@ namespace Enemy
 
 		if ( !data.stateSeconds.empty() )
 		{
-			timer += elapsedTime;
+			timer += deltaTime;
 			if ( data.stateSeconds[stateIndex] <= timer )
 			{
 				ToNextState( wsTargetPos );
@@ -78,7 +78,7 @@ namespace Enemy
 			}
 		}
 
-		velocity.y -= data.gravity * elapsedTime;
+		velocity.y -= data.gravity * deltaTime;
 
 		if ( status == MotionKind::Idle )
 		{
@@ -88,12 +88,12 @@ namespace Enemy
 		}
 
 		const float motionAcceleration = ( data.animePlaySpeeds.size() <= stateIndex ) ? 1.0f : data.animePlaySpeeds[stateIndex];
-		UpdateMotionIfCan( elapsedTime * motionAcceleration, stateIndex );
+		UpdateMotionIfCan( deltaTime * motionAcceleration, stateIndex );
 	}
-	void SkeletonJoe::PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence )
+	void SkeletonJoe::PhysicUpdate( float deltaTime, const Map &terrain, bool considerBodyExistence )
 	{
 		// My body's existence will be changed by status, so I must be collide to terrain explicitly.
-		Base::PhysicUpdate( elapsedTime, terrain, /* considerBodyExistence = */ false );
+		Base::PhysicUpdate( deltaTime, terrain, /* considerBodyExistence = */ false );
 	}
 	Kind SkeletonJoe::GetKind() const { return Kind::SkeletonJoe; }
 	Definition::Damage SkeletonJoe::GetTouchDamage() const

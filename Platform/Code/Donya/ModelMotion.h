@@ -72,7 +72,7 @@ namespace Donya
 		class Animator
 		{
 		private:
-			float	elapsedTime		= 0.0f;
+			float	deltaTime		= 0.0f;
 			float	repeatRangeL	= 0.0f;
 			float	repeatRangeR	= 1.0f;
 			bool	enableRepeat	= false;
@@ -86,7 +86,7 @@ namespace Donya
 			/// <summary>
 			/// Update an internal elapsed-timer.
 			/// </summary>
-			void Update( float elapsedTime );
+			void Update( float deltaTime );
 		public:
 			/// <summary>
 			/// Returns true if the current time was over the repeat range.<para></para>

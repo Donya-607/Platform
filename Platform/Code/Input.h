@@ -78,7 +78,7 @@ namespace Input
 		bool			performing = false;
 	public:
 		bool Init();
-		void Update( float elapsedTime );
+		void Update( float deltaTime );
 		void Draw( Type type, bool showControllerType, const Donya::Vector2 &ssPos, const Donya::Vector2 &ssScale = { 1.0f, 1.0f }, float drawDepth = 0.0f ) const;
 	public:
 		void Notify();

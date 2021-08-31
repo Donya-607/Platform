@@ -23,7 +23,7 @@ void Tile::Init( StageFormat::ID identifier, const Donya::Vector3 &wsTilePos, co
 	tileID		= identifier;
 }
 void Tile::Uninit() {}
-void Tile::Update( float elapsedTime ) {}
+void Tile::Update( float deltaTime ) {}
 void Tile::DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const
 {
 	if ( !Common::IsShowCollision() || !pRenderer ) { return; }
@@ -328,7 +328,7 @@ void Map::Uninit()
 		}
 	);
 }
-void Map::Update( float elapsedTime )
+void Map::Update( float deltaTime )
 {
 	ForEach
 	(
@@ -336,7 +336,7 @@ void Map::Update( float elapsedTime )
 		{
 			if ( pElement )
 			{
-				pElement->Update( elapsedTime );
+				pElement->Update( deltaTime );
 
 				//if ( pElement->ShouldRemove() )
 				//{

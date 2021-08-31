@@ -31,7 +31,7 @@ namespace Bullet
 	public:
 		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
-		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
+		void Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
 		Kind GetKind() const override;
 	public:

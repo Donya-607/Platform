@@ -26,7 +26,7 @@ namespace Performer
 			bool			active = false;
 		public:
 			void Init();
-			void Update( float elapsedTime );
+			void Update( float deltaTime );
 			void Draw( float drawDepth, float drawAlpha );
 		public:
 			void Start( const Donya::Vector2 &ssBasePos );
@@ -44,7 +44,7 @@ namespace Performer
 			bool			active = false;
 		public:
 			void Init();
-			void Update( float elapsedTime );
+			void Update( float deltaTime );
 			void Draw( float drawDepth, float drawAlpha );
 		public:
 			void Start( const Donya::Vector2 &ssBasePos );
@@ -60,7 +60,7 @@ namespace Performer
 	public:
 		void Init();
 		void Uninit();
-		void UpdateIfActive( float elapsedTime );
+		void UpdateIfActive( float deltaTime );
 		void DrawIfActive( float drawDepth );
 	public:
 		void Start( const Donya::Vector2 &ssBasePos, const Donya::Color::Code &color );

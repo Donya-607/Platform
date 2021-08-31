@@ -30,8 +30,8 @@ namespace Enemy
 		}
 	public:
 		void Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
-		void PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence = true ) override;
+		void Update( float deltaTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
+		void PhysicUpdate( float deltaTime, const Map &terrain, bool considerBodyExistence = true ) override;
 		void Draw( RenderingHelper *pRenderer ) const override;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
 	public:

@@ -32,7 +32,7 @@ namespace Input
 		/// <summary>
 		/// Update records' life span and record new input
 		/// </summary>
-		void Update( float elapsedTime, bool currentFrameIsPressed );
+		void Update( float deltaTime, bool currentFrameIsPressed );
 	public:
 		/// <summary>
 		/// It returns found part's "elapsedSecond" or negative value like -1.0f if not found.

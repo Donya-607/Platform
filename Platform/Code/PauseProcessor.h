@@ -58,7 +58,7 @@ public:
 	void	Init( const Music::ID &currentPlayingBGM );
 	void	Uninit();
 
-	Result	Update( float elapsedTime, const Donya::XInput &controller );
+	Result	Update( float deltaTime, const Donya::XInput &controller );
 
 	void	Draw();
 private:

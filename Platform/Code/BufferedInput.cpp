@@ -15,11 +15,11 @@ namespace Input
 
 		SetLifeSpan( maxRecordSecond );
 	}
-	void BufferedInput::Update( float elapsedTime, bool pressed )
+	void BufferedInput::Update( float deltaTime, bool pressed )
 	{
 		for ( auto &it : buffer )
 		{
-			it.elapsedSecond += elapsedTime;
+			it.elapsedSecond += deltaTime;
 		}
 		DiscardByLifeSpan();
 

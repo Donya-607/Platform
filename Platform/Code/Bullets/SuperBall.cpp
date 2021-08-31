@@ -41,14 +41,14 @@ namespace Bullet
 		accelCount = 0;
 	}
 	void SuperBall::Uninit() {} // No op
-	void SuperBall::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
+	void SuperBall::Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
-		Base::Update( elapsedTime, wsScreenHitBox );
+		Base::Update( deltaTime, wsScreenHitBox );
 
 		const auto &data = Parameter::GetSuperBall();
-		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
+		UpdateMotionIfCan( deltaTime * data.basic.animePlaySpeed, 0 );
 	}
-	void SuperBall::PhysicUpdate( float elapsedTime, const Map &terrain )
+	void SuperBall::PhysicUpdate( float deltaTime, const Map &terrain )
 	{
 		const auto &data = Parameter::GetSuperBall();
 		Donya::Vector3 acceleratedVelocity = velocity;
@@ -61,7 +61,7 @@ namespace Bullet
 		Actor mover;
 		mover.body = GetHitBox();
 
-		const auto movement		= acceleratedVelocity * elapsedTime;
+		const auto movement		= acceleratedVelocity * deltaTime;
 		const auto aroundTiles	= terrain.GetPlaceTiles( mover.body, movement );
 			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, mover.body );
 		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );

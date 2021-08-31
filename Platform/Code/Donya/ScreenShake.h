@@ -17,7 +17,7 @@ namespace Donya
 		/// <summary>
 		/// Please call every frame.
 		/// </summary>
-		void Update( float elapsedTime );
+		void Update( float deltaTime );
 
 		/// <summary>
 		/// This is state machine.<para></para>

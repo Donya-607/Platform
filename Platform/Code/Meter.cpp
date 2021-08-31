@@ -84,9 +84,9 @@ namespace Meter
 		sprite.origin	= { 0.0f, 0.0f };
 		sprite.color	= { 1.0f, 1.0f, 1.0f };
 	}
-	void Drawer::Update( float elapsedTime )
+	void Drawer::Update( float deltaTime )
 	{
-		ShakeUpdate( elapsedTime );
+		ShakeUpdate( deltaTime );
 
 		const float diff = destination - current;
 		if ( Donya::SignBit( diff ) == 0 ) { return; }
@@ -102,7 +102,7 @@ namespace Meter
 		// else
 
 		// Recovering is incrementally
-		current += Parameter::GetMeter().recoveryAmount * elapsedTime;
+		current += Parameter::GetMeter().recoveryAmount * deltaTime;
 
 		if ( destination < current )
 		{
@@ -110,7 +110,7 @@ namespace Meter
 		}
 
 		// Do not play the SE if the game pausing
-		if ( !IsZero( elapsedTime ) )
+		if ( !IsZero( deltaTime ) )
 		{
 			// Make to do not magnify the volume by multiple playing in same time
 			Donya::Sound::Stop( Music::RecoverHP );
@@ -231,9 +231,9 @@ namespace Meter
 
 		shakeAmpl = data.shakeBaseAmpl + ( data.shakeDamageAmpl * factor );
 	}
-	void Drawer::ShakeUpdate( float elapsedTime )
+	void Drawer::ShakeUpdate( float deltaTime )
 	{
-		shakeTimer -= elapsedTime;
+		shakeTimer -= deltaTime;
 		if ( shakeTimer <= 0.0f )
 		{
 			shakeTimer = 0.0f;
@@ -253,7 +253,7 @@ namespace Meter
 		// else
 
 		const float rotAmount = PI / data.shakeCycleSec;
-		shakeRadian += rotAmount * elapsedTime;
+		shakeRadian += rotAmount * deltaTime;
 
 		const float ampl = cosf( shakeRadian ) * shakeAmpl;
 		const float attenuateFactor = shakeTimer / data.shakeSecond;

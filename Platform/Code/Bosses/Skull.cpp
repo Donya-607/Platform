@@ -65,16 +65,16 @@ namespace Boss
 
 		AssignPose( inst, currKind );
 	}
-	void Skull::MotionManager::Update( Skull &inst, float elapsedTime )
+	void Skull::MotionManager::Update( Skull &inst, float deltaTime )
 	{
 		const auto &data = Parameter::GetSkull();
 		const size_t currentMotionIndex	= scast<size_t>( ToMotionIndex( currKind ) );
 		const size_t playSpeedCount		= data.animePlaySpeeds.size();
 		const float  motionAcceleration	= ( playSpeedCount <= currentMotionIndex ) ? 1.0f : data.animePlaySpeeds[currentMotionIndex];
-		inst.model.animator.Update( elapsedTime * motionAcceleration );
+		inst.model.animator.Update( deltaTime * motionAcceleration );
 		
 		AssignPose( inst, currKind );
-		inst.model.AdvanceInterpolation( elapsedTime );
+		inst.model.AdvanceInterpolation( deltaTime );
 	}
 	void Skull::MotionManager::ChangeMotion( Skull &inst, MotionKind nextKind, bool resetTimerIfSameMotion )
 	{
@@ -154,17 +154,17 @@ namespace Boss
 
 	void Skull::MoverBase::Init( Skull &inst ) {}
 	void Skull::MoverBase::Uninit( Skull &inst ) {}
-	void Skull::MoverBase::Update( Skull &inst, float elapsedTime, const Input &input ) {}
-	void Skull::MoverBase::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
+	void Skull::MoverBase::Update( Skull &inst, float deltaTime, const Input &input ) {}
+	void Skull::MoverBase::PhysicUpdate( Skull &inst, float deltaTime, const Map &terrain )
 	{
-		inst.Base::PhysicUpdate( elapsedTime, terrain );
+		inst.Base::PhysicUpdate( deltaTime, terrain );
 	}
 	
 	void Skull::AppearPerformance::Init( Skull &inst )
 	{
 		inst.AppearInit();
 
-		elapsedTimeAfterLanding = 0.0f;
+		deltaTimeAfterLanding = 0.0f;
 
 		if ( inst.motionManager.CurrentMotionKind() != MotionKind::Jump )
 		{
@@ -177,9 +177,9 @@ namespace Boss
 	{
 		inst.detectingLimitSecond = Parameter::GetSkull().detectFirstWaitSec;
 	}
-	void Skull::AppearPerformance::Update( Skull &inst, float elapsedTime, const Input &input )
+	void Skull::AppearPerformance::Update( Skull &inst, float deltaTime, const Input &input )
 	{
-		inst.AppearUpdate( elapsedTime, input );
+		inst.AppearUpdate( deltaTime, input );
 		inst.LookingToTarget( input.wsTargetPos );
 
 		const auto nowKind = inst.motionManager.CurrentMotionKind();
@@ -197,11 +197,11 @@ namespace Boss
 
 		const auto &data = Parameter::GetSkull();
 
-		oldTimeAfterLanding		=  elapsedTimeAfterLanding;
-		elapsedTimeAfterLanding	+= elapsedTime;
+		oldTimeAfterLanding		=  deltaTimeAfterLanding;
+		deltaTimeAfterLanding	+= deltaTime;
 
 		const int oldRoarSign = Donya::SignBit( data.appearRoarTiming - oldTimeAfterLanding		);
-		const int nowRoarSign = Donya::SignBit( data.appearRoarTiming - elapsedTimeAfterLanding	);
+		const int nowRoarSign = Donya::SignBit( data.appearRoarTiming - deltaTimeAfterLanding	);
 		if ( oldRoarSign != nowRoarSign )
 		{
 			Donya::Sound::Play( Music::Skull_Roar );
@@ -210,7 +210,7 @@ namespace Boss
 		switch ( nowKind )
 		{
 		case MotionKind::Appear_Begin:
-			if ( data.appearWaitMotionSec <= elapsedTimeAfterLanding )
+			if ( data.appearWaitMotionSec <= deltaTimeAfterLanding )
 			{
 				inst.motionManager.ChangeMotion( inst, MotionKind::Appear_End );
 			}
@@ -222,9 +222,9 @@ namespace Boss
 			return;
 		}
 	}
-	void Skull::AppearPerformance::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
+	void Skull::AppearPerformance::PhysicUpdate( Skull &inst, float deltaTime, const Map &terrain )
 	{
-		wasLanding = inst.AppearPhysicUpdate( elapsedTime, terrain );
+		wasLanding = inst.AppearPhysicUpdate( deltaTime, terrain );
 	}
 	bool Skull::AppearPerformance::NowAppearing( const Skull &inst ) const
 	{
@@ -234,7 +234,7 @@ namespace Boss
 	{
 		const auto &data  =  Parameter::GetSkull();
 		const int oldSign =  Donya::SignBit( data.appearRecoverHPTiming - oldTimeAfterLanding		);
-		const int nowSign =  Donya::SignBit( data.appearRecoverHPTiming - elapsedTimeAfterLanding	);
+		const int nowSign =  Donya::SignBit( data.appearRecoverHPTiming - deltaTimeAfterLanding	);
 		return  ( oldSign != nowSign );
 	}
 	bool Skull::AppearPerformance::ShouldChangeMover( const Skull &inst ) const
@@ -266,13 +266,13 @@ namespace Boss
 	{
 		inst.detectingLimitSecond = Parameter::GetSkull().detectWaitSecMax;
 	}
-	void Skull::DetectTargetAction::Update( Skull &inst, float elapsedTime, const Input &input )
+	void Skull::DetectTargetAction::Update( Skull &inst, float deltaTime, const Input &input )
 	{
 		if ( input.dontMove			) { return; }
-		if ( IsZero( elapsedTime )	) { return; } // If the game pausing
+		if ( IsZero( deltaTime )	) { return; } // If the game pausing
 		// else
 
-		inst.Fall( elapsedTime );
+		inst.Fall( deltaTime );
 		inst.LookingToTarget( input.wsTargetPos );
 		inst.UpdateInvincibleExistence();
 
@@ -341,7 +341,7 @@ namespace Boss
 		// else
 
 		// Prevention of stop
-		timer += elapsedTime;
+		timer += deltaTime;
 		if ( inst.detectingLimitSecond <= timer )
 		{
 			ChooseShot();
@@ -387,13 +387,13 @@ namespace Boss
 		fireCount		= 0;
 		wasFinished		= false;
 	}
-	void Skull::Shot::Update( Skull &inst, float elapsedTime, const Input &input )
+	void Skull::Shot::Update( Skull &inst, float deltaTime, const Input &input )
 	{
-		inst.Fall( elapsedTime );
+		inst.Fall( deltaTime );
 		inst.LookingToTarget( input.wsTargetPos );
 		inst.UpdateInvincibleExistence();
 
-		timer += elapsedTime;
+		timer += deltaTime;
 
 		const auto &data = Parameter::GetSkull();
 
@@ -411,10 +411,10 @@ namespace Boss
 		if ( timer < data.shotBeginLagSecond ) { return; }
 		// else
 
-		interval += elapsedTime;
+		interval += deltaTime;
 		if ( data.shotFireIntervalSecond <= interval )
 		{
-			Fire( inst, elapsedTime, input );
+			Fire( inst, deltaTime, input );
 			fireCount++;
 			interval -= data.shotFireIntervalSecond;
 		}
@@ -439,7 +439,7 @@ namespace Boss
 		return u8"ƒVƒ‡ƒbƒg";
 	}
 #endif // USE_IMGUI
-	void Skull::Shot::Fire( Skull &inst, float elapsedTime, const Input &input ) const
+	void Skull::Shot::Fire( Skull &inst, float deltaTime, const Input &input ) const
 	{
 		const auto &data = Parameter::GetSkull();
 		const Donya::Vector3 wsPos	=  inst.body.WorldPosition();
@@ -576,22 +576,22 @@ namespace Boss
 
 		Donya::Sound::Play( Music::Skull_Jump );
 	}
-	void Skull::Jump::Update( Skull &inst, float elapsedTime, const Input &input )
+	void Skull::Jump::Update( Skull &inst, float deltaTime, const Input &input )
 	{
-		inst.Fall( elapsedTime );
+		inst.Fall( deltaTime );
 		inst.UpdateInvincibleExistence();
 	}
-	void Skull::Jump::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
+	void Skull::Jump::PhysicUpdate( Skull &inst, float deltaTime, const Map &terrain )
 	{
 		if ( inst.NowDead() ) { return; }
 		// else
 
-		const auto aroundSolids = inst.FetchSolidsByBody( terrain, inst.GetHitBox(), elapsedTime, inst.velocity );
+		const auto aroundSolids = inst.FetchSolidsByBody( terrain, inst.GetHitBox(), deltaTime, inst.velocity );
 
-		inst.MoveOnlyX( elapsedTime, aroundSolids );
-		inst.MoveOnlyZ( elapsedTime, aroundSolids );
+		inst.MoveOnlyX( deltaTime, aroundSolids );
+		inst.MoveOnlyZ( deltaTime, aroundSolids );
 
-		inst.MoveOnlyY( elapsedTime, aroundSolids );
+		inst.MoveOnlyY( deltaTime, aroundSolids );
 	}
 	bool Skull::Jump::ShouldChangeMover( const Skull &inst ) const
 	{
@@ -642,15 +642,15 @@ namespace Boss
 			}
 		}
 	}
-	void Skull::Shield::Update( Skull &inst, float elapsedTime, const Input &input )
+	void Skull::Shield::Update( Skull &inst, float deltaTime, const Input &input )
 	{
-		inst.Fall( elapsedTime );
+		inst.Fall( deltaTime );
 		inst.LookingToTarget( input.wsTargetPos );
 		inst.UpdateInvincibleExistence();
 
 		const auto &data = Parameter::GetSkull();
 
-		timer += elapsedTime;
+		timer += deltaTime;
 
 		if ( data.shieldBeginLagSecond <= timer && timer < protectSecond )
 		{
@@ -755,19 +755,19 @@ namespace Boss
 		wasArrived	= false;
 		initialPos	= inst.body.WorldPosition();
 	}
-	void Skull::Run::Update( Skull &inst, float elapsedTime, const Input &input )
+	void Skull::Run::Update( Skull &inst, float deltaTime, const Input &input )
 	{
-		inst.Fall( elapsedTime );
+		inst.Fall( deltaTime );
 		inst.UpdateInvincibleExistence();
 
 		if ( wasArrived )
 		{
-			waitTimer += elapsedTime;
+			waitTimer += deltaTime;
 			inst.LookingToTarget( input.wsTargetPos );
 		}
 		else
 		{
-			runTimer += elapsedTime;
+			runTimer += deltaTime;
 
 			// Invalid compare between none-unit and [s].
 			// But it works as almost I want.
@@ -779,10 +779,10 @@ namespace Boss
 			}
 		}
 	}
-	void Skull::Run::PhysicUpdate( Skull &inst, float elapsedTime, const Map &terrain )
+	void Skull::Run::PhysicUpdate( Skull &inst, float deltaTime, const Map &terrain )
 	{
 		const int prevSign = GetCurrentDirectionSign( inst );
-		MoverBase::PhysicUpdate( inst, elapsedTime, terrain );
+		MoverBase::PhysicUpdate( inst, deltaTime, terrain );
 		const int nowSign  = GetCurrentDirectionSign( inst );
 
 		const bool nowArrived = ( nowSign != prevSign || nowSign == 0 );
@@ -830,7 +830,7 @@ namespace Boss
 		? AssignMover<AppearPerformance>()
 		: AssignMover<DetectTargetAction>();
 	}
-	void Skull::Update( float elapsedTime, const Input &input )
+	void Skull::Update( float deltaTime, const Input &input )
 	{
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
@@ -843,7 +843,7 @@ namespace Boss
 		}
 	#endif // USE_IMGUI
 
-		Base::Update( elapsedTime, input );
+		Base::Update( deltaTime, input );
 
 		if ( NowDead() ) { return; }
 		// else
@@ -855,18 +855,18 @@ namespace Boss
 		}
 		// else
 
-		pMover->Update( *this, elapsedTime, input );
+		pMover->Update( *this, deltaTime, input );
 		if ( pMover->ShouldChangeMover( *this ) )
 		{
 			auto ChangeState = pMover->GetChangeStateMethod( *this );
 			ChangeState();
 		}
 
-		motionManager.Update( *this, elapsedTime );
+		motionManager.Update( *this, deltaTime );
 
 		previousInput = input;
 	}
-	void Skull::PhysicUpdate( float elapsedTime, const Map &terrain )
+	void Skull::PhysicUpdate( float deltaTime, const Map &terrain )
 	{
 		if ( !pMover )
 		{
@@ -876,7 +876,7 @@ namespace Boss
 		// else
 
 		const bool oldOnGround = onGround;
-		pMover->PhysicUpdate( *this, elapsedTime, terrain );
+		pMover->PhysicUpdate( *this, deltaTime, terrain );
 		if ( onGround && !oldOnGround )
 		{
 			Donya::Sound::Play( Music::Skull_Landing );
@@ -941,9 +941,9 @@ namespace Boss
 		previousBehaviors.back()  = previousBehaviors.front();
 		previousBehaviors.front() = behavior;
 	}
-	void Skull::Fall( float elapsedTime )
+	void Skull::Fall( float deltaTime )
 	{
-		velocity.y -= GetGravity() * elapsedTime;
+		velocity.y -= GetGravity() * deltaTime;
 	}
 	void Skull::LookingToTarget( const Donya::Vector3 &targetPos )
 	{

@@ -290,11 +290,11 @@ namespace Item
 		timer	= 0.0f;
 		active	= true;
 	}
-	void Item::Flusher::Update( float elapsedTime )
+	void Item::Flusher::Update( float deltaTime )
 	{
 		if ( !active ) { return; }
 		// else
-		timer += elapsedTime;
+		timer += deltaTime;
 	}
 	bool Item::Flusher::IsActive() const
 	{
@@ -358,7 +358,7 @@ namespace Item
 		}
 	}
 	void Item::Uninit() {} // No op
-	void Item::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen, const Map &terrain )
+	void Item::Update( float deltaTime, const Donya::Collision::Box3F &wsScreen, const Map &terrain )
 	{
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
@@ -367,25 +367,25 @@ namespace Item
 		}
 	#endif // USE_IMGUI
 
-		aliveTimer += elapsedTime;
+		aliveTimer += deltaTime;
 
 		UpdateRemoveCondition( wsScreen );
 
-		flusher.Update( elapsedTime );
+		flusher.Update( deltaTime );
 
 		if ( !beBuried )
 		{
-			velocity.y -= GetGravity() * elapsedTime;
+			velocity.y -= GetGravity() * deltaTime;
 		}
 
 		const auto *pData = GetGeneralOrNull( GetKind() );
 		const float animePlaySpeed = ( pData ) ? pData->animePlaySpeed : 1.0f;
-		model.UpdateMotion( elapsedTime * animePlaySpeed, 0 );
+		model.UpdateMotion( deltaTime * animePlaySpeed, 0 );
 	}
-	void Item::PhysicUpdate( float elapsedTime, const Map &terrain )
+	void Item::PhysicUpdate( float deltaTime, const Map &terrain )
 	{
-		const auto movement		= velocity * elapsedTime;
-		const auto aroundSolids	= FetchAroundSolids( elapsedTime, terrain );
+		const auto movement		= velocity * deltaTime;
+		const auto aroundSolids	= FetchAroundSolids( deltaTime, terrain );
 
 		if ( beBuried )
 		{
@@ -497,10 +497,10 @@ namespace Item
 		wantRemove = true;
 		Donya::Sound::Play( Music::CatchItem );
 	}
-	std::vector<Donya::Collision::Box3F> Item::FetchAroundSolids( float elapsedTime, const Map &terrain ) const
+	std::vector<Donya::Collision::Box3F> Item::FetchAroundSolids( float deltaTime, const Map &terrain ) const
 	{
 		const auto myBody		= GetHitBox();
-		const auto movement		= velocity * elapsedTime;
+		const auto movement		= velocity * deltaTime;
 		const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
 			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
 		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
@@ -612,23 +612,23 @@ namespace Item
 			it.Uninit();
 		}
 	}
-	void Admin::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen, const Map &terrain )
+	void Admin::Update( float deltaTime, const Donya::Collision::Box3F &wsScreen, const Map &terrain )
 	{
 		GenerateRequestedItems( terrain );
 		generateRequests.clear();
 
 		for ( auto &it : items )
 		{
-			it.Update( elapsedTime, wsScreen, terrain );
+			it.Update( deltaTime, wsScreen, terrain );
 		}
 
 		RemoveItemsIfNeeds();
 	}
-	void Admin::PhysicUpdate( float elapsedTime, const Map &terrain )
+	void Admin::PhysicUpdate( float deltaTime, const Map &terrain )
 	{
 		for ( auto &it : items )
 		{
-			it.PhysicUpdate( elapsedTime, terrain );
+			it.PhysicUpdate( deltaTime, terrain );
 		}
 	}
 	void Admin::Draw( RenderingHelper *pRenderer ) const

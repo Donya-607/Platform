@@ -68,13 +68,13 @@ namespace ModelHelper
 		/// Update the animator then call AssignMotion().
 		/// And advance motion interpolation if now transition-ing.
 		/// </summary>
-		void UpdateMotion( float elapsedTime, int motionIndex );
+		void UpdateMotion( float deltaTime, int motionIndex );
 	public:
 		/// <summary>
 		/// Only update the interpolate process.
 		/// The UpdateMotion() is also calls this, so you have not need to call it if you call UpdateMotion().
 		/// </summary>
-		void AdvanceInterpolation( float elapsedTime );
+		void AdvanceInterpolation( float deltaTime );
 	};
 
 	/// <summary>

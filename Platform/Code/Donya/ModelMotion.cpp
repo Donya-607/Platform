@@ -135,15 +135,15 @@ namespace Donya
 
 		void  Animator::ResetTimer()
 		{
-			elapsedTime	= 0.0f;
+			deltaTime	= 0.0f;
 			wasEnded	= false;
 		}
-		void  Animator::Update( float argElapsedTime )
+		void  Animator::Update( float argDeltaTime )
 		{
 			if ( wasEnded && !enableLoop ) { return; }
 			// else
 
-			elapsedTime	+= argElapsedTime;
+			deltaTime	+= argDeltaTime;
 			wasEnded	=  false;
 
 			if ( enableRepeat )
@@ -156,7 +156,7 @@ namespace Donya
 		bool  Animator::IsOverPlaybackTimeOf( const std::vector<Animation::KeyFrame> &motion ) const
 		{
 			const float lastTime = CalcWholeSeconds( motion );
-			return ( lastTime <= elapsedTime );
+			return ( lastTime <= deltaTime );
 		}
 		bool  Animator::IsOverPlaybackTimeOf( const Animation::Motion &motion ) const
 		{
@@ -173,7 +173,7 @@ namespace Donya
 
 			auto  CalcCurrentSeconds = [&]()
 			{
-				float sec =  elapsedTime;
+				float sec =  deltaTime;
 				if ( 0.0f <= sec ) { return sec; } // Positive value is ok.
 				// else
 
@@ -294,11 +294,11 @@ namespace Donya
 
 		void  Animator::SetInternalElapsedTime( float overwrite )
 		{
-			elapsedTime = overwrite;
+			deltaTime = overwrite;
 		}
 		float Animator::GetInternalElapsedTime() const
 		{
-			return elapsedTime;
+			return deltaTime;
 		}
 
 		void  Animator::WrapAround( float min, float max )
@@ -313,13 +313,13 @@ namespace Donya
 
 			if ( enableLoop )
 			{
-				while ( max < elapsedTime ) { elapsedTime -= distance; wasEnded = true; }
-				while ( elapsedTime < min ) { elapsedTime += distance; wasEnded = true; }
+				while ( max < deltaTime ) { deltaTime -= distance; wasEnded = true; }
+				while ( deltaTime < min ) { deltaTime += distance; wasEnded = true; }
 			}
 			else
 			{
-				if ( max < elapsedTime ) { elapsedTime = max; wasEnded = true; }
-				if ( elapsedTime < min ) { elapsedTime = min; wasEnded = true; }
+				if ( max < deltaTime ) { deltaTime = max; wasEnded = true; }
+				if ( deltaTime < min ) { deltaTime = min; wasEnded = true; }
 			}
 		}
 	}

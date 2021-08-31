@@ -51,23 +51,23 @@ namespace Bullet
 			Item::DropItemByLottery( GetPosition() );
 		}
 	}
-	void TogeheroBody::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
+	void TogeheroBody::Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
-		Base::Update( elapsedTime, wsScreenHitBox );
+		Base::Update( deltaTime, wsScreenHitBox );
 
 		const auto &data = Parameter::GetTogeheroBody();
 
-		zigzagTimer += elapsedTime;
+		zigzagTimer += deltaTime;
 		if ( data.zigzagInterval <= zigzagTimer )
 		{
 			zigzagTimer = 0.0f;
 			UpdateVerticalVelocity();
 		}
 
-		const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( data.rotateSpeed * elapsedTime ) );
+		const Donya::Quaternion rotation = Donya::Quaternion::Make( Donya::Vector3::Up(), ToRadian( data.rotateSpeed * deltaTime ) );
 		orientation.RotateBy( rotation );
 
-		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
+		UpdateMotionIfCan( deltaTime * data.basic.animePlaySpeed, 0 );
 	}
 	void TogeheroBody::UpdateVerticalVelocity( bool halfWay )
 	{

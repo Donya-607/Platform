@@ -102,7 +102,7 @@ namespace Door
 		model.animator.DisableLoop();
 		model.AssignMotion( scast<int>( Motion::Open ) );
 	}
-	void Instance::Update( float elapsedTime )
+	void Instance::Update( float deltaTime )
 	{
 	#if USE_IMGUI
 		// Assign the changes as immediately
@@ -115,7 +115,7 @@ namespace Door
 		const auto  &data = FetchParameter();
 		const float &motionSpeed = ( nowMotion == Motion::Open ) ? data.animeSpeedOpen : data.animeSpeedClose;
 
-		model.UpdateMotion( elapsedTime * motionSpeed, scast<int>( nowMotion ) );
+		model.UpdateMotion( deltaTime * motionSpeed, scast<int>( nowMotion ) );
 		if ( model.animator.WasEnded() )
 		{
 			nowPlaying = false;
@@ -365,11 +365,11 @@ namespace Door
 	{
 		LoadParameter( stageNo );
 	}
-	void Container::Update( float elapsedTime )
+	void Container::Update( float deltaTime )
 	{
 		for ( auto &it : doors )
 		{
-			it.Update( elapsedTime );
+			it.Update( deltaTime );
 		}
 	}
 	void Container::Draw( RenderingHelper *pRenderer ) const

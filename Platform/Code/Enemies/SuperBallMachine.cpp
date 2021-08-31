@@ -60,9 +60,9 @@ namespace Enemy
 		Base::Uninit();
 		intervalTimer = 0.0f;
 	}
-	void SuperBallMachine::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void SuperBallMachine::Update( float deltaTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
-		Base::Update( elapsedTime, wsTargetPos, wsScreen );
+		Base::Update( deltaTime, wsTargetPos, wsScreen );
 		if ( NowWaiting() ) { return; }
 		// else
 
@@ -73,7 +73,7 @@ namespace Enemy
 
 		const auto &data = Parameter::GetSuperBallMachine();
 
-		velocity.y -= data.gravity * elapsedTime;
+		velocity.y -= data.gravity * deltaTime;
 
 		if ( currentMotion == MotionKind::Fire && model.animator.WasEnded() )
 		{
@@ -82,20 +82,20 @@ namespace Enemy
 
 		if ( currentMotion != MotionKind::Fire )
 		{
-			intervalTimer += elapsedTime;
+			intervalTimer += deltaTime;
 			if ( data.prepareSecond <= intervalTimer && currentMotion == MotionKind::Prepare )
 			{
 				ChangeMotion( MotionKind::Soon );
 			}
 		}
 
-		ShotIfNeeded( elapsedTime, wsTargetPos );
+		ShotIfNeeded( deltaTime, wsTargetPos );
 
 		const auto   &playSpeeds		= data.animePlaySpeeds;
 		const size_t currentMotionIndex	= scast<size_t>( currentMotion );
 		const size_t playSpeedCount		= playSpeeds.size();
 		const float  motionAcceleration	= ( playSpeedCount <= currentMotionIndex ) ? 1.0f : playSpeeds[currentMotionIndex];
-		UpdateMotionIfCan( elapsedTime * motionAcceleration, currentMotionIndex );
+		UpdateMotionIfCan( deltaTime * motionAcceleration, currentMotionIndex );
 	}
 	Kind SuperBallMachine::GetKind() const { return Kind::SuperBallMachine; }
 	Definition::Damage SuperBallMachine::GetTouchDamage() const
@@ -146,7 +146,7 @@ namespace Enemy
 
 		model.AssignMotion( intNextKind );
 	}
-	void SuperBallMachine::ShotIfNeeded( float elapsedTime, const Donya::Vector3 &wsTargetPos )
+	void SuperBallMachine::ShotIfNeeded( float deltaTime, const Donya::Vector3 &wsTargetPos )
 	{
 		const auto &data = Parameter::GetSuperBallMachine();
 

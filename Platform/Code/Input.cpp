@@ -151,14 +151,14 @@ namespace Input
 
 		return ( spriteId == NULL ) ? false : true;
 	}
-	void Explainer::Update( float elapsedTime )
+	void Explainer::Update( float deltaTime )
 	{
 		if ( !performing ) { return; }
 		// else
 
 		const auto &data = FetchParameter();
 
-		timer += elapsedTime;
+		timer += deltaTime;
 
 		const auto &stretches = data.notifyingStretches;
 		if ( stretches.size() < 2 )

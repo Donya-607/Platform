@@ -49,12 +49,12 @@ bool Sky::Init()
 	drawColor		= CalcCurrentColor( defaultHour );
 	return sky.Init();
 }
-void Sky::Update( float elapsedTime )
+void Sky::Update( float deltaTime )
 {
 	if ( lerpTimer <= 0.0f ) { return; }
 	// else
 
-	lerpTimer -= elapsedTime;
+	lerpTimer -= deltaTime;
 	if ( lerpTimer <= 0.0f )
 	{
 		lerpTimer = -1.0f;

@@ -41,7 +41,7 @@ namespace Enemy
 	public:
 		void Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 		void Uninit() override;
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
+		void Update( float deltaTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
 		Kind GetKind() const override;
 		Definition::Damage GetTouchDamage() const override;
@@ -50,7 +50,7 @@ namespace Enemy
 		void AssignMyBody( const Donya::Vector3 &wsPos ) override;
 	private:
 		void ChangeMotion( MotionKind nextKind );
-		void ShotIfNeeded( float elapsedTime, const Donya::Vector3 &wsTargetPos );
+		void ShotIfNeeded( float deltaTime, const Donya::Vector3 &wsTargetPos );
 	public:
 	#if USE_IMGUI
 		/// <summary>

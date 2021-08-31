@@ -141,8 +141,8 @@ namespace Enemy
 	public:
 		virtual void Init( const InitializeParam &parameter, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
 		virtual void Uninit();
-		virtual void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
-		virtual void PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence = true );
+		virtual void Update( float deltaTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
+		virtual void PhysicUpdate( float deltaTime, const Map &terrain, bool considerBodyExistence = true );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
@@ -157,7 +157,7 @@ namespace Enemy
 	public:
 		bool NowWaiting() const;
 	protected:
-		void UpdateMotionIfCan( float elapsedTime, int motionIndex );
+		void UpdateMotionIfCan( float deltaTime, int motionIndex );
 		void UpdateOutSideState( const Donya::Collision::Box3F &wsScreenHitBox );
 		bool OnOutSide() const;
 		void BeginWaitIfActive();
@@ -204,8 +204,8 @@ namespace Enemy
 		static constexpr const char *ID = "Enemy";
 	public:
 		void Uninit();
-		void Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
-		void PhysicUpdate( float elapsedTime, const Map &terrain );
+		void Update( float deltaTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreenHitBox );
+		void PhysicUpdate( float deltaTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:

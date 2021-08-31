@@ -35,7 +35,7 @@ namespace Boss
 			MotionKind currKind = MotionKind::Jump;
 		public:
 			void Init( Skull &instance );
-			void Update( Skull &instance, float elapsedTime );
+			void Update( Skull &instance, float deltaTime );
 		public:
 			void ChangeMotion( Skull &instance, MotionKind nextMotionKind, bool resetTimerIfSameMotion = false );
 			bool WasCurrentMotionEnded( const Skull &instance ) const;
@@ -52,8 +52,8 @@ namespace Boss
 		public:
 			virtual void Init( Skull &instance );
 			virtual void Uninit( Skull &instance );
-			virtual void Update( Skull &instance, float elapsedTime, const Input &input );
-			virtual void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain );
+			virtual void Update( Skull &instance, float deltaTime, const Input &input );
+			virtual void PhysicUpdate( Skull &instance, float deltaTime, const Map &terrain );
 			virtual bool NowAppearing( const Skull &instance ) const { return false; }
 			virtual bool NowRecoverHPTiming( const Skull &instance ) const { return false; }
 			virtual bool ShouldChangeMover( const Skull &instance ) const = 0;
@@ -66,13 +66,13 @@ namespace Boss
 		{
 		private:
 			float	oldTimeAfterLanding		= 0.0f;
-			float	elapsedTimeAfterLanding	= 0.0f;
+			float	deltaTimeAfterLanding	= 0.0f;
 			bool	wasLanding				= false;
 		public:
 			void Init( Skull &instance ) override;
 			void Uninit( Skull &instance ) override;
-			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
-			void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain ) override;
+			void Update( Skull &instance, float deltaTime, const Input &input ) override;
+			void PhysicUpdate( Skull &instance, float deltaTime, const Map &terrain ) override;
 			bool NowAppearing( const Skull &instance ) const override;
 			bool NowRecoverHPTiming( const Skull &instance ) const override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
@@ -95,7 +95,7 @@ namespace Boss
 		public:
 			void Init( Skull &instance ) override;
 			void Uninit( Skull &instance ) override;
-			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
+			void Update( Skull &instance, float deltaTime, const Input &input ) override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
@@ -113,21 +113,21 @@ namespace Boss
 			bool	wasFinished	= false;
 		public:
 			void Init( Skull &instance ) override;
-			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
+			void Update( Skull &instance, float deltaTime, const Input &input ) override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
 			std::string GetMoverName() const override;
 		#endif // USE_IMGUI
 		private:
-			void Fire( Skull &instance, float elapsedTime, const Input &input ) const;
+			void Fire( Skull &instance, float deltaTime, const Input &input ) const;
 		};
 		class Jump : public MoverBase
 		{
 		public:
 			void Init( Skull &instance ) override;
-			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
-			void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain ) override;
+			void Update( Skull &instance, float deltaTime, const Input &input ) override;
+			void PhysicUpdate( Skull &instance, float deltaTime, const Map &terrain ) override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
@@ -142,7 +142,7 @@ namespace Boss
 			bool	nowProtected	= false;
 		public:
 			void Init( Skull &instance ) override;
-			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
+			void Update( Skull &instance, float deltaTime, const Input &input ) override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
@@ -162,8 +162,8 @@ namespace Boss
 			Donya::Vector3 initialPos;
 		public:
 			void Init( Skull &instance ) override;
-			void Update( Skull &instance, float elapsedTime, const Input &input ) override;
-			void PhysicUpdate( Skull &instance, float elapsedTime, const Map &terrain ) override;
+			void Update( Skull &instance, float deltaTime, const Input &input ) override;
+			void PhysicUpdate( Skull &instance, float deltaTime, const Map &terrain ) override;
 			bool ShouldChangeMover( const Skull &instance ) const override;
 			std::function<void()> GetChangeStateMethod( Skull &instance ) const override;
 		#if USE_IMGUI
@@ -202,8 +202,8 @@ namespace Boss
 		}
 	public:
 		void Init( const InitializeParam &parameter, int roomID, bool withAppearPerformance, const Donya::Collision::Box3F &wsRoomArea ) override;
-		void Update( float elapsedTime, const Input &input ) override;
-		void PhysicUpdate( float elapsedTime, const Map &terrain ) override;
+		void Update( float deltaTime, const Input &input ) override;
+		void PhysicUpdate( float deltaTime, const Map &terrain ) override;
 		void Draw( RenderingHelper *pRenderer ) const override;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
 	public:
@@ -233,7 +233,7 @@ namespace Boss
 			pMover->Init( *this );
 		}
 	private:
-		void Fall( float elapsedTime );
+		void Fall( float deltaTime );
 		void LookingToTarget( const Donya::Vector3 &wsTargetPos );
 	public:
 	#if USE_IMGUI

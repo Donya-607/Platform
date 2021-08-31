@@ -15,8 +15,8 @@ namespace Bullet
 	public:
 		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
-		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
-		void PhysicUpdate( float elapsedTime, const Map &terrain ) override;
+		void Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
+		void PhysicUpdate( float deltaTime, const Map &terrain ) override;
 	public:
 		bool Destructible() const override;
 		Kind GetKind() const override;

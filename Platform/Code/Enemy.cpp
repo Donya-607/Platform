@@ -247,7 +247,7 @@ namespace Enemy
 
 		pReceivedDamage.reset();
 	}
-	void Base::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void Base::Update( float deltaTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		// Update wait/alive state
 
@@ -272,17 +272,17 @@ namespace Enemy
 
 		// Normal update processes
 
-		hurtBox.UpdateIgnoreList( elapsedTime );
+		hurtBox.UpdateIgnoreList( deltaTime );
 
 		ApplyReceivedDamageIfHas();
 	}
-	void Base::PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence )
+	void Base::PhysicUpdate( float deltaTime, const Map &terrain, bool considerBodyExistence )
 	{
 		if ( NowWaiting() ) { return; }
 		// else
 
 		const auto myBody		= GetHitBox();
-		const auto movement		= velocity * elapsedTime;
+		const auto movement		= velocity * deltaTime;
 		const auto aroundTiles	= terrain.GetPlaceTiles( myBody, movement );
 			  auto aroundSolids	= Map::ToAABBSolids( aroundTiles, terrain, myBody );
 		Donya::AppendVector( &aroundSolids, terrain.GetExtraSolids() );
@@ -406,12 +406,12 @@ namespace Enemy
 	{
 		return waitForRespawn;
 	}
-	void Base::UpdateMotionIfCan( float elapsedTime, int motionIndex )
+	void Base::UpdateMotionIfCan( float deltaTime, int motionIndex )
 	{
 		if ( !model.IsAssignableIndex( motionIndex ) ) { return; }
 		// else
 
-		model.UpdateMotion( elapsedTime, motionIndex );
+		model.UpdateMotion( deltaTime, motionIndex );
 	}
 	void Base::UpdateOutSideState( const Donya::Collision::Box3F &wsScreen )
 	{
@@ -507,20 +507,20 @@ namespace Enemy
 			if ( pIt ) { pIt->Uninit(); }
 		}
 	}
-	void Admin::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void Admin::Update( float deltaTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		for ( auto &pIt : enemyPtrs )
 		{
-			if ( pIt ) { pIt->Update( elapsedTime, wsTargetPos, wsScreen ); }
+			if ( pIt ) { pIt->Update( deltaTime, wsTargetPos, wsScreen ); }
 		}
 
 		RemoveEnemiesIfNeeded();
 	}
-	void Admin::PhysicUpdate( float elapsedTime, const Map &terrain )
+	void Admin::PhysicUpdate( float deltaTime, const Map &terrain )
 	{
 		for ( auto &pIt : enemyPtrs )
 		{
-			if ( pIt ) { pIt->PhysicUpdate( elapsedTime, terrain ); }
+			if ( pIt ) { pIt->PhysicUpdate( deltaTime, terrain ); }
 		}
 	}
 	void Admin::Draw( RenderingHelper *pRenderer ) const

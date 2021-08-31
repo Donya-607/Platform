@@ -17,17 +17,17 @@ namespace Donya
 		public:
 			Shift() : amplitude( 0.0f ), decel( 0.0f ), shift( 0.0f ), kind( MOMENT ), interval() {}
 		public:
-			void Update( float elapsedTime )
+			void Update( float deltaTime )
 			{
 				if ( !IsActive() ) { return; }
 				// else
 
-				interval.Update( elapsedTime );
+				interval.Update( deltaTime );
 
 				switch ( kind )
 				{
-				case MOMENT:		Moment( elapsedTime );		break;
-				case PERMANENCE:	Permanence( elapsedTime );	break;
+				case MOMENT:		Moment( deltaTime );		break;
+				case PERMANENCE:	Permanence( deltaTime );	break;
 				}
 			}
 
@@ -51,9 +51,9 @@ namespace Donya
 				return shift;
 			}
 		private:
-			void Moment( float elapsedTime )
+			void Moment( float deltaTime )
 			{
-				amplitude -= decel * elapsedTime;
+				amplitude -= decel * deltaTime;
 				if ( amplitude <= 0.0f )
 				{
 					amplitude	= 0.0f;
@@ -62,9 +62,9 @@ namespace Donya
 
 				UpdateShift();
 			}
-			void Permanence( float elapsedTime )
+			void Permanence( float deltaTime )
 			{
-				countDown.Update( elapsedTime );
+				countDown.Update( deltaTime );
 
 				if ( countDown.IsDone() )
 				{
@@ -97,10 +97,10 @@ namespace Donya
 
 		static Shift x{}, y{};
 
-		void Update( float elapsedTime )
+		void Update( float deltaTime )
 		{
-			x.Update( elapsedTime );
-			y.Update( elapsedTime );
+			x.Update( deltaTime );
+			y.Update( deltaTime );
 		}
 
 		static bool isEnableShakeState = true;

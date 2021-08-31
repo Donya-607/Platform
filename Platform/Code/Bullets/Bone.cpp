@@ -42,25 +42,25 @@ namespace Bullet
 		DisallowRemovingByOutOfScreen();
 	}
 	void Bone::Uninit() {} // No op
-	void Bone::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
+	void Bone::Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
-		Base::Update( elapsedTime, wsScreenHitBox );
+		Base::Update( deltaTime, wsScreenHitBox );
 
 		const auto &data = Parameter::GetBone();
 
-		aliveSecond += elapsedTime;
+		aliveSecond += deltaTime;
 		if ( data.alwaysSurviveSecond <= aliveSecond )
 		{
 			AllowRemovingByOutOfScreen();
 		}
 
-		velocity.y -= data.gravity * elapsedTime;
+		velocity.y -= data.gravity * deltaTime;
 		if ( !velocity.IsZero() )
 		{
 			UpdateOrientation( velocity.Unit() );
 		}
 
-		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
+		UpdateMotionIfCan( deltaTime * data.basic.animePlaySpeed, 0 );
 	}
 	Kind Bone::GetKind() const
 	{

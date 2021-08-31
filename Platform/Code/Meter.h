@@ -46,7 +46,7 @@ namespace Meter
 		mutable UIObject	sprite;
 	public:
 		void Init( float maxAmount, float startAmount, float destinationAmount );
-		void Update( float elapsedTime );
+		void Update( float deltaTime );
 		void Draw		( float drawDepth = 0.0f ) const;
 		void DrawIcon	( Icon kind, float drawDepth = 0.0f ) const;
 		void DrawRemains( FontAttribute font, int amount, float drawDepth = 0.0f ) const;
@@ -56,7 +56,7 @@ namespace Meter
 		bool NowRecovering() const;
 	private:
 		void ShakeInit( float damage );
-		void ShakeUpdate( float elapsedTime );
+		void ShakeUpdate( float deltaTime );
 		void DrawGauge( float drawDepth ) const;
 		void DrawAmount( float drawDepth ) const;
 	};

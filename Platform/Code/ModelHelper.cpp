@@ -84,17 +84,17 @@ namespace ModelHelper
 		animator.SetRepeatRange( motion );
 		pose.AssignSkeletal( animator.CalcCurrentPose( motion ) );
 	}
-	void SkinningOperator::UpdateMotion( float elapsedTime, int motionIndex )
+	void SkinningOperator::UpdateMotion( float deltaTime, int motionIndex )
 	{
 		if ( !pResource ) { return; }
 		// else
 
-		animator.Update( elapsedTime );
+		animator.Update( deltaTime );
 		AssignMotion( motionIndex );
 
-		AdvanceInterpolation( elapsedTime );
+		AdvanceInterpolation( deltaTime );
 	}
-	void SkinningOperator::AdvanceInterpolation( float elapsedTime )
+	void SkinningOperator::AdvanceInterpolation( float deltaTime )
 	{
 		Interpolation &lerp = interpolation;
 
@@ -111,7 +111,7 @@ namespace ModelHelper
 		// else
 
 		const float updateSecond = 1.0f / lerp.transSecond;
-		lerp.transPercent += updateSecond * elapsedTime;
+		lerp.transPercent += updateSecond * deltaTime;
 
 		if ( 1.0f <= lerp.transPercent )
 		{

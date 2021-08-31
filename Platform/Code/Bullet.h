@@ -166,8 +166,8 @@ namespace Bullet
 	public:
 		virtual void Init( const FireDesc &parameter );
 		virtual void Uninit() = 0;
-		virtual void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox );
-		virtual void PhysicUpdate( float elapsedTime, const Map &terrain );
+		virtual void Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox );
+		virtual void PhysicUpdate( float deltaTime, const Map &terrain );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
@@ -221,7 +221,7 @@ namespace Bullet
 		virtual void AssignBodyParameter( const Donya::Vector3 &wsPos ) = 0;
 		virtual void InitBody( const FireDesc &parameter );
 		virtual void UpdateOrientation( const Donya::Vector3 &direction );
-		void UpdateMotionIfCan( float elapsedTime, int motionIndex );
+		void UpdateMotionIfCan( float deltaTime, int motionIndex );
 		Donya::Vector4x4 MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const;
 	public:
 	#if USE_IMGUI
@@ -243,7 +243,7 @@ namespace Bullet
 	private:
 		Admin() = default;
 	public:
-		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox );
+		void Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox );
 		void PhysicUpdate( float elasedTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;

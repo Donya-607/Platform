@@ -86,7 +86,7 @@ void PauseProcessor::Uninit()
 	Effect::Admin::Get().SetUpdateSpeed( 1.0f );
 }
 
-PauseProcessor::Result PauseProcessor::Update( float elapsedTime, const Donya::XInput &controller )
+PauseProcessor::Result PauseProcessor::Update( float deltaTime, const Donya::XInput &controller )
 {
 	UpdateInput( controller );
 	UpdateChooseItem();

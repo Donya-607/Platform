@@ -31,7 +31,7 @@ private:
 	Performer::LoadPart loadPerformer;
 
 #if DEBUG_MODE
-	float elapsedTimer	= 0;
+	float deltaTimer = 0;
 #endif // DEBUG_MODE
 public:
 	SceneLoad() : Scene() {}

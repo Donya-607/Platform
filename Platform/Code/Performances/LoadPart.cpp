@@ -100,7 +100,7 @@ namespace Performer
 			_ASSERT_EXPR( 0, L"Error: Load the Loading-Icon is failed!" );
 		}
 	}
-	void LoadPart::Icon::Update( float elapsedTime )
+	void LoadPart::Icon::Update( float deltaTime )
 	{
 		if ( !active ) { return; }
 		// else
@@ -122,7 +122,7 @@ namespace Performer
 		}
 	#endif // USE_IMGUI
 
-		timer += elapsedTime;
+		timer += deltaTime;
 
 		const auto &data = Parameter::Get().partIcon;
 		if ( IsZero( data.cycleSecond ) )
@@ -209,7 +209,7 @@ namespace Performer
 		posOffset	= data.config.pos;
 		pivot		= data.config.origin;
 	}
-	void LoadPart::String::Update( float elapsedTime )
+	void LoadPart::String::Update( float deltaTime )
 	{
 		if ( !active ) { return; }
 		// else
@@ -233,7 +233,7 @@ namespace Performer
 		const auto &data = Parameter::Get().partString;
 		const float wholeCycleSecond = data.staySecond + ( data.partPopSecond * showingStrCountF );
 
-		timer += elapsedTime;
+		timer += deltaTime;
 		timer = fmodf( timer, wholeCycleSecond );
 
 		if ( timer < data.staySecond )
@@ -326,7 +326,7 @@ namespace Performer
 	{
 		// No op
 	}
-	void LoadPart::UpdateIfActive( float elapsedTime )
+	void LoadPart::UpdateIfActive( float deltaTime )
 	{
 		if ( !active )
 		{
@@ -338,7 +338,7 @@ namespace Performer
 			else
 			{
 				const float toOpaque = 1.0f / fadeSec;
-				alpha -= toOpaque * elapsedTime;
+				alpha -= toOpaque * deltaTime;
 			}
 
 			if ( alpha <= 0.0f )
@@ -350,10 +350,10 @@ namespace Performer
 			}
 		}
 
-		timer += elapsedTime;
+		timer += deltaTime;
 
-		partIcon.Update( elapsedTime );
-		partString.Update( elapsedTime );
+		partIcon.Update( deltaTime );
+		partString.Update( deltaTime );
 	}
 	void LoadPart::DrawIfActive( float drawDepth )
 	{

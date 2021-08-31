@@ -104,7 +104,7 @@ namespace Boss
 			~Flusher();
 		public:
 			void Start( float flushingSeconds );
-			void Update( const Base &instance, float elapsedTime );
+			void Update( const Base &instance, float deltaTime );
 			bool Drawable( float flushingInterval ) const;
 			/// <summary>
 			/// It means now invincible.
@@ -153,8 +153,8 @@ namespace Boss
 	public:
 		virtual void Init( const InitializeParam &parameter, int roomID, bool withAppearPerformance, const Donya::Collision::Box3F &wsRoomArea = Donya::Collision::Box3F::Nil() );
 		virtual void Uninit();
-		virtual void Update( float elapsedTime, const Input &input );
-		virtual void PhysicUpdate( float elapsedTime, const Map &terrain );
+		virtual void Update( float deltaTime, const Input &input );
+		virtual void PhysicUpdate( float deltaTime, const Map &terrain );
 		virtual void Draw( RenderingHelper *pRenderer ) const;
 		virtual void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
@@ -197,26 +197,26 @@ namespace Boss
 		virtual void DieMoment();
 	protected:
 		void UpdateInvincibleExistence();
-		void UpdateMotionIfCan( float elapsedTime, int motionIndex );
-		std::vector<Donya::Collision::Box3F> FetchSolidsByBody( const Map &terrain, const Donya::Collision::Box3F &hitBoxVSTerrain, float elapsedTime, const Donya::Vector3 &currentVelocity );
+		void UpdateMotionIfCan( float deltaTime, int motionIndex );
+		std::vector<Donya::Collision::Box3F> FetchSolidsByBody( const Map &terrain, const Donya::Collision::Box3F &hitBoxVSTerrain, float deltaTime, const Donya::Vector3 &currentVelocity );
 		/// <summary>
 		/// Returns the return value of Actor::MoveX().
 		/// </summary>
-		virtual int MoveOnlyX( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+		virtual int MoveOnlyX( float deltaTime, const std::vector<Donya::Collision::Box3F> &solids );
 		/// <summary>
 		/// Returns the return value of Actor::MoveY().
 		/// </summary>
-		virtual int MoveOnlyY( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+		virtual int MoveOnlyY( float deltaTime, const std::vector<Donya::Collision::Box3F> &solids );
 		/// <summary>
 		/// Returns the return value of Actor::MoveZ().
 		/// </summary>
-		virtual int MoveOnlyZ( float elapsedTime, const std::vector<Donya::Collision::Box3F> &solids );
+		virtual int MoveOnlyZ( float deltaTime, const std::vector<Donya::Collision::Box3F> &solids );
 		virtual void AppearInit();
-		virtual void AppearUpdate( float elapsedTime, const Input &input );
+		virtual void AppearUpdate( float deltaTime, const Input &input );
 		/// <summary>
 		/// Returns true when landing to ground.
 		/// </summary>
-		virtual bool AppearPhysicUpdate( float elapsedTime, const Map &terrain );
+		virtual bool AppearPhysicUpdate( float deltaTime, const Map &terrain );
 	protected:
 		virtual int GetInitialHP() const = 0;
 		virtual void AssignMyBody( const Donya::Vector3 &wsPos ) = 0;
@@ -281,8 +281,8 @@ namespace Boss
 	public:
 		bool Init( int stageNumber );
 		void Uninit();
-		void Update( float elapsedTime, const Input &input );
-		void PhysicUpdate( float elapsedTime, const Map &terrain );
+		void Update( float deltaTime, const Input &input );
+		void PhysicUpdate( float deltaTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:

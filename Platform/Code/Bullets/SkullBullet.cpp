@@ -50,12 +50,12 @@ namespace Bullet
 
 
 	void SkullBuster::Uninit() {} // No op
-	void SkullBuster::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
+	void SkullBuster::Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
-		Base::Update( elapsedTime, wsScreenHitBox );
+		Base::Update( deltaTime, wsScreenHitBox );
 
 		const auto &data = Parameter::GetSkullBuster();
-		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
+		UpdateMotionIfCan( deltaTime * data.basic.animePlaySpeed, 0 );
 	}
 	Kind SkullBuster::GetKind() const
 	{
@@ -98,14 +98,14 @@ namespace Bullet
 		rotateSign		= ( parameter.direction.x < 0.0f ) ? +1.0f : -1.0f;
 	}
 	void SkullShield::Uninit() {} // No op
-	void SkullShield::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
+	void SkullShield::Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
-		Base::Update( elapsedTime, wsScreenHitBox );
+		Base::Update( deltaTime, wsScreenHitBox );
 
 		const auto &data = Parameter::GetSkullShield();
-		currentDegree += data.rotateDegree * rotateSign * elapsedTime;
+		currentDegree += data.rotateDegree * rotateSign * deltaTime;
 
-		UpdateMotionIfCan( elapsedTime * data.basic.animePlaySpeed, 0 );
+		UpdateMotionIfCan( deltaTime * data.basic.animePlaySpeed, 0 );
 	}
 	void SkullShield::Draw( RenderingHelper *pRenderer ) const
 	{

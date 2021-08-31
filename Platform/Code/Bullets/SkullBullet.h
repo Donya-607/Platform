@@ -12,7 +12,7 @@ namespace Bullet
 	{
 	public:
 		void Uninit() override;
-		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
+		void Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 	public:
 		Kind GetKind() const override;
 	private:
@@ -65,7 +65,7 @@ namespace Bullet
 	public:
 		void Init( const FireDesc &parameter ) override;
 		void Uninit() override;
-		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
+		void Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox ) override;
 		void Draw( RenderingHelper *pRenderer ) const override;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const override;
 	public:

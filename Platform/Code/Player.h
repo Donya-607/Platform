@@ -175,7 +175,7 @@ private:
 		Donya::Vector3	wsDestination;				// World space. It is valid when the headToDestination is true
 	public:
 		void Init();
-		void Update( const Player &instance, float elapsedTime, const Input &input );
+		void Update( const Player &instance, float deltaTime, const Input &input );
 	public:
 		bool NowJumpable( bool useSlideParam = false )	const;
 		bool NowUseJump( bool useSlideParam = false )	const;	// Returns just is there a jump input
@@ -197,7 +197,7 @@ private:
 		/// </summary>
 		Donya::Vector3 HeadingDestinationOrOrigin() const;
 	private:
-		void RegisterCurrentInputs( float elapsedTime, const Input &input );
+		void RegisterCurrentInputs( float deltaTime, const Input &input );
 		int  IndexOfUsingJump( bool useSlideParam = false ) const; // Return -1 if not using
 		int  IndexOfReleasingJump()		const; // Return -1 if not using
 		int  IndexOfUsingShot()			const; // Return -1 if not using
@@ -222,7 +222,7 @@ private:
 		bool shouldPoseShot = false;
 	public:
 		void Init();
-		void Update( Player &instance, float elapsedTime, bool stopAnimation = false );
+		void Update( Player &instance, float deltaTime, bool stopAnimation = false );
 		void Draw( RenderingHelper *pRenderer, const Donya::Vector4x4 &matW, const Donya::Vector3 &blendColor, float blendAlpha, const Donya::Vector2 &uvOffset ) const;
 	public:
 		void ResetMotionFrame();
@@ -235,14 +235,14 @@ private:
 		const Donya::Model::Pose &GetCurrentPose() const;
 		const Donya::Model::SkinningModel *GetModelOrNullptr() const;
 	private:
-		void UpdateShotMotion( Player &instance, float elapsedTime );
-		void ApplyPartMotion( Player &instance, float elapsedTime, MotionKind useMotion );
+		void UpdateShotMotion( Player &instance, float deltaTime );
+		void ApplyPartMotion( Player &instance, float deltaTime, MotionKind useMotion );
 		void ExplorePartBone( std::vector<size_t> *pTargetBoneIndices, const std::vector<Donya::Model::Animation::Node> &exploreSkeletal, const std::string &searchBoneRootName );
 	private:
 		int  ToMotionIndex( MotionKind kind ) const;
 		void AssignPose( MotionKind kind );
 		bool ShouldEnableLoop( MotionKind kind ) const;
-		MotionKind GetNowKind( Player &instance, float elapsedTime ) const;
+		MotionKind GetNowKind( Player &instance, float deltaTime ) const;
 	};
 	class ShotManager
 	{
@@ -261,7 +261,7 @@ private:
 	public:
 		void Init();
 		void Uninit();
-		void Update( const Player &instance, float elapsedTime );
+		void Update( const Player &instance, float deltaTime );
 	public:
 		void ChargeFully();
 		void SetFXPosition( const Donya::Vector3 &wsPosition );
@@ -276,7 +276,7 @@ private:
 		Donya::Vector3	CalcEmissiveColor	( float chargingSecond ) const;
 		void AssignLoopFX( Effect::Kind kind );
 	private:
-		void ChargeUpdate( const Player &instance , float elapsedTime );
+		void ChargeUpdate( const Player &instance , float deltaTime );
 		void PlayLoopSFXIfStopping();
 		void StopLoopSFXIfPlaying( bool forcely = false );
 	};
@@ -296,7 +296,7 @@ private:
 			Command::Part cmd;
 		public:
 			void Init( const Command::Part &chargeCommand );
-			void Update( const SticksType &inputs, float elapsedTime );
+			void Update( const SticksType &inputs, float deltaTime );
 			bool Accepted() const;
 		private:
 			void AdvanceProgressIfPressed( const SticksType &inputs );
@@ -314,7 +314,7 @@ private:
 		std::vector<Processor>	processors;
 	public:
 		void Init();
-		void Update( Player &instance, float elapsedTime );
+		void Update( Player &instance, float deltaTime );
 		bool WantFire() const { return wantFire; }
 	public:
 	#if USE_IMGUI
@@ -332,7 +332,7 @@ private:
 		~Flusher();
 	public:
 		void Start( float flushingSeconds );
-		void Update( const Player &instance, float elapsedTime );
+		void Update( const Player &instance, float deltaTime );
 		void SetFXPosition( const Donya::Vector3 &wsPosition );
 		bool Drawable() const;
 		/// <summary>
@@ -353,7 +353,7 @@ private:
 		std::vector<Vision> visions;
 	public:
 		void Init();
-		void Update( float elapsedTime );
+		void Update( float deltaTime );
 		void Draw( RenderingHelper *pRenderer, const Donya::Model::SkinningModel &model ) const;
 	public:
 		void Add( const Donya::Model::Pose &pose, const Donya::Vector3 &wsPos, const Donya::Quaternion &orientation );
@@ -366,8 +366,8 @@ private:
 	public:
 		virtual void Init( Player &instance );
 		virtual void Uninit( Player &instance ) {}
-		virtual void Update( Player &instance, float elapsedTime, const Map &terrain ) = 0;
-		virtual void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) = 0;
+		virtual void Update( Player &instance, float deltaTime, const Map &terrain ) = 0;
+		virtual void Move( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) = 0;
 	public:
 		virtual MotionKind GetNowMotionKind( const Player &instance ) const = 0;
 		virtual bool NowMiss( const Player &instance ) const { return false; }
@@ -381,9 +381,9 @@ private:
 	protected:
 		virtual void AssignBodyParameter( Player &instance );
 	protected:
-		void MotionUpdate( Player &instance, float elapsedTime, bool stopAnimation = false );
-		void MoveOnlyHorizontal( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
-		void MoveOnlyVertical( Player &instance, float elapsedTime, const Map &terrain );
+		void MotionUpdate( Player &instance, float deltaTime, bool stopAnimation = false );
+		void MoveOnlyHorizontal( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
+		void MoveOnlyVertical( Player &instance, float deltaTime, const Map &terrain );
 	};
 	class Normal : public MoverBase
 	{
@@ -392,14 +392,14 @@ private:
 		bool gotoLadder		= false;
 		bool braceOneself	= false;
 	public:
-		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		void Update( Player &instance, float deltaTime, const Map &terrain ) override;
+		void Move( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 	public:
 		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	private:
-		void UpdateVertical( Player &instance, float elapsedTime, const Map &terrain );
+		void UpdateVertical( Player &instance, float deltaTime, const Map &terrain );
 	public:
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"í èÌ"; }
@@ -422,15 +422,15 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		void Update( Player &instance, float deltaTime, const Map &terrain ) override;
+		void Move( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 	public:
 		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	private:
-		void UpdateStatus( Player &instance, float elapsedTime, const Map &terrain );
-		void UpdateVertical( Player &instance, float elapsedTime );
+		void UpdateStatus( Player &instance, float deltaTime, const Map &terrain );
+		void UpdateVertical( Player &instance, float deltaTime );
 		void UpdateTakeOverInput( bool pressJump, bool pressDown );
 	public:
 	#if USE_IMGUI
@@ -456,8 +456,8 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		void Update( Player &instance, float deltaTime, const Map &terrain ) override;
+		void Move( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 	public:
 		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool ShouldChangeMover( const Player &instance ) const override;
@@ -470,9 +470,9 @@ private:
 		void LookToFront( Player &instance );
 	private:
 		bool NowUnderShotLag() const;
-		void ShotProcess( Player &instance, float elapsedTime );
+		void ShotProcess( Player &instance, float deltaTime );
 	private:
-		ReleaseWay JudgeWhetherToRelease( Player &instance, float elapsedTime, const Map &terrain ) const;
+		ReleaseWay JudgeWhetherToRelease( Player &instance, float deltaTime, const Map &terrain ) const;
 	};
 	class KnockBack : public MoverBase
 	{
@@ -482,8 +482,8 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		void Update( Player &instance, float deltaTime, const Map &terrain ) override;
+		void Move( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 	public:
 		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool CanShoryuken( const Player &instance ) const override { return false; }
@@ -497,8 +497,8 @@ private:
 	{
 	public:
 		void Init( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		void Update( Player &instance, float deltaTime, const Map &terrain ) override;
+		void Move( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 	public:
 		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool NowMiss( const Player &instance ) const override { return true; }
@@ -517,8 +517,8 @@ private:
 		bool	visible	= false;
 	public:
 		void Init( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		void Update( Player &instance, float deltaTime, const Map &terrain ) override;
+		void Move( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 	public:
 		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool Drawable( const Player &instance ) const override;
@@ -536,8 +536,8 @@ private:
 		bool	visible	= true;
 	public:
 		void Init( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		void Update( Player &instance, float deltaTime, const Map &terrain ) override;
+		void Move( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 	public:
 		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool Drawable( const Player &instance ) const override;
@@ -553,8 +553,8 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		void Update( Player &instance, float deltaTime, const Map &terrain ) override;
+		void Move( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 	public:
 		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool CanShoryuken( const Player &instance ) const override { return false; }
@@ -576,23 +576,23 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit( Player &instance ) override;
-		void Update( Player &instance, float elapsedTime, const Map &terrain ) override;
-		void Move( Player &instance, float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
+		void Update( Player &instance, float deltaTime, const Map &terrain ) override;
+		void Move( Player &instance, float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder ) override;
 	public:
 		MotionKind GetNowMotionKind( const Player &instance ) const override;
 		bool CanShoryuken( const Player &instance ) const override { return false; }
 		bool ShouldChangeMover( const Player &instance ) const override;
 		std::function<void()> GetChangeStateMethod( Player &instance ) const override;
 	private:
-		void UpdateHSpeed( Player &instance, float elapsedTime );
-		void UpdateVSpeed( Player &instance, float elapsedTime );
+		void UpdateHSpeed( Player &instance, float deltaTime );
+		void UpdateVSpeed( Player &instance, float deltaTime );
 	private:
 		void GenerateCollision( Player &instance );
 		std::shared_ptr<Bullet::Base> FindAliveCollisionOrNullptr();
 		void UpdateCollision( Player &instance );
 		void RemoveCollision( Player &instance );
 	private:
-		void GenerateVisionIfNeeded( Player &instance, float elapsedTime );
+		void GenerateVisionIfNeeded( Player &instance, float deltaTime );
 	public:
 	#if USE_IMGUI
 		std::string GetMoverName() const override { return u8"è∏ó¥åù"; }
@@ -608,11 +608,11 @@ private:
 	public:
 		virtual void Init( Player &instance );
 		virtual void Uninit();
-		virtual void Update( Player &instance, float elapsedTime );
+		virtual void Update( Player &instance, float deltaTime );
 		/// <summary>
 		/// Will called after the Player::PhysicUpdate()
 		/// </summary>
-		virtual void MovedUpdate( Player &instance, float elapsedTime );
+		virtual void MovedUpdate( Player &instance, float deltaTime );
 	public:
 		virtual bool Chargeable() const = 0;
 		virtual bool NowFireable( const Player &instance ) const = 0;
@@ -651,8 +651,8 @@ private:
 	public:
 		void Init( Player &instance ) override;
 		void Uninit() override;
-		void Update( Player &instance, float elapsedTime ) override;
-		void MovedUpdate( Player &instance, float elapsedTime ) override;
+		void Update( Player &instance, float deltaTime ) override;
+		void MovedUpdate( Player &instance, float deltaTime ) override;
 	public:
 		bool Chargeable() const override;
 		bool NowFireable( const Player &instance ) const override;
@@ -712,8 +712,8 @@ public:
 	void Init( const PlayerInitializer &initializer, const Map &terrain, bool withAppearPerformance = true );
 	void Uninit();
 
-	void Update( float elapsedTime, const Input &input, const Map &terrain );
-	void PhysicUpdate( float elapsedTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
+	void Update( float deltaTime, const Input &input, const Map &terrain );
+	void PhysicUpdate( float deltaTime, const Map &terrain, float roomLeftBorder, float roomRightBorder );
 
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP, const Donya::Vector4 &unused = { 0.0f, 0.0f, 0.0f, 0.0f } ) const override;
@@ -749,7 +749,7 @@ public:
 	virtual bool				WillDie()			const;
 public:
 	void KillMe();
-	void KillMeIfCollideToKillAreas( float elapsedTime, const Map &terrain );
+	void KillMeIfCollideToKillAreas( float deltaTime, const Map &terrain );
 	void PerformWinning();
 	void PerformLeaving();
 private:
@@ -757,7 +757,7 @@ private:
 	/// <summary>
 	/// After this, the "pReceivedDamage" will be reset.
 	/// </summary>
-	void ApplyReceivedDamageIfHas( float elapsedTime, const Map &terrain );
+	void ApplyReceivedDamageIfHas( float deltaTime, const Map &terrain );
 private:
 	template<class Mover>
 	void AssignMover()
@@ -790,8 +790,8 @@ private:
 	}
 	void AssignGunByKind( Definition::WeaponKind kind );
 private:
-	void UpdateInvincible( float elapsedTime, const Map &terrain );
-	void UpdateMover( float elapsedTime, const Map &terrain );
+	void UpdateInvincible( float deltaTime, const Map &terrain );
+	void UpdateMover( float deltaTime, const Map &terrain );
 private:
 	void AssignCurrentBodyInfo( Donya::Collision::Box3F *pTarget, bool useHurtBoxInfo ) const;
 	Donya::Collision::Box3F GetNormalBody ( bool ofHurtBox ) const;
@@ -805,17 +805,17 @@ private:
 	using Actor::MoveY;
 	using Actor::MoveZ;
 	using Actor::DrawHitBox;
-	void MoveHorizontal( float elapsedTime );
-	void MoveVertical  ( float elapsedTime );
-	bool NowShotable( float elapsedTime ) const;
-	void ShotIfRequested( float elapsedTime );
+	void MoveHorizontal( float deltaTime );
+	void MoveVertical  ( float deltaTime );
+	bool NowShotable( float deltaTime ) const;
+	void ShotIfRequested( float deltaTime );
 	void UpdateOrientation( bool lookingRight );
 	void Jump();
 	bool Jumpable() const;
 	bool WillUseJump() const; // Returns comprehensively judge of the player will jumps
-	void Fall( float elapsedTime );
+	void Fall( float deltaTime );
 	void Landing();
-	void ShiftGunIfNeeded( float elapsedTime );
+	void ShiftGunIfNeeded( float deltaTime );
 private:
 	void GenerateSlideEffects() const;
 	void AddLagVision();

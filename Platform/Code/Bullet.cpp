@@ -285,7 +285,7 @@ namespace Bullet
 		}
 		wantRemove	= false;
 	}
-	void Base::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
+	void Base::Update( float deltaTime, const Donya::Collision::Box3F &wsScreen )
 	{
 	#if USE_IMGUI
 		// Apply for be able to see an adjustment immediately
@@ -300,11 +300,11 @@ namespace Bullet
 		}
 	#endif // USE_IMGUI
 
-		body.UpdateIgnoreList( elapsedTime );
-		hitSphere.UpdateIgnoreList( elapsedTime );
+		body.UpdateIgnoreList( deltaTime );
+		hitSphere.UpdateIgnoreList( deltaTime );
 		collidedCallingCount = 0;
 
-		secondToRemove -= elapsedTime;
+		secondToRemove -= deltaTime;
 		if ( secondToRemove <= 0.0f )
 		{
 			wantRemove = true;
@@ -324,10 +324,10 @@ namespace Bullet
 			ProcessOnOutSide();
 		}
 	}
-	void Base::PhysicUpdate( float elapsedTime, const Map &terrain )
+	void Base::PhysicUpdate( float deltaTime, const Map &terrain )
 	{
 		const auto oldPos	= body.pos;
-		const auto movement	= velocity * elapsedTime;
+		const auto movement	= velocity * deltaTime;
 		Solid::Move( movement, {}, {} ); // It moves the "body" only
 
 		const auto delta = body.pos - oldPos;
@@ -594,14 +594,14 @@ namespace Bullet
 		if ( useAABB	) { AssignBodyParameter( body.pos		); }
 		if ( useSphere	) { AssignBodyParameter( hitSphere.pos	); }
 	}
-	void Base::UpdateMotionIfCan( float elapsedTime, int motionIndex )
+	void Base::UpdateMotionIfCan( float deltaTime, int motionIndex )
 	{
 		if ( wasProtected != ProtectedInfo::None ) { return; }
 		// else
 		if ( !model.IsAssignableIndex( motionIndex ) ) { return; }
 		// else
 
-		model.UpdateMotion( elapsedTime, motionIndex );
+		model.UpdateMotion( deltaTime, motionIndex );
 	}
 	Donya::Vector4x4 Base::MakeWorldMatrix( const Donya::Vector3 &scale, bool enableRotation, const Donya::Vector3 &translation ) const
 	{
@@ -635,7 +635,7 @@ namespace Bullet
 #endif // USE_IMGUI
 
 
-	void Admin::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreen )
+	void Admin::Update( float deltaTime, const Donya::Collision::Box3F &wsScreen )
 	{
 		GenerateRequestedFires();
 		generateRequests.clear();
@@ -646,7 +646,7 @@ namespace Bullet
 			if ( !pIt ) { continue; }
 			// else
 
-			pIt->Update( elapsedTime, wsScreen );
+			pIt->Update( deltaTime, wsScreen );
 
 			if ( pIt->ShouldRemove() )
 			{
@@ -656,7 +656,7 @@ namespace Bullet
 
 		RemoveInstancesIfNeeds();
 	}
-	void Admin::PhysicUpdate( float elapsedTime, const Map &terrain )
+	void Admin::PhysicUpdate( float deltaTime, const Map &terrain )
 	{
 		// TODO: Should detect a remove sign and erase that in here?
 
@@ -665,7 +665,7 @@ namespace Bullet
 			if ( !pIt ) { continue; }
 			// else
 
-			pIt->PhysicUpdate( elapsedTime, terrain );
+			pIt->PhysicUpdate( deltaTime, terrain );
 
 			if ( pIt->ShouldRemove() )
 			{

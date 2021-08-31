@@ -56,7 +56,7 @@ private:
 	Donya::Vector3	drawColor{ 1.0f, 1.0f, 1.0f };
 public:
 	bool Init();
-	void Update( float elapsedTime );
+	void Update( float deltaTime );
 	void Draw( const Donya::Vector3 &wsCameraPos, const Donya::Vector4x4 &matVP );
 public:
 	/// <summary>

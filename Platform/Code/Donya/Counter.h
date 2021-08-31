@@ -21,12 +21,12 @@ namespace Donya
 		Counter( T changeAmount, T goal ) :
 			addAmount( changeAmount ), current( T{} ), goal( goal ), isDone( false ) {}
 	public:
-		void Update( float elapsedTime )
+		void Update( float deltaTime )
 		{
 			if ( isDone ) { return; }
 			// else
 
-			current += addAmount * elapsedTime;
+			current += addAmount * deltaTime;
 			if ( goal <= current )
 			{
 				current = goal;

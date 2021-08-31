@@ -50,7 +50,7 @@ private:
 public:
 	void Init( StageFormat::ID tileID, const Donya::Vector3 &wsTilePos, const Donya::Vector3 &wsTileWholeSize );
 	void Uninit();
-	void Update( float elapsedTime );
+	void Update( float deltaTime );
 	void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:
 	bool ShouldRemove() const;
@@ -123,7 +123,7 @@ private:
 public:
 	bool Init( int stageNumber, bool reloadModel );
 	void Uninit();
-	void Update( float elapsedTime );
+	void Update( float deltaTime );
 	void Draw( RenderingHelper *pRenderer ) const;
 	void DrawHitBoxes( const Donya::Collision::Box3F &wsScreenHitBox, RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 public:

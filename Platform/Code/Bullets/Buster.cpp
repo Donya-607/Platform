@@ -112,13 +112,13 @@ namespace Bullet
 	{
 		livingCount--;
 	}
-	void Buster::Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox )
+	void Buster::Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox )
 	{
-		Base::Update( elapsedTime, wsScreenHitBox );
+		Base::Update( deltaTime, wsScreenHitBox );
 
 		const auto *pLevel = GetParamLevelOrNullptr( chargeLevel );
 		const float animePlaySpeed = ( pLevel ) ? pLevel->basic.animePlaySpeed : 1.0f;
-		UpdateMotionIfCan( elapsedTime * animePlaySpeed, scast<int>( chargeLevel ) );
+		UpdateMotionIfCan( deltaTime * animePlaySpeed, scast<int>( chargeLevel ) );
 
 		if ( pLevel )
 		{
@@ -129,7 +129,7 @@ namespace Bullet
 
 		if ( Player::IsFullyCharged( chargeLevel ) && !WasProtected() )
 		{
-			generationTimer += elapsedTime;
+			generationTimer += deltaTime;
 
 			const float &generateInterval = Parameter::GetBuster().chargedTracingInterval;
 			if ( generateInterval <= generationTimer )

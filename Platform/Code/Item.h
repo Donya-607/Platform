@@ -92,7 +92,7 @@ namespace Item
 			bool	active	= false;
 		public:
 			void Start();
-			void Update( float elapsedTime );
+			void Update( float deltaTime );
 			bool IsActive() const;
 			bool Drawable() const;
 		};
@@ -126,8 +126,8 @@ namespace Item
 	public:
 		void Init( const InitializeParam &parameter, const Map &terrain );
 		void Uninit();
-		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox, const Map &terrain );
-		void PhysicUpdate( float elapsedTime, const Map &terrain );
+		void Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox, const Map &terrain );
+		void PhysicUpdate( float deltaTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:
@@ -141,7 +141,7 @@ namespace Item
 		void WasCaught() const;
 	public:
 	private:
-		std::vector<Donya::Collision::Box3F> FetchAroundSolids( float elapsedTime, const Map &terrain ) const;
+		std::vector<Donya::Collision::Box3F> FetchAroundSolids( float deltaTime, const Map &terrain ) const;
 		bool IsHitToAnyOf( const std::vector<Donya::Collision::Box3F> &solids ) const;
 		bool OnOutSideScreen( const Donya::Collision::Box3F &wsScreenHitBox );
 		void UpdateRemoveCondition( const Donya::Collision::Box3F &wsScreenHitBox );
@@ -184,8 +184,8 @@ namespace Item
 		static constexpr const char *ID = "Item";
 	public:
 		void Uninit();
-		void Update( float elapsedTime, const Donya::Collision::Box3F &wsScreenHitBox, const Map &terrain );
-		void PhysicUpdate( float elapsedTime, const Map &terrain );
+		void Update( float deltaTime, const Donya::Collision::Box3F &wsScreenHitBox, const Map &terrain );
+		void PhysicUpdate( float deltaTime, const Map &terrain );
 		void Draw( RenderingHelper *pRenderer ) const;
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &matVP ) const;
 	public:

@@ -52,13 +52,13 @@ namespace Enemy
 			AssignMyBody( initializer.wsPos );
 		}
 	}
-	void Togehero::Update( float elapsedTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
+	void Togehero::Update( float deltaTime, const Donya::Vector3 &wsTargetPos, const Donya::Collision::Box3F &wsScreen )
 	{
 		const auto &data = Parameter::GetTogehero();
 
 		prevIncludeSecond = currIncludeSecond;
 		if ( Donya::Collision::IsHit( body, wsTargetPos, /* considerExistFlag = */ false ) )
-		{ currIncludeSecond += elapsedTime; }
+		{ currIncludeSecond += deltaTime; }
 		else
 		{ currIncludeSecond = 0.0f; }
 
@@ -74,7 +74,7 @@ namespace Enemy
 			}
 		}
 	}
-	void Togehero::PhysicUpdate( float elapsedTime, const Map &terrain, bool considerBodyExistence )
+	void Togehero::PhysicUpdate( float deltaTime, const Map &terrain, bool considerBodyExistence )
 	{
 		// No op
 	}

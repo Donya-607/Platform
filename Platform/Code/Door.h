@@ -58,7 +58,7 @@ namespace Door
 		}
 	public:
 		void Init();
-		void Update( float elapsedTime );
+		void Update( float deltaTime );
 		void Draw( RenderingHelper *pRenderer ) const;
 	#if DEBUG_MODE
 		void DrawHitBox( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) const;
@@ -109,7 +109,7 @@ namespace Door
 		static constexpr const char *ID = "Doors";
 	public:
 		void Init( int stageNo );
-		void Update( float elapsedTime );
+		void Update( float deltaTime );
 		void Draw( RenderingHelper *pRenderer ) const;
 	#if DEBUG_MODE
 		void DrawHitBoxes( RenderingHelper *pRenderer, const Donya::Vector4x4 &VP ) const;

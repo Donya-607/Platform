@@ -373,7 +373,7 @@ Scene::Result SceneLoad::Update()
 #endif // USE_IMGUI
 
 #if DEBUG_MODE
-	elapsedTimer += deltaTime;
+	deltaTimer += deltaTime;
 #endif // DEBUG_MODE
 
 	loadPerformer.UpdateIfActive( deltaTime );
@@ -489,7 +489,7 @@ void SceneLoad::UseImGui()
 
 	ImGui::Checkbox( u8"フェードアウトを止める", &stopFadeout );
 
-	ImGui::Text( u8"経過時間：[%6.3f]", elapsedTimer );
+	ImGui::Text( u8"経過時間：[%6.3f]", deltaTimer );
 
 	sceneParam.ShowImGuiNode( u8"ロード画面のパラメータ" );
 

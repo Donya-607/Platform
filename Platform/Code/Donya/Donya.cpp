@@ -1039,19 +1039,19 @@ namespace Donya
 		*/
 
 		static int frames = 0;
-		static float elapsedTime = 0.0f;
+		static float deltaTime = 0.0f;
 
 		frames++;
 
 		// Compute averages over one second period.
-		if ( 1.0f <= ( smg->highResoTimer.TimeStamp() - elapsedTime ) )
+		if ( 1.0f <= ( smg->highResoTimer.TimeStamp() - deltaTime ) )
 		{
 			smg->currentFPS  = scast<float>( frames ); // fps = frameCnt / 1
 			smg->currentMSPF = 1000.0f / smg->currentFPS;
 
 			// Reset for next average.
 			frames = 0;
-			elapsedTime += 1.0f;
+			deltaTime += 1.0f;
 		}
 	}
 	void UpdateWindowCaption()

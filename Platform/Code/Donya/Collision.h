@@ -46,9 +46,9 @@ namespace Donya
 			IDType	ignoreID		= 0;
 			float	ignoreSecond	= FLT_MAX;
 		public:
-			void Update( float elapsedTime )
+			void Update( float deltaTime )
 			{
-				ignoreSecond -= elapsedTime;
+				ignoreSecond -= deltaTime;
 			}
 			bool ShouldRemove() const
 			{
@@ -102,11 +102,11 @@ namespace Donya
 				T Max( const Donya::Quaternion &orientation ) const
 				{ return WorldPosition( orientation ) + size; }
 			public:
-				void UpdateIgnoreList( float elapsedTime )
+				void UpdateIgnoreList( float deltaTime )
 				{
 					for ( auto &it : ignoreList )
 					{
-						it.Update( elapsedTime );
+						it.Update( deltaTime );
 					}
 
 					auto result = std::remove_if
@@ -174,11 +174,11 @@ namespace Donya
 				CoordT WorldPosition( const Donya::Quaternion &orientation ) const
 				{ return pos + orientation.RotateVector( offset ); }
 			public:
-				void UpdateIgnoreList( float elapsedTime )
+				void UpdateIgnoreList( float deltaTime )
 				{
 					for ( auto &it : ignoreList )
 					{
-						it.Update( elapsedTime );
+						it.Update( deltaTime );
 					}
 
 					auto result = std::remove_if

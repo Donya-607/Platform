@@ -39,7 +39,7 @@ public:
 	/// Please call this immediately-after constructor.
 	/// </summary>
 	virtual void Init( float wholeCloseSecond )	= 0;
-	virtual void Update( float elapsedTime )	= 0;
+	virtual void Update( float deltaTime )		= 0;
 	virtual void Draw()							= 0;
 public:
 	/// <summary>
@@ -100,11 +100,11 @@ public:
 		velocity *= speed;
 	}
 
-	void Update( float elapsedTime ) override
+	void Update( float deltaTime ) override
 	{
 		const float oldTimer = timer;
-		timer -= elapsedTime;
-		pos += velocity * elapsedTime;
+		timer -= deltaTime;
+		pos += velocity * deltaTime;
 
 		SwitchFlagsByTimer( oldTimer );
 	}
@@ -152,15 +152,15 @@ public:
 		fadeSpeed = 1.0f / scast<float>( wholeCloseSecond );
 	}
 
-	void Update( float elapsedTime ) override
+	void Update( float deltaTime ) override
 	{
-		timer -= elapsedTime;
+		timer -= deltaTime;
 		isClosed = false;
 
 		switch ( status )
 		{
 		case BaseFade::State::FADE_IN:
-			alpha += fadeSpeed * elapsedTime;
+			alpha += fadeSpeed * deltaTime;
 			if ( 1.0f <= alpha )
 			{
 				alpha = 1.0f;
@@ -170,7 +170,7 @@ public:
 			}
 			break;
 		case BaseFade::State::FADE_OUT:
-			alpha -= fadeSpeed * elapsedTime;
+			alpha -= fadeSpeed * deltaTime;
 			if ( alpha <= 0.0f )
 			{
 				alpha = 0.0f;
@@ -276,12 +276,12 @@ public:
 		pFade.reset( nullptr );
 	}
 
-	void Update( float elapsedTime )
+	void Update( float deltaTime )
 	{
 		if ( !pFade ) { return; }
 		// else
 
-		pFade->Update( elapsedTime );
+		pFade->Update( deltaTime );
 
 		if ( pFade->NowHidden() )
 		{
