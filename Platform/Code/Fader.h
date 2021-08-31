@@ -46,6 +46,8 @@ public:
 		float			closeSecond{};	// You specify time of completely close(per second)
 		unsigned int	parameter{};	// [Type::Scroll : Used to judge direction(you can specify by Fader::Direction)] [Type::Gradually : Used to fill color. This is linking to Donya::Color::Code]
 	public:
+		static Configuration UseDefault( Type fadeType );
+	public:
 		void SetDefault( Type fadeType );
 
 		/// <summary>
@@ -70,8 +72,6 @@ public:
 		/// These float value are expected to [0.0f ~ 1.0f].
 		/// </summary>
 		void SetColor( float R, float G, float B );
-	public:
-		static Configuration UseDefault( Type fadeType );
 	};
 
 	/// <summary>
@@ -83,6 +83,8 @@ public:
 		Overwrite,	// Overwrite by the new fade. the old fade will be dispose immediately.
 		Reserve,	// Reserved fade will apply when finished current fade.
 	};
+public:
+	static float GetDefaultCloseSecond();
 private:
 	struct Impl;
 	std::unique_ptr<Impl> pImpl;
@@ -95,12 +97,10 @@ public:
 	/// Initialize and reset current state.
 	/// </summary>
 	void Init();
-
 	/// <summary>
 	/// Please call every frame.
 	/// </summary>
-	void Update( float elapsedTime );
-
+	void Update();
 	void Draw();
 public:
 	/// <summary>
@@ -117,6 +117,4 @@ public:
 	/// Returns true when exist instance even one.
 	/// </summary>
 	bool IsExist() const;
-public:
-	static float GetDefaultCloseSecond();
 };

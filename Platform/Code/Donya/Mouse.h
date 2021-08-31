@@ -1,7 +1,9 @@
-#ifndef _INCLUDED_MOUSE_H_
-#define _INCLUDED_MOUSE_H_
+#ifndef INCLUDED_DONYA_MOUSE_H_
+#define INCLUDED_DONYA_MOUSE_H_
 
 #include <Windows.h>
+
+#include "Vector.h"	// Int2, Vector2
 
 namespace Donya
 {
@@ -23,31 +25,31 @@ namespace Donya
 		void ResetMouseWheelRot();
 
 		/// <summary>
-		/// Mouse coordinate is cliant space.<para></para>
-		/// You can set nullptr.
+		/// Mouse coordinate is cliant space.
 		/// </summary>
-		POINT Coordinate();
+		Donya::Int2 Coordinate();
 		/// <summary>
-		/// Mouse coordinate is cliant space.<para></para>
-		/// You can set nullptr.
+		/// Float version of Coordinate(), that converted by static_cast<float>.
+		/// Mouse coordinate is cliant space.
 		/// </summary>
-		void Coordinate( int *x, int *y );
-		/// <summary>
-		/// Mouse coordinate is cliant space.<para></para>
-		/// You can set nullptr.
-		/// </summary>
-		void Coordinate( float *x, float *y );
-
-		POINT Size();
-		/// <summary>
-		/// You can set nullptr.
-		/// </summary>
-		void Size( int *x, int *y );
+		Donya::Vector2 CoordinateF();
 
 		/// <summary>
-		/// Returns :<para></para>
-		/// positive : rotate to up.<para></para>
-		/// zero : not rotate.<para></para>
+		/// Returns (Width,Height) of the mouse cursor, in pixels.
+		/// These values are fetched by GetSystemMetrics() with SM_CXCURSOR and SM_CYCURSOR.
+		/// </summary>
+		Donya::Int2 Size();
+		/// <summary>
+		/// Float version of Size(), that converted by static_cast<float>.
+		/// Returns (Width,Height) of the mouse cursor, in pixels.
+		/// These values are fetched by GetSystemMetrics() with SM_CXCURSOR and SM_CYCURSOR.
+		/// </summary>
+		Donya::Vector2 SizeF();
+
+		/// <summary>
+		/// Returns :
+		/// positive : rotate to up.
+		/// zero : not rotate.
 		/// negative : rotate to down.
 		/// </summary>
 		int WheelRot( bool isVertical = true );
@@ -88,4 +90,4 @@ namespace Donya
 	}
 }
 
-#endif // _INCLUDED_MOUSE_H_
+#endif // INCLUDED_DONYA_MOUSE_H_

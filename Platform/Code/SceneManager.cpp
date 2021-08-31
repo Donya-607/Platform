@@ -7,6 +7,7 @@
 
 #include "Fader.h"
 #include "Effect/EffectAdmin.h"
+#include "GameStatus.h"
 #include "SceneGame.h"
 #include "SceneLoad.h"
 #include "SceneLogo.h"
@@ -36,14 +37,18 @@ void SceneMng::Uninit()
 	Fader::Get().Init();
 }
 
-void SceneMng::Update( float elapsedTime )
+void SceneMng::Update()
 {
+	// I do not consider the case that no one scene does not exist, so add some scene.
 	if ( pScenes.empty() )
 	{
-		_ASSERT_EXPR( 0, L"Error: Scene is empty." );
-		// Fail safe.
+		_ASSERT_EXPR( 0, L"Error: Scene is empty!" );
 		PushScene( Scene::Type::Title, true );
 	}
+
+
+	// Update the top scene only,
+	// but I also update a next scene if the top scene requests.
 
 	Scene::Result message{};
 
@@ -51,26 +56,33 @@ void SceneMng::Update( float elapsedTime )
 	for ( int i = 0; i < updateCount; ++i )
 	{
 		auto &itr = ( *std::next( pScenes.begin(), i ) );
-		message = itr->Update( elapsedTime );
+		message = itr->Update();
 
 		ProcessMessage( message, updateCount, i );
 	}
 
-	Effect::Admin::Get().Update( elapsedTime );
 
-	Fader::Get().Update( elapsedTime );
+	// Update sub systems
+	Effect::Admin::Get().Update( Status::GetDeltaTime() );
+
+	Fader::Get().Update();
 }
 
-void SceneMng::Draw( float elapsedTime )
+void SceneMng::Draw()
 {
+	// Reset the depth to default
 	Donya::Sprite::SetDrawDepth( 1.0f );
 
+
+	// Draw all scenes from bottom
 	const auto &end = pScenes.crend();
 	for ( auto it   = pScenes.crbegin(); it != end; ++it )
 	{
-		( *it )->Draw( elapsedTime );
+		( *it )->Draw();
 	}
 
+
+	// Draw the fading object to nearest
 	Donya::Sprite::SetDrawDepth( 0.0f );
 
 	// If use AlphaToCoverage mode, the transparency will be strange.
@@ -83,8 +95,9 @@ bool SceneMng::WillEmptyIfApplied( Scene::Result message ) const
 	if ( message.request == Scene::Request::NONE ) { return false; }
 	// else
 
-	bool willEmpty = false;
 
+	// Is the message just removes every scene?
+	bool willEmpty = false;
 	if ( message.HasRequest( Scene::Request::REMOVE_ALL ) )
 	{
 		willEmpty = true;
@@ -94,10 +107,14 @@ bool SceneMng::WillEmptyIfApplied( Scene::Result message ) const
 		willEmpty = true;
 	}
 
+
+	// (sceneType == Null) means the message does not add a scene.
+	// Returns true if the message just removes all scenes.
 	if ( willEmpty && message.sceneType == Scene::Type::Null )
 	{
 		return true;
 	}
+	// else
 
 	return false;
 }
@@ -106,25 +123,27 @@ bool SceneMng::ValidateMessage( Scene::Result message ) const
 	if ( message.request == Scene::Request::NONE ) { return true; }
 	// else
 
+
 	if ( WillEmptyIfApplied( message ) )
 	{
 		return false;
 	}
+	// else
+
 
 	return true;
 }
 Scene::Result SceneMng::ApplyFailSafe( Scene::Result wrongMessage ) const
 {
-	if ( WillEmptyIfApplied( wrongMessage ) )
-	{
-		wrongMessage.sceneType = Scene::Type::Logo;
-	}
-
-	return wrongMessage;
+	Scene::Result gotoInitialScene;
+	gotoInitialScene.AddRequest( Scene::Request::ASSIGN );
+	gotoInitialScene.sceneType = Scene::Type::Logo;
+	return gotoInitialScene;
 }
 
 void SceneMng::ProcessMessage( Scene::Result message, int &refUpdateCount, int &refLoopIndex )
 {
+	// Is the message correct?
 	if ( !ValidateMessage( message ) )
 	{
 		_ASSERT_EXPR( 0, L"Error: The passed message is wrong!" );
@@ -132,14 +151,16 @@ void SceneMng::ProcessMessage( Scene::Result message, int &refUpdateCount, int &
 		message = ApplyFailSafe( message );
 	}
 
-	// Attention to order of process message.
+
+	// Process requests
+
+	// !Attention to order of process message!
 	// ex) [pop_front() -> push_front()] [push_front() -> pop_front]
 
 	if ( message.HasRequest( Scene::Request::REMOVE_ME ) )
 	{
 		PopScene( /* fromFront = */ true );
 	}
-
 	if ( message.HasRequest( Scene::Request::REMOVE_ALL ) )
 	{
 		PopAll();
@@ -149,7 +170,6 @@ void SceneMng::ProcessMessage( Scene::Result message, int &refUpdateCount, int &
 	{
 		PushScene( message.sceneType, /* toFront = */ true );
 	}
-	
 	if ( message.HasRequest( Scene::Request::APPEND_SCENE ) )
 	{
 		PushScene( message.sceneType, /* toFront = */ false );
@@ -159,13 +179,18 @@ void SceneMng::ProcessMessage( Scene::Result message, int &refUpdateCount, int &
 	{
 		if ( message.HasRequest( Scene::Request::REMOVE_ME ) )
 		{
+			// Adjust the index instead increment the update count
 			refLoopIndex--;
+
+			// The loop-index will be increment at Update(), so lower limit is -1.
 			refLoopIndex = std::max( -1, refLoopIndex );
-			// The loop-index will be increment, so lower limit is -1.
 		}
 		else
 		{
+			// Request to be the Update() also updates next scene
 			refUpdateCount++;
+
+			// Limit the range within the scene count
 			refUpdateCount = std::min( scast<int>( pScenes.size() ), refUpdateCount );
 		}
 	}
@@ -184,7 +209,6 @@ void SceneMng::PushScene( Scene::Type type, bool toFront )
 	default: _ASSERT_EXPR( 0, L"Error: The scene does not exist."   ); return;
 	}
 }
-
 void SceneMng::PopScene( bool fromFront )
 {
 	if ( fromFront )
@@ -198,7 +222,6 @@ void SceneMng::PopScene( bool fromFront )
 		pScenes.pop_back();
 	}
 }
-
 void SceneMng::PopAll()
 {
 	for ( auto &it : pScenes )

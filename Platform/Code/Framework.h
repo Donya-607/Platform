@@ -20,12 +20,8 @@ public:
 public:
 	bool Init();
 	void Uninit();
-
-	// The "elapsedTime" is elapsed seconds from last frame.
-	void Update( float elapsedTime );
-
-	// The "elapsedTime" is elapsed seconds from last frame.
-	void Draw( float elapsedTime );
+	void Update();
+	void Draw();
 private:
 #if USE_IMGUI
 	void DebugShowInformation();

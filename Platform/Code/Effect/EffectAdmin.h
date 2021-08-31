@@ -49,7 +49,7 @@ namespace Effect
 		bool Init( ID3D11Device *pDevice, ID3D11DeviceContext *pContext );
 		void Uninit();
 
-		void Update( float elapsedTime );
+		void Update( float deltaTime );
 
 		void Draw();
 	public:

@@ -9,6 +9,7 @@
 #include "Common.h"
 #include "Effect/EffectAdmin.h"
 #include "Framework.h"
+#include "FontHelper.h"
 #include "Icon.h"
 
 namespace
@@ -33,12 +34,19 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 	// _crtBreakAlloc = ;
 #endif
 
-	setlocale( LC_ALL, "JPN" );
 
-	srand( scast<unsigned int>( time( NULL ) ) );
 
 	bool initResult = true;
 
+
+
+	// Init system settings
+	setlocale( LC_ALL, "JPN" );
+	srand( scast<unsigned int>( time( NULL ) ) );
+
+
+
+	// Init the library and the window
 	Donya::LibraryInitializer desc{};
 	desc.screenWidth		= Common::ScreenWidth();
 	desc.screenHeight		= Common::ScreenHeight();
@@ -53,10 +61,36 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 	}
 	// else
 
-	Donya::SetWindowIcon( instance, IDI_ICON );
+	initResult = Donya::SetWindowIcon( instance, IDI_ICON );
+	if ( !initResult )
+	{
+		Donya::ShowMessageBox( L"System Initialization is failed.", L"ERROR", mbTellFatalError );
+		return Donya::Uninit();
+	}
+	// else
 
-	Effect::Admin::Get().Init( Donya::GetDevice(), Donya::GetImmediateContext() );
-	
+
+
+	// Init sub systems
+	initResult = FontHelper::Init();
+	if ( !initResult )
+	{
+		Donya::ShowMessageBox( L"Font Initialization is failed.", L"ERROR", mbTellFatalError );
+		return Donya::Uninit();
+	}
+	// else
+
+	initResult = Effect::Admin::Get().Init( Donya::GetDevice(), Donya::GetImmediateContext() );
+	if ( !initResult )
+	{
+		Donya::ShowMessageBox( L"Effect Initialization is failed.", L"ERROR", mbTellFatalError );
+		return Donya::Uninit();
+	}
+	// else
+
+
+
+	// Init the framework of the game
 	Framework framework{};
 	initResult = framework.Init();
 	if ( !initResult )
@@ -66,27 +100,36 @@ INT WINAPI wWinMain( _In_ HINSTANCE instance, _In_opt_ HINSTANCE prevInstance, _
 	}
 	// else
 
-#if DEBUG_MODE
-	constexpr UINT syncInterval = dontWaitToSync;
-	// constexpr UINT syncInterval = waitToSync;
-#else
-	constexpr UINT syncInterval = waitToSync;
-#endif // DEBUG_MODE
 
+
+	// Main loop of the game
+
+	constexpr UINT syncInterval =
+#if DEBUG_MODE
+	dontWaitToSync
+	// waitToSync
+#else
+	waitToSync
+#endif // DEBUG_MODE
+	;
 	while ( Donya::MessageLoop() )
 	{
 		Donya::ClearViews();
 
 		Donya::SystemUpdate();
-		framework.Update( Donya::GetElapsedTime() );
+		framework.Update();
 
-		framework.Draw( Donya::GetElapsedTime() );
+		framework.Draw();
 		Donya::Present( syncInterval );
 	}
 
+
+
+	// Uninit the framework, sub systems and library
 	framework.Uninit();
 
 	Effect::Admin::Get().Uninit();
+	FontHelper::Uninit();
 
 	auto   returnValue = Donya::Uninit();
 	return returnValue;

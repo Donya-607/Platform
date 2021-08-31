@@ -180,7 +180,7 @@ namespace Effect
 		wasInitialized = false;
 	}
 
-	void Admin::Update( float elapsedTime )
+	void Admin::Update( float deltaTime )
 	{
 		if ( !wasInitialized )
 		{
@@ -190,7 +190,7 @@ namespace Effect
 		// else
 
 		constexpr float toBePerFrame = 60.0f;
-		pManager->Update( elapsedTime * updateSpeed * toBePerFrame );
+		pManager->Update( deltaTime * updateSpeed * toBePerFrame );
 
 		auto result = std::remove_if
 		(

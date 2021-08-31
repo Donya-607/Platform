@@ -167,6 +167,7 @@
     <ClCompile Include="Code\FilePath.cpp" />
     <ClCompile Include="Code\FontHelper.cpp" />
     <ClCompile Include="Code\Framework.cpp" />
+    <ClCompile Include="Code\GameStatus.cpp" />
     <ClCompile Include="Code\Grid.cpp" />
     <ClCompile Include="Code\Input.cpp" />
     <ClCompile Include="Code\Item.cpp" />
@@ -293,6 +294,7 @@
     <ClInclude Include="Code\FilePath.h" />
     <ClInclude Include="Code\FontHelper.h" />
     <ClInclude Include="Code\Framework.h" />
+    <ClInclude Include="Code\GameStatus.h" />
     <ClInclude Include="Code\Grid.h" />
     <ClInclude Include="Code\Icon.h" />
     <ClInclude Include="Code\Input.h" />

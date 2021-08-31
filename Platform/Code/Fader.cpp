@@ -6,6 +6,7 @@
 #include "Donya/Sprite.h"
 #include "Donya/Useful.h"
 #include "Donya/Vector.h"
+#include "GameStatus.h"
 
 class BaseFade
 {
@@ -130,9 +131,7 @@ public:
 	GraduallyFade( unsigned int color ) : BaseFade(),
 		alpha( 0.0f ), fadeSpeed( 0.0f ),
 		color( color )
-	{
-		
-	}
+	{}
 public:
 	void Init( float wholeCloseSecond ) override
 	{
@@ -194,6 +193,14 @@ public:
 	}
 };
 
+
+
+Fader::Configuration Fader::Configuration::UseDefault( Type fadeType )
+{
+	Configuration def{};
+	def.SetDefault( fadeType );
+	return def;
+}
 void Fader::Configuration::SetDefault( Type fadeType )
 {
 	switch ( fadeType )
@@ -211,7 +218,6 @@ void Fader::Configuration::SetDefault( Type fadeType )
 	default: _ASSERT_EXPR( 0, L"Error: Unexpected type!" ); return;
 	}
 }
-
 void Fader::Configuration::SetDirection( Direction dir )
 {
 	parameter = dir;
@@ -234,7 +240,6 @@ void Fader::Configuration::NormalizeDirection()
 		dir &= ~scast<int>(  RIGHT );
 	}
 }
-
 void Fader::Configuration::SetColor( Donya::Color::Code colorCode )
 {
 	parameter = scast<unsigned int>( colorCode );
@@ -250,12 +255,6 @@ void Fader::Configuration::SetColor( float R, float G, float B )
 	parameter = ( iR << 24 ) | ( iG << 16 ) | ( iB << 8 ) | ( iA << 0 );
 }
 
-Fader::Configuration Fader::Configuration::UseDefault( Type fadeType )
-{
-	Configuration def{};
-	def.SetDefault( fadeType );
-	return def;
-}
 
 struct Fader::Impl
 {
@@ -263,15 +262,12 @@ public:
 	std::unique_ptr<BaseFade> pFade;
 	std::queue<Configuration> reserves;
 public:
-	Impl() : pFade( nullptr ), reserves()
-	{
-
-	}
+	Impl() : pFade( nullptr ), reserves() {}
 	~Impl()
 	{
 		pFade.reset( nullptr );
 
-		// Clear idiom of std::queue.
+		// Clear idiom of std::queue
 		std::queue<Configuration>().swap( reserves );
 	}
 public:
@@ -337,21 +333,22 @@ public:
 	}
 };
 
-Fader::Fader() : pImpl( std::make_unique<Fader::Impl>() )
-{
 
+float Fader::GetDefaultCloseSecond()
+{
+	constexpr float DEFAULT_CLOSE_SECOND = 0.5f;
+	return DEFAULT_CLOSE_SECOND;
 }
+Fader::Fader() : pImpl( std::make_unique<Fader::Impl>() ) {}
 Fader::~Fader()
 {
 	pImpl.reset( nullptr );
 }
-
 void Fader::Init()
 {
 	pImpl->Init();
 }
-
-void Fader::Update( float elapsedTime )
+void Fader::Update()
 {
 	if ( !pImpl->pFade && !pImpl->reserves.empty() )
 	{
@@ -359,14 +356,12 @@ void Fader::Update( float elapsedTime )
 		pImpl->reserves.pop();
 	}
 
-	pImpl->Update( elapsedTime );
+	pImpl->Update( Status::GetRawDeltaTime() );
 }
-
 void Fader::Draw()
 {
 	pImpl->Draw();
 }
-
 void Fader::StartFadeOut( Configuration config, AssignmentOption option )
 {
 	if ( IsExist() )
@@ -387,19 +382,11 @@ void Fader::StartFadeOut( Configuration config, AssignmentOption option )
 
 	pImpl->StartFade( config );
 }
-
 bool Fader::IsClosed() const
 {
 	return ( pImpl->pFade ) ? pImpl->pFade->IsClosed() : false;
 }
-
 bool Fader::IsExist() const
 {
 	return ( pImpl->pFade || !pImpl->reserves.empty() ) ? true : false;
-}
-
-float Fader::GetDefaultCloseSecond()
-{
-	constexpr float DEFAULT_CLOSE_SECOND = 0.5f;
-	return DEFAULT_CLOSE_SECOND;
 }

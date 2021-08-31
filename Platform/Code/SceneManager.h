@@ -23,11 +23,12 @@ public:
 public:
 	void Init( Scene::Type initScene );
 	void Uninit();
-
-	void Update( float elapsedTime );
-
-	void Draw( float elapsedTime );
+	void Update();
+	void Draw();
 private:
+	/// <summary>
+	/// Returns true if the scenes will be empty after I process the message.
+	/// </summary>
 	bool WillEmptyIfApplied( Scene::Result message ) const;
 	/// <summary>
 	/// Returns false if the message is wrong.

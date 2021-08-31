@@ -10,7 +10,7 @@
 #include "Donya/UseImgui.h"
 
 #include "Common.h"
-#include "FontHelper.h"
+#include "GameStatus.h"
 #include "Music.h"
 
 #undef max
@@ -20,16 +20,15 @@ bool Framework::Init()
 {
 	bool succeeded = true;
 
-	if ( !FontHelper::Init() ) { succeeded = false; }
 
 	pSceneMng = std::make_unique<SceneMng>();
-
 #if DEBUG_MODE
 	pSceneMng->Init( Scene::Type::Load );
 	// pSceneMng->Init( Scene::Type::Logo );
 #else
 	pSceneMng->Init( Scene::Type::Logo );
 #endif // DEBUG_MODE
+
 
 	return succeeded;
 }
@@ -39,7 +38,7 @@ void Framework::Uninit()
 	pSceneMng->Uninit();
 }
 
-void Framework::Update( float elapsedTime )
+void Framework::Update()
 {
 #if DEBUG_MODE
 	if ( Donya::Keyboard::Press( VK_MENU ) )
@@ -63,17 +62,25 @@ void Framework::Update( float elapsedTime )
 	DebugShowInformation();
 #endif // USE_IMGUI
 
-	// Prevent the elapsedTime will be very larging
-	elapsedTime = std::min( Common::LargestDeltaTime(), elapsedTime );
 
-	pSceneMng->Update( elapsedTime );
+	// Set the current delta time to Game status
+
+	float deltaTime = Donya::GetElapsedTime();
+	// Prevent the deltaTime will be very larging
+	deltaTime = std::min( Common::LargestDeltaTime(), deltaTime );
+	Status::SetDeltaTime( deltaTime );
+
+
+
+	pSceneMng->Update();
 }
 
-void Framework::Draw( float elapsedTime )
+void Framework::Draw()
 {
+	// Reset the blend state to default
 	Donya::Blend::Activate( Donya::Blend::Mode::ALPHA_NO_ATC );
 
-	pSceneMng->Draw( elapsedTime );
+	pSceneMng->Draw();
 }
 
 #if USE_IMGUI
@@ -104,9 +111,8 @@ void Framework::DebugShowInformation()
 
 	if ( ImGui::TreeNode( u8"マウス情報" ) )
 	{
-		int x = 0, y = 0;
-		Donya::Mouse::Coordinate( &x, &y );
-		ImGui::Text( u8"マウス座標[X:%d][Y:%d]", x, y );
+		Donya::Int2 mouse = Donya::Mouse::Coordinate();
+		ImGui::Text( u8"マウス座標[X:%d][Y:%d]", mouse.x, mouse.y );
 		ImGui::Text( u8"マウスホイール[%d]", Donya::Mouse::WheelRot() );
 
 		int LB = 0, MB = 0, RB = 0;

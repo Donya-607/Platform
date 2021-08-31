@@ -1,16 +1,15 @@
 #include "Mouse.h"
 
-#include "Keyboard.h" // use for GetMouseButtonState.
+#include "Keyboard.h" // Use for GetMouseButtonState().
 
 namespace Donya
 {
 	namespace Mouse
 	{
-		struct Int2 { int x = 0, y = 0; };
-		static Int2 coordinate; // cliant space.
+		static Donya::Int2 coordinate; // cliant space.
 
-		static Int2 wheelFraction{};
-		static Int2 rotateAmount{};
+		static Donya::Int2 wheelFraction{};
+		static Donya::Int2 rotateAmount{};
 
 		void UpdateMouseCoordinate( LPARAM lParam )
 		{
@@ -55,39 +54,27 @@ namespace Donya
 			rotateAmount.y = 0;
 		}
 
-		POINT Coordinate()
+		Int2 Coordinate()
 		{
-			return POINT{ coordinate.x, coordinate.y };
+			return coordinate;
 		}
-		void Coordinate( int *x, int *y )
+		Vector2 CoordinateF()
 		{
-			if ( x != nullptr ) { *x = coordinate.x; }
-			if ( y != nullptr ) { *y = coordinate.y; }
-		}
-		void Coordinate( float *x, float *y )
-		{
-			int ix = 0, iy = 0;
-			Coordinate( &ix, &iy );
-
-			if( x != nullptr ) { *x = static_cast<float>( ix ); }
-			if( y != nullptr ) { *y = static_cast<float>( iy ); }
+			return Coordinate().Float();
 		}
 
-		POINT Size()
+		Int2 Size()
 		{
-			POINT size
+			Int2 size
 			{
 				GetSystemMetrics( SM_CXCURSOR ),
 				GetSystemMetrics( SM_CYCURSOR )
 			};
 			return size;
 		}
-		void Size( int *x, int *y )
+		Donya::Vector2 SizeF()
 		{
-			POINT size = Size();
-
-			if ( x != nullptr ) { *x = size.x; }
-			if ( y != nullptr ) { *y = size.y; }
+			return Size().Float();
 		}
 
 		int  WheelRot( bool isVertical )
