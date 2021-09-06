@@ -126,6 +126,7 @@
     <ClCompile Include="Code\Donya\CollisionShapes\ShapeSphere.cpp" />
     <ClCompile Include="Code\Donya\CollisionWorld.cpp" />
     <ClCompile Include="Code\Donya\Color.cpp" />
+    <ClCompile Include="Code\Donya\Controller.cpp" />
     <ClCompile Include="Code\Donya\Displayer.cpp" />
     <ClCompile Include="Code\Donya\Donya.cpp" />
     <ClCompile Include="Code\Donya\Font.cpp" />
@@ -242,6 +243,7 @@
     <ClInclude Include="Code\Donya\CollisionWorld.h" />
     <ClInclude Include="Code\Donya\Color.h" />
     <ClInclude Include="Code\Donya\Constant.h" />
+    <ClInclude Include="Code\Donya\Controller.h" />
     <ClInclude Include="Code\Donya\Counter.h" />
     <ClInclude Include="Code\Donya\Direct3DUtil.h" />
     <ClInclude Include="Code\Donya\Displayer.h" />

@@ -63,10 +63,14 @@ namespace Donya
 			int current = State( vKey, Mode::PRESS );
 			current -= lowestFrame;
 
+			// The frame must greater than the "lowestFrame"
 			if ( current <= 0 ) { return FALSE; }
 			// else
 			
-			// prevent zero-divide.
+
+			// Validate the frame is the timing of "interval"
+
+			// Prevent zero divide
 			if ( interval == 0 ) { return ( current ) ? TRUE : FALSE; }
 			// else
 

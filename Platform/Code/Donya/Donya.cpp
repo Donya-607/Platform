@@ -11,7 +11,7 @@
 
 #include "Blend.h"
 #include "Constant.h"
-#include "GamepadXInput.h"
+#include "Controller.h"
 #include "HighResolutionTimer.h"
 #include "Keyboard.h"
 #include "Mouse.h"
@@ -994,6 +994,7 @@ namespace Donya
 	#endif // USE_IMGUI
 
 		Donya::Blend::Init();
+		Donya::Controller::Init();
 		Donya::DepthStencil::CreateDefinedStates( GetDevice() );
 		Donya::Rasterizer::CreateDefinedStates( GetDevice() );
 		Donya::Sampler::CreateDefinedStates( GetDevice() );
@@ -1159,6 +1160,7 @@ namespace Donya
 	#endif
 
 		Donya::Keyboard::Update();
+		Donya::Controller::Update();
 
 		Donya::ScreenShake::Update( GetElapsedTime() );
 		Donya::Sound::Update();
@@ -1263,7 +1265,7 @@ namespace Donya
 
 		Donya::Sound::Uninit();
 
-		Donya::XInput::Uninit();
+		Donya::Controller::Uninit();
 
 		Donya::Resource::ReleaseAllCachedResources();
 
