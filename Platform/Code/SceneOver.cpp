@@ -9,6 +9,7 @@
 #include "Donya/CollisionShapes/ShapeAABB.h"
 #include "Donya/CollisionShapes/ShapePoint.h"
 #include "Donya/CollisionShapes/ShapeSphere.h"
+#include "Donya/Controller.h"
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
 #include "Donya/Sprite.h"
@@ -192,9 +193,6 @@ Scene::Result SceneOver::Update()
 #if USE_IMGUI
 	UseImGui();
 #endif // USE_IMGUI
-
-
-	controller.Update();
 
 
 	const float deltaTime = Status::GetDeltaTime();

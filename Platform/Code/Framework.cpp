@@ -66,7 +66,7 @@ void Framework::Update()
 	// Set the current delta time to Game status
 
 	float deltaTime = Donya::GetElapsedTime();
-	// Prevent the deltaTime will be very larging
+	// Prevent to be very large
 	deltaTime = std::min( Common::LargestDeltaTime(), deltaTime );
 	Status::SetDeltaTime( deltaTime );
 

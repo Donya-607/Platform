@@ -3,9 +3,8 @@
 #include <memory>
 #include <vector>
 
-#include "Donya/Constant.h"			// Use DEBUG_MODE macro.
-#include "Donya/GamepadXInput.h"
-#include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
+#include "Donya/Constant.h"	// Use DEBUG_MODE macro.
+#include "Donya/UseImGui.h"	// Use USE_IMGUI macro.
 
 #include <string>
 #include "Donya/Camera.h"
@@ -18,8 +17,6 @@
 class SceneOver : public Scene
 {
 private:
-	Donya::XInput controller{ Donya::Gamepad::PAD_1 };
-	
 	float timer = 0.0f;
 
 	Donya::ICamera iCamera;

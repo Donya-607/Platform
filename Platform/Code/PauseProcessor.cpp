@@ -1,5 +1,7 @@
 #include "PauseProcessor.h"
 
+#include "Donya/Controller.h"
+#include "Donya/GamepadXInput.h"
 #include "Donya/Sound.h"
 #include "Donya/Sprite.h"
 
@@ -86,12 +88,12 @@ void PauseProcessor::Uninit()
 	Effect::Admin::Get().SetUpdateSpeed( 1.0f );
 }
 
-PauseProcessor::Result PauseProcessor::Update( float deltaTime, const Donya::XInput &controller )
+PauseProcessor::Result PauseProcessor::Update( float deltaTime )
 {
-	UpdateInput( controller );
+	UpdateInput();
 	UpdateChooseItem();
 
-	return ReturnResult( controller );
+	return ReturnResult();
 }
 
 void PauseProcessor::Draw()
@@ -163,16 +165,16 @@ void PauseProcessor::SetVolume( float volume )
 	Donya::Sound::AppendFadePoint( nowPlayingBGM, data.fadeSoundSecond, volume, /* isEnableForAll = */ true );
 }
 
-void PauseProcessor::UpdateInput( const Donya::XInput &controller )
+void PauseProcessor::UpdateInput()
 {
 	static const Donya::Vector2 deadZone
 	{
-		Donya::XInput::GetDeadZoneLeftStick(),
-		Donya::XInput::GetDeadZoneLeftStick()
+		Donya::Controller::Impl::XInput::GetDeadZoneLeftStick(),
+		Donya::Controller::Impl::XInput::GetDeadZoneLeftStick()
 	};
 
 	previousInput = currentInput;
-	currentInput  = Input::MakeCurrentInput( controller, deadZone );
+	currentInput  = Input::MakeCurrentInput( deadZone );
 }
 void PauseProcessor::UpdateChooseItem()
 {
@@ -255,11 +257,11 @@ void PauseProcessor::UpdateChooseItem()
 
 	choice = scast<Choice>( index );
 }
-PauseProcessor::Result PauseProcessor::ReturnResult( const Donya::XInput &controller )
+PauseProcessor::Result PauseProcessor::ReturnResult()
 {
 	Result rv;
 
-	if ( Input::IsPauseRequested( controller ) )
+	if ( Input::IsPauseRequested() )
 	{
 		rv.command = Result::Command::Resume;
 	}

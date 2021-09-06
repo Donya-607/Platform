@@ -9,6 +9,7 @@
 
 #include "Donya/Blend.h"
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
+#include "Donya/Controller.h"
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
@@ -588,8 +589,7 @@ Scene::Result SceneGame::Update()
 		InitStage( Music::BGM_Game, stageNumber, /* reloadModel = */ false );
 	}
 
-	
-	controller.Update();
+
 	AssignCurrentInput();
 
 
@@ -1354,7 +1354,7 @@ void SceneGame::UninitStage()
 void SceneGame::AssignCurrentInput()
 {
 	const auto &deadZone = FetchParameter().deadZone;
-	currentInput = Input::MakeCurrentInput( controller, deadZone );
+	currentInput = Input::MakeCurrentInput( deadZone );
 }
 
 float SceneGame::PauseUpdate( float deltaTime )
@@ -1368,7 +1368,7 @@ float SceneGame::PauseUpdate( float deltaTime )
 			!Fader::Get().IsExist() &&
 			status != State::Clear && status != State::WaitToFade
 			;
-		if ( Input::IsPauseRequested( controller ) && pausable )
+		if ( Input::IsPauseRequested() && pausable )
 		{
 			BeginPause();
 			updateSpeedFactor = 0.0f;
@@ -1388,7 +1388,7 @@ float SceneGame::PauseUpdate( float deltaTime )
 
 	using Cmd = PauseProcessor::Result::Command;
 
-	const auto result = pPauser->Update( deltaTime, controller );
+	const auto result = pPauser->Update( deltaTime );
 	if ( result.command == Cmd::Noop ) { return updateSpeedFactor; }
 	// else
 

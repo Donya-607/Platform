@@ -17,12 +17,14 @@ namespace Donya
 				struct Impl;
 				std::unique_ptr<Impl> pImpl;
 			public:
-				Gamepad( PadNumber padNumber );
+				Gamepad();
 				Gamepad( const Gamepad &  ) = default;
 				Gamepad(       Gamepad && ) = default;
 				Gamepad &operator = ( const Gamepad &  ) = default;
 				Gamepad &operator = (       Gamepad && ) = default;
-				virtual ~Gamepad() = 0;
+				virtual ~Gamepad();
+			public:
+				void Init( PadNumber padNumber );
 			public:
 				PadNumber PadNo() const;
 			public:
@@ -49,6 +51,8 @@ namespace Donya
 				/// </summary>
 				Vector2 Stick( bool leftStick ) const;
 			};
+
+
 
 			class XInput : public Gamepad
 			{
@@ -77,15 +81,15 @@ namespace Donya
 				/// </summary>
 				static float GetDeadZoneRightStick();
 			private:
-				struct Impl;
-				std::unique_ptr<Impl> pXImpl;
+				struct XImpl;
+				std::unique_ptr<XImpl> pXImpl;
 			public:
-				XInput( PadNumber padNumber );
-				XInput( const XInput &  );
+				XInput();
+				XInput( const XInput &  ) = default;
 				XInput(       XInput && ) = default;
-				XInput &operator = ( const XInput &  );
+				XInput &operator = ( const XInput &  ) = default;
 				XInput &operator = (       XInput && ) = default;
-				~XInput() override;
+				~XInput();
 			public:
 				void Update();
 			private:

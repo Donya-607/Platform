@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"
 
 #include "Player.h"
@@ -58,12 +57,12 @@ public:
 	void	Init( const Music::ID &currentPlayingBGM );
 	void	Uninit();
 
-	Result	Update( float deltaTime, const Donya::XInput &controller );
+	Result	Update( float deltaTime );
 
 	void	Draw();
 private:
 	void	SetVolume( float volume );
-	void	UpdateInput( const Donya::XInput &controller );
+	void	UpdateInput();
 	void	UpdateChooseItem();
-	Result	ReturnResult( const Donya::XInput &controller );
+	Result	ReturnResult();
 };

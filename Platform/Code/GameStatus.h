@@ -12,7 +12,7 @@ namespace Status
 	float GetDeltaTime();
 
 	/// <summary>
-	/// Returns raw delta-time, fetched by Donya library.
+	/// Returns raw delta-time, fetched by Donya library(but returns one is adjusted).
 	/// </summary>
 	float GetRawDeltaTime();
 }

@@ -1,5 +1,6 @@
 #include "Input.h"
 
+#include "Donya/Controller.h"
 #include "Donya/Keyboard.h"
 #include "Donya/Sprite.h"
 
@@ -23,7 +24,7 @@ namespace Input
 		return !input.moveVelocity.IsZero();
 	}
 	
-	Player::Input MakeCurrentInput( const Donya::XInput &controller, const Donya::Vector2 &deadZone )
+	Player::Input MakeCurrentInput( const Donya::Vector2 &deadZone )
 	{
 		Player::Input input{};
 
@@ -34,28 +35,28 @@ namespace Input
 
 		// TODO: To be changeable the input key or button
 
-		if ( controller.IsConnected() )
+		if ( Donya::Controller::IsConnected( Donya::Controller::Pad0 ) )
 		{
-			using Button	= Donya::Gamepad::Button;
-			using Direction	= Donya::Gamepad::StickDirection;
+			using Button	= Donya::Controller::Button;
+			using Direction	= Donya::Controller::StickDirection;
 
-			const auto stick = controller.LeftStick();
+			const auto stick = Donya::Controller::Stick( /* leftStick = */ true );
 		
-			pressLeft	= controller.Press( Button::LEFT	) || ( stick.x <= -deadZone.x );
-			pressRight	= controller.Press( Button::RIGHT	) || ( stick.x >= +deadZone.x );
-			pressUp		= controller.Press( Button::UP		) || ( stick.y >= +deadZone.y );
-			pressDown	= controller.Press( Button::DOWN	) || ( stick.y <= -deadZone.y );
+			pressLeft	= Donya::Controller::Press( Button::LEFT	) || ( stick.x <= -deadZone.x );
+			pressRight	= Donya::Controller::Press( Button::RIGHT	) || ( stick.x >= +deadZone.x );
+			pressUp		= Donya::Controller::Press( Button::UP		) || ( stick.y >= +deadZone.y );
+			pressDown	= Donya::Controller::Press( Button::DOWN	) || ( stick.y <= -deadZone.y );
 		
-			input.useJumps[0]	= controller.Press( Button::A	);
-			input.useShots[0]	= controller.Press( Button::X	);
-			input.useDashes[0]	= controller.Press( Button::RT	);
-			input.shiftGuns[0]	= controller.Press( Button::RB	) ? +1 : 0;
+			input.useJumps[0]	= Donya::Controller::Press( Button::A	);
+			input.useShots[0]	= Donya::Controller::Press( Button::X	);
+			input.useDashes[0]	= Donya::Controller::Press( Button::RT	);
+			input.shiftGuns[0]	= Donya::Controller::Press( Button::RB	) ? +1 : 0;
 			if ( 2 <= Player::Input::variationCount )
 			{
-			input.useJumps[1]	= controller.Press( Button::B	);
-			input.useShots[1]	= controller.Press( Button::Y	);
-			input.useDashes[1]	= controller.Press( Button::LT	);
-			input.shiftGuns[1]	= controller.Press( Button::LB	) ? -1 : 0;
+			input.useJumps[1]	= Donya::Controller::Press( Button::B	);
+			input.useShots[1]	= Donya::Controller::Press( Button::Y	);
+			input.useDashes[1]	= Donya::Controller::Press( Button::LT	);
+			input.shiftGuns[1]	= Donya::Controller::Press( Button::LB	) ? -1 : 0;
 			}
 		}
 		else
@@ -85,9 +86,9 @@ namespace Input
 		return input;
 	}
 
-	bool IsPauseRequested( const Donya::XInput &controller )
+	bool IsPauseRequested()
 	{
-		const bool button	= controller.Trigger( Donya::Gamepad::Button::START );
+		const bool button	= Donya::Controller::Trigger( Donya::Controller::Button::START );
 		const bool key		= Donya::Keyboard::Trigger( 'P' );
 		return button || key;
 	}

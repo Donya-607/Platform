@@ -4,9 +4,8 @@
 #include <memory>
 
 #include "Donya/Camera.h"
-#include "Donya/Constant.h"			// Use DEBUG_MODE macro.
-#include "Donya/GamepadXInput.h"
-#include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
+#include "Donya/Constant.h"	// Use DEBUG_MODE macro.
+#include "Donya/UseImGui.h"	// Use USE_IMGUI macro.
 
 #include "Boss.h"
 #include "ClearEvent.h"
@@ -54,7 +53,6 @@ private:
 	std::array<Donya::ICamera, cameraStateCount>	stateCameras;
 	Donya::ICamera									lightCamera;
 
-	Donya::XInput									controller{ Donya::Gamepad::PAD_1 };
 	Player::Input									previousInput; // Use for detect a trigger/release timing
 	Player::Input									currentInput;
 	Donya::Collision::Box3F							currentScreen;

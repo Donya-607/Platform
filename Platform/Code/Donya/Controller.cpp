@@ -10,8 +10,7 @@ namespace Donya
 	namespace Controller
 	{
 		// Currently, I supports only the XInput controller
-		static std::array<std::unique_ptr<Impl::XInput>, PadNumber::MAX_PAD_COUNT>
-			controllerPtrs{};
+		static std::array<Impl::XInput, PadNumber::MAX_PAD_COUNT> controllers;
 		static bool isInitialized = false;
 
 
@@ -21,10 +20,10 @@ namespace Donya
 			// else
 
 
-			// Construct the pointers
+			// Construct the controllers
 			for ( int i = 0; i < MAX_PAD_COUNT; ++i )
 			{
-				controllerPtrs[i] = std::make_unique<Impl::XInput>( i );
+				controllers[i].Init( static_cast<PadNumber>( i ) );
 			}
 
 
@@ -37,29 +36,32 @@ namespace Donya
 			// else
 
 
-			for ( auto &pIt : controllerPtrs )
+			for ( auto &it : controllers )
 			{
-				pIt->Update();
+				it.Update();
 			}
 		}
 		void Uninit()
 		{
 			Impl::XInput::Uninit();
+
+
+			isInitialized = false;
 		}
 
 
 		bool IsConnected( PadNumber no )
 		{
-			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
+			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return false; }
 			// else
 
 
 			// Verify all
 			if ( no < 0 || MAX_PAD_COUNT <= no )
 			{
-				for ( auto &pIt : controllerPtrs )
+				for ( auto &it : controllers )
 				{
-					if ( pIt->IsConnected() )
+					if ( it.IsConnected() )
 					{
 						return true;
 					}
@@ -71,73 +73,73 @@ namespace Donya
 
 
 			// Verify the one
-			return controllerPtrs[no]->IsConnected();
+			return controllers[no].IsConnected();
 		}
 
 		int  Press  ( Button kind, PadNumber padNo )
 		{
-			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
+			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return NULL; }
 			// else
 
-			return controllerPtrs[padNo]->Press( kind );
+			return controllers[padNo].Press( kind );
 		}
 		bool Trigger( Button kind, PadNumber padNo )
 		{
-			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
+			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return false; }
 			// else
 
-			return controllerPtrs[padNo]->Trigger( kind );
+			return controllers[padNo].Trigger( kind );
 		}
 		bool Release( Button kind, PadNumber padNo )
 		{
-			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
+			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return false; }
 			// else
 
-			return controllerPtrs[padNo]->Release( kind );
+			return controllers[padNo].Release( kind );
 		}
 		bool Repeat ( Button kind, int interval, int lowestFrame, PadNumber padNo )
 		{
-			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
+			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return false; }
 			// else
 
-			return controllerPtrs[padNo]->Repeat( kind, interval, lowestFrame );
+			return controllers[padNo].Repeat( kind, interval, lowestFrame );
 		}
 
 		int  PressStick  ( StickDirection dir, bool leftStick, PadNumber padNo )
 		{
-			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
+			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return NULL; }
 			// else
 
-			return controllerPtrs[padNo]->PressStick( dir, leftStick );
+			return controllers[padNo].PressStick( dir, leftStick );
 		}
 		bool TriggerStick( StickDirection dir, bool leftStick, PadNumber padNo )
 		{
-			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
+			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return false; }
 			// else
 
-			return controllerPtrs[padNo]->TriggerStick( dir, leftStick );
+			return controllers[padNo].TriggerStick( dir, leftStick );
 		}
 		bool ReleaseStick( StickDirection dir, bool leftStick, PadNumber padNo )
 		{
-			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
+			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return false; }
 			// else
 
-			return controllerPtrs[padNo]->ReleaseStick( dir, leftStick );
+			return controllers[padNo].ReleaseStick( dir, leftStick );
 		}
 		bool RepeatStick ( StickDirection dir, int interval, int lowestFrame, bool leftStick, PadNumber padNo )
 		{
-			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
+			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return false; }
 			// else
 
-			return controllerPtrs[padNo]->RepeatStick( dir, interval, lowestFrame, leftStick );
+			return controllers[padNo].RepeatStick( dir, interval, lowestFrame, leftStick );
 		}
 
 		Vector2 Stick( bool leftStick, PadNumber padNo )
 		{
-			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
+			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return Donya::Vector2::Zero(); }
 			// else
 
-			return controllerPtrs[padNo]->Stick( leftStick );
+			return controllers[padNo].Stick( leftStick );
 		}
 
 		void Vibrate( int vibrateFrame, float leftStrength, float rightStrength, PadNumber padNo )
@@ -145,21 +147,21 @@ namespace Donya
 			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
 			// else
 
-			controllerPtrs[padNo]->Vibrate( vibrateFrame, leftStrength, rightStrength );
+			controllers[padNo].Vibrate( vibrateFrame, leftStrength, rightStrength );
 		}
 		void Vibrate( int vibrateFrame, float strength, PadNumber padNo )
 		{
 			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
 			// else
 
-			controllerPtrs[padNo]->Vibrate( vibrateFrame, strength );
+			controllers[padNo].Vibrate( vibrateFrame, strength );
 		}
 		void StopVibration( PadNumber padNo )
 		{
 			if ( !isInitialized ) { _ASSERT_EXPR( 0, L"ERROR: Controller system is not initialized!" ); return; }
 			// else
 
-			controllerPtrs[padNo]->StopVibration();
+			controllers[padNo].StopVibration();
 		}
 	}
 }

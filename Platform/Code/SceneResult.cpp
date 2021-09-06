@@ -9,6 +9,7 @@
 #include "Donya/Blend.h"
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
 #include "Donya/Constant.h"
+#include "Donya/Controller.h"
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
@@ -463,9 +464,6 @@ Scene::Result SceneResult::Update()
 	PointLightStorage::Get().Clear();
 
 
-	controller.Update();
-
-
 	previousTimer = currentTimer;
 	currentTimer += deltaTime;
 #if USE_IMGUI
@@ -797,7 +795,7 @@ void SceneResult::Draw()
 	if ( pInputExplainer )
 	{
 		const auto ssOffset			= data.ssMeterDrawPos;
-		const bool showController	= controller.IsConnected();
+		const bool showController	= Donya::Controller::IsConnected( Donya::Controller::Pad0 );
 		auto Draw = [&]( Input::Type type, const SceneParam::ShiftInput &data )
 		{
 			pInputExplainer->Draw( type, showController, data.ssPos + ssOffset, data.ssScale );
@@ -926,11 +924,11 @@ Donya::Collision::Box3F SceneResult::CalcCurrentScreenPlane() const
 
 bool SceneResult::WantToSkip() const
 {
-	if ( controller.IsConnected() )
+	if ( Donya::Controller::IsConnected( Donya::Controller::Pad0 ) )
 	{
-		using Btn = Donya::Gamepad::Button;
-		if ( controller.Press( Btn::START  ) ) { return true; }
-		if ( controller.Press( Btn::SELECT ) ) { return true; }
+		using Btn = Donya::Controller::Button;
+		if ( Donya::Controller::Press( Btn::START  ) ) { return true; }
+		if ( Donya::Controller::Press( Btn::SELECT ) ) { return true; }
 	}
 	else
 	{
@@ -939,7 +937,7 @@ bool SceneResult::WantToSkip() const
 			constexpr unsigned int considerCount = 2;
 			unsigned int pressedCount = 0;
 
-			const auto input = Input::MakeCurrentInput( controller, Donya::Vector2::Zero() );
+			const auto input = Input::MakeCurrentInput( Donya::Vector2::Zero() );
 
 			pressedCount += Input::CountTrue( input.useJumps );
 			if ( considerCount <= pressedCount ) { return true; }
@@ -1150,7 +1148,7 @@ void SceneResult::PlayerUpdate( float deltaTime, const Map &terrain )
 	}
 
 #if DEBUG_MODE
-	input.useShots = Input::MakeCurrentInput( controller, {} ).useShots;
+	input.useShots = Input::MakeCurrentInput( Donya::Vector2::Zero() ).useShots;
 #endif // DEBUG_MODE
 
 	switch ( status )

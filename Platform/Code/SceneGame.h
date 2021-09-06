@@ -9,7 +9,6 @@
 #include "Donya/Camera.h"
 #include "Donya/Collision.h"
 #include "Donya/Constant.h"			// Use DEBUG_MODE macro.
-#include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
 
 #include "Boss.h"
@@ -52,7 +51,6 @@ private:
 	Scroll								scroll;
 	Donya::ICamera						lightCamera;
 
-	Donya::XInput						controller{ Donya::Gamepad::PAD_1 };
 	Player::Input						currentInput;
 	Donya::Collision::Box3F				currentScreen;
 	int									currentRoomID		= 0;

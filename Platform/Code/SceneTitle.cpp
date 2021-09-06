@@ -6,7 +6,9 @@
 
 #include "Donya/Blend.h"
 #include "Donya/Color.h"			// Use ClearBackGround(), StartFade().
+#include "Donya/Controller.h"
 #include "Donya/Easing.h"
+#include "Donya/GamepadXInput.h"
 #include "Donya/Keyboard.h"			// Make an input of player.
 #include "Donya/Serializer.h"
 #include "Donya/Sound.h"
@@ -1318,10 +1320,8 @@ void SceneTitle::LoadSaveData()
 
 void SceneTitle::UpdateInput()
 {
-	controller.Update();
-
 	previousInput = currentInput;
-	currentInput  = Input::MakeCurrentInput( controller, FetchParameter().deadZone );
+	currentInput  = Input::MakeCurrentInput( FetchParameter().deadZone );
 }
 
 void SceneTitle::UpdateChooseItem()
@@ -1340,7 +1340,7 @@ void SceneTitle::UpdateChooseItem()
 	const bool trgRight		= Tilted( curr.moveVelocity.x, +1 ) && !Tilted( prev.moveVelocity.x, +1 );
 	const bool trgUp		= Tilted( curr.moveVelocity.y, +1 ) && !Tilted( prev.moveVelocity.y, +1 );
 	const bool trgDown		= Tilted( curr.moveVelocity.y, -1 ) && !Tilted( prev.moveVelocity.y, -1 );
-	const bool trgDecide	= controller.Trigger( Donya::Gamepad::Button::START ) || ( Input::HasTrue( curr.useShots ) && !Input::HasTrue( prev.useShots ) );
+	const bool trgDecide	= Donya::Controller::Trigger( Donya::Controller::Button::START ) || ( Input::HasTrue( curr.useShots ) && !Input::HasTrue( prev.useShots ) );
 
 	if ( saveDataIsExist )
 	{
@@ -1796,8 +1796,8 @@ Player::Input SceneTitle::MakePlayerInput( float deltaTime )
 
 	static const Donya::Vector2 deadZone
 	{
-		Donya::XInput::GetDeadZoneLeftStick(),
-		Donya::XInput::GetDeadZoneLeftStick()
+		Donya::Controller::Impl::XInput::GetDeadZoneLeftStick(),
+		Donya::Controller::Impl::XInput::GetDeadZoneLeftStick()
 	};
 
 	input = currentInput;

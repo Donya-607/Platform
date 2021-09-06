@@ -5,10 +5,9 @@
 
 #include "Donya/Camera.h"
 #include "Donya/Collision.h"
-#include "Donya/Constant.h"			// Use DEBUG_MODE macro.
+#include "Donya/Constant.h"		// Use DEBUG_MODE macro.
 #include "Donya/Displayer.h"
-#include "Donya/GamepadXInput.h"
-#include "Donya/UseImGui.h"			// Use USE_IMGUI macro.
+#include "Donya/UseImGui.h"		// Use USE_IMGUI macro.
 
 #include "Enemy.h"
 #include "Input.h"
@@ -30,7 +29,6 @@ private:
 	Donya::ICamera								lightCamera;
 	State										status = State::Performance;
 
-	Donya::XInput								controller{ Donya::Gamepad::PAD_1 };
 	Donya::Collision::Box3F						currentScreen;	// It used for a bullet's lifespan
 	int											currentRoomID	= 0;
 	PlayerInitializer							playerIniter;

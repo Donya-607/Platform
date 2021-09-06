@@ -71,14 +71,16 @@ namespace Donya
 				bool isConnected = false;
 			};
 
-			Gamepad::Gamepad( PadNumber padNo )
-				: pImpl( std::make_unique<Gamepad::Impl>( padNo ) )
-			{
-				pImpl->padNo = padNo;
-			}
+			Gamepad::Gamepad()
+				: pImpl( std::make_unique<Gamepad::Impl>() )
+			{}
 			Gamepad::~Gamepad()
 			{
 				pImpl.reset( nullptr );
+			}
+			void Gamepad::Init( PadNumber padNo )
+			{
+				pImpl->padNo = padNo;
 			}
 
 			PadNumber Gamepad::PadNo() const
@@ -227,7 +229,7 @@ namespace Donya
 				return border;
 			}
 
-			struct XInput::Impl
+			struct XInput::XImpl
 			{
 				static constexpr int VIBRATION_RANGE = 65535;
 			public:
@@ -303,21 +305,10 @@ namespace Donya
 				}
 			};
 
-			XInput::XInput( PadNumber padNo )
-				: Gamepad( padNo ), pXImpl( std::make_unique<XInput::Impl>() )
-			{}
-			XInput::XInput( const XInput &ref )
-				: Gamepad( ref.PadNo() ), pXImpl( Donya::Clone( ref.pXImpl ) )
-			{}
-			XInput &XInput::operator = ( const XInput &ref )
-			{
-				if ( this == &ref ) { return *this; }
-				// else
 
-				pXImpl = Donya::Clone( ref.pXImpl );
-
-				return *this;
-			}
+			XInput::XInput()
+				: Gamepad(), pXImpl( std::make_unique<XInput::XImpl>() )
+			{}
 			XInput::~XInput()
 			{
 				pXImpl.reset( nullptr );

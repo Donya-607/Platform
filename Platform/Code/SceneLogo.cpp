@@ -2,6 +2,7 @@
 
 #include "Donya/Blend.h"
 #include "Donya/Constant.h"
+#include "Donya/Controller.h"
 #include "Donya/Donya.h"		// Use ClearViews()
 #include "Donya/Keyboard.h"
 #include "Donya/Sprite.h"
@@ -29,14 +30,14 @@ namespace
 			'Z',
 			'X',
 		};
-		constexpr Donya::Gamepad::Button xinput[]
+		constexpr Donya::Controller::Button xinput[]
 		{
-			Donya::Gamepad::Button::A,
-			Donya::Gamepad::Button::B,
-			Donya::Gamepad::Button::X,
-			Donya::Gamepad::Button::Y,
-			Donya::Gamepad::Button::START,
-			Donya::Gamepad::Button::SELECT,
+			Donya::Controller::Button::A,
+			Donya::Controller::Button::B,
+			Donya::Controller::Button::X,
+			Donya::Controller::Button::Y,
+			Donya::Controller::Button::START,
+			Donya::Controller::Button::SELECT,
 		};
 	}
 
@@ -93,9 +94,6 @@ void SceneLogo::Uninit()
 }
 Scene::Result SceneLogo::Update()
 {
-	controller.Update();
-
-
 	// Skip process if requested
 	if ( WannaSkip() && status != State::END )
 	{
@@ -161,12 +159,12 @@ bool SceneLogo::WannaSkip() const
 		if ( Donya::Keyboard::Trigger( key ) ) { return true; }
 	}
 
-	if ( !controller.IsConnected() ) { return false; }
+	if ( !Donya::Controller::IsConnected( Donya::Controller::Pad0 ) ) { return false; }
 	// else
 
 	for ( const auto &button : SkipInput::xinput )
 	{
-		if ( controller.Trigger( button ) ) { return true; }
+		if ( Donya::Controller::Trigger( button ) ) { return true; }
 	}
 
 	return false;

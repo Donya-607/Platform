@@ -1,6 +1,13 @@
 #include "GameStatus.h"
 
-#include "Donya.h" // Use Donya::GetElapsedTime().
+#include <algorithm>		// Use std::min()
+
+#include "Donya/Donya.h"	// Use Donya::GetElapsedTime()
+
+#include "Common.h"			// Use LargestDeltaTime()
+
+#undef max
+#undef min
 
 namespace Status
 {
@@ -17,6 +24,7 @@ namespace Status
 
 	float GetRawDeltaTime()
 	{
-		return Donya::GetElapsedTime();
+		// Prevent to be very large
+		return std::min( Common::LargestDeltaTime(), Donya::GetElapsedTime() );
 	}
 }

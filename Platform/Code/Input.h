@@ -2,7 +2,6 @@
 
 #include <array>
 
-#include "Donya/GamepadXInput.h"
 #include "Donya/UseImGui.h"
 #include "Donya/Vector.h"
 
@@ -37,9 +36,9 @@ namespace Input
 	bool HasButtonInput( const Player::Input &input );
 	bool HasStickInput( const Player::Input &input );
 	
-	Player::Input MakeCurrentInput( const Donya::XInput &controller, const Donya::Vector2 &stickDeadZone );
+	Player::Input MakeCurrentInput( const Donya::Vector2 &stickDeadZone );
 
-	bool IsPauseRequested( const Donya::XInput &controller );
+	bool IsPauseRequested();
 }
 namespace Input
 {

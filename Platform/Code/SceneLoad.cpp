@@ -147,13 +147,13 @@ void SceneLoad::Init()
 
 		bool succeeded = true;
 
-		//if ( !Boss	::LoadResource() ) { succeeded = false; }
-		//if ( !Bullet::LoadResource() ) { succeeded = false; }
-		//if ( !Door	::LoadResource() ) { succeeded = false; }
-		//if ( !Enemy	::LoadResource() ) { succeeded = false; }
-		//if ( !Item	::LoadResource() ) { succeeded = false; }
+		if ( !Boss	::LoadResource() ) { succeeded = false; }
+		if ( !Bullet::LoadResource() ) { succeeded = false; }
+		if ( !Door	::LoadResource() ) { succeeded = false; }
+		if ( !Enemy	::LoadResource() ) { succeeded = false; }
+		if ( !Item	::LoadResource() ) { succeeded = false; }
 		if ( !Meter	::LoadResource() ) { succeeded = false; }
-		//if ( !Player::LoadResource() ) { succeeded = false; }
+		if ( !Player::LoadResource() ) { succeeded = false; }
 
 		_ASSERT_EXPR( succeeded, L"Failed: Models load is failed." );
 
@@ -466,10 +466,10 @@ Scene::Result SceneLoad::ReturnResult()
 		Scene::Result change{};
 		change.AddRequest( Scene::Request::ADD_SCENE, Scene::Request::REMOVE_ME );
 	#if DEBUG_MODE
-		// change.sceneType = Scene::Type::Game;
-		// change.sceneType = Scene::Type::Title;
-		// change.sceneType = Scene::Type::Result;
-		change.sceneType = Scene::Type::Over;
+		change.sceneType = Scene::Type::Game;
+		//change.sceneType = Scene::Type::Title;
+		//change.sceneType = Scene::Type::Result;
+		//change.sceneType = Scene::Type::Over;
 	#else
 		change.sceneType = Scene::Type::Title;
 	#endif // DEBUG_MODE

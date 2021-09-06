@@ -126,7 +126,7 @@ class GraduallyFade : public BaseFade
 private:
 	float			alpha;		// 0.0f ~ 1.0f.
 	float			fadeSpeed;
-	unsigned int	color;		// ARGB.
+	unsigned int	color;		// RGBA.
 public:
 	GraduallyFade( unsigned int color ) : BaseFade(),
 		alpha( 0.0f ), fadeSpeed( 0.0f ),
